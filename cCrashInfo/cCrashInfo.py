@@ -40,7 +40,7 @@ class cCrashInfo(object):
       0x00010000, # SYMOPT_AUTO_PUBLICS
 #      0x00020000, # SYMOPT_NO_IMAGE_SEARCH
       0x00080000, # SYMOPT_NO_PROMPTS
-      0x80000000, # SYMOPT_DEBUG
+      dxCrashInfoConfig.get("bDebugSymbolLoading", False) and 0x80000000 or 0, # SYMOPT_DEBUG
     ]);
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
     # -o => debug child processes, -sflags 0xXXXXXXXX => symbol options:

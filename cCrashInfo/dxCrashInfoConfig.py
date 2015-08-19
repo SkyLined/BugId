@@ -12,6 +12,7 @@ for (sName, xValue) in {
   "asSymbolCachePaths": [],     # Where are symbols cached?
   "bOutputFirstChanceExceptions": False, # Are first chance exceptions detected and output?
   "bOutputCommandLine": False,  # Is the cbd.exe command line printed before execution?
+  "bDebugSymbolLoading": False, # Enable noizy symbol loading in cdb.
 }.items():
   if sName not in dxCrashInfoConfig:
     dxCrashInfoConfig[sName] = xValue;
