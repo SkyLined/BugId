@@ -167,9 +167,9 @@ class cCrashInfo(object):
         # get a stack for this first chance exception (in case it turns out to be interesting later)
         if oSelf._fasSendCommandAndReadOutput("kn 0x%X" % dxCrashInfoConfig.get("uMaxStackFramesCount", 50)) is None:
           return;
-        # continue the application.
+        # LOOP: continue the application.
       
-      # Report that an exception has been detected.
+      # An exception that should be reported was detected
       oSelf._fErrorDetectedCallback();
       # Gather exception information:
       oException = cException.foCreate(oSelf, uCode, sDescription);

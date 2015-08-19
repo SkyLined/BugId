@@ -99,8 +99,9 @@ class cException(object):
       uAddress = oSelf.auParameters[1];
       sAddressId = fsGetAddressId(uAddress);
       oSelf.sTypeId = "%s@%s" % (sViolationTypeId, sAddressId);
-      oSelf.sDescription = "%s while %s memory at 0x%08X (%s)" % (sCodeDescription, sViolationTypeDescription, uAddress, sAddressId);
-      oSelf.sSecurityImpact = ((uAddress > 0xFFFF0000 or uAddress < 0x10000)
+      oSelf.sDescription = "%s while %s memory at 0x%X (%s)" % (sCodeDescription, sViolationTypeDescription, uAddress, sAddressId);
+      uNULLMinusOffsetMinAddress = {"x64": 0xFFFFFFFFFFFF0000, "x86": 0xFFFF0000}[oProcess.sISA];
+      oSelf.sSecurityImpact = ((uAddress > uNULLMinusOffsetMinAddress or uAddress < 0x10000)
         and "Not a security issue"
         or "Probably a security issue"
       );

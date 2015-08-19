@@ -2,13 +2,14 @@ import os, re;
 from cModule import cModule;
 
 class cProcess(object):
-  def __init__(oSelf, uPid, sBinaryName):
+  def __init__(oSelf, uPid, sBinaryName, sISA):
     oSelf.uPid = uPid;
     oSelf.sBinaryName = sBinaryName;
+    oSelf.sISA = sISA;
     oSelf._doModules_sCdbId = {};
   
   def __str__(oSelf):
-    return 'Process(%s #%d)' % (oSelf.sBinaryName, oSelf.uPid);
+    return 'Process(%s #%d %s)' % (oSelf.sBinaryName, oSelf.uPid, oSelf.sISA);
   
   def foGetModule(oSelf, sCdbModuleId):
     return oSelf._doModules_sCdbId[sCdbModuleId];
@@ -35,10 +36,19 @@ class cProcess(object):
       ), sLine, re.I);
       if oMatch:
         sPid, sBinaryNameOrPath = oMatch.groups();
+        uPid = int(sPid, 16);
+        sBinaryName = os.path.basename(sBinaryNameOrPath);
         break;
     else:
-      raise AssertionError("Unexpected processes output: %s" % repr(asLines));
-    oSelf = cSelf(int(sPid, 16), os.path.basename(sBinaryNameOrPath));
+      raise AssertionError("Unexpected processes output: %s" % repr(asProcesses));
+    # Gather instruction set architecture for current process.
+    asEffmach = oCrashInfo._fasSendCommandAndReadOutput(".effmach");
+    if asEffmach is None: return None;
+    oEffmachMatch = len(asEffmach) == 1 and re.match(r"^Effective machine: (x\d{2}) .*$", asEffmach[0]);
+    assert oEffmachMatch, "Unexpected .effmach output: %s" % repr(asEffmach);
+    sISA = oEffmachMatch.group(1);
+    # Create a cProcess instance
+    oSelf = cSelf(uPid, sBinaryName, sISA);
     # Gather start and end address and binary name information for loaded modules.
     asModules = oCrashInfo._fasSendCommandAndReadOutput("lm on");
     if asModules is None: return None;
