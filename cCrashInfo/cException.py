@@ -125,7 +125,7 @@ class cException(object):
       sCodeId, sCodeDescription, sSecurityImpact = \
           ftsGetFailFastErrorCodeIdDescriptionAndSecurityImpact(oSelf.auParameters[0]);
       oSelf.sTypeId = "FF@%s" % sCodeId;
-      oSelf.sDescription = "A serious problem was detected (code 0x%08X: %s)" % (oSelf.auParameters[0], sCodeDescription);
+      oSelf.sDescription = "A critical issue was detected (code %d: %s)" % (oSelf.auParameters[0], sCodeDescription);
       oSelf.sSecurityImpact = sSecurityImpact;
     else:
       oSelf.sTypeId = fsGetExceptionTypeId(uCode);

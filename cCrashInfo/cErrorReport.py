@@ -59,12 +59,12 @@ class cErrorReport(object):
         oHasher = hashlib.md5();
         oHasher.update(oFrame.sHashAddress);
         sStackId += "%02X" % ord(oHasher.digest()[0]);
-        asHTMLStack.append("<b>%s</b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
+        asHTMLStack.append("<b><u>%s</u></b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
       elif oFrame.oModule:
         oHasher = hashlib.md5();
         oHasher.update(oFrame.sHashAddress);
         sStackId += "(%02X)" % ord(oHasher.digest()[0]);
-        asHTMLStack.append("<b><i>%s</i></b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
+        asHTMLStack.append("<b><u><i>%s</i></u></b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
       else:
         sStackId += "--";
         asHTMLStack.append("<s>%s</s> (not in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
@@ -79,7 +79,8 @@ class cErrorReport(object):
     sId = " ".join([sApplicationId, sTypeId, sStackId, sFunctionId]);
     
     # Get the description 
-    sLocationDescription = oTopFrame and oTopFrame.sAddress or "(no stack)";
+    oLocationFrame = oMainFrame or oTopFrame;
+    sLocationDescription = oLocationFrame and oLocationFrame.sAddress or "(no stack)";
     sDescription = "%s in %s" % (oException.sDescription, sLocationDescription);
     
     sSecurityImpact = oException.sSecurityImpact;
