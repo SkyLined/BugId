@@ -14,6 +14,13 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
   STATUS_ACCESS_VIOLATION: [ # All Access Violations
     "chrome_child.dll!memcpy",
   ],
+  STATUS_STACK_BUFFER_OVERRUN: [ # All FailFast exceptions
+    "ntdll.dll!RtlFailFast2",
+    "ntdll.dll!RtlpHandleInvalidUserCallTarget",
+    "ntdll.dll!RtlDispatchException",
+    "ntdll.dll!KiUserExceptionDispatcher",
+    "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
+  ],
   "Breakpoint": [
     "kernel32.dll!DebugBreak",
     "ntdll.dll!DbgBreakPoint",

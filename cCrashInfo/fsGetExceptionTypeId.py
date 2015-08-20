@@ -10,7 +10,7 @@ dsId_uCode = {
   STATUS_BREAKPOINT: "Breakpoint",
   STATUS_SINGLE_STEP: "SingleStep",
   0x8007000E: "OOM",
-  STATUS_ACCESS_VIOLATION: "AV",
+  STATUS_ACCESS_VIOLATION: "AV", # Special cased if exception parameters are available
   STATUS_IN_PAGE_ERROR: "InPageIO",
   STATUS_INVALID_HANDLE: "InvalidHandle",
   STATUS_NO_MEMORY: "OOM",
@@ -30,7 +30,7 @@ dsId_uCode = {
   STATUS_PRIVILEGED_INSTRUCTION: "PrivInstr",
   STATUS_STACK_OVERFLOW: "StackExhaust",
   0xC000027B: "WRTLanguage",
-  STATUS_STACK_BUFFER_OVERRUN: "SecurityCheck",
+  STATUS_STACK_BUFFER_OVERRUN: "FF", # Special cased if exception parameters are available
   0xC000041D: "Verifier",
   STATUS_FAIL_FAST_EXCEPTION: "FailFast",
   0xE06D7363: "C++",

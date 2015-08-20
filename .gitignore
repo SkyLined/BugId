@@ -41,4 +41,7 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Project specific files and folders:
 cCrashInfo/Debugging Tools For Windows (*)/
+*.pyc

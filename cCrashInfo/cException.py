@@ -1,5 +1,6 @@
 import re;
-from fsGetAddressId import fsGetAddressId;
+from ftsGetAddressIdAndDescription import ftsGetAddressIdAndDescription;
+from ftsGetFailFastErrorCodeIdDescriptionAndSecurityImpact import ftsGetFailFastErrorCodeIdDescriptionAndSecurityImpact;
 from fsGetExceptionTypeId import fsGetExceptionTypeId;
 from cProcess import cProcess;
 from cStack import cStack;
@@ -93,18 +94,39 @@ class cException(object):
       # The stowed exception replaces this exception:
       return cStowedException.foCreate(oCrashInfo, oProcess, pStowedExceptionsAddress);
     elif uCode == STATUS_ACCESS_VIOLATION:
+      # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
+      # Parameter[1] = address
+      assert len(oSelf.auParameters) == 2, \
+          "Unexpected number of access violation exception parameters (%d vs 2)" % len(oSelf.auParameters);
       # Access violation: add the type of operation and the location to the exception id.
       sViolationTypeId = "AV" + {0:"R", 1:"W", 8:"E"}.get(oSelf.auParameters[0], "?");
-      sViolationTypeDescription = {0:"reading", 1:"writing", 8:"executing"}.get(oSelf.auParameters[0], "?");
+      sViolationTypeDescription = {0:"reading", 1:"writing", 8:"executing"}.get(oSelf.auParameters[0], "0x%X-ing" % oSelf.auParameters[0]);
       uAddress = oSelf.auParameters[1];
-      sAddressId = fsGetAddressId(uAddress);
+      sAddressId, sAddressDescription = ftsGetAddressIdAndDescription(uAddress);
+      if sAddressId != "NULL":
+        asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
+        asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
+        asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % (uAddress - 0x4));
+        if asPageHeapInformation is None: return None;
+        #if uAddress & 0xFFF < 0x8:
+        #  # Assuming page heap is This may be a buffer overrun
       oSelf.sTypeId = "%s@%s" % (sViolationTypeId, sAddressId);
-      oSelf.sDescription = "%s while %s memory at 0x%X (%s)" % (sCodeDescription, sViolationTypeDescription, uAddress, sAddressId);
+      oSelf.sDescription = "%s while %s memory at 0x%X (%s)" % \
+          (sCodeDescription, sViolationTypeDescription, uAddress, sAddressDescription);
       uNULLMinusOffsetMinAddress = {"x64": 0xFFFFFFFFFFFF0000, "x86": 0xFFFF0000}[oProcess.sISA];
       oSelf.sSecurityImpact = ((uAddress > uNULLMinusOffsetMinAddress or uAddress < 0x10000)
         and "Not a security issue"
         or "Probably a security issue"
       );
+    elif uCode == STATUS_STACK_BUFFER_OVERRUN:
+      # Parameter[0] = fail fast code
+      assert len(oSelf.auParameters) == 1, \
+          "Unexpected number of fail fast exception parameters (%d vs 1)" % len(oSelf.auParameters);
+      sCodeId, sCodeDescription, sSecurityImpact = \
+          ftsGetFailFastErrorCodeIdDescriptionAndSecurityImpact(oSelf.auParameters[0]);
+      oSelf.sTypeId = "FF@%s" % sCodeId;
+      oSelf.sDescription = "A serious problem was detected (code 0x%08X: %s)" % (oSelf.auParameters[0], sCodeDescription);
+      oSelf.sSecurityImpact = sSecurityImpact;
     else:
       oSelf.sTypeId = fsGetExceptionTypeId(uCode);
       oSelf.sDescription = "%s (code 0x%08X)" % (sCodeDescription, uCode);

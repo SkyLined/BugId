@@ -34,23 +34,22 @@ class cErrorReport(object):
     # * Plenty of exceptions get thrown by special functions, eg. kernel32!DebugBreak, which are not relevant to the
     #   exception. These are ignored and the calling function is used as the "main" frame).
     
-      
     oMainFrame = None;
     uIgnoredFramesHashed = 0;
     uFramesHashed = 0;
-    asStack = [];
+    asHTMLStack = [];
     sStackId = "";
     oIgnoredFramesHasher = hashlib.md5();
     oSkippedFramesHasher = hashlib.md5();
     for oFrame in oException.oStack.aoFrames:
       if (uFramesHashed - uIgnoredFramesHashed == dxCrashInfoConfig.get("uStackHashFramesCount", 3)):
-        asStack.append("   %s" % oFrame.sAddress);
+        asHTMLStack.append("%s<br/>" % fsHTMLEncode(oFrame.sAddress));
         continue;
       if oMainFrame is None:
         if fbIsIrrelevantTopFrame(sTypeId, oException.uCode, oFrame):
           uIgnoredFramesHashed += 1;
           uFramesHashed += 1;
-          asStack.append(" ~ %s" % oFrame.sAddress);
+          asHTMLStack.append("<s>%s</s> (not in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
           oIgnoredFramesHasher.update(oFrame.sHashAddress);
           continue; # This frame is irrelevant in the context of this exception type.
         if uIgnoredFramesHashed > 0:
@@ -60,20 +59,20 @@ class cErrorReport(object):
         oHasher = hashlib.md5();
         oHasher.update(oFrame.sHashAddress);
         sStackId += "%02X" % ord(oHasher.digest()[0]);
-        asStack.append(" * %s" % oFrame.sAddress);
+        asHTMLStack.append("<b>%s</b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
       elif oFrame.oModule:
         oHasher = hashlib.md5();
         oHasher.update(oFrame.sHashAddress);
         sStackId += "(%02X)" % ord(oHasher.digest()[0]);
-        asStack.append(" ? %s" % oFrame.sAddress);
+        asHTMLStack.append("<b><i>%s</i></b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
       else:
         sStackId += "--";
-        asStack.append(" - %s" % oFrame.sAddress);
+        asHTMLStack.append("<s>%s</s> (not in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
       uFramesHashed += 1;
     if uFramesHashed == 0:
       sStackId = "#";
     if oException.oStack.bPartialStack:
-      asStack.append("   ...");
+      asHTMLStack.append("... (rest of the stack was ignored)<br/>");
     # Get the main stack frame's simplified address as the id.
     sFunctionId = oMainFrame and oMainFrame.sSimplifiedAddress or "(no stack)";
     # Combine the various ids into a unique exception id
@@ -100,6 +99,10 @@ class cErrorReport(object):
       code {
         margin-bottom: 1em;
       }
+      s {
+        color: silver;
+        text-decoration: line-through;
+      }
     </style>
     <title>%s</title>
   </head>
@@ -112,7 +115,7 @@ class cErrorReport(object):
 </html>""".strip() % (
       fsHTMLEncode(sId),
       fsHTMLEncode(sDescription),
-      "".join(["%s<br/>" % fsHTMLEncode(x) for x in asStack]),
+      "".join(asHTMLStack),
       "".join(["%s<br/>" % fsHTMLEncode(x) for x in asCdbIO])
     );
     return cSelf(sId, sDescription, sSecurityImpact, sHTMLDetails);
