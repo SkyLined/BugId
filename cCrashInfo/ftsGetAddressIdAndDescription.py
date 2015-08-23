@@ -27,18 +27,19 @@ dsId_uAddress = {     # Short             # This message is inserted into "Attem
 };
 
 def ftsGetAddressIdAndDescription(uAddress):
+  uMaxAddressOffset = dxCrashInfoConfig.get("uMaxAddressOffset", 0xFFF);
   for (uBaseAddress, (sId, sDescription)) in dsId_uAddress.items():
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
-      return sId;
-    uMaxAddressOffset = dxCrashInfoConfig.get("uMaxAddressOffset", 0xFFF);
+      return sId, sDescription;
     if iOffset > uMaxAddressOffset: # Maybe this is wrapping:
       iOffset -= 0x100000000;
     elif iOffset < -uMaxAddressOffset: # Maybe this is wrapping:
       iOffset += 0x100000000;
     uOffset = abs(iOffset);
     if uOffset < uMaxAddressOffset:
-      return "%s%s0x%X" % (sId, iOffset < 0 and "-" or "+", uOffset), sDescription;
+      sId = "%s%s0x%X" % (sId, iOffset < 0 and "-" or "+", uOffset);
+      return sId, sDescription;
   return "Arbitrary", "an invalid pointer was used";
 
 if __name__ == "__main__":

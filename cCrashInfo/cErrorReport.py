@@ -1,31 +1,98 @@
 import hashlib;
-from fsGetSpecialExceptionTypeId import fsGetSpecialExceptionTypeId;
+from NTSTATUS import *;
+from foSpecialErrorReport_CppException import foSpecialErrorReport_CppException;
+from foSpecialErrorReport_STATUS_ACCESS_VIOLATION import foSpecialErrorReport_STATUS_ACCESS_VIOLATION;
+from foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION import foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION;
+from foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN import foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN;
+from foSpecialErrorReport_STATUS_STOWED_EXCEPTION import foSpecialErrorReport_STATUS_STOWED_EXCEPTION;
 from fbIsIrrelevantTopFrame import fbIsIrrelevantTopFrame;
-
 from dxCrashInfoConfig import dxCrashInfoConfig;
+
+dfoSpecialErrorReport_uExceptionCode = {
+  CPP_EXCEPTION_CODE: foSpecialErrorReport_CppException,
+  STATUS_ACCESS_VIOLATION: foSpecialErrorReport_STATUS_ACCESS_VIOLATION,
+  STATUS_FAIL_FAST_EXCEPTION: foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION,
+  STATUS_STACK_BUFFER_OVERRUN: foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN,
+  STATUS_STOWED_EXCEPTION: foSpecialErrorReport_STATUS_STOWED_EXCEPTION,
+};
+
+sHTMLDetailsTemplate = """
+<!doctype html>
+<html>
+  <head>
+    <style>
+      * {
+        font-family: Courier New, courier, monospace;
+      }
+      body {
+        margin: 5pt;
+      }
+      div {
+        color: white;
+        background: black;
+        padding: 5pt;
+        padding-left: 10pt;
+        margin-top: 10pt;
+        margin-bottom: 10pt;
+      }
+      code {
+        margin-left: 10pt;
+        display: block;
+      }
+      s {
+        color: silver;
+        text-decoration: line-through;
+      }
+    </style>
+    <title>%(sId)s</title>
+  </head>
+  <body>
+    <div>%(sDescription)s</div>
+    <code>%(sStack)s</code>
+    <div>Debugger input/output</div>
+    <code>%(sCdbIO)s</code>
+  </body>
+</html>""".strip();
 
 def fsHTMLEncode(sData):
   return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
 
 class cErrorReport(object):
-  def __init__(self, sId, sDescription, sSecurityImpact, sHTMLDetails):
-    self.sId = sId;
-    self.sDescription = sDescription;
-    self.sSecurityImpact = sSecurityImpact;
-    self.sHTMLDetails = sHTMLDetails;
+  def __init__(oSelf, sApplicationId, sExceptionTypeId, sExceptionDescription, sSecurityImpact):
+    oSelf.sApplicationId = sApplicationId;
+    oSelf.sExceptionTypeId = sExceptionTypeId;
+    oSelf.sStackId = None;
+    oSelf.sFunctionId = None;
+    oSelf.sExceptionDescription = sExceptionDescription;
+    oSelf.sLocationDescription = None;
+    oSelf.sSecurityImpact = sSecurityImpact;
+    oSelf.sHTMLDetails = None;
+  
+  def fsGetId(oSelf):
+    if oSelf.sFunctionId.startswith(oSelf.sApplicationId + "!"):
+      # No use mentioning this twice.
+      return "%s %s %s" % (oSelf.sExceptionTypeId, oSelf.sFunctionId, oSelf.sStackId);
+    return "%s %s %s %s" % (oSelf.sExceptionTypeId, oSelf.sApplicationId, oSelf.sFunctionId, oSelf.sStackId);
+  sId = property(fsGetId);
+  
+  def fsGetDescription(oSelf):
+    return "%s in %s" % (oSelf.sExceptionDescription, oSelf.sLocationDescription);
+  sDescription = property(fsGetDescription);
   
   @classmethod
-  def foCreateFromException(cSelf, oException, asCdbIO):
-    # Get initial exception type id and description
-    oTopFrame = len(oException.oStack.aoFrames) > 0 and oException.oStack.aoFrames[0] or None;
-    # Get application id.
-    sApplicationId = oException.oProcess.sBinaryName;
-    # See if its in a "special" exception and rewrite the exception type id accordingly.
-    if oTopFrame and oTopFrame.oFunction:
-      sTypeId = fsGetSpecialExceptionTypeId(oException.sTypeId, oTopFrame) \
-                or oException.sTypeId; # in case there is no special type id.
-    else:
-      sTypeId = oException.sTypeId;
+  def foCreateFromException(cSelf, oCrashInfo, oException):
+    oSelf = cSelf(
+      sApplicationId = oException.oProcess.sBinaryName,
+      sExceptionTypeId = oException.sTypeId,
+      sExceptionDescription = oException.sDescription,
+      sSecurityImpact = oException.sSecurityImpact
+    );
+    
+    foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);
+    if foSpecialErrorReport:
+      oException = foSpecialErrorReport(oSelf, oCrashInfo, oException);
+      if oException is None: return None;
+    
     # Find out which frame should be the "main" frame and get stack id.
     # * Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call
     #   themselves. If possible, this is detected, and the alphabetically first functions is chosen as the main function
@@ -34,89 +101,61 @@ class cErrorReport(object):
     # * Plenty of exceptions get thrown by special functions, eg. kernel32!DebugBreak, which are not relevant to the
     #   exception. These are ignored and the calling function is used as the "main" frame).
     
-    oMainFrame = None;
-    uIgnoredFramesHashed = 0;
+    oStack = oException.foCreateStack(oCrashInfo);
+    
+    oMainFunctionFrame = None;
+    oMainModuleFrame = None;
+    uIgnoredFrames = 0;
     uFramesHashed = 0;
     asHTMLStack = [];
     sStackId = "";
-    oIgnoredFramesHasher = hashlib.md5();
-    oSkippedFramesHasher = hashlib.md5();
-    for oFrame in oException.oStack.aoFrames:
-      if (uFramesHashed - uIgnoredFramesHashed == dxCrashInfoConfig.get("uStackHashFramesCount", 3)):
-        asHTMLStack.append("%s<br/>" % fsHTMLEncode(oFrame.sAddress));
-        continue;
-      if oMainFrame is None:
-        if fbIsIrrelevantTopFrame(sTypeId, oException.uCode, oFrame):
-          uIgnoredFramesHashed += 1;
-          uFramesHashed += 1;
-          asHTMLStack.append("<s>%s</s> (not in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
-          oIgnoredFramesHasher.update(oFrame.sHashAddress);
-          continue; # This frame is irrelevant in the context of this exception type.
-        if uIgnoredFramesHashed > 0:
-          sStackId += "%02X~" % ord(oIgnoredFramesHasher.digest()[0]);
-        oMainFrame = oFrame;
-      if oFrame.oFunction:
-        oHasher = hashlib.md5();
-        oHasher.update(oFrame.sHashAddress);
-        sStackId += "%02X" % ord(oHasher.digest()[0]);
-        asHTMLStack.append("<b><u>%s</u></b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
-      elif oFrame.oModule:
-        oHasher = hashlib.md5();
-        oHasher.update(oFrame.sHashAddress);
-        sStackId += "(%02X)" % ord(oHasher.digest()[0]);
-        asHTMLStack.append("<b><u><i>%s</i></u></b> (in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
+    bIgnoringIrrelevantTopFrames = True;
+    for oFrame in oStack.aoFrames:
+      if bIgnoringIrrelevantTopFrames and fbIsIrrelevantTopFrame(oSelf.sExceptionTypeId, oException.uCode, oFrame):
+        # This frame is irrelevant at the top of the stack in the context of this exception type.
+        uIgnoredFrames += 1;
+        asHTMLStack.append("<s>%s</s><br/>" % fsHTMLEncode(oFrame.sAddress));
       else:
-        sStackId += "--";
-        asHTMLStack.append("<s>%s</s> (not in hash)<br/>" % fsHTMLEncode(oFrame.sAddress));
-      uFramesHashed += 1;
-    if uFramesHashed == 0:
-      sStackId = "#";
-    if oException.oStack.bPartialStack:
+        bIgnoringIrrelevantTopFrames = False;
+        # Determine main function frame and main module frame. Also make non function frames italic
+        sHTMLAddress = fsHTMLEncode(oFrame.sAddress);
+        if oFrame.oFunction:
+          oMainFunctionFrame = oMainFunctionFrame or oFrame;
+        else:
+          if oFrame.oModule:
+            oMainModuleFrame = oMainModuleFrame or oFrame;
+          sHTMLAddress = "<i>%s</i>" % sHTMLAddress;
+        # Hash frame address for id and output frame to html
+        if uFramesHashed == dxCrashInfoConfig.get("uStackHashFramesCount", 3):
+          # no more hashing is needed: just output as is:
+          asHTMLStack.append("%s<br/>" % sHTMLAddress);
+        elif oFrame.sIdAddress:
+          # frame is part of id: add hash and output bold
+          oHasher = hashlib.md5();
+          oHasher.update(oFrame.sIdAddress);
+          sStackId += "%02X" % ord(oHasher.digest()[0]);
+          uFramesHashed += 1;
+          asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, sStackId));
+        else:
+          # This is not part of the id, but between frames that are: add "__" to id and output strike-through
+          sStackId += "__";
+          asHTMLStack.append("<s>%s</s><br/>" % sHTMLAddress);
+    oSelf.sStackId = uFramesHashed == 0 and "##" or sStackId;
+    if oStack.bPartialStack:
       asHTMLStack.append("... (rest of the stack was ignored)<br/>");
-    # Get the main stack frame's simplified address as the id.
-    sFunctionId = oMainFrame and oMainFrame.sSimplifiedAddress or "(no stack)";
-    # Combine the various ids into a unique exception id
-    sId = " ".join([sApplicationId, sTypeId, sStackId, sFunctionId]);
+    # Get the main stack frame's simplified address as the function id.
+    oMainFrame = oMainFunctionFrame or oMainModuleFrame;
+    oSelf.sFunctionId = oMainFrame and oMainFrame.sSimplifiedAddress or "(unknown)";
     
-    # Get the description 
+    # Create the location description 
     oLocationFrame = oMainFrame or oTopFrame;
-    sLocationDescription = oLocationFrame and oLocationFrame.sAddress or "(no stack)";
-    sDescription = "%s in %s" % (oException.sDescription, sLocationDescription);
-    
-    sSecurityImpact = oException.sSecurityImpact;
+    oSelf.sLocationDescription = oLocationFrame and oLocationFrame.sAddress or "(unknown)";
     
     # Create HTML details
-    sHTMLDetails = """
-<!doctype html>
-<html>
-  <head>
-    <style>
-      div {
-        color: white;
-        background: black;
-        padding: 5px;
-        margin-bottom: 1em;
-      }
-      code {
-        margin-bottom: 1em;
-      }
-      s {
-        color: silver;
-        text-decoration: line-through;
-      }
-    </style>
-    <title>%s</title>
-  </head>
-  <body>
-    <div>%s</div>
-    <code>%s</code>
-    <div>Debugger input/output</div>
-    <code>%s</code>
-  </body>
-</html>""".strip() % (
-      fsHTMLEncode(sId),
-      fsHTMLEncode(sDescription),
-      "".join(asHTMLStack),
-      "".join(["%s<br/>" % fsHTMLEncode(x) for x in asCdbIO])
-    );
-    return cSelf(sId, sDescription, sSecurityImpact, sHTMLDetails);
+    oSelf.sHTMLDetails = sHTMLDetailsTemplate % {
+      "sId": fsHTMLEncode(oSelf.sId),
+      "sDescription": fsHTMLEncode(oSelf.sDescription),
+      "sStack": "".join(asHTMLStack),
+      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo.asCdbIO])
+    };
+    return oSelf;

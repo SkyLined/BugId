@@ -1,7 +1,7 @@
 # Load base config file
 from dxConfig import dxConfig;
 # Add CrashInfo group if it doesn't exist.
-dxCrashInfoConfig = dxConfig.get("CrashInfo", {});
+dxCrashInfoConfig = dxConfig.setdefault("CrashInfo", {});
 # Add default values where no values have been supplied:
 for (sName, xValue) in {
   "bOutputIO": False,           # Output cdb i/o while debugging application

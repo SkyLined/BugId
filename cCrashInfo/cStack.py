@@ -27,10 +27,8 @@ class cStack(object):
   def foCreateFromAddress(cSelf, oCrashInfo, oProcess, pAddress, uSize):
     oSelf = cSelf(oProcess);
     uStackFramesCount = min(dxCrashInfoConfig.get("uMaxStackFramesCount", 50), uSize);
-    # Execute twice, as the first time may trigger symbol loading, which outputs messages that make parsing harder.
-    for x in xrange(2):
-      asStack = oCrashInfo._fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
-      if asStack is None: return None;
+    asStack = oCrashInfo._fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
+    if asStack is None: return None;
     # Here are some lines you might expect to parse:
     # |TODO put something here...
     uFrameNumber = 0;
@@ -64,10 +62,8 @@ class cStack(object):
   def foCreate(cSelf, oCrashInfo, oProcess):
     oSelf = cSelf(oProcess);
     uStackFramesCount = dxCrashInfoConfig.get("uMaxStackFramesCount", 50);
-    # Execute twice, as the first time may trigger symbol loading, which outputs messages that make parsing harder.
-    for x in xrange(2):
-      asStack = oCrashInfo._fasSendCommandAndReadOutput("kn 0x%X" % uStackFramesCount);
-      if asStack is None: return None;
+    asStack = oCrashInfo._fasSendCommandAndReadOutput("kn 0x%X" % uStackFramesCount);
+    if asStack is None: return None;
     sHeader = asStack.pop(0);
     assert re.sub(r"\s+", " ", sHeader.strip()) in ["# ChildEBP RetAddr", "# Child-SP RetAddr Call Site"], \
         "Unknown stack header: %s" % repr(sHeader);
@@ -85,33 +81,32 @@ class cStack(object):
     # |Could not allocate memory for stack trace
     uFrameNumber = 0;
     for sLine in asStack:
-      if re.match(r"^%s$" % "|".join([
-          "WARNING: Frame IP not in any known module\. Following frames may be wrong\.",
-          "WARNING: Stack unwind information not available\. Following frames may be wrong\.",
-          "Could not allocate memory for stack trace",
+      if not re.match(r"^(?:%s)$" % "|".join([
+        r"WARNING: Frame IP not in any known module\. Following frames may be wrong\.",
+        r"WARNING: Stack unwind information not available\. Following frames may be wrong\.",
+        r"Could not allocate memory for stack trace",
       ]), sLine):
-        continue;
-      oMatch = re.match(r"^\s*%s\s*$" % (
-        r"([0-9A-F]+)"               r"\s+" # frame_number whitespace
-        r"(?:[0-9A-F`]+|\(Inline\))" r"\s+" # {stack_address || "(Inline)"} whitespace
-        r"(?:[0-9A-F`]+|\-{8})"      r"\s+" # {ret_address || "--------"} whitespace
-        "(?:"                               # either {
-          r"(0x[0-9A-F`]+)"                 #   ("0x" address)
-        "|"                                 # } or {
-          r"(\w+)"                          #   (cdb_module_id)
-          "(?:"                             #   either {
-            "(\+0x[0-9A-F]+)"               #     ("+0x" offset_in_module)
-          "|"                               #   } or {
-            r"!(.+?)([\+\-]0x[0-9A-F]+)?"   #     "!" (function_name) optional{(["+" || "-"] "0x" offset)}
-          ")"                               #   }
-        ")"                                 # }
-      ), sLine, re.I);
-      assert oMatch, "Unknown stack output: %s" % repr(sLine);
-      (sFrameNumber, sAddress, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
-      assert uFrameNumber == int(sFrameNumber, 16), "Unexpected frame number: %s vs %d" % (sFrameNumber, uFrameNumber);
-      uAddress = sAddress and int(sAddress.replace("`", ""), 16);
-      uModuleOffset = sModuleOffset is not None and int(sModuleOffset.replace("`", ""), 16);
-      uSymbolOffset = sSymbolOffset is not None and int(sSymbolOffset.replace("`", ""), 16);
-      oSelf._fAddStackFrame(uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
-      uFrameNumber += 1;
+        oMatch = re.match(r"^\s*%s\s*$" % (
+          r"([0-9A-F]+)"               r"\s+" # frame_number whitespace
+          r"(?:[0-9A-F`]+|\(Inline\))" r"\s+" # {stack_address || "(Inline)"} whitespace
+          r"(?:[0-9A-F`]+|\-{8})"      r"\s+" # {ret_address || "--------"} whitespace
+          "(?:"                               # either {
+            r"(0x[0-9A-F`]+)"                 #   ("0x" address)
+          "|"                                 # } or {
+            r"(\w+)"                          #   (cdb_module_id)
+            "(?:"                             #   either {
+              "(\+0x[0-9A-F]+)"               #     ("+0x" offset_in_module)
+            "|"                               #   } or {
+              r"!(.+?)([\+\-]0x[0-9A-F]+)?"   #     "!" (function_name) optional{(["+" || "-"] "0x" offset)}
+            ")"                               #   }
+          ")"                                 # }
+        ), sLine, re.I);
+        assert oMatch, "Unknown stack output: %s" % repr(sLine);
+        (sFrameNumber, sAddress, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
+        assert uFrameNumber == int(sFrameNumber, 16), "Unexpected frame number: %s vs %d" % (sFrameNumber, uFrameNumber);
+        uAddress = sAddress and int(sAddress.replace("`", ""), 16);
+        uModuleOffset = sModuleOffset is not None and int(sModuleOffset.replace("`", ""), 16);
+        uSymbolOffset = sSymbolOffset is not None and int(sSymbolOffset.replace("`", ""), 16);
+        oSelf._fAddStackFrame(uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
+        uFrameNumber += 1;
     return oSelf;

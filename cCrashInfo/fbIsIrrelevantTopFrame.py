@@ -5,29 +5,39 @@ from NTSTATUS import *;
 
 dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
   "*": [
+    "KERNELBASE!RaiseException",
     "ntdll.dll!KiUserExceptionDispatch",
     "ntdll.dll!NtRaiseException",
     "ntdll.dll!RtlDispatchException",
     "ntdll.dll!RtlpExecuteHandlerForException",
     "ntdll.dll!ZwRaiseException",
   ],
-  STATUS_ACCESS_VIOLATION: [ # All Access Violations
+  STATUS_ACCESS_VIOLATION: [
     "chrome_child.dll!memcpy",
   ],
-  STATUS_STACK_BUFFER_OVERRUN: [ # All FailFast exceptions
+  STATUS_FAIL_FAST_EXCEPTION: [
+    "EDGEHTML.dll!Abandonment::InduceAbandonment",
+    "EDGEHTML.dll!Abandonment::OutOfMemory",
+  ],
+  STATUS_STACK_BUFFER_OVERRUN: [
+    "ntdll.dll!KiUserExceptionDispatcher",
+    "ntdll.dll!LdrpValidateUserCallTarget",
+    "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
+    "ntdll.dll!LdrpValidateUserCallTargetBitMapRet",
+    "ntdll.dll!LdrpValidateUserCallTargetEH",
     "ntdll.dll!RtlFailFast2",
     "ntdll.dll!RtlpHandleInvalidUserCallTarget",
-    "ntdll.dll!RtlDispatchException",
-    "ntdll.dll!KiUserExceptionDispatcher",
-    "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
+  ],
+  CPP_EXCEPTION_CODE: [
+    "KERNELBASE.dll!RaiseException",
+    "msvcrt.dll!CxxThrowException",
+    "msvcrt.dll!_CxxThrowException",
+    "MSVCR110.dll!CxxThrowException",
+    "MSVCR110.dll!_CxxThrowException",
   ],
   "Breakpoint": [
     "kernel32.dll!DebugBreak",
     "ntdll.dll!DbgBreakPoint",
-  ],
-  "C++": [
-    "KERNELBASE.dll!RaiseException",
-    "msvcrt.dll!CxxThrowException",
   ],
   "FatalError": [
     "chrome_child.dll!blink::reportFatalErrorInMainThread",
@@ -88,14 +98,6 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
   ],
   "AVE@NULL": [
     "0x0",
-  ],
-  "SecurityCheck": [
-    "ntdll.dll!LdrpValidateUserCallTarget",
-    "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
-    "ntdll.dll!LdrpValidateUserCallTargetBitMapRet",
-    "ntdll.dll!LdrpValidateUserCallTargetEH",
-    "ntdll.dll!RtlpHandleInvalidUserCallTarget",
-    "ntdll.dll!KiUserExceptionDispatcher",
   ],
 };
 

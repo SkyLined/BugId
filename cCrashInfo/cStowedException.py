@@ -59,8 +59,7 @@ class cStowedException(object):
     oSelf.sTypeId = "%s(Stowed)" + fsGetExceptionTypeId(oSelf.uCode);
     oSelf.sDescription = "Stowed exception code 0x%08X" % oSelf.uCode;
     
-    # Get the stack
-    oSelf.oStack = cStack.foCreateFromAddress(oCrashInfo, oProcess, oSelf.pStackTrace, oSelf.uStackTraceSize);
-    if oSelf.oStack is None: return None;
-    
     return oSelf;
+  
+  def foCreateStack(oSelf, oCrashInfo):
+    return cStack.foCreateFromAddress(oCrashInfo, oSelf.oProcess, oSelf.pStackTrace, oSelf.uStackTraceSize);

@@ -40,6 +40,7 @@ class cCrashInfo(object):
       0x00010000, # SYMOPT_AUTO_PUBLICS
 #      0x00020000, # SYMOPT_NO_IMAGE_SEARCH
       0x00080000, # SYMOPT_NO_PROMPTS
+#      0x80000000, # SYMOPT_DEBUG # Makes parsing output near impossible :(
       dxCrashInfoConfig.get("bDebugSymbolLoading", False) and 0x80000000 or 0, # SYMOPT_DEBUG
     ]);
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
@@ -69,7 +70,7 @@ class cCrashInfo(object):
       for sArgument in asCommandLine[1:]:
         print "|   %s" % sArgument;
       print "`".ljust(120, "-");
-    oSelf._asIO = [];
+    oSelf.asCdbIO = [];
     oSelf._oErrorReport = None;
     oSelf._bExpectTermination = False;
     oSelf._oProcess = subprocess.Popen(args = " ".join(asCommandLine), stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
@@ -175,8 +176,8 @@ class cCrashInfo(object):
       oException = cException.foCreate(oSelf, uCode, sDescription);
       if oException is None:
         return None;
-      # Sve the exception report for returning when we're finished.
-      oSelf._oErrorReport = cErrorReport.foCreateFromException(oException, oSelf._asIO);
+      # Save the exception report for returning when we're finished.
+      oSelf._oErrorReport = cErrorReport.foCreateFromException(oSelf, oException);
       # terminate the debugger.
       oSelf._bExpectTermination = True;
       asDebuggerOutput = oSelf._fasSendCommandAndReadOutput("q");
@@ -186,47 +187,80 @@ class cCrashInfo(object):
       raise;
   
   def _fasReadOutput(oSelf):
-    # Read until the debugger outputs an input prompt, or terminated.
-    asLines = [];
-    sCurrentLine = "";
+    # Read cdb output until an input prompt is detected, or cdb terminates.
+    # This is a bit more complex than one might expect because I attempted to make it work with noizy symbol loading.
+    # This may interject messages at any point during command execution, which are not part of the commands output and
+    # have to be remove to make parsing of the output possible. Unfortuntely, it appears to be too complex to be
+    # worth the effort. I've left what i did in here in case I want to try to finish it at some point.
+    sLine = "";
+    sCleanedLine = "";
+    asCleanedLines = [];
+    bNextLineIsSymbolLoaderMessage = False;
     while 1:
       sChar = oSelf._oProcess.stdout.read(1);
       if sChar in ["\r", "\n", ""]:
-        if sCurrentLine:
-          if dxCrashInfoConfig.get("bOutputIO", False): print "cdb>%s" % repr(sCurrentLine)[1:-1];
-          oSelf._asIO.append(sCurrentLine);
-          asLines.append(sCurrentLine);
-          sCurrentLine = "";
+        if dxCrashInfoConfig.get("bOutputIO", False): print "cdb>%s" % repr(sLine)[1:-1];
+        oSelf.asCdbIO.append(sLine);
+        sLine = "";
+        if sCleanedLine:
+          oLineEndsWithWarning = re.match(r"^(.*)\*\*\* WARNING: Unable to verify checksum for .*$", sCleanedLine);
+          if oLineEndsWithWarning:
+            # Sample output:
+            # 
+            # |00000073`ce10fda0  00007ff7`cf312200*** WARNING: Unable to verify checksum for CppException_x64.exe
+            # | CppException_x64!cException::`vftable'
+            # The warning and a "\r\n" appear in the middle of a line od output and need to be removed. The interrupted
+            # output continues on the next line.
+            sCleanedLine = oLineEndsWithWarning.group(1);
+          else:
+            oSymbolLoaderMessageMatch = re.match(r"^(?:%s)$" % "|".join([
+              r"SYMSRV: .+",
+              r"\s*\x08+\s+(?:copied\s*|\d+ percentSYMSRV: .+)",
+              r"DBGHELP: .+?( \- (?:private|public) symbols(?: & lines)?)?\s*",
+             ]), sCleanedLine);
+            if oSymbolLoaderMessageMatch:
+              # Sample output:
+              # |SYMSRV:  c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb not found
+              # |DBGHELP: \\server\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb cached to c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
+              # |DBGHELP: chakra - public symbols  
+              # |        c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
+              bNextLineIsSymbolLoaderMessage = oSymbolLoaderMessageMatch.group(1) is not None;
+            elif bNextLineIsSymbolLoaderMessage:
+              bNextLineIsSymbolLoaderMessage = False;
+            else:
+              asCleanedLines.append(sCleanedLine);
+            sCleanedLine = "";
         if sChar == "":
           break;
       else:
-        sCurrentLine += sChar;
+        sLine += sChar;
+        sCleanedLine += sChar;
         # Detect the prompt.
-        oPromptMatch = re.match("^\d+:\d+(:x86)?> $", sCurrentLine);
+        oPromptMatch = re.match("^\d+:\d+(:x86)?> $", sCleanedLine);
         if oPromptMatch:
-          if dxCrashInfoConfig.get("bOutputIO", False): print "cdb>%s" % repr(sCurrentLine)[1:-1];
-          oSelf._asIO.append(sCurrentLine);
-          return asLines;
+          if dxCrashInfoConfig.get("bOutputIO", False): print "cdb>%s" % repr(sLine)[1:-1];
+          oSelf.asCdbIO.append(sCleanedLine);
+          return asCleanedLines;
     # Cdb stdout was closed: the process is terminating.
     assert oSelf._bExpectTermination, \
-        "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf._asIO[-20:]);
+        "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf.asCdbIO[-20:]);
     oSelf._oProcess.wait(); # wait for it to terminate completely.
     oSelf._fFinishedCallback(oSelf._oErrorReport);
     return None;
    
   def _fasSendCommandAndReadOutput(oSelf, sCommand):
     if dxCrashInfoConfig.get("bOutputIO", False): print "cdb<%s" % repr(sCommand)[1:-1];
-    oSelf._asIO[-1] += sCommand;
+    oSelf.asCdbIO[-1] += sCommand;
     try:
       oSelf._oProcess.stdin.write("%s\r\n" % sCommand);
     except Exception, oException:
       assert oSelf._bExpectTermination, \
-          "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf._asIO[-20:]);
+          "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf.asCdbIO[-20:]);
       oSelf._oProcess.wait(); # wait for it to terminate completely.
       oSelf._fFinishedCallback(oSelf._oErrorReport);
       return None;
     asOutput = oSelf._fasReadOutput();
     # Detect obvious errors executing the command. (this will not catch everything, but does help development)
-    assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*^ .*$", asOutput[0]), \
-        "There was a problem executing the command %s: %s" % (repr(sCommand), asOutput[0].strip());
+    assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*\^ .*$", asOutput[0]), \
+        "There was a problem executing the command %s: %s" % (repr(sCommand), repr(asOutput));
     return asOutput;

@@ -17,19 +17,19 @@ class cStackFrame(object):
         oSelf.sAddress = oSelf.oFunction.sName;
       oSelf.sSimplifiedAddress = oSelf.oFunction.sSimplifiedName;
       if uFunctionOffset in xrange(dxCrashInfoConfig.get("uMaxFunctionOffset", 0xFFF)):
-        oSelf.sHashAddress = oSelf.oFunction.sName;
+        oSelf.sIdAddress = oSelf.oFunction.sName;
       else:
         # The offset is negative or too large: this is the closest symbol, but probably not the correct symbol.
         # This probably means there are not enough symbols to distinguish different functions. The only thing that
         # can be done to create a unique stack hash for this frame is add the offset. Unfortunately, this offset will
         # likely be different in a different build of the same application, so the stack hash will be different as well.
-        oSelf.sHashAddress = oSelf.sAddress;
+        oSelf.sIdAddress = oSelf.sAddress;
         oSelf.sAddress += " (this symbol may not be correct)";
     elif oSelf.oModule:
       oSelf.sAddress = "%s + 0x%X" % (oSelf.oModule.sBinaryName, oSelf.uModuleOffset);
-      oSelf.sSimplifiedAddress = "%s!(unknown)" % oSelf.oModule.sBinaryName;
-      oSelf.sHashAddress = oSelf.oModule.sBinaryName;
+      oSelf.sSimplifiedAddress = "%s+0x%X" % (oSelf.oModule.sBinaryName, oSelf.uModuleOffset);
+      oSelf.sIdAddress = oSelf.sAddress;
     else:
       oSelf.sAddress = "0x%X" % oSelf.uAddress;
       oSelf.sSimplifiedAddress = "(unknown)";
-      oSelf.sHashAddress = "";
+      oSelf.sIdAddress = None;

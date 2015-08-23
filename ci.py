@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print "  ci.py [options] --pids=[comma separated list of process ids]";
     print "    Attach debugger to the process(es) provided in the list. The processes must";
     print "    all have been suspended, as they will be resumed by the debugger.";
-    print "  ci.py [options] path\to\executable.exe [arguments]";
+    print "  ci.py [options] path\\to\\executable.exe [arguments]";
     print "    Start the executable in the debugger with the provided arguments.";
     print;
     print "Options:";
