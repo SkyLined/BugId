@@ -100,8 +100,10 @@ class cErrorReport(object):
     #   ^^^^ THIS IS NOT YET IMPLEMENTED ^^^
     # * Plenty of exceptions get thrown by special functions, eg. kernel32!DebugBreak, which are not relevant to the
     #   exception. These are ignored and the calling function is used as the "main" frame).
+    #   See fbIsIrrelevantTopFrame for more details
     
-    oStack = oException.foCreateStack(oCrashInfo);
+    oStack = oException.foGetStack(oCrashInfo);
+    if oStack is None: return None;
     
     oMainFunctionFrame = None;
     oMainModuleFrame = None;

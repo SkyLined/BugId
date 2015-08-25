@@ -10,7 +10,6 @@ class cStowedException(object):
     oSelf.pStackTrace = pStackTrace; # dpS {pStackTrace} L{uStackTraceSize}
     oSelf.uStackTraceSize = uStackTraceSize;
     oSelf.sErrorText = sErrorText;
-    oSelf.oStack = None;
     oSelf.sTypeId = None;
     oSelf.sDescription = None;
     oSelf.sSecurityImpact = None;
@@ -61,5 +60,8 @@ class cStowedException(object):
     
     return oSelf;
   
-  def foCreateStack(oSelf, oCrashInfo):
-    return cStack.foCreateFromAddress(oCrashInfo, oSelf.oProcess, oSelf.pStackTrace, oSelf.uStackTraceSize);
+  def foGetStack(oSelf, oCrashInfo):
+    # This is not going to chance, so we can cache it:
+    if not hasattr(oSelf, "oStack"):
+      oSelf.oStack = cStack.foCreateFromAddress(oCrashInfo, oSelf.oProcess, oSelf.pStackTrace, oSelf.uStackTraceSize);
+    return oSelf.oStack;

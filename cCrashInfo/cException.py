@@ -78,6 +78,9 @@ class cException(object):
     oSelf.sSecurityImpact = fsGetSecurityImpact(uCode);
     return oSelf;
   
-  def foCreateStack(oSelf, oCrashInfo):
-    return cStack.foCreate(oCrashInfo, oSelf.oProcess);
+  def foGetStack(oSelf, oCrashInfo):
+    # This is not going to chance, so we can cache it:
+    if not hasattr(oSelf, "oStack"):
+      oSelf.oStack = cStack.foCreate(oCrashInfo, oSelf.oProcess);
+    return oSelf.oStack;
 

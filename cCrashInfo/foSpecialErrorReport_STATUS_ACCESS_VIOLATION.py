@@ -1,15 +1,15 @@
 from ftsGetAddressIdAndDescription import ftsGetAddressIdAndDescription;
+from fbExceptionIsReportedAsOOM import fbExceptionIsReportedAsOOM;
 
-ddsFunctionName_sSpecialTypeId_sTypeId = {
-  "AVW@NULL": {
-    "chrome_child.dll!blink::reportFatalErrorInMainThread": "FatalError",
-    "chrome_child.dll!WTF::partitionOutOfMemory": "OOM",
-    "mozalloc.dll!mozalloc_abort": "OOM",
-    "xul.dll!js::CrashAtUnhandlableOOM": "OOM",
-    "xul.dll!NS_ABORT_OOM": "OOM",
-    "xul.dll!StatsCompartmentCallback": "OOM",
-    "xul.dll!nsGlobalWindow::ClearDocumentDependentSlots": "OOM",
-  },
+daasOOMExceptionTopStackFrames_sTypeId = {
+  "AVW@NULL": [
+    ["chrome_child.dll!WTF::partitionOutOfMemory"],
+    ["mozalloc.dll!mozalloc_abort"],
+    ["xul.dll!js::CrashAtUnhandlableOOM"],
+    ["xul.dll!NS_ABORT_OOM"],
+    ["xul.dll!StatsCompartmentCallback"],
+    ["xul.dll!nsGlobalWindow::ClearDocumentDependentSlots"],
+  ],
 };
 
 def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
@@ -31,27 +31,25 @@ def foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oExce
   uAddress = oException.auParameters[1];
   sAddressId, sAddressDescription = ftsGetAddressIdAndDescription(uAddress);
   sTypeId = "%s%s:%s" % (oErrorReport.sExceptionTypeId, sViolationTypeId, sAddressId);
-  if sTypeId in ddsFunctionName_sSpecialTypeId_sTypeId:
-    dsFunctionName_sSpecialTypeId = ddsFunctionName_sSpecialTypeId_sTypeId[sTypeId];
-    oTopFrame = len(oException.oStack.aoFrames) > 0 and oException.oStack.aoFrames[0] or None;
-    # See if its in a "special" exception and rewrite the exception type id accordingly.
-    if oTopFrame and oTopFrame.oFunction:
-      sTypeId = dsFunctionName_sSpecialTypeId.get(oTopFrame.sAddress) or \
-          dsFunctionName_sSpecialTypeId.get(oTopFrame.sSimplifiedAddress) or \
-          sTypeId;
-  if sAddressId != "NULL":
-    sSecurityImpact = "Not a security issue";
-  else:
-    sSecurityImpact = "Probably a security issue";
-    asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % (0xFFFFFFFF & (0x100000004 + uAddress)));
-    if asPageHeapInformation is None: return None;
-    asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
-    if asPageHeapInformation is None: return None;
-    asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % (uAddress + 0x4));
-    if asPageHeapInformation is None: return None;
-  
-  oErrorReport.sExceptionTypeId = sTypeId;
-  oErrorReport.sExceptionDescription = "Access violation while %s memory at 0x%X (%s)" % \
-      (sViolationTypeDescription, uAddress, sAddressDescription);
-  oErrorReport.sSecurityImpact = sSecurityImpact;
+  bExceptionIsReportedAsAV = True;
+  if sTypeId in daasOOMExceptionTopStackFrames_sTypeId:
+    aasOOMExceptionTopStackFrames = daasOOMExceptionTopStackFrames_sTypeId[sTypeId];
+    bExceptionIsReportedAsAV = not fbExceptionIsReportedAsOOM( \
+        oErrorReport, oCrashInfo, oException, aasOOMExceptionTopStackFrames);
+  if bExceptionIsReportedAsAV:
+    if sAddressId != "NULL":
+      sSecurityImpact = "Not a security issue";
+    else:
+      sSecurityImpact = "Probably a security issue";
+      asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % (0xFFFFFFFF & (0x100000004 + uAddress)));
+      if asPageHeapInformation is None: return None;
+      asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
+      if asPageHeapInformation is None: return None;
+      asPageHeapInformation = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % (uAddress + 0x4));
+      if asPageHeapInformation is None: return None;
+    
+    oErrorReport.sExceptionTypeId = sTypeId;
+    oErrorReport.sExceptionDescription = "Access violation while %s memory at 0x%X (%s)" % \
+        (sViolationTypeDescription, uAddress, sAddressDescription);
+    oErrorReport.sSecurityImpact = sSecurityImpact;
   return oException;

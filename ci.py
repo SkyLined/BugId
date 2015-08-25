@@ -62,8 +62,8 @@ if __name__ == "__main__":
       print "* The application was started successfully and is running...";
     else:
       print "* The application was resumed successfully and is running...";
-  def fErrorDetectedHandler():
-    print "* A fatal exception was detected and is being analyzed...";
+  def fFatalExceptionDetectedCallback(uCode, sDescription):
+    print "* A fatal exception 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
   
   def fFinishedHandler(oErrorReport):
     if oErrorReport:
@@ -91,15 +91,19 @@ if __name__ == "__main__":
     print "* CrashInfo is starting the application...";
   else:
     print "* CrashInfo is attaching to the application...";
-  cCrashInfo(
+  oCrashInfo = cCrashInfo(
     asApplicationCommandLine = asApplicationCommandLine,
     auApplicationProcessIds = auApplicationProcessIds,
     sApplicationISA = "irrelevant",
     asSymbolServerURLs = [],
     fApplicationStartedCallback = fApplicationStartedHandler,
-    fErrorDetectedCallback = fErrorDetectedHandler,
+    fFatalExceptionDetectedCallback = fFatalExceptionDetectedCallback,
     fFinishedCallback = fFinishedHandler,
     fInternalExceptionCallback = fInternalExceptionHandler,
   );
-  
-  oFinishedEvent.wait();
+  try:
+    oFinishedEvent.wait();
+  except KeyboardInterrupt:
+    print "* CrashInfo is stopping...";
+    oCrashInfo.fStop();
+    oFinishedEvent.wait();
