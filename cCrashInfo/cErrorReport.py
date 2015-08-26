@@ -1,4 +1,4 @@
-import hashlib;
+import hashlib, re;
 from NTSTATUS import *;
 from foSpecialErrorReport_CppException import foSpecialErrorReport_CppException;
 from foSpecialErrorReport_STATUS_ACCESS_VIOLATION import foSpecialErrorReport_STATUS_ACCESS_VIOLATION;
@@ -49,11 +49,15 @@ sHTMLDetailsTemplate = """
   <body>
     <div>%(sDescription)s</div>
     <code>%(sStack)s</code>
+    %(sAdditionalInformation)s
     <div>Debugger input/output</div>
     <code>%(sCdbIO)s</code>
   </body>
 </html>""".strip();
-
+sHTMLAdditionalInformationTemplate = """
+    <div>%(sName)s</div>
+    <code>%(sDetails)s</code>
+""".strip();
 def fsHTMLEncode(sData):
   return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
 
@@ -66,13 +70,14 @@ class cErrorReport(object):
     oSelf.sExceptionDescription = sExceptionDescription;
     oSelf.sLocationDescription = None;
     oSelf.sSecurityImpact = sSecurityImpact;
+    oSelf.dasAdditionalInformation = {};
     oSelf.sHTMLDetails = None;
   
   def fsGetId(oSelf):
     if oSelf.sFunctionId.startswith(oSelf.sApplicationId + "!"):
       # No use mentioning this twice.
       return "%s %s %s" % (oSelf.sExceptionTypeId, oSelf.sFunctionId, oSelf.sStackId);
-    return "%s %s %s %s" % (oSelf.sExceptionTypeId, oSelf.sApplicationId, oSelf.sFunctionId, oSelf.sStackId);
+    return "%s %s!%s %s" % (oSelf.sExceptionTypeId, oSelf.sApplicationId, oSelf.sFunctionId, oSelf.sStackId);
   sId = property(fsGetId);
   
   def fsGetDescription(oSelf):
@@ -87,6 +92,38 @@ class cErrorReport(object):
       sExceptionDescription = oException.sDescription,
       sSecurityImpact = oException.sSecurityImpact
     );
+    
+    # Get application version information:
+    asBinaryVersionOutput = oCrashInfo._fasSendCommandAndReadOutput("lmv M *%s" % oException.oProcess.sBinaryName);
+    if asBinaryVersionOutput is None: return None;
+    # Sample output:
+    # |0:004> lmv M firefox.exe
+    # |start             end                 module name
+    # |00000000`011b0000 00000000`0120f000   firefox    (deferred)             
+    # |    Image path: firefox.exe
+    # |    Image name: firefox.exe
+    # |    Timestamp:        Thu Aug 13 03:23:30 2015 (55CBF192)
+    # |    CheckSum:         0006133B
+    # |    ImageSize:        0005F000
+    # |    File version:     40.0.2.5702
+    # |    Product version:  40.0.2.0
+    # |    File flags:       0 (Mask 3F)
+    # |    File OS:          4 Unknown Win32
+    # |    File type:        2.0 Dll
+    # |    File date:        00000000.00000000
+    # |    Translations:     0000.04b0
+    # |    CompanyName:      Mozilla Corporation
+    # |    ProductName:      Firefox
+    # |    InternalName:     Firefox
+    # |    OriginalFilename: firefox.exe
+    # |    ProductVersion:   40.0.2
+    # |    FileVersion:      40.0.2
+    # |    FileDescription:  Firefox
+    # |    LegalCopyright:   (c)Firefox and Mozilla Developers; available under the MPL 2 license.
+    # |    LegalTrademarks:  Firefox is a Trademark of The Mozilla Foundation.
+    # |    Comments:         Firefox is a Trademark of The Mozilla Foundation.
+    # The first two lines can be skipped.
+    oSelf.dasAdditionalInformation["%s version information" % oException.oProcess.sBinaryName] = asBinaryVersionOutput[2:];
     
     foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);
     if foSpecialErrorReport:
@@ -158,6 +195,15 @@ class cErrorReport(object):
       "sId": fsHTMLEncode(oSelf.sId),
       "sDescription": fsHTMLEncode(oSelf.sDescription),
       "sStack": "".join(asHTMLStack),
-      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo.asCdbIO])
+      "sAdditionalInformation": "".join(
+        [
+          sHTMLAdditionalInformationTemplate % {
+            "sName": fsHTMLEncode(sName),
+            "sDetails": "".join(["%s<br/>" % fsHTMLEncode(x) for x in asDetails]),
+          }
+          for (sName, asDetails) in oSelf.dasAdditionalInformation.items()
+        ]
+      ),
+      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo.asCdbIO]),
     };
     return oSelf;
