@@ -11,7 +11,7 @@ dsFailFastErrorCodes = {
   4:  ("BadStack",      "FAST_FAIL_INCORRECT_STACK",              "Potentially exploitable security issue"),
   5:  ("InvalidArg",    "FAST_FAIL_INVALID_ARG",                  "Potentially exploitable security issue"),
   6:  ("GSCookie",      "FAST_FAIL_GS_COOKIE_INIT",               "Potentially exploitable security issue"),
-  7:  ("AppExit",       "FAST_FAIL_FATAL_APP_EXIT",               "Potentially not a security issue"),
+  7:  ("AppExit",       "FAST_FAIL_FATAL_APP_EXIT",               None),
   8:  ("RangeCheck",    "FAST_FAIL_RANGE_CHECK_FAILURE",          "Potentially exploitable security issue"),
   9:  ("Registry",      "FAST_FAIL_UNSAFE_REGISTRY_ACCESS",       "Potentially exploitable security issue"),
   10: ("GuardICall",    "Control flow guard detect a call to an invalid address",    "Potentially exploitable security issue"),
@@ -43,6 +43,7 @@ def foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCrashInfo, o
   if sFailFastCodeDescription.startswith("FAIL_FAST_"):
     oErrorReport.sExceptionDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
         (oException.uCode, uFailFastCode, sFailFastCodeDefinition);
+  else:
     oErrorReport.sExceptionDescription = sFailFastCodeDescription;
   oErrorReport.sSecurityImpact = sSecurityImpact;
   return oException;

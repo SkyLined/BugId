@@ -3,7 +3,7 @@ from fbExceptionIsReportedAsOOM import fbExceptionIsReportedAsOOM;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 dsId_uAddress = {     # Short             Pointer description                                   Security impact
-          0x00000000: ('NULL',            "a NULL ptr",                                         "Not a security issue"),
+          0x00000000: ('NULL',            "a NULL ptr",                                         None),
           0XBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
           0XBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
   0XBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),

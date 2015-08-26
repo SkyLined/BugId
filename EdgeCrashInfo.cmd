@@ -15,7 +15,7 @@ IF NOT EXIST "%EdgeDbg%" (
 )
 If "%~1" == "" (
   SET OpenURL=http://%COMPUTERNAME%:28876/
-  SET CrashInfoArguments="--ci.bSaveReport=true"
+  SET CrashInfoArguments=
 ) ELSE (
   SET OpenURL=%1
   SET CrashInfoArguments=%2 %3 %4 %5 %6 %7 %8 %9

@@ -39,6 +39,13 @@ sHTMLDetailsTemplate = """
         margin-left: 10pt;
         display: block;
       }
+      table, tbody, tr, td {
+        cell-padding: 0;
+        cell-spacing: 0;
+        border: 0;
+        padding: 0;
+        margin: 0;
+      }
       s {
         color: silver;
         text-decoration: line-through;
@@ -47,7 +54,19 @@ sHTMLDetailsTemplate = """
     <title>%(sId)s</title>
   </head>
   <body>
-    <div>%(sDescription)s</div>
+    <div>Details</div>
+    <code>
+      <table>
+        <tbody>
+          <tr><td>Id:               </td><td><b>%(sId)s</b></td></tr>
+          <tr><td>Description:      </td><td><b>%(sExceptionDescription)s</b></td></tr>
+          <tr><td>Process binary:   </td><td>%(sProcessBinaryName)s</td></tr>
+          <tr><td>Location:         </td><td>%(sLocationDescription)s</td></tr>
+          <tr><td>Security impact:  </td><td>%(sSecurityImpact)s</td></tr>
+        </table>
+      </tbody>
+    </code>
+    <div>Stack</div>
     <code>%(sStack)s</code>
     %(sAdditionalInformation)s
     <div>Debugger input/output</div>
@@ -62,8 +81,8 @@ def fsHTMLEncode(sData):
   return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
 
 class cErrorReport(object):
-  def __init__(oSelf, sApplicationId, sExceptionTypeId, sExceptionDescription, sSecurityImpact):
-    oSelf.sApplicationId = sApplicationId;
+  def __init__(oSelf, sProcessBinaryName, sExceptionTypeId, sExceptionDescription, sSecurityImpact):
+    oSelf.sProcessBinaryName = sProcessBinaryName;
     oSelf.sExceptionTypeId = sExceptionTypeId;
     oSelf.sStackId = None;
     oSelf.sFunctionId = None;
@@ -74,20 +93,16 @@ class cErrorReport(object):
     oSelf.sHTMLDetails = None;
   
   def fsGetId(oSelf):
-    if oSelf.sFunctionId.startswith(oSelf.sApplicationId + "!"):
+    if oSelf.sFunctionId.startswith(oSelf.sProcessBinaryName + "!"):
       # No use mentioning this twice.
       return "%s %s %s" % (oSelf.sExceptionTypeId, oSelf.sFunctionId, oSelf.sStackId);
-    return "%s %s!%s %s" % (oSelf.sExceptionTypeId, oSelf.sApplicationId, oSelf.sFunctionId, oSelf.sStackId);
+    return "%s %s!%s %s" % (oSelf.sExceptionTypeId, oSelf.sProcessBinaryName, oSelf.sFunctionId, oSelf.sStackId);
   sId = property(fsGetId);
-  
-  def fsGetDescription(oSelf):
-    return "%s in %s" % (oSelf.sExceptionDescription, oSelf.sLocationDescription);
-  sDescription = property(fsGetDescription);
   
   @classmethod
   def foCreateFromException(cSelf, oCrashInfo, oException):
     oSelf = cSelf(
-      sApplicationId = oException.oProcess.sBinaryName,
+      sProcessBinaryName = oException.oProcess.sBinaryName,
       sExceptionTypeId = oException.sTypeId,
       sExceptionDescription = oException.sDescription,
       sSecurityImpact = oException.sSecurityImpact
@@ -193,7 +208,10 @@ class cErrorReport(object):
     # Create HTML details
     oSelf.sHTMLDetails = sHTMLDetailsTemplate % {
       "sId": fsHTMLEncode(oSelf.sId),
-      "sDescription": fsHTMLEncode(oSelf.sDescription),
+      "sExceptionDescription": fsHTMLEncode(oSelf.sExceptionDescription),
+      "sProcessBinaryName": fsHTMLEncode(oException.oProcess.sBinaryName),
+      "sLocationDescription": fsHTMLEncode(oSelf.sLocationDescription),
+      "sSecurityImpact": oSelf.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oSelf.sSecurityImpact) or "None",
       "sStack": "".join(asHTMLStack),
       "sAdditionalInformation": "".join(
         [

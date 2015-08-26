@@ -14,8 +14,8 @@ if __name__ == "__main__":
     print "    Start the executable in the debugger with the provided arguments.";
     print;
     print "Options:";
-    print "  --ci.bSaveReport=true";
-    print "    Save a HTML formatted crash report using the crash id as the file name.";
+    print "  --ci.bSaveReport=false";
+    print "    Do not save a HTML formatted crash report.";
     print "  --CrashInfo.bOutputIO=true";
     print "    Show verbose cdb output and input during debugging.";
     print "  --CrashInfo.asSymbolCachePaths=[\"C:\\Symbols\"]";
@@ -69,10 +69,12 @@ if __name__ == "__main__":
   def fFinishedHandler(oErrorReport):
     if oErrorReport:
       print;
-      print "%16s: %s" % ("Id", oErrorReport.sId);
-      print "%16s: %s" % ("Description", oErrorReport.sDescription);
-      print "%16s: %s" % ("Security impact", oErrorReport.sSecurityImpact);
-      if dxCIConfig.get("bSaveReport", False):
+      print "Id:               %s" % oErrorReport.sId;
+      print "Description:      %s" % oErrorReport.sExceptionDescription;
+      print "Process binary:   %s" % oErrorReport.sProcessBinaryName;
+      print "Location:         %s" % oErrorReport.sLocationDescription;
+      print "Security impact:  %s" % oErrorReport.sSecurityImpact;
+      if dxCIConfig.get("bSaveReport", True):
         dsMap = {'"': "''", "<": "[", ">": "]", "\\": "!", "/": "!", "?": "!", "*": ".", ":": ";", "|": "!"};
         sFileName = "".join([dsMap.get(sChar, sChar) for sChar in oErrorReport.sId]) + ".html";
         oFile = open(sFileName, "wb");
@@ -80,7 +82,7 @@ if __name__ == "__main__":
           oFile.write(oErrorReport.sHTMLDetails);
         finally:
           oFile.close();
-        print "%16s: %s (%d bytes)" % ("Error report", sFileName, len(oErrorReport.sHTMLDetails));
+        print "Error report:     %s (%d bytes)" % (sFileName, len(oErrorReport.sHTMLDetails));
     else:
       print "* The application has terminated without crashing.";
     oFinishedEvent.set();
