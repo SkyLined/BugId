@@ -72,6 +72,18 @@ def foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oExce
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
     asPageHeapReport = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
+    if asPageHeapReport is None: return None;
+    # Sample output:
+    # |    address 0e948ffc found in
+    # |    _DPH_HEAP_ROOT @ 48b1000
+    # |    in free-ed allocation (  DPH_HEAP_BLOCK:         VirtAddr         VirtSize)
+    # |                                    e9f08bc:          e948000             2000
+    # |    6d009cd2 verifier!AVrfDebugPageHeapFree+0x000000c2
+    # |    77d42e20 ntdll!RtlDebugFreeHeap+0x0000003c
+    # |    77cfe0da ntdll!RtlpFreeHeap+0x0006c97a
+    # |    77cf5d2c ntdll!RtlpFreeHeapInternal+0x0000027e
+    # |    77c90a3c ntdll!RtlFreeHeap+0x0000002c
+    # <snip> no 0-day information for you!
     if (
       len(asPageHeapReport) >= 3 and \
       re.match(r"^\s+address [0-9`a-f]+ found in\s*$", asPageHeapReport[0]) and \
