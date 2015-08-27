@@ -1,3 +1,4 @@
+from dsCdbBinaryPath_sISA import dsCdbBinaryPath_sISA;
 # Load base config file
 from dxConfig import dxConfig;
 # Add CrashInfo group if it doesn't exist.
@@ -15,6 +16,8 @@ for (sName, xValue) in {
   "bOutputCommandLine": False,  # Is the cbd.exe command line printed before execution?
   "bDebugSymbolLoading": False, # Enable noizy symbol loading in cdb. Warning: will probably break CrashInfo's cdb command output parsing.
   "bOutputProcesses": False,    # Output process details whenever one is created/attached to/terminated.
+  "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
+  "sCdbBinaryPath_AMD64": dsCdbBinaryPath_sISA.get("AMD64"),
 }.items():
   if sName not in dxCrashInfoConfig:
     dxCrashInfoConfig[sName] = xValue;

@@ -4,12 +4,10 @@ from cCrashInfo_fbInitialize import cCrashInfo_fbInitialize;
 from cCrashInfo_foDebugAndGetErrorReport import cCrashInfo_foDebugAndGetErrorReport;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
-sISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # AMD64 or x86
-sCdbBinaryPath = os.path.join(os.path.dirname(__file__), "Debugging Tools for Windows (%s)" % sISA, "cdb.exe");
+sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # AMD64 or x86
 sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
 class cCrashInfo(object):
-  sISA = sISA;
   def __init__(oSelf, asApplicationCommandLine, auApplicationProcessIds, sApplicationISA, asSymbolServerURLs, \
       fApplicationStartedCallback, fFatalExceptionDetectedCallback, fFinishedCallback, fInternalExceptionCallback):
     oSelf._fApplicationStartedCallback = fApplicationStartedCallback;
@@ -32,6 +30,10 @@ class cCrashInfo(object):
       0x00080000, # SYMOPT_NO_PROMPTS
       dxCrashInfoConfig.get("bDebugSymbolLoading", False) and 0x80000000 or 0, # SYMOPT_DEBUG
     ]);
+    # For historic reasons, the ISA of the OS is used to determine which ISA version of cdb to use. It is not known if
+    # this was originally done to avoid problems with x86 cdb debugging x86 applications of AMD64 windows, or if it
+    # doesn't really matter which cdb ISA version is used in this case.
+    sCdbBinaryPath = dxCrashInfoConfig.get("sCdbBinaryPath_%s" % sOSISA);
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
     # -o => debug child processes, -sflags 0xXXXXXXXX => symbol options:
     set_asSymbolServerURLs = set(asSymbolServerURLs + [sMicrosoftSymbolServerURL]);
