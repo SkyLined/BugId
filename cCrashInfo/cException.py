@@ -1,6 +1,5 @@
 import re;
 from fsGetExceptionTypeId import fsGetExceptionTypeId;
-from cProcess import cProcess;
 from cStack import cStack;
 from cStowedException import cStowedException;
 from fsGetSecurityImpact import fsGetSecurityImpact;
@@ -21,8 +20,7 @@ class cException(object):
     oSelf.sSecurityImpact = None;
   
   @classmethod
-  def foCreate(cSelf, oCrashInfo, uCode, sCodeDescription):
-    oProcess = cProcess.foCreate(oCrashInfo);
+  def foCreate(cSelf, oCrashInfo, oProcess, uCode, sCodeDescription):
     oSelf = cSelf(oProcess, uCode, sCodeDescription);
     asExceptionRecord = oCrashInfo._fasSendCommandAndReadOutput(".exr -1");
     if asExceptionRecord is None: return None;

@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <script>
+      var uSize = 0x80000000,
+          a = [];
+      window.onload = function () {
+        console.log(uSize);
+        try {
+          for (var u = 0x1000; u--;) {
+            a.push(new Uint32Array(uSize));
+            x = new Array(uSize);a.push(x);
+            a.push(x.join("A") + 1);
+            a.push(document.createTextNode("A"));
+          }
+        } catch (e) {
+          console.log(a.length);
+          console.log(e.message);
+          uSize /= 2;
+          setTimeout(arguments.callee, 0);
+        }
+      }
+    </script>
+  </head>
+</html>

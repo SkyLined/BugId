@@ -1,7 +1,27 @@
 import re;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 from cProcess import cProcess;
-from fbIsPageHeapEnabledForCurrentProcess import fbIsPageHeapEnabledForCurrentProcess;
+from NTSTATUS import *;
+
+auFirstChanceExceptionCodes = [
+  STATUS_GUARD_PAGE_VIOLATION,
+  STATUS_DATATYPE_MISALIGNMENT,
+  STATUS_ACCESS_VIOLATION,
+  STATUS_IN_PAGE_ERROR,
+  STATUS_ILLEGAL_INSTRUCTION,
+  STATUS_ARRAY_BOUNDS_EXCEEDED,
+  STATUS_PRIVILEGED_INSTRUCTION,
+  STATUS_STACK_BUFFER_OVERRUN,
+  STATUS_FAIL_FAST_EXCEPTION,
+];
+asSecondChanceExceptions = [
+  "*", "asrt", "aph", "bpe", "dz", "eh", "iov", 
+  "isc", "lsq", "sov", "sse", "ssec", "vcpp", "wkd", "wob", "wos",
+];
+asIgnoredExceptions = [
+  "ch", "hc", "ibp", "ld", "ud", "wos",
+  # "cpr" and "epr" are missing because they are special-cased in the code, see below
+];
 
 def fDetectFailedAttach(asLines):
   for sLine in asLines:
@@ -11,13 +31,13 @@ def fDetectFailedAttach(asLines):
         asAttachToProcess
     );
 
-def fbInitializeCdb(oCrashInfo, asDetectedExceptions, asIgnoredExceptions, auProcessIdsPendingAttach):
+def cCrashInfo_fbInitialize(oCrashInfo):
   # Read the initial cdb output related to starting/attaching to the first process.
   asAttachToProcess = oCrashInfo._fasReadOutput()
   if asAttachToProcess is None: return False;
   fDetectFailedAttach(asAttachToProcess);
   # If the debugger is attaching to processes, it must resume them later.
-  bMustResumeProcesses = len(auProcessIdsPendingAttach) > 0
+  bMustResumeProcesses = len(oCrashInfo._auProcessIdsPendingAttach) > 0
   # For each process that was started/attached to, do the following:
   while 1:
     # Get the process id and name of the binary of the current process:
@@ -27,24 +47,18 @@ def fbInitializeCdb(oCrashInfo, asDetectedExceptions, asIgnoredExceptions, auPro
     if oCrashInfo._fasSendCommandAndReadOutput(".childdbg 1") is None: return False;
     oCrashInfo._auProcessIds.append(uProcessId);
     # If the debugger attached to this process, remove it from the list of pending attaches:
-    if len(auProcessIdsPendingAttach) > 0:
-      assert auProcessIdsPendingAttach[0] == uProcessId, \
-          "Expected to attach to process %d, got %d" % (auProcessIdsPendingAttach[0], uProcessId);
-      auProcessIdsPendingAttach.remove(uProcessId);
+    if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
+      uAttachedProcessId = oCrashInfo._auProcessIdsPendingAttach.pop(0);
+      assert uAttachedProcessId == uProcessId, \
+          "Expected to attach to process %d, got %d" % (uAttachedProcessId, uProcessId);
       if dxCrashInfoConfig.get("bOutputProcesses", False):
         print "* Attached to process %d/0x%X (%s)" % (uProcessId, uProcessId, sBinaryName);
     else:
       if dxCrashInfoConfig.get("bOutputProcesses", False):
         print "* Started process %d/0x%X (%s)" % (uProcessId, uProcessId, sBinaryName);
-    # Make sure page heap is enabled. Not that this does not guarantee the application does not use it's own heap
-    # allocator, which bypasses page heap. (eg Chrome and Internet Explorer both require some additional settings to
-    # make sure they use page heap).
-    bPageHeapIsEnabled = fbIsPageHeapEnabledForCurrentProcess(oCrashInfo);
-    if bPageHeapIsEnabled is None: return False;
-    assert bPageHeapIsEnabled, "Page heap is not enabled for %s" % sBinaryName;
     # If there are more processes to attach to, do so:
-    if len(auProcessIdsPendingAttach) > 0:
-      asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % auProcessIdsPendingAttach[0]);
+    if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
+      asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % oCrashInfo._auProcessIdsPendingAttach[0]);
       if asAttachToProcess is None: return False;
       fDetectFailedAttach(asAttachToProcess);
       # Continue the application to attach to the process.
@@ -60,11 +74,10 @@ def fbInitializeCdb(oCrashInfo, asDetectedExceptions, asIgnoredExceptions, auPro
   # Set up exception handling
   asExceptionHandlingCommands = [];
   # request second chance debugger break for certain exceptions that indicate the application has a bug.
-  for sException in asDetectedExceptions:
-    if dxCrashInfoConfig.get("bOutputFirstChanceExceptions", False):
-      asExceptionHandlingCommands.append("sxe %s" % sException);
-    else:
-      asExceptionHandlingCommands.append("sxd %s" % sException);
+  for uExceptionCode in auFirstChanceExceptionCodes:
+    asExceptionHandlingCommands.append("sxe 0x%08X" % uExceptionCode);
+  for sException in asSecondChanceExceptions:
+    asExceptionHandlingCommands.append("sxd %s" % sException);
   # ignore certain other exceptions
   for sException in asIgnoredExceptions:
     asExceptionHandlingCommands.append("sxi %s" % sException);

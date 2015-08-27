@@ -1,5 +1,4 @@
 import re;
-from fbExceptionIsReportedAsOOM import fbExceptionIsReportedAsOOM;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 dsId_uAddress = {     # Short             Pointer description                                   Security impact
@@ -28,17 +27,6 @@ dsId_uAddress = {     # Short             Pointer description                   
           0XFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
 };
 
-daasOOMExceptionTopStackFrames_sTypeId = {
-  "AVW@NULL": [
-    ["chrome_child.dll!WTF::partitionOutOfMemory"],
-    ["mozalloc.dll!mozalloc_abort"],
-    ["xul.dll!js::CrashAtUnhandlableOOM"],
-    ["xul.dll!NS_ABORT_OOM"],
-    ["xul.dll!StatsCompartmentCallback"],
-    ["xul.dll!nsGlobalWindow::ClearDocumentDependentSlots"],
-  ],
-};
-
 def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
   dsFunctionName_sSpecialTypeId = ddsFunctionName_sSpecialTypeId_sTypeId.get(sTypeId, {});
   return (
@@ -57,17 +45,17 @@ def foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oExce
         oException.auParameters[0], "0x%X-ing" % oException.auParameters[0]);
   uAddress = oException.auParameters[1];
   uMaxAddressOffset = dxCrashInfoConfig.get("uMaxAddressOffset", 0xFFF);
-  for (uBaseAddress, (sBaseId, sAddressDescription, sSecurityImpact)) in dsId_uAddress.items():
+  for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dsId_uAddress.items():
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
-      return sId, sDescription;
+      break;
     if iOffset > uMaxAddressOffset: # Maybe this is wrapping:
       iOffset -= 0x100000000;
     elif iOffset < -uMaxAddressOffset: # Maybe this is wrapping:
       iOffset += 0x100000000;
     uOffset = abs(iOffset);
-    if uOffset < uMaxAddressOffset:
-      sAddressId = "%s%s0x%X" % (sBaseId, iOffset < 0 and "-" or "+", uOffset);
+    if uOffset <= uMaxAddressOffset:
+      sAddressId += "%s0x%X" % (iOffset < 0 and "-" or "+", uOffset);
       break;
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
@@ -96,18 +84,11 @@ def foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oExce
     else:
       sAddressId = "Arbitrary";
       sAddressDescription = "an invalid pointer";
-    oErrorReport.dasAdditionalInformation["Page heap report for address 0x%X:" % uAddress] = asPageHeapReport;
+    oErrorReport.atsAdditionalInformation.append(("Page heap report for address 0x%X:" % uAddress, asPageHeapReport));
     sSecurityImpact = "Potentially exploitable security issue";
   sTypeId = "%s%s:%s" % (oErrorReport.sExceptionTypeId, sViolationTypeId, sAddressId);
-  bExceptionIsReportedAsAV = True;
-  if sTypeId in daasOOMExceptionTopStackFrames_sTypeId:
-    aasOOMExceptionTopStackFrames = daasOOMExceptionTopStackFrames_sTypeId[sTypeId];
-    bExceptionIsReportedAsAV = not fbExceptionIsReportedAsOOM( \
-        oErrorReport, oCrashInfo, oException, aasOOMExceptionTopStackFrames);
-  if bExceptionIsReportedAsAV:
-    
-    oErrorReport.sExceptionTypeId = sTypeId;
-    oErrorReport.sExceptionDescription = "Access violation while %s memory at 0x%X using %s" % \
-        (sViolationTypeDescription, uAddress, sAddressDescription);
-    oErrorReport.sSecurityImpact = sSecurityImpact;
+  oErrorReport.sExceptionTypeId = sTypeId;
+  oErrorReport.sExceptionDescription = "Access violation while %s memory at 0x%X using %s" % \
+      (sViolationTypeDescription, uAddress, sAddressDescription);
+  oErrorReport.sSecurityImpact = sSecurityImpact;
   return oException;

@@ -44,11 +44,20 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "chrome_child.dll!v8::Utils::ReportApiFailure",
   ],
   "OOM": [
+    "chrome.dll!`anonymous namespace'::call_new_handler",
+    "chrome.dll!`anonymous namespace'::generic_cpp_alloc",
+    "chrome.dll!malloc",
+    "chrome.dll!operator new[]",
+    "chrome.dll!realloc",
+    "chrome.dll!std::_Allocate",
+    "chrome.dll!std::allocator<...>::allocate",
     "chrome_child.dll!blink::PurgeableVector::append",
     "chrome_child.dll!blink::RawResource::appendData",
     "chrome_child.dll!blink::Resource::appendData",
     "chrome_child.dll!blink::SharedBuffer::append",
     "chrome_child.dll!blink::SharedBuffer::SharedBuffer",
+    "chrome_child.dll!v8::internal::Heap::FatalProcessOutOfMemory",
+    "chrome_child.dll!WTF::ArrayBuffer::create",
     "chrome_child.dll!WTF::DefaultAllocator::allocateBacking",
     "chrome_child.dll!WTF::DefaultAllocator::allocateZeroedHashTableBacking<...>",
     "chrome_child.dll!WTF::fastMalloc",
@@ -56,9 +65,14 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "chrome_child.dll!WTF::HashTable<...>::allocateTable",
     "chrome_child.dll!WTF::HashTable<...>::expand",
     "chrome_child.dll!WTF::HashTable<...>::rehash",
+    "chrome_child.dll!WTF::partitionAlloc",
+    "chrome_child.dll!WTF::partitionAllocGeneric",
+    "chrome_child.dll!WTF::partitionAllocGenericFlags",
     "chrome_child.dll!WTF::partitionAllocSlowPath",
+    "chrome_child.dll!WTF::partitionBucketAlloc",
     "chrome_child.dll!WTF::partitionOutOfMemory",
     "chrome_child.dll!WTF::partitionReallocGeneric",
+    "chrome_child.dll!WTF::Partitions::bufferMalloc",
     "chrome_child.dll!WTF::String::utf8",
     "chrome_child.dll!WTF::StringBuilder::append",
     "chrome_child.dll!WTF::StringBuilder::appendUninitializedSlow<...>",
@@ -73,10 +87,11 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "chrome_child.dll!WTF::VectorBuffer<...>::VectorBuffer<...>",
     "chrome_child.dll!WTF::VectorBuffer<...>::allocateExpandedBuffer",
     "chrome_child.dll!WTF::VectorBufferBase<...>::allocateBuffer",
-    "mozalloc.dll!moz_xmalloc",
-    "mozalloc.dll!moz_xrealloc",
-    "mozalloc.dll!mozalloc_abort",
-    "mozalloc.dll!mozalloc_handle_oom",
+    "mozglue.dll!moz_xcalloc",
+    "mozglue.dll!moz_xmalloc",
+    "mozglue.dll!moz_xrealloc",
+    "mozglue.dll!mozalloc_abort",
+    "mozglue.dll!mozalloc_handle_oom",
     "xul.dll!js::CrashAtUnhandlableOOM",
     "xul.dll!js::MallocProvider<...>",
     "xul.dll!mozilla::CircularByteBuffer::SetCapacity",
@@ -96,19 +111,28 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "xul.dll!std::vector<...>::_Reallocate",
     "xul.dll!std::vector<...>::_Reserve",
   ],
-  "AVE@NULL": [
+  "AVE:NULL": [
     "0x0",
   ],
 };
 
-def fbIsIrrelevantTopFrame(sExceptionTypeId, uExceptionCode, oFrame):
-  def fbIsIrrelevantAddress(sAddress):
-    return (
-      sAddress in dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get("*", [])
-      or sAddress in dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(sExceptionTypeId, [])
-      or sAddress in dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(uExceptionCode, [])
-    );
-  return (
-    fbIsIrrelevantAddress(oFrame.sAddress)
-    or fbIsIrrelevantAddress(oFrame.sSimplifiedAddress)
+def fMarkIrrelevantTopFrames(oErrorReport, uExceptionCode, oStack):
+  asIrrelevantTopFrameFunctions = (
+    dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get("*", []) +
+    dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(oErrorReport.sExceptionTypeId, []) +
+    dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(uExceptionCode, [])
   );
+  # For each frame
+  for oFrame in oStack.aoFrames:
+    # if it's not marked as irrelevant yet:
+    if not oFrame.bIsIrrelevant:
+      # go through all irrelevant top frame functions:
+      for sIrrelevantTopFrameFunction in asIrrelevantTopFrameFunctions:
+        # and see if one of them is a match:
+        if sIrrelevantTopFrameFunction in (oFrame.sAddress, oFrame.sSimplifiedAddress):
+          oFrame.bIsIrrelevant = True;
+          # yes!, go to the next frame
+          break;
+      else:
+        # no match found: this is not irrelevant
+        return;

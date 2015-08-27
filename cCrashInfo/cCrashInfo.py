@@ -1,21 +1,12 @@
 import os, re, subprocess, threading, time;
 
-from fbInitializeCdb import fbInitializeCdb;
-from foRunApplicationAndGetErrorReport import foRunApplicationAndGetErrorReport;
+from cCrashInfo_fbInitialize import cCrashInfo_fbInitialize;
+from cCrashInfo_foDebugAndGetErrorReport import cCrashInfo_foDebugAndGetErrorReport;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 sISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # AMD64 or x86
 sCdbBinaryPath = os.path.join(os.path.dirname(__file__), "Debugging Tools for Windows (%s)" % sISA, "cdb.exe");
 sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
-
-asDetectedExceptions = [
-  "*", "asrt", "aph", "av", "bpe", "dm", "dz", "eh", "gp", "ii", "iov", "ip",
-  "isc", "lsq", "sbo", "sov", "sse", "ssec", "vcpp", "wkd", "wob", "wos",
-];
-asIgnoredExceptions = [
-  "ch", "hc", "ibp", "ld", "ud", "wos",
-  # "cpr" and "epr" are missing because they are special-cased in the code, see below
-];
 
 class cCrashInfo(object):
   sISA = sISA;
@@ -96,9 +87,9 @@ class cCrashInfo(object):
   
   def _fCdbDebuggerThread(oSelf):
     try:
-      if fbInitializeCdb(oSelf, asDetectedExceptions, asIgnoredExceptions, oSelf._auProcessIdsPendingAttach):
+      if cCrashInfo_fbInitialize(oSelf):
         oSelf._fApplicationStartedCallback();
-        oSelf._oErrorReport = foRunApplicationAndGetErrorReport(oSelf);
+        oSelf._oErrorReport = cCrashInfo_foDebugAndGetErrorReport(oSelf);
     except Exception, oException:
       oSelf._fInternalExceptionCallback(oException);
       oSelf._bDebuggerTerminated = True;
@@ -124,16 +115,12 @@ class cCrashInfo(object):
           sCommand = '%s /FI "PID eq %d" /NH /FO CSV' % (sTasklistBinaryPath, uProcessId);
           oTaskListProcess = subprocess.Popen(args=sCommand, stdout=subprocess.PIPE, stderr=subprocess.PIPE);
           sStdOut, sStdErr = oTaskListProcess.communicate(input=None);
-          sMessage = "cCrashInfo TEST Process %d: %s" % (uProcessId, repr(sStdOut));
-          oSelf.asTest.append(sMessage);
-          print sMessage;
           assert not sStdErr, "Error running tasklist.exe: %s" % repr(sStdErr);
           if sStdOut != "INFO: No tasks are running which match the specified criteria.\r\n":
-            time.sleep(1);
+            time.sleep(0.1);
           else:
             break;
       # report that we're finished.
-      print "cCrashInfo FINISHED";
       oSelf._fFinishedCallback(oSelf._oErrorReport);
     except Exception, oException:
       oSelf._fInternalExceptionCallback(oException);
@@ -173,6 +160,7 @@ class cCrashInfo(object):
               r"SYMSRV: .+",
               r"\s*\x08+\s+(?:copied\s*|\d+ percentSYMSRV: .+)",
               r"DBGHELP: .+?( \- (?:private|public) symbols(?: & lines)?)?\s*",
+              r"\*\*\* ERROR: Module load completed but symbols could not be loaded for .*$",
              ]), sCleanedLine);
             if oSymbolLoaderMessageMatch:
               # Sample output:
@@ -180,6 +168,7 @@ class cCrashInfo(object):
               # |DBGHELP: \\server\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb cached to c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
               # |DBGHELP: chakra - public symbols  
               # |        c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
+              # |*** ERROR: Module load completed but symbols could not be loaded for C:\Windows\System32\Macromed\Flash\Flash.ocx
               bNextLineIsSymbolLoaderMessage = oSymbolLoaderMessageMatch.group(1) is not None;
             elif bNextLineIsSymbolLoaderMessage:
               bNextLineIsSymbolLoaderMessage = False;

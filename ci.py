@@ -1,4 +1,4 @@
-import json, re, sys, threading;
+import json, re, os, sys, threading;
 from cCrashInfo import cCrashInfo;
 from dxConfig import dxConfig;
 dxCIConfig = dxConfig.get("ci", {});
@@ -54,6 +54,15 @@ if __name__ == "__main__":
       raise AssertionError("Unknown switch %s" % repr(asArguments[0]));
     asArguments.pop(0);
   asApplicationCommandLine = len(asArguments) and asArguments or None;
+  if len(asApplicationCommandLine) == 1:
+    sURL = "http://%s:28876" % os.getenv("COMPUTERNAME");
+    asApplicationCommandLine = {
+      "chrome": ["C:\Program Files (x86)\Google\Chrome\Application\chrome.exe", sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+      "firefox": ["%ProgramFiles(x86)%\Mozilla Firefox\firefox.exe", sURL, "--no-remote"],
+      "msie": ["%ProgramFiles%\Internet Explorer\iexplore.exe", sURL],
+      "msie64": ["%ProgramFiles%\Internet Explorer\iexplore.exe", sURL],
+      "msie86": ["%ProgramFiles(x86)%\Internet Explorer\iexplore.exe", sURL],
+    }.get(asApplicationCommandLine[0].lower(), asApplicationCommandLine)
   
   oFinishedEvent = threading.Event();
   
@@ -93,6 +102,7 @@ if __name__ == "__main__":
   
   if asApplicationCommandLine:
     print "* CrashInfo is starting the application...";
+    print "  Command line: %s" % " ".join(asApplicationCommandLine);
   else:
     print "* CrashInfo is attaching to the application...";
   oCrashInfo = cCrashInfo(

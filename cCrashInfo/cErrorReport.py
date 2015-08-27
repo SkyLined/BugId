@@ -2,16 +2,15 @@ import hashlib, re;
 from NTSTATUS import *;
 from foSpecialErrorReport_CppException import foSpecialErrorReport_CppException;
 from foSpecialErrorReport_STATUS_ACCESS_VIOLATION import foSpecialErrorReport_STATUS_ACCESS_VIOLATION;
-from foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION import foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION;
 from foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN import foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN;
 from foSpecialErrorReport_STATUS_STOWED_EXCEPTION import foSpecialErrorReport_STATUS_STOWED_EXCEPTION;
-from fbIsIrrelevantTopFrame import fbIsIrrelevantTopFrame;
+from fErrorReportTranslateException import fErrorReportTranslateException;
+from fMarkIrrelevantTopFrames import fMarkIrrelevantTopFrames;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 dfoSpecialErrorReport_uExceptionCode = {
   CPP_EXCEPTION_CODE: foSpecialErrorReport_CppException,
   STATUS_ACCESS_VIOLATION: foSpecialErrorReport_STATUS_ACCESS_VIOLATION,
-  STATUS_FAIL_FAST_EXCEPTION: foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION,
   STATUS_STACK_BUFFER_OVERRUN: foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN,
   STATUS_STOWED_EXCEPTION: foSpecialErrorReport_STATUS_STOWED_EXCEPTION,
 };
@@ -89,7 +88,7 @@ class cErrorReport(object):
     oSelf.sExceptionDescription = sExceptionDescription;
     oSelf.sLocationDescription = None;
     oSelf.sSecurityImpact = sSecurityImpact;
-    oSelf.dasAdditionalInformation = {};
+    oSelf.atsAdditionalInformation = [];
     oSelf.sHTMLDetails = None;
   
   def fsGetId(oSelf):
@@ -138,46 +137,45 @@ class cErrorReport(object):
     # |    LegalTrademarks:  Firefox is a Trademark of The Mozilla Foundation.
     # |    Comments:         Firefox is a Trademark of The Mozilla Foundation.
     # The first two lines can be skipped.
-    oSelf.dasAdditionalInformation["%s version information" % oException.oProcess.sBinaryName] = asBinaryVersionOutput[2:];
+    oSelf.atsAdditionalInformation.append(("%s version information" % oException.oProcess.sBinaryName, asBinaryVersionOutput[2:]));
     
     foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);
     if foSpecialErrorReport:
       oException = foSpecialErrorReport(oSelf, oCrashInfo, oException);
       if oException is None: return None;
     
+    # Get the stack
+    oStack = oException.foGetStack(oCrashInfo);
+    if oStack is None: return None;
+    # Based on the exception and stack, potentially translate the exception details (eg. Firefox triggers a write
+    # access violation at NULL in xul.dll!js::CrashAtUnhandlableOOM when an OOM is detected; this should be reported
+    # as OOM and not AVR@NULL.)
+    fErrorReportTranslateException(oSelf, oException.uCode, oStack);
+    # Based on the exception, potentially mark some top frames as irrelevant. (eg. kernel32!DebugBreak does not cause a
+    # debug break, but only executes it on behalf of the caller.)
+    fMarkIrrelevantTopFrames(oSelf, oException.uCode, oStack);
+    
     # Find out which frame should be the "main" frame and get stack id.
     # * Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call
     #   themselves. If possible, this is detected, and the alphabetically first functions is chosen as the main function
     #   The stack hash is created using only the looping functions.
     #   ^^^^ THIS IS NOT YET IMPLEMENTED ^^^
-    # * Plenty of exceptions get thrown by special functions, eg. kernel32!DebugBreak, which are not relevant to the
-    #   exception. These are ignored and the calling function is used as the "main" frame).
-    #   See fbIsIrrelevantTopFrame for more details
     
-    oStack = oException.foGetStack(oCrashInfo);
-    if oStack is None: return None;
-    
-    oMainFunctionFrame = None;
-    oMainModuleFrame = None;
-    uIgnoredFrames = 0;
+    oTopmostRelevantFrame = None;          # topmost relevant frame
+    oTopmostRelevantFunctionFrame = None;  # topmost relevant frame that has a function symbol
+    oTopmostRelevantModuleFrame = None;    # topmost relevant frame that has no function symbol but a module
     uFramesHashed = 0;
     asHTMLStack = [];
     sStackId = "";
-    bIgnoringIrrelevantTopFrames = True;
     for oFrame in oStack.aoFrames:
-      if bIgnoringIrrelevantTopFrames and fbIsIrrelevantTopFrame(oSelf.sExceptionTypeId, oException.uCode, oFrame):
-        # This frame is irrelevant at the top of the stack in the context of this exception type.
-        uIgnoredFrames += 1;
+      if oFrame.bIsIrrelevant:
+        # This frame is irrelevant
         asHTMLStack.append("<s>%s</s><br/>" % fsHTMLEncode(oFrame.sAddress));
       else:
-        bIgnoringIrrelevantTopFrames = False;
-        # Determine main function frame and main module frame. Also make non function frames italic
+        oTopmostRelevantFrame = oTopmostRelevantFrame or oFrame;
         sHTMLAddress = fsHTMLEncode(oFrame.sAddress);
-        if oFrame.oFunction:
-          oMainFunctionFrame = oMainFunctionFrame or oFrame;
-        else:
-          if oFrame.oModule:
-            oMainModuleFrame = oMainModuleFrame or oFrame;
+        # Make stack frames without a function symbol italic
+        if not oFrame.oFunction:
           sHTMLAddress = "<i>%s</i>" % sHTMLAddress;
         # Hash frame address for id and output frame to html
         if uFramesHashed == dxCrashInfoConfig.get("uStackHashFramesCount", 3):
@@ -187,9 +185,15 @@ class cErrorReport(object):
           # frame is part of id: add hash and output bold
           oHasher = hashlib.md5();
           oHasher.update(oFrame.sIdAddress);
-          sStackId += "%02X" % ord(oHasher.digest()[0]);
+          sFrameId = "%02X" % ord(oHasher.digest()[0]);
+          sStackId += sFrameId;
           uFramesHashed += 1;
-          asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, sStackId));
+          asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, sFrameId));
+          # Determine the top frame for the id:
+          if oFrame.oFunction:
+            oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oFrame;
+          elif oFrame.oModule:
+            oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oFrame;
         else:
           # This is not part of the id, but between frames that are: add "__" to id and output strike-through
           sStackId += "__";
@@ -197,13 +201,12 @@ class cErrorReport(object):
     oSelf.sStackId = uFramesHashed == 0 and "##" or sStackId;
     if oStack.bPartialStack:
       asHTMLStack.append("... (rest of the stack was ignored)<br/>");
-    # Get the main stack frame's simplified address as the function id.
-    oMainFrame = oMainFunctionFrame or oMainModuleFrame;
-    oSelf.sFunctionId = oMainFrame and oMainFrame.sSimplifiedAddress or "(unknown)";
+    # Use a function for the id
+    oIdFrame = oTopmostRelevantFunctionFrame or oTopmostRelevantModuleFrame;
+    oSelf.sFunctionId = oIdFrame and oIdFrame.sSimplifiedAddress or "(unknown)";
     
     # Create the location description 
-    oLocationFrame = oMainFrame or oTopFrame;
-    oSelf.sLocationDescription = oLocationFrame and oLocationFrame.sAddress or "(unknown)";
+    oSelf.sLocationDescription = oTopmostRelevantFrame and oTopmostRelevantFrame.sAddress or "(unknown)";
     
     # Create HTML details
     oSelf.sHTMLDetails = sHTMLDetailsTemplate % {
@@ -219,7 +222,7 @@ class cErrorReport(object):
             "sName": fsHTMLEncode(sName),
             "sDetails": "".join(["%s<br/>" % fsHTMLEncode(x) for x in asDetails]),
           }
-          for (sName, asDetails) in oSelf.dasAdditionalInformation.items()
+          for (sName, asDetails) in oSelf.atsAdditionalInformation
         ]
       ),
       "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo.asCdbIO]),
