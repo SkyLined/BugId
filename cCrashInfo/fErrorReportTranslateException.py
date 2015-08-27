@@ -100,6 +100,8 @@ def fErrorReportTranslateException(oErrorReport, uExceptionCode, oStack):
   for (xExceptionCodeOrTypeId, dtxExceptionTranslation) in ddtxExceptionTranslation_xExceptionCodeOrTypeId.items():
     if xExceptionCodeOrTypeId in (oErrorReport.sExceptionTypeId, uExceptionCode):
       for (sNewExceptionTypeId, txExceptionTranslation) in dtxExceptionTranslation.items():
+        (sExceptionTypeId, sExceptionDescription, sSecurityImpact, aasStackTopFrameAddresses) = \
+            txExceptionTranslation;
       # See if we have a matching stack top:
       for asStackTopFrameAddresses in aasStackTopFrameAddresses:
         uFrameIndex = 0;
@@ -111,8 +113,9 @@ def fErrorReportTranslateException(oErrorReport, uExceptionCode, oStack):
             break;
         else:
           # All frames matched: translate exception:
-          (oErrorReport.sExceptionTypeId, oErrorReport.sExceptionDescription, oErrorReport.sSecurityImpact) =
-              txExceptionTranslation;
+          oErrorReport.sExceptionTypeId = sExceptionTypeId;
+          oErrorReport.sExceptionDescription = sExceptionDescription;
+          oErrorReport.sSecurityImpact = sSecurityImpact;
           # And mark all the matched frames as irrelevant
           for oFrame in oStack.aoFrames[:uFrameIndex]:
             oFrame.bIsIrrelevant = True;
