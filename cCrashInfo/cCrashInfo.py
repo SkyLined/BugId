@@ -117,6 +117,9 @@ class cCrashInfo(object):
           sCommand = '%s /FI "PID eq %d" /NH /FO CSV' % (sTasklistBinaryPath, uProcessId);
           oTaskListProcess = subprocess.Popen(args=sCommand, stdout=subprocess.PIPE, stderr=subprocess.PIPE);
           sStdOut, sStdErr = oTaskListProcess.communicate(input=None);
+          oTaskListProcess.stdout.close();
+          oTaskListProcess.stderr.close();
+          oTaskListProcess.terminate();
           assert not sStdErr, "Error running tasklist.exe: %s" % repr(sStdErr);
           if sStdOut != "INFO: No tasks are running which match the specified criteria.\r\n":
             time.sleep(0.1);

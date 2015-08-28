@@ -46,4 +46,4 @@ Temporary Items
 cCrashInfo/Debugging Tools For Windows (*)/
 Tests/
 *.pyc
-cCrashInfo/#Update FuzzFramework.cmd
+#*.cmd
