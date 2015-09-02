@@ -4,18 +4,20 @@ from cErrorReport import cErrorReport;
 from cException import cException;
 from cProcess import cProcess;
 
-def cCrashInfo_foDebugAndGetErrorReport(oCrashInfo):
+def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo):
   # The application is now started, read its output until an exception is detected:
   oErrorReport = None;
   while len(oCrashInfo._auProcessIds) > 0:
+    oCrashInfo._fApplicationRunningCallback(True);
     asOutput = oCrashInfo._fasSendCommandAndReadOutput("g");
-    if asOutput is None: return None;
+    oCrashInfo._fApplicationRunningCallback(False);
+    if not oCrashInfo._bCdbRunning: return None;
     # Get current process id and binary name
     uCurrentProcessId, sBinaryName = cProcess.ftxGetCurrentProcessIdAndBinaryName(oCrashInfo);
-    if uCurrentProcessId is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     # Find out what event caused the debugger break
     asLastEventOutput = oCrashInfo._fasSendCommandAndReadOutput(".lastevent");
-    if asLastEventOutput is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     # Sample output:
     # |Last event: 3d8.1348: Create process 3:3d8                
     # |  debugger time: Tue Aug 25 00:06:07.311 2015 (UTC + 2:00)
@@ -45,24 +47,33 @@ def cCrashInfo_foDebugAndGetErrorReport(oCrashInfo):
           print "* Terminated process %d/0x%X (%s)" % (uProcessId, uProcessId, sBinaryName);
     else:
       # A fatal exception was detected.
+      # Turn off noizy symbol loading; it can mess up the output of commands, making it unparsable.
+      asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
+      if not oCrashInfo._bCdbRunning: return None;
       # Get exception description and code...
       oExceptionMatch = re.match(r"^(.*?) \- code ([0-9A-F]+) \(!*\s*(first|second) chance\s*!*\)$", sEvent, re.I);
       assert oExceptionMatch, "The last event was not recognized:\r\n%s" % "\r\n".join(asLastEventOutput);
       sDescription, sCode, sChance = oExceptionMatch.groups();
       uCode = int(sCode, 16);
       # Report that analysis is starting...
-      oCrashInfo._fFatalExceptionDetectedCallback(uCode, sDescription);
+      oCrashInfo._fExceptionDetectedCallback(uCode, sDescription);
       # Gather relevant information...
       oProcess = cProcess.foCreate(oCrashInfo, uCurrentProcessId, sBinaryName);
       oException = cException.foCreate(oCrashInfo, oProcess, uCode, sDescription);
-      if oException is None: return None;
+      if not oCrashInfo._bCdbRunning: return None;
       # Save the exception report for returning when we're finished.
       oErrorReport = cErrorReport.foCreateFromException(oCrashInfo, oException);
-      # Stop the debugger
-      break;
+      if not oCrashInfo._bCdbRunning: return None;
+      # Stop the debugger if there was a fatal error that needs to be reported.
+      if oErrorReport is not None:
+        break;
+      # Turn on noizy symbol loading if it was enabled.
+      if dxCrashInfoConfig.get("bDebugSymbolLoading", False):
+        asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym noizy");
+        if not oCrashInfo._bCdbRunning: return None;
     # LOOP: continue the application.
   # Terminate cdb.
-  oCrashInfo._bDebuggerTerminated = True;
-  assert oCrashInfo._fasSendCommandAndReadOutput("q") is None, \
-      "Debugger did not terminate when requested";
+  oCrashInfo._bCdbTerminated = True;
+  oCrashInfo._fasSendCommandAndReadOutput("q");
+  assert not oCrashInfo._bCdbRunning, "Debugger did not terminate when requested";
   return oErrorReport;

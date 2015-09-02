@@ -1,8 +1,8 @@
 @ECHO OFF
 IF "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
-  SET EdgeDbg=%~dp0..\..\C\EdgeDbg\Build\EdgeDbg_x64.exe
+  SET EdgeDbg=C:\Tools\EdgeDbg\EdgeDbg_x64.exe
 ) ELSE (
-  SET EdgeDbg=%~dp0..\..\C\EdgeDbg\Build\EdgeDbg_x86.exe
+  SET EdgeDbg=C:\Tools\EdgeDbg\EdgeDbg_x86.exe
 )
 IF NOT EXIST "%PYTHON%" (
   ECHO Cannot find python at %PYTHON%.

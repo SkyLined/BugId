@@ -27,7 +27,7 @@ dsFailFastErrorCodes = {
   26: ("ExtCall",       "FAST_FAIL_UNSAFE_EXTENSION_CALL",                            "Potentially exploitable security issue"),
 };
 
-def foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCrashInfo, oException):
+def cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCrashInfo, oException):
   # Parameter[0] = fail fast code
   assert len(oException.auParameters) == 1, \
       "Unexpected number of fail fast exception parameters (%d vs 1)" % len(oException.auParameters);

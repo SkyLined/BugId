@@ -34,7 +34,7 @@ def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
     or dsFunctionName_sSpecialTypeId.get(oFrame.sSimplifiedAddress)
   );
 
-def foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oException):
+def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oException):
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
   # Parameter[1] = address
   assert len(oException.auParameters) == 2, \
@@ -60,7 +60,7 @@ def foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oExce
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
     asPageHeapReport = oCrashInfo._fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
-    if asPageHeapReport is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     # Sample output:
     # |    address 0e948ffc found in
     # |    _DPH_HEAP_ROOT @ 48b1000

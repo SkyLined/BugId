@@ -18,7 +18,7 @@ class cProcess(object):
   def ftxGetCurrentProcessIdAndBinaryName(cSelf, oCrashInfo):
     # Gather process id and binary name for the current process.
     asProcessesOutput = oCrashInfo._fasSendCommandAndReadOutput("|.");
-    if asProcessesOutput is None: return None, None;
+    if not oCrashInfo._bCdbRunning: return None, None;
     #Output:
     # |.  2 id:  e44 child   name: chrome.exe
     # |.  1 id:  28c child   name: iexplore.exe
@@ -41,7 +41,7 @@ class cProcess(object):
   def foCreate(cSelf, oCrashInfo, uProcessId, sBinaryName):
     # Gather instruction set architecture for current process.
     asEffmach = oCrashInfo._fasSendCommandAndReadOutput(".effmach");
-    if asEffmach is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     oEffmachMatch = len(asEffmach) == 1 and re.match(r"^Effective machine: (x\d{2}) .*$", asEffmach[0]);
     assert oEffmachMatch, "Unexpected .effmach output: %s" % repr(asEffmach);
     sISA = oEffmachMatch.group(1);
@@ -49,7 +49,7 @@ class cProcess(object):
     oSelf = cSelf(uProcessId, sBinaryName, sISA);
     # Gather start and end address and binary name information for loaded modules.
     asModules = oCrashInfo._fasSendCommandAndReadOutput("lm on");
-    if asModules is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     sHeader = asModules.pop(0);
     assert re.sub(r"\s+", " ", sHeader.strip()) in ["start end module name"], \
         "Unknown modules header: %s" % repr(sHeader);

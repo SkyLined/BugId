@@ -1,6 +1,7 @@
 import re;
 from cStack import cStack;
-from fsGetExceptionTypeId import fsGetExceptionTypeId;
+from cException_fSetTypeId import cException_fSetTypeId;
+from cException_fSetSecurityImpact import cException_fSetSecurityImpact;
 
 class cStowedException(object):
   def __init__(oSelf, oProcess, uCode, uAddress = None, pStackTrace = None, uStackTraceSize = 0, sErrorText = None):
@@ -55,8 +56,10 @@ class cStowedException(object):
     assert dwSignature == 0x53453031 or uNestedExceptionType == 0, "Unexpected nested exception type 0x%X" % adwData[8];
     
     # Create an exception id that uniquely identifies the exception and a description of the exception.
-    oSelf.sTypeId = "%s(Stowed)" + fsGetExceptionTypeId(oSelf.uCode);
+    cException_fSetTypeId(oSelf);
+    oSelf.sTypeId += "(Stowed)";
     oSelf.sDescription = "Stowed exception code 0x%08X" % oSelf.uCode;
+    cException_fSetSecurityImpact(oSelf);
     
     return oSelf;
   

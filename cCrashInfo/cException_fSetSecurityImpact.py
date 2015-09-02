@@ -34,5 +34,5 @@ dsId_uCode = {
   STATUS_FAIL_FAST_EXCEPTION: "May be a security issue", # Special cased if exception parameters are available
   0xE06D7363: None,
 };
-def fsGetSecurityImpact(uExceptionCode):
-  return dsId_uCode.get(uExceptionCode) or "Unknown";
+def cException_fSetSecurityImpact(oException):
+  oException.sSecurityImpact = dsId_uCode.get(oException.uCode, "Unknown");

@@ -28,13 +28,13 @@ def fDetectFailedAttach(asLines):
     oFailedAttachMatch = re.match(r"^Cannot debug pid (\d+),\s*(.*?)\s*$", sLine);
     assert not oFailedAttachMatch, "\r\n".join(
         ["Failed to attach to process %s: %s" % oFailedAttachMatch.groups()] + 
-        asAttachToProcess
+        asLines
     );
 
-def cCrashInfo_fbInitialize(oCrashInfo):
+def cCrashInfo_fCdbInitialize(oCrashInfo):
   # Read the initial cdb output related to starting/attaching to the first process.
-  asAttachToProcess = oCrashInfo._fasReadOutput()
-  if asAttachToProcess is None: return False;
+  asAttachToProcess = oCrashInfo._fasReadOutput();
+  if not oCrashInfo._bCdbRunning: return;
   fDetectFailedAttach(asAttachToProcess);
   # If the debugger is attaching to processes, it must resume them later.
   bMustResumeProcesses = len(oCrashInfo._auProcessIdsPendingAttach) > 0
@@ -42,15 +42,16 @@ def cCrashInfo_fbInitialize(oCrashInfo):
   while 1:
     # Get the process id and name of the binary of the current process:
     uProcessId, sBinaryName = cProcess.ftxGetCurrentProcessIdAndBinaryName(oCrashInfo);
-    if uProcessId is None: return False;
+    if not oCrashInfo._bCdbRunning: return False;
     # Make sure all child processes are debugged as well.
-    if oCrashInfo._fasSendCommandAndReadOutput(".childdbg 1") is None: return False;
+    oCrashInfo._fasSendCommandAndReadOutput(".childdbg 1");
+    if not oCrashInfo._bCdbRunning: return;
     oCrashInfo._auProcessIds.append(uProcessId);
     # If the debugger attached to this process, remove it from the list of pending attaches:
     if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
-      uAttachedProcessId = oCrashInfo._auProcessIdsPendingAttach.pop(0);
-      assert uAttachedProcessId == uProcessId, \
-          "Expected to attach to process %d, got %d" % (uAttachedProcessId, uProcessId);
+      uPendingAttachProcessId = oCrashInfo._auProcessIdsPendingAttach.pop(0);
+      assert uPendingAttachProcessId == uProcessId, \
+          "Expected to attach to process %d, got %d" % (uPendingAttachProcessId, uProcessId);
       if dxCrashInfoConfig.get("bOutputProcesses", False):
         print "* Attached to process %d/0x%X (%s)" % (uProcessId, uProcessId, sBinaryName);
     else:
@@ -59,17 +60,19 @@ def cCrashInfo_fbInitialize(oCrashInfo):
     # If there are more processes to attach to, do so:
     if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
       asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % oCrashInfo._auProcessIdsPendingAttach[0]);
-      if asAttachToProcess is None: return False;
+      if not oCrashInfo._bCdbRunning: return;
       fDetectFailedAttach(asAttachToProcess);
       # Continue the application to attach to the process.
-      if oCrashInfo._fasSendCommandAndReadOutput("g") is None: return False;
+      oCrashInfo._fasSendCommandAndReadOutput("g");
+      if not oCrashInfo._bCdbRunning: return;
     else:
       # otherwise stop.
       break;
   if bMustResumeProcesses:
     # All processes that the debugger attached to must be resumed:
     for uProcessId in oCrashInfo._auProcessIds:
-      if oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId) is None: return False;
+      oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
+      if not oCrashInfo._bCdbRunning: return;
   
   # Set up exception handling
   asExceptionHandlingCommands = [];
@@ -87,10 +90,8 @@ def cCrashInfo_fbInitialize(oCrashInfo):
   # To distinguish this from other unexpected terminations of the debugger, epr must also be enabled.
   asExceptionHandlingCommands.append("sxe cpr");
   asExceptionHandlingCommands.append("sxe epr");
-
+  
   # Execute all commands in the list and stop if cdb terminates in the mean time.
   for sCommand in asExceptionHandlingCommands:
-    if oCrashInfo._fasSendCommandAndReadOutput(sCommand) is None:
-      return False;
-
-  return True;
+    oCrashInfo._fasSendCommandAndReadOutput(sCommand);
+    if not oCrashInfo._bCdbRunning: return;

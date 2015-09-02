@@ -1,83 +1,17 @@
-import hashlib, re;
 from NTSTATUS import *;
-from foSpecialErrorReport_CppException import foSpecialErrorReport_CppException;
-from foSpecialErrorReport_STATUS_ACCESS_VIOLATION import foSpecialErrorReport_STATUS_ACCESS_VIOLATION;
-from foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN import foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN;
-from foSpecialErrorReport_STATUS_STOWED_EXCEPTION import foSpecialErrorReport_STATUS_STOWED_EXCEPTION;
-from fErrorReportTranslateException import fErrorReportTranslateException;
-from fMarkIrrelevantTopFrames import fMarkIrrelevantTopFrames;
-from dxCrashInfoConfig import dxCrashInfoConfig;
+from cErrorReport_foHandleException_CppException import cErrorReport_foHandleException_CppException;
+from cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION import cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION;
+from cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN import cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN;
+from cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION import cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION;
+from cErrorReport_foHandleSpecialCases import cErrorReport_foHandleSpecialCases;
+from cErrorReport_fProcesssStack import cErrorReport_fProcesssStack;
 
 dfoSpecialErrorReport_uExceptionCode = {
-  CPP_EXCEPTION_CODE: foSpecialErrorReport_CppException,
-  STATUS_ACCESS_VIOLATION: foSpecialErrorReport_STATUS_ACCESS_VIOLATION,
-  STATUS_STACK_BUFFER_OVERRUN: foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN,
-  STATUS_STOWED_EXCEPTION: foSpecialErrorReport_STATUS_STOWED_EXCEPTION,
+  CPP_EXCEPTION_CODE: cErrorReport_foHandleException_CppException,
+  STATUS_ACCESS_VIOLATION: cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION,
+  STATUS_STACK_BUFFER_OVERRUN: cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN,
+  STATUS_STOWED_EXCEPTION: cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION,
 };
-
-sHTMLDetailsTemplate = """
-<!doctype html>
-<html>
-  <head>
-    <style>
-      * {
-        font-family: Courier New, courier, monospace;
-      }
-      body {
-        margin: 5pt;
-      }
-      div {
-        color: white;
-        background: black;
-        padding: 5pt;
-        padding-left: 10pt;
-        margin-top: 10pt;
-        margin-bottom: 10pt;
-      }
-      code {
-        margin-left: 10pt;
-        display: block;
-      }
-      table, tbody, tr, td {
-        cell-padding: 0;
-        cell-spacing: 0;
-        border: 0;
-        padding: 0;
-        margin: 0;
-      }
-      s {
-        color: silver;
-        text-decoration: line-through;
-      }
-    </style>
-    <title>%(sId)s</title>
-  </head>
-  <body>
-    <div>Details</div>
-    <code>
-      <table>
-        <tbody>
-          <tr><td>Id:               </td><td><b>%(sId)s</b></td></tr>
-          <tr><td>Description:      </td><td><b>%(sExceptionDescription)s</b></td></tr>
-          <tr><td>Process binary:   </td><td>%(sProcessBinaryName)s</td></tr>
-          <tr><td>Location:         </td><td>%(sLocationDescription)s</td></tr>
-          <tr><td>Security impact:  </td><td>%(sSecurityImpact)s</td></tr>
-        </table>
-      </tbody>
-    </code>
-    <div>Stack</div>
-    <code>%(sStack)s</code>
-    %(sAdditionalInformation)s
-    <div>Debugger input/output</div>
-    <code>%(sCdbIO)s</code>
-  </body>
-</html>""".strip();
-sHTMLAdditionalInformationTemplate = """
-    <div>%(sName)s</div>
-    <code>%(sDetails)s</code>
-""".strip();
-def fsHTMLEncode(sData):
-  return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
 
 class cErrorReport(object):
   def __init__(oSelf, sProcessBinaryName, sExceptionTypeId, sExceptionDescription, sSecurityImpact):
@@ -100,6 +34,9 @@ class cErrorReport(object):
   
   @classmethod
   def foCreateFromException(cSelf, oCrashInfo, oException):
+    # Returns cCrashInfo instance if exception is fatal
+    # Returns False if exception is not fatal an application should continue running.
+    # Returns None if i/o with cdb failed.
     oSelf = cSelf(
       sProcessBinaryName = oException.oProcess.sBinaryName,
       sExceptionTypeId = oException.sTypeId,
@@ -109,7 +46,7 @@ class cErrorReport(object):
     
     # Get application version information:
     asBinaryVersionOutput = oCrashInfo._fasSendCommandAndReadOutput("lmv M *%s" % oException.oProcess.sBinaryName);
-    if asBinaryVersionOutput is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     # Sample output:
     # |0:004> lmv M firefox.exe
     # |start             end                 module name
@@ -142,89 +79,24 @@ class cErrorReport(object):
     foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);
     if foSpecialErrorReport:
       oException = foSpecialErrorReport(oSelf, oCrashInfo, oException);
-      if oException is None: return None;
+      if not oCrashInfo._bCdbRunning: return None;
     
     # Get the stack
     oStack = oException.foGetStack(oCrashInfo);
-    if oStack is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     # Based on the exception and stack, potentially translate the exception details (eg. Firefox triggers a write
     # access violation at NULL in xul.dll!js::CrashAtUnhandlableOOM when an OOM is detected; this should be reported
-    # as OOM and not AVR@NULL.)
-    fErrorReportTranslateException(oSelf, oException.uCode, oStack);
-    # Based on the exception, potentially mark some top frames as irrelevant. (eg. kernel32!DebugBreak does not cause a
+    # as OOM and not AVR@NULL. MSIE 8 tests is DEP is enabled by attempting to execute RW memory, this should not be
+    # reported at all, and MSIE 8 should be allowed to continue execution)
+    oErrorReport = cErrorReport_foHandleSpecialCases(oSelf, oException.uCode, oStack);
+    if not oCrashInfo._bCdbRunning: return None;
+    if oErrorReport is None:
+      # This should not be reported, continue the application
+      return None;
+    # Based on the exception, potentially hide some irrelevant top frames. (eg. kernel32!DebugBreak does not cause a
     # debug break, but only executes it on behalf of the caller.)
-    fMarkIrrelevantTopFrames(oSelf, oException.uCode, oStack);
+    oStack.fHideIrrelevantFrames(oSelf.sExceptionTypeId, oException.uCode);
     
-    # Find out which frame should be the "main" frame and get stack id.
-    # * Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call
-    #   themselves. If possible, this is detected, and the alphabetically first functions is chosen as the main function
-    #   The stack hash is created using only the looping functions.
-    #   ^^^^ THIS IS NOT YET IMPLEMENTED ^^^
-    
-    oTopmostRelevantFrame = None;          # topmost relevant frame
-    oTopmostRelevantFunctionFrame = None;  # topmost relevant frame that has a function symbol
-    oTopmostRelevantModuleFrame = None;    # topmost relevant frame that has no function symbol but a module
-    uFramesHashed = 0;
-    asHTMLStack = [];
-    sStackId = "";
-    for oFrame in oStack.aoFrames:
-      if oFrame.bIsIrrelevant:
-        # This frame is irrelevant
-        asHTMLStack.append("<s>%s</s><br/>" % fsHTMLEncode(oFrame.sAddress));
-      else:
-        oTopmostRelevantFrame = oTopmostRelevantFrame or oFrame;
-        sHTMLAddress = fsHTMLEncode(oFrame.sAddress);
-        # Make stack frames without a function symbol italic
-        if not oFrame.oFunction:
-          sHTMLAddress = "<i>%s</i>" % sHTMLAddress;
-        # Hash frame address for id and output frame to html
-        if uFramesHashed == dxCrashInfoConfig.get("uStackHashFramesCount", 3):
-          # no more hashing is needed: just output as is:
-          asHTMLStack.append("%s<br/>" % sHTMLAddress);
-        elif oFrame.sIdAddress:
-          # frame is part of id: add hash and output bold
-          oHasher = hashlib.md5();
-          oHasher.update(oFrame.sIdAddress);
-          sFrameId = "%02X" % ord(oHasher.digest()[0]);
-          sStackId += sFrameId;
-          uFramesHashed += 1;
-          asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, sFrameId));
-          # Determine the top frame for the id:
-          if oFrame.oFunction:
-            oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oFrame;
-          elif oFrame.oModule:
-            oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oFrame;
-        else:
-          # This is not part of the id, but between frames that are: add "__" to id and output strike-through
-          sStackId += "__";
-          asHTMLStack.append("<s>%s</s><br/>" % sHTMLAddress);
-    oSelf.sStackId = uFramesHashed == 0 and "##" or sStackId;
-    if oStack.bPartialStack:
-      asHTMLStack.append("... (rest of the stack was ignored)<br/>");
-    # Use a function for the id
-    oIdFrame = oTopmostRelevantFunctionFrame or oTopmostRelevantModuleFrame;
-    oSelf.sFunctionId = oIdFrame and oIdFrame.sSimplifiedAddress or "(unknown)";
-    
-    # Create the location description 
-    oSelf.sLocationDescription = oTopmostRelevantFrame and oTopmostRelevantFrame.sAddress or "(unknown)";
-    
-    # Create HTML details
-    oSelf.sHTMLDetails = sHTMLDetailsTemplate % {
-      "sId": fsHTMLEncode(oSelf.sId),
-      "sExceptionDescription": fsHTMLEncode(oSelf.sExceptionDescription),
-      "sProcessBinaryName": fsHTMLEncode(oException.oProcess.sBinaryName),
-      "sLocationDescription": fsHTMLEncode(oSelf.sLocationDescription),
-      "sSecurityImpact": oSelf.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oSelf.sSecurityImpact) or "None",
-      "sStack": "".join(asHTMLStack),
-      "sAdditionalInformation": "".join(
-        [
-          sHTMLAdditionalInformationTemplate % {
-            "sName": fsHTMLEncode(sName),
-            "sDetails": "".join(["%s<br/>" % fsHTMLEncode(x) for x in asDetails]),
-          }
-          for (sName, asDetails) in oSelf.atsAdditionalInformation
-        ]
-      ),
-      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo.asCdbIO]),
-    };
+    cErrorReport_fProcesssStack(oSelf, oCrashInfo, oStack, oException);
+  
     return oSelf;

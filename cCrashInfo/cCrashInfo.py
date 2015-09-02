@@ -1,7 +1,7 @@
 import os, re, subprocess, threading, time;
 
-from cCrashInfo_fbInitialize import cCrashInfo_fbInitialize;
-from cCrashInfo_foDebugAndGetErrorReport import cCrashInfo_foDebugAndGetErrorReport;
+from cCrashInfo_fCdbInitialize import cCrashInfo_fCdbInitialize;
+from cCrashInfo_foCdbRunApplicationAndGetErrorReport import cCrashInfo_foCdbRunApplicationAndGetErrorReport;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # AMD64 or x86
@@ -9,9 +9,9 @@ sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
 class cCrashInfo(object):
   def __init__(oSelf, asApplicationCommandLine, auApplicationProcessIds, sApplicationISA, asSymbolServerURLs, \
-      fApplicationStartedCallback, fFatalExceptionDetectedCallback, fFinishedCallback, fInternalExceptionCallback):
-    oSelf._fApplicationStartedCallback = fApplicationStartedCallback;
-    oSelf._fFatalExceptionDetectedCallback = fFatalExceptionDetectedCallback;
+      fApplicationRunningCallback, fExceptionDetectedCallback, fFinishedCallback, fInternalExceptionCallback):
+    oSelf._fApplicationRunningCallback = fApplicationRunningCallback;
+    oSelf._fExceptionDetectedCallback = fExceptionDetectedCallback;
     oSelf._fFinishedCallback = fFinishedCallback;
     oSelf._fInternalExceptionCallback = fInternalExceptionCallback;
     oSelf._sApplicationISA = sApplicationISA;
@@ -46,6 +46,7 @@ class cCrashInfo(object):
       asCommandLine += asApplicationCommandLine;
     oSelf._auProcessIds = [];
     oSelf._auProcessIdsPendingAttach = [];
+    oSelf._auApplicationProcessIds = auApplicationProcessIds; # TODO: remove once bug has been fixed.
     if auApplicationProcessIds is not None and len(auApplicationProcessIds) > 0:
       asCommandLine += ["-p", str(auApplicationProcessIds[0])];
       oSelf._auProcessIdsPendingAttach = auApplicationProcessIds;
@@ -58,9 +59,10 @@ class cCrashInfo(object):
       print "* Starting %s" % " ".join(asCommandLine);
     oSelf.asCdbIO = [];
     oSelf._oErrorReport = None;
-    oSelf._bDebuggerTerminated = False;
     oSelf._uLastProcessId = None;
     oSelf._oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine), stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
+    oSelf._bCdbRunning = True;
+    oSelf._bCdbTerminated = False;
     # Create a thread that interacts with the debugger to debug the application
     oSelf._oCdbDebuggerThread = threading.Thread(target = oSelf._fCdbDebuggerThread);
     oSelf._oCdbDebuggerThread.start();
@@ -82,19 +84,19 @@ class cCrashInfo(object):
         print "*** INTERNAL ERROR: CrashInfo was not stopped, the cdb process is still running.";
   
   def fStop(oSelf):
-    oSelf._bDebuggerTerminated = True;
+    oSelf._bCdbTerminated = True;
     oSelf._oCdbProcess.terminate();
     oSelf._oCdbDebuggerThread.join();
     oSelf._oCdbCleanupThread.join();
   
   def _fCdbDebuggerThread(oSelf):
     try:
-      if cCrashInfo_fbInitialize(oSelf):
-        oSelf._fApplicationStartedCallback();
-        oSelf._oErrorReport = cCrashInfo_foDebugAndGetErrorReport(oSelf);
+      cCrashInfo_fCdbInitialize(oSelf);
+      if not oSelf._bCdbRunning: return;
+      oSelf._oErrorReport = cCrashInfo_foCdbRunApplicationAndGetErrorReport(oSelf);
     except Exception, oException:
       oSelf._fInternalExceptionCallback(oException);
-      oSelf._bDebuggerTerminated = True;
+      oSelf._bCdbTerminated = True;
       oSelf._oCdbProcess.terminate();
       raise;
   
@@ -193,8 +195,9 @@ class cCrashInfo(object):
           oSelf.asCdbIO.append(sCleanedLine);
           return asCleanedLines;
     # Cdb stdout was closed: the process is terminating.
-    assert oSelf._bDebuggerTerminated or len(oSelf._auProcessIds) == 0, \
+    assert oSelf._bCdbTerminated or len(oSelf._auProcessIds) == 0, \
         "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf.asCdbIO[-20:]);
+    oSelf._bCdbRunning = False;
     return None;
    
   def _fasSendCommandAndReadOutput(oSelf, sCommand):
@@ -204,8 +207,9 @@ class cCrashInfo(object):
     try:
       oSelf._oCdbProcess.stdin.write("%s\r\n" % sCommand);
     except Exception, oException:
-      assert oSelf._bDebuggerTerminated or len(oSelf._auProcessIds) == 0, \
+      assert oSelf._bCdbTerminated or len(oSelf._auProcessIds) == 0, \
           "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf.asCdbIO[-20:]);
+      oSelf._bCdbRunning = False;
       return None;
     asOutput = oSelf._fasReadOutput();
     # Detect obvious errors executing the command. (this will not catch everything, but does help development)

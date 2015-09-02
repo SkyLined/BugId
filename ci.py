@@ -54,26 +54,37 @@ if __name__ == "__main__":
       raise AssertionError("Unknown switch %s" % repr(asArguments[0]));
     asArguments.pop(0);
   asApplicationCommandLine = len(asArguments) and asArguments or None;
-  if len(asApplicationCommandLine) == 1:
+  if asApplicationCommandLine and len(asApplicationCommandLine) == 1:
     sURL = "http://%s:28876" % os.getenv("COMPUTERNAME");
+    sProgramFilesPath = os.getenv("ProgramFiles");
+    sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
+    sProgramFilesPath_AMD64 = os.getenv("ProgramW6432");
     asApplicationCommandLine = {
-      "chrome": ["C:\Program Files (x86)\Google\Chrome\Application\chrome.exe", sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-      "firefox": ["%ProgramFiles(x86)%\Mozilla Firefox\firefox.exe", sURL, "--no-remote"],
-      "msie": ["%ProgramFiles%\Internet Explorer\iexplore.exe", sURL],
-      "msie64": ["%ProgramFiles%\Internet Explorer\iexplore.exe", sURL],
-      "msie86": ["%ProgramFiles(x86)%\Internet Explorer\iexplore.exe", sURL],
+      "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+      "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, sURL, "--no-remote"],
+      "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, sURL],
+      "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_AMD64, sURL],
+      "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, sURL],
     }.get(asApplicationCommandLine[0].lower(), asApplicationCommandLine)
   
   oFinishedEvent = threading.Event();
   
-  def fApplicationStartedHandler():
-    if asApplicationCommandLine:
+  bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
+  def fApplicationRunningHandler(bApplicationIsRunning):
+    global bApplicationIsStarted;
+    if not bApplicationIsRunning:
+      # Paused.
+      print "* The application was paused and an event is being analyzed...";
+    elif not bApplicationIsStarted:
+      # Running for the first time after being started.
       print "* The application was started successfully and is running...";
+      bApplicationIsStarted = True;
     else:
+      # Running after being resumed.
       print "* The application was resumed successfully and is running...";
   
-  def fFatalExceptionDetectedHandler(uCode, sDescription):
-    print "* A fatal exception 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
+  def fExceptionDetectedHandler(uCode, sDescription):
+    print "* Exception code 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
   
   def fFinishedHandler(oErrorReport):
     if oErrorReport:
@@ -110,8 +121,8 @@ if __name__ == "__main__":
     auApplicationProcessIds = auApplicationProcessIds,
     sApplicationISA = "irrelevant",
     asSymbolServerURLs = [],
-    fApplicationStartedCallback = fApplicationStartedHandler,
-    fFatalExceptionDetectedCallback = fFatalExceptionDetectedHandler,
+    fApplicationRunningCallback = fApplicationRunningHandler,
+    fExceptionDetectedCallback = fExceptionDetectedHandler,
     fFinishedCallback = fFinishedHandler,
     fInternalExceptionCallback = fInternalExceptionHandler,
   );

@@ -1,8 +1,8 @@
 import re;
-from fsGetExceptionTypeId import fsGetExceptionTypeId;
+from cException_fSetSecurityImpact import cException_fSetSecurityImpact;
+from cException_fSetTypeId import cException_fSetTypeId;
 from cStack import cStack;
 from cStowedException import cStowedException;
-from fsGetSecurityImpact import fsGetSecurityImpact;
 from NTSTATUS import *;
 
 class cException(object):
@@ -23,7 +23,7 @@ class cException(object):
   def foCreate(cSelf, oCrashInfo, oProcess, uCode, sCodeDescription):
     oSelf = cSelf(oProcess, uCode, sCodeDescription);
     asExceptionRecord = oCrashInfo._fasSendCommandAndReadOutput(".exr -1");
-    if asExceptionRecord is None: return None;
+    if not oCrashInfo._bCdbRunning: return None;
     uParameterCount = None;
     uParameterIndex = None;
     for sLine in asExceptionRecord:
@@ -71,9 +71,9 @@ class cException(object):
         "Unexpected number of parameters (%d vs %d)" % (len(oSelf.auParameters), uParameterCount);
     # Now handle the information in the exception record to create an exception id that uniquely identifies the
     # type of exception and a description of the exception.
-    oSelf.sTypeId = fsGetExceptionTypeId(uCode);
+    cException_fSetTypeId(oSelf);
     oSelf.sDescription = "%s (code 0x%08X)" % (sCodeDescription, uCode);
-    oSelf.sSecurityImpact = fsGetSecurityImpact(uCode);
+    cException_fSetSecurityImpact(oSelf);
     return oSelf;
   
   def foGetStack(oSelf, oCrashInfo):

@@ -1,6 +1,7 @@
 import re;
+from cStowedException import cStowedException;
 
-def foSpecialErrorReport_STATUS_STOWED_EXCEPTION(oErrorReport, oCrashInfo, oException):
+def cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION(oErrorReport, oCrashInfo, oException):
   # Parameter[0] = paStowedExceptionInformationArray;
   # Parameter[1] = uStowedExceptionInformationArrayLength;
   assert len(oException.auParameters) == 2, \

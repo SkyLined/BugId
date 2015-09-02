@@ -54,13 +54,24 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "chrome.dll!std::allocator<...>::allocate",
     "chrome.dll!std::allocator<...>::allocate",
     "chrome.dll!std::basic_string<...>::append",
+    "chrome.dll!std::basic_string<...>::assign",
     "chrome.dll!std::basic_string<...>::_Copy",
+    "chrome.dll!std::basic_string<...>::{ctor}",
     "chrome.dll!std::basic_string<...>::_Grow",
     "chrome.dll!std::deque<...>::emplace_back<>",
     "chrome.dll!std::deque<...>::_Growmap",
     "chrome.dll!std::deque<...>::insert",
     "chrome.dll!std::deque<...>::push_back",
     "chrome.dll!std::deque<...>::resize",
+    "chrome.dll!std::_Hash<...>::_Check_size",
+    "chrome.dll!std::_Hash<...>::emplace",
+    "chrome.dll!std::_Hash<...>::_Init",
+    "chrome.dll!std::_Hash<...>::_Insert<...>",
+    "chrome.dll!std::unordered_map<...>::operator[]",
+    "chrome.dll!std::vector<...>::assign",
+    "chrome.dll!std::vector<...>::_Buy",
+    "chrome.dll!std::vector<...>::insert",
+    "chrome.dll!std::vector<...>::_Insert_n",
     "chrome.dll!std::vector<...>::_Reallocate",
     "chrome.dll!std::_Wrap_alloc<...>::allocate",
     "chrome_child.dll!blink::DOMArrayBuffer::create",
@@ -91,6 +102,7 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "chrome_child.dll!WTF::DefaultAllocator::allocateVectorBacking",
     "chrome_child.dll!WTF::DefaultAllocator::allocateZeroedHashTableBacking<...>",
     "chrome_child.dll!WTF::fastMalloc",
+    "chrome_child.dll!WTF::HashMap<...>::inlineAdd",
     "chrome_child.dll!WTF::HashTable<...>::add<...>",
     "chrome_child.dll!WTF::HashTable<...>::allocateTable",
     "chrome_child.dll!WTF::HashTable<...>::expand",
@@ -142,6 +154,7 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "jscript9.dll!Js::Exception::RaiseIfScriptActive",
     "mozglue.dll!arena_malloc_large",
     "mozglue.dll!arena_run_split",
+    "mozglue.dll!je_malloc",
     "mozglue.dll!moz_xcalloc",
     "mozglue.dll!moz_xmalloc",
     "mozglue.dll!moz_xrealloc",
@@ -151,6 +164,7 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "xul.dll!js::MallocProvider<...>",
     "xul.dll!mozilla::CircularByteBuffer::SetCapacity",
     "xul.dll!NS_ABORT_OOM",
+    "xul.dll!nsAString_internal::nsAString_internal",
     "xul.dll!nsACString_internal::AppendFunc",
     "xul.dll!nsBaseHashtable<...>::Put",
     "xul.dll!nsBaseHashtable::Put",
@@ -171,21 +185,21 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
   ],
 };
 
-def fMarkIrrelevantTopFrames(oErrorReport, uExceptionCode, oStack):
+def cStack_fHideIrrelevantFrames(oStack, sExceptionTypeId, uExceptionCode):
   asIrrelevantTopFrameFunctions = (
     dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get("*", []) +
-    dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(oErrorReport.sExceptionTypeId, []) +
+    dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(sExceptionTypeId, []) +
     dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(uExceptionCode, [])
   );
   # For each frame
   for oFrame in oStack.aoFrames:
     # if it's not marked as irrelevant yet:
-    if not oFrame.bIsIrrelevant:
+    if not oFrame.bIsHidden:
       # go through all irrelevant top frame functions:
       for sIrrelevantTopFrameFunction in asIrrelevantTopFrameFunctions:
         # and see if one of them is a match:
         if sIrrelevantTopFrameFunction in (oFrame.sAddress, oFrame.sSimplifiedAddress):
-          oFrame.bIsIrrelevant = True;
+          oFrame.bIsHidden = True;
           # yes!, go to the next frame
           break;
       else:

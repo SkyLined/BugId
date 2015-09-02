@@ -1,6 +1,20 @@
 from NTSTATUS import *;
 
 ddtxExceptionTranslation_xExceptionCodeOrTypeId = {
+  STATUS_ACCESS_VIOLATION: {
+    # MSIE 8 can test if DEP is enabled by storing a RET instruction in RW memory and calling it. This causes an
+    # access violation if DEP is enabled, which is caught and handled. Therefore this exception should be ignored:
+    None: (
+      None,
+      None,
+      [
+        [
+          "(unknown)", # The location where the RET instruction is stored is not inside a module and has no symbol.
+          "corpol.dll!IsNxON",
+        ],
+      ],
+    ),
+  },
   STATUS_FAIL_FAST_EXCEPTION: {
     "OOM": (
       "The process was unable to allocate enough memory",
@@ -95,7 +109,7 @@ ddtxExceptionTranslation_xExceptionCodeOrTypeId = {
   },
 };
 
-def fErrorReportTranslateException(oErrorReport, uExceptionCode, oStack):
+def cErrorReport_foHandleSpecialCases(oErrorReport, uExceptionCode, oStack):
   # See if we have a translationtable for this exception:
   for (xExceptionCodeOrTypeId, dtxExceptionTranslation) in ddtxExceptionTranslation_xExceptionCodeOrTypeId.items():
     if xExceptionCodeOrTypeId in (oErrorReport.sExceptionTypeId, uExceptionCode):
@@ -113,13 +127,17 @@ def fErrorReportTranslateException(oErrorReport, uExceptionCode, oStack):
             break;
         else:
           # All frames matched: translate exception:
-          oErrorReport.sExceptionTypeId = sNewExceptionTypeId;
-          oErrorReport.sExceptionDescription = sNewExceptionDescription;
-          oErrorReport.sSecurityImpact = sNewSecurityImpact;
-          # And mark all the matched frames as irrelevant
-          for oFrame in oStack.aoFrames[:uFrameIndex]:
-            oFrame.bIsIrrelevant = True;
-          return;
+          if sNewExceptionTypeId is None:
+            # This exception should be ignored:
+            return None;
+          else:
+            oErrorReport.sExceptionTypeId = sNewExceptionTypeId;
+            oErrorReport.sExceptionDescription = sNewExceptionDescription;
+            oErrorReport.sSecurityImpact = sNewSecurityImpact;
+            # And mark all the matched frames as irrelevant
+            for oFrame in oStack.aoFrames[:uFrameIndex]:
+              oFrame.bIsIrrelevant = True;
+            return oErrorReport;
         print;
   # No match; no translation
-
+  return oErrorReport;

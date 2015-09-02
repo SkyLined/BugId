@@ -35,5 +35,5 @@ dsId_uCode = {
   STATUS_FAIL_FAST_EXCEPTION:       "FailFast",
   CPP_EXCEPTION_CODE:               "C++",
 };
-def fsGetExceptionTypeId(uCode):
-  return dsId_uCode.get(uCode) or "0x%08X" % uCode;
+def cException_fSetTypeId(oException):
+  oException.sTypeId = dsId_uCode.get(oException.uCode) or "0x%08X" % oException.uCode;

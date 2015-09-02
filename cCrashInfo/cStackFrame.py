@@ -8,7 +8,7 @@ class cStackFrame(object):
     oSelf.uModuleOffset = uModuleOffset;
     oSelf.oFunction = oFunction;
     oSelf.uFunctionOffset = uFunctionOffset;
-    oSelf.bIsIrrelevant = False; # Set to true if this frame did not contribute to the exception (i.e. don't shoot the messenger).
+    oSelf.bIsHidden = False; # Set to true if this frame should be hidden because it is not relevant.
     if oSelf.oFunction:
       if oSelf.uFunctionOffset > 0:
         oSelf.sAddress = "%s + 0x%X" % (oSelf.oFunction.sName, oSelf.uFunctionOffset);
