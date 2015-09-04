@@ -1,3 +1,4 @@
+import re;
 
 # Fix a bug in verifier.dll. For more details see:
 # http://berendjanwever.blogspot.nl/2015/07/work-around-for-page-heap-reallocate-in.html

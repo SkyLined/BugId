@@ -11,7 +11,7 @@ def cCrashInfo_fHandleCreateExitProcess(oCrashInfo, sCreateExit, uProcessId):
     # affect on performance and would prevent bugs if this assumption is not true.
     oCrashInfo._fasSendCommandAndReadOutput(".childdbg 1");
     if not oCrashInfo._bCdbRunning: return;
-    cCrashInfo_fFixVerifierBugInCurrentProcess();
+    cCrashInfo_fFixVerifierBugInCurrentProcess(oCrashInfo);
     if not oCrashInfo._bCdbRunning: return;
     # If the debugger attached to this process, remove it from the list of pending attaches:
     if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
