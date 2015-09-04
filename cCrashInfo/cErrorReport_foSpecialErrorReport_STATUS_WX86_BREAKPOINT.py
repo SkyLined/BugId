@@ -1,0 +1,5 @@
+from cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT import cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT;
+
+def cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT(oErrorReport, oCrashInfo):
+  return cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT(oErrorReport, oCrashInfo);
+

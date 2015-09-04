@@ -13,6 +13,9 @@ class cCrashInfo(object):
     oSelf._fExceptionDetectedCallback = fExceptionDetectedCallback;
     oSelf._fFinishedCallback = fFinishedCallback;
     oSelf._fInternalExceptionCallback = fInternalExceptionCallback;
+    oSelf.dafEventCallbacks_by_sEventName = {
+      "load module": set(),
+    };
     uSymbolOptions = sum([
       0x00000001, # SYMOPT_CASE_INSENSITIVE
       0x00000002, # SYMOPT_UNDNAME
@@ -26,17 +29,17 @@ class cCrashInfo(object):
       0x00010000, # SYMOPT_AUTO_PUBLICS
 #      0x00020000, # SYMOPT_NO_IMAGE_SEARCH
       0x00080000, # SYMOPT_NO_PROMPTS
-      dxCrashInfoConfig.get("bDebugSymbolLoading", False) and 0x80000000 or 0, # SYMOPT_DEBUG
+      dxCrashInfoConfig["bDebugSymbolLoading"] and 0x80000000 or 0, # SYMOPT_DEBUG
     ]);
     # For historic reasons, the ISA of the OS is used to determine which ISA version of cdb to use. It is not known if
     # this was originally done to avoid problems with x86 cdb debugging x86 applications of AMD64 windows, or if it
     # doesn't really matter which cdb ISA version is used in this case.
-    sCdbBinaryPath = dxCrashInfoConfig.get("sCdbBinaryPath_%s" % sOSISA);
+    sCdbBinaryPath = dxCrashInfoConfig["sCdbBinaryPath_%s" % sOSISA];
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
     # -o => debug child processes, -sflags 0xXXXXXXXX => symbol options:
     set_asSymbolServerURLs = set(asSymbolServerURLs + [sMicrosoftSymbolServerURL]);
     sSymbolsPath = ";".join(
-      ["cache*%s" % sSymbolCachePath for sSymbolCachePath in dxCrashInfoConfig.get("asSymbolCachePaths", [])] +
+      ["cache*%s" % sSymbolCachePath for sSymbolCachePath in dxCrashInfoConfig["asSymbolCachePaths"]] +
       ["srv*%s" % sSymbolServerURL for sSymbolServerURL in set_asSymbolServerURLs]
     );
     asCommandLine.extend(["-y", sSymbolsPath]);
@@ -53,7 +56,7 @@ class cCrashInfo(object):
       (sArg.find(" ") == -1 or sArg[0] == '"')        and sArg               or '"%s"' % sArg.replace('"', '\\"')
       for sArg in asCommandLine
     ];
-    if dxCrashInfoConfig.get("bOutputCommandLine", False):
+    if dxCrashInfoConfig["bOutputCommandLine"]:
       print "* Starting %s" % " ".join(asCommandLine);
     oSelf.asCdbIO = [];
     oSelf._asCdbStdErrIO = [];
@@ -90,6 +93,13 @@ class cCrashInfo(object):
     oSelf._oCdbProcess.terminate();
     oSelf._oCdbDebuggerThread.join();
     oSelf._oCdbCleanupThread.join();
+  
+  def fAddEventCallback(oSelf, sEventName, fEventCallback):
+    oSelf.dafEventCallbacks_by_sEventName[sEventName].add(fEventCallback);
+  
+  def fFireEvent(oSelf, sEventName, *axEventInforamtion):
+    for fEventCallback in oSelf.dafEventCallbacks_by_sEventName[sEventName]:
+      fEventCallback(oSelf, *axEventInforamtion);
   
   def _fCdbDebuggerThread(oSelf):
     try:
@@ -147,7 +157,7 @@ class cCrashInfo(object):
       elif sChar in ("\n", ""):
         if sChar == "\n" or sLine:
           oSelf._asCdbStdErrIO.append(sLine);
-          if dxCrashInfoConfig.get("bOutputErrIO", False):
+          if dxCrashInfoConfig["bOutputErrIO"]:
             print "cdb:stderr>%s" % repr(sLine)[1:-1];
         if sChar == "":
           break;
@@ -161,83 +171,11 @@ class cCrashInfo(object):
     return None;
     
   def _fasReadOutput(oSelf):
-    # Read cdb output until an input prompt is detected, or cdb terminates.
-    # This is a bit more complex than one might expect because I attempted to make it work with noizy symbol loading.
-    # This may interject messages at any point during command execution, which are not part of the commands output and
-    # have to be remove to make parsing of the output possible. Unfortuntely, it appears to be too complex to be
-    # worth the effort. I've left what i did in here in case I want to try to finish it at some point.
-    sLine = "";
-    sCleanedLine = "";
-    asCleanedLines = [];
-    bNextLineIsSymbolLoaderMessage = False;
-    while 1:
-      sChar = oSelf._oCdbProcess.stdout.read(1);
-      if sChar == "\r":
-        pass; # ignored.
-      elif sChar in ("\n", ""):
-        if sChar == "\n" or sLine:
-          oSelf.asCdbIO.append(sLine);
-          if dxCrashInfoConfig.get("bOutputIO", False):
-            print "cdb>%s" % repr(sLine)[1:-1];
-        if sChar == "":
-          break;
-        sLine = "";
-        if sCleanedLine:
-          oLineEndsWithWarning = re.match(r"^(.*)\*\*\* WARNING: Unable to verify checksum for .*$", sCleanedLine);
-          if oLineEndsWithWarning:
-            # Sample output:
-            # 
-            # |00000073`ce10fda0  00007ff7`cf312200*** WARNING: Unable to verify checksum for CppException_x64.exe
-            # | CppException_x64!cException::`vftable'
-            # The warning and a "\r\n" appear in the middle of a line od output and need to be removed. The interrupted
-            # output continues on the next line.
-            sCleanedLine = oLineEndsWithWarning.group(1);
-          else:
-            oSymbolLoaderMessageMatch = re.match(r"^(?:%s)$" % "|".join([
-              r"SYMSRV: .+",
-              r"\s*\x08+\s+(?:copied\s*|\d+ percentSYMSRV: .+)",
-              r"DBGHELP: .+?( \- (?:private|public) symbols(?: & lines)?)?\s*", # matched
-              r"\*\*\*.*",
-             ]), sCleanedLine);
-            # Sample output:
-            # |SYMSRV:  c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb not found
-            # |DBGHELP: \\server\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb cached to c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
-            # |DBGHELP: chakra - public symbols  
-            # |        c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
-            # |*** ERROR: Module load completed but symbols could not be loaded for C:\Windows\System32\Macromed\Flash\Flash.ocx
-            # |*************************************************************************
-            # |***                                                                   ***
-            # |***                                                                   ***
-            # |***    Either you specified an unqualified symbol, or your debugger   ***
-            # |***    doesn't have full symbol information.  Unqualified symbol      ***
-            # |***    resolution is turned off by default. Please either specify a   ***
-            # |***    fully qualified symbol module!symbolname, or enable resolution ***
-            if oSymbolLoaderMessageMatch:
-              # The "DBGHELP:..." line may indicate that another symbol loader message line is to follow:
-              bNextLineIsSymbolLoaderMessage = oSymbolLoaderMessageMatch.group(1) is not None;
-            elif bNextLineIsSymbolLoaderMessage:
-              bNextLineIsSymbolLoaderMessage = False;
-            else:
-              asCleanedLines.append(sCleanedLine);
-            sCleanedLine = "";
-      else:
-        sLine += sChar;
-        sCleanedLine += sChar;
-        # Detect the prompt.
-        oPromptMatch = re.match("^\d+:\d+(:x86)?> $", sCleanedLine);
-        if oPromptMatch:
-          if dxCrashInfoConfig.get("bOutputIO", False):
-            print "cdb>%s" % repr(sLine)[1:-1];
-          oSelf.asCdbIO.append(sCleanedLine);
-          return asCleanedLines;
-    # Cdb stdout was closed: the process is terminating.
-    assert oSelf._bCdbTerminated or len(oSelf._auProcessIds) == 0, \
-        "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oSelf.asCdbIO[-20:]);
-    oSelf._bCdbRunning = False;
-    return None;
-   
+    from cCrashInfo_fasReadOutput import cCrashInfo_fasReadOutput;
+    return cCrashInfo_fasReadOutput(oSelf);
+  
   def _fasSendCommandAndReadOutput(oSelf, sCommand):
-    if dxCrashInfoConfig.get("bOutputIO", False) or dxCrashInfoConfig.get("bOutputCommands", False):
+    if dxCrashInfoConfig["bOutputIO"] or dxCrashInfoConfig["bOutputCommands"]:
       print "cdb<%s" % repr(sCommand)[1:-1];
     oSelf.asCdbIO[-1] += sCommand;
     try:
@@ -252,3 +190,27 @@ class cCrashInfo(object):
     assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*\^ .*$", asOutput[0]), \
         "There was a problem executing the command %s: %s" % (repr(sCommand), repr(asOutput));
     return asOutput;
+  
+  def fuEvaluateExpression(oSelf, sExpression):
+    from cCrashInfo_fuEvaluateExpression import cCrashInfo_fuEvaluateExpression;
+    return cCrashInfo_fuEvaluateExpression(oSelf, sExpression);
+  
+#  def fsGetModuleISA(oSelf, sCdbModuleId):
+#    from cCrashInfo_fsGetModuleISA import cCrashInfo_fsGetModuleISA;
+#    return cCrashInfo_fsGetModuleISA(oSelf, sCdbModuleId);
+  
+  def fsGetCurrentProcessISA(oSelf):
+    from cCrashInfo_fsGetCurrentProcessISA import cCrashInfo_fsGetCurrentProcessISA;
+    return cCrashInfo_fsGetCurrentProcessISA(oSelf);
+  
+  def fPatchVerifierBugInCurrentProcess(oSelf):
+    from cCrashInfo_fPatchVerifierBugInCurrentProcess import cCrashInfo_fPatchVerifierBugInCurrentProcess;
+    return cCrashInfo_fPatchVerifierBugInCurrentProcess(oSelf);
+  
+  def fHandleCreateExitProcess(oSelf, sCreateExit, uProcessId):
+    from cCrashInfo_fHandleCreateExitProcess import cCrashInfo_fHandleCreateExitProcess;
+    return cCrashInfo_fHandleCreateExitProcess(oSelf, sCreateExit, uProcessId);
+  
+  def fasGetModuleCdbNames(oSelf, sModuleFileName):
+    from cCrashInfo_fasGetModuleCdbNames import cCrashInfo_fasGetModuleCdbNames;
+    return cCrashInfo_fasGetModuleCdbNames(oSelf, sModuleFileName);

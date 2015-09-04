@@ -1,6 +1,25 @@
 import re;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
+# Hide some functions at the top of the stack that are not relevant to the error:
+asHiddenTopFrames = {
+  "0x0", # AVE:NULL
+};
+# Some access violations may not be an error:
+dtxErrorTranslations = {
+  # corpol.dll can test if DEP is enabled by storing a RET instruction in RW memory and calling it. This causes an
+  # access violation if DEP is enabled, which is caught and handled. Therefore this exception should be ignored:
+  None: (
+    None,
+    None,
+    [
+      [
+        "(unknown)", # The location where the RET instruction is stored is not inside a module and has no symbol.
+        "corpol.dll!IsNxON",
+      ],
+    ],
+  ),
+};
 dsId_uAddress = {     # Short             Pointer description                                   Security impact
           0x00000000: ('NULL',            "a NULL ptr",                                         None),
           0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
@@ -34,7 +53,8 @@ def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
     or dsFunctionName_sSpecialTypeId.get(oFrame.sSimplifiedAddress)
   );
 
-def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oException, oStack):
+def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo):
+  oException = oErrorReport.oException;
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
   # Parameter[1] = address
   assert len(oException.auParameters) == 2, \
@@ -44,9 +64,9 @@ def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashI
   sViolationTypeDescription = {0:"reading", 1:"writing", 8:"executing"}.get( \
         oException.auParameters[0], "0x%X-ing" % oException.auParameters[0]);
   uAddress = oException.auParameters[1];
-  uMaxAddressOffset = dxCrashInfoConfig.get("uMaxAddressOffset", 0xFFF);
+  uMaxAddressOffset = dxCrashInfoConfig["uMaxAddressOffset"];
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dsId_uAddress.items():
-    sExceptionDescription = "Access violation while %s memory at 0x%X using %s" % \
+    sErrorDescription = "Access violation while %s memory at 0x%X using %s" % \
         (sViolationTypeDescription, uAddress, sAddressDescription);
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
@@ -107,7 +127,7 @@ def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashI
       if sBlockType == "free-ed":
         # Page heap tells us the memory was freed:
         sAddressId = "Free";
-        sExceptionDescription = "Access violation while %s freed memory at 0x%X" % \
+        sErrorDescription = "Access violation while %s freed memory at 0x%X" % \
             (sViolationTypeDescription, uAddress);
       elif sBlockType == "busy":
         # This can only happen if the read was beyond the end of the heap block:
@@ -124,16 +144,17 @@ def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashI
           # and that the offset will not change, so this information is added to the address id.
           sAddressId += "[0x%X]+0x%X" % (uBlockSize, uOffsetPastEndOfBlock);
         sOffset = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
-        sExceptionDescription = "Access violation while %s memory at 0x%X; " \
+        sErrorDescription = "Access violation while %s memory at 0x%X; " \
             "%s a %d/0x%X byte memory block at 0x%X" % \
             (sViolationTypeDescription, uAddress, sOffset, uBlockSize, uBlockSize, uBlockAddress);
       oErrorReport.atsAdditionalInformation.append(("Page heap report for address 0x%X:" % uAddress, asPageHeapReport));
     else:
-      sExceptionDescription = "Access violation while %s memory at 0x%X" % (sViolationTypeDescription, uAddress);
+      sAddressId = "Arbitrary";
+      sErrorDescription = "Access violation while %s memory at 0x%X" % (sViolationTypeDescription, uAddress);
     # No matter what, this is potentially exploitable.
     sSecurityImpact = "Potentially exploitable security issue";
-  sTypeId = "%s%s:%s" % (oErrorReport.sExceptionTypeId, sViolationTypeId, sAddressId);
-  oErrorReport.sExceptionTypeId = sTypeId;
-  oErrorReport.sExceptionDescription = sExceptionDescription;
+  oErrorReport.sErrorTypeId = "%s%s:%s" % (oErrorReport.sErrorTypeId, sViolationTypeId, sAddressId);
+  oErrorReport.sErrorDescription = sErrorDescription;
   oErrorReport.sSecurityImpact = sSecurityImpact;
-  return oException;
+  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oErrorReport.foTranslateError(dtxErrorTranslations);

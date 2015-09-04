@@ -1,7 +1,8 @@
 from cFunction import cFunction;
 
 class cModule(object):
-  def __init__(oSelf, oProcess, sBinaryName, uStartAddress, uEndAddress):
+  def __init__(oSelf, oProcess, sCdbId, sBinaryName, uStartAddress, uEndAddress):
+    oSelf.sCdbId = sCdbId;
     oSelf.oProcess = oProcess;
     oSelf.sBinaryName = sBinaryName;
     oSelf.uStartAddress = uStartAddress;

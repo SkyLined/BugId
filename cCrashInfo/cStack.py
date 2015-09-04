@@ -1,38 +1,38 @@
 import re;
-from cStack_fHideIrrelevantFrames import cStack_fHideIrrelevantFrames;
 from cStackFrame import cStackFrame;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 class cStack(object):
-  def __init__(oSelf, oProcess):
-    oSelf.oProcess = oProcess;
-    oSelf.aoFrames = [];
-    oSelf.bPartialStack = False;
-    oSelf.uHashFramesCount = dxCrashInfoConfig.get("uStackHashFramesCount", 3);
+  def __init__(oStack, oProcess):
+    oStack.oProcess = oProcess;
+    oStack.aoFrames = [];
+    oStack.bPartialStack = False;
+    oStack.uHashFramesCount = dxCrashInfoConfig["uStackHashFramesCount"];
   
-  def fHideIrrelevantFrames(oSelf, sExceptionTypeId, uExceptionCode):
-    return cStack_fHideIrrelevantFrames(oSelf, sExceptionTypeId, uExceptionCode);
+  def fHideTopFrames(oStack, asFrameAddresses):
+    for oFrame in oStack.aoFrames: # For each frame
+      if not oFrame.bIsHidden: # if it's not yet hidden,
+        if oFrame.sAddress in asFrameAddresses or oFrame.sSimplifiedAddress in asFrameAddresses: # and it should be,
+          oFrame.bIsHidden = True; # hide it.
+        else:
+          break; # this should not be hidden, stop looking.
   
-  def _fAddStackFrame(oSelf, oCrashInfo, uNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset):
+  def fCreateAndAddStackFrame(oStack, oCrashInfo, uNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset):
     # frames must be created in order:
-    assert uNumber == len(oSelf.aoFrames), \
-        "Unexpected frame number %d vs %d" % (uNumber, len(oSelf.aoFrames));
-    uMaxStackFramesCount = dxCrashInfoConfig.get("uMaxStackFramesCount", 50);
+    assert uNumber == len(oStack.aoFrames), \
+        "Unexpected frame number %d vs %d" % (uNumber, len(oStack.aoFrames));
+    uMaxStackFramesCount = dxCrashInfoConfig["uMaxStackFramesCount"];
     assert uNumber < uMaxStackFramesCount, \
         "Unexpected frame number %d (max %d)" % (uNumber, uMaxStackFramesCount);
     if uNumber == uMaxStackFramesCount - 1:
-      oSelf.bPartialStack = True; # We leave the last one out so we can truely say there are more.
+      oStack.bPartialStack = True; # We leave the last one out so we can truely say there are more.
     else:
       if sCdbModuleId == "SharedUserData":
         # "ShareUserData" is a symbol outside of any module that gets used as a module name in cdb.
         # Any value referencing it must be converted to an address:
         sBaseSymbol = "SharedUserData";
         if sSymbol: sBaseSymbol += "!%s" % sSymbol;
-        asBaseAddress = oCrashInfo._fasSendCommandAndReadOutput("? %s" % sBaseSymbol);
-        if not oCrashInfo._bCdbRunning: return;
-        oMatch = len(asBaseAddress) == 1 and re.match(r"Evaluate expression: (\d+) = [a-f0-9`]+", asBaseAddress[0]);
-        assert oMatch, "Invalid syntax in SharedUserData value:\r\n%s" % "\r\n".join(asBaseAddress);
-        uAddress = int(oMatch.groups(1));
+        uAddress = oCrashInfo.fuEvaluateExpression(sBaseSymbol);
         if uModuleOffset: uAddress += uModuleOffset;
         if uSymbolOffset: uAddress += uSymbolOffset;
         # Clean up:
@@ -40,14 +40,14 @@ class cStack(object):
         uModuleOffset = None;
         sSymbol = None;
         uSymbolOffset = None;
-      oModule = sCdbModuleId and oSelf.oProcess.foGetModule(sCdbModuleId);
+      oModule = sCdbModuleId and oStack.oProcess.foGetModule(sCdbModuleId);
       oFunction = oModule and sSymbol and oModule.foGetOrCreateFunction(sSymbol);
-      oSelf.aoFrames.append(cStackFrame(uNumber, uAddress, oModule, uModuleOffset, oFunction, uSymbolOffset));
+      oStack.aoFrames.append(cStackFrame(uNumber, uAddress, oModule, uModuleOffset, oFunction, uSymbolOffset));
     
   @classmethod
-  def foCreateFromAddress(cSelf, oCrashInfo, oProcess, pAddress, uSize):
-    oSelf = cSelf(oProcess);
-    uStackFramesCount = min(dxCrashInfoConfig.get("uMaxStackFramesCount", 50), uSize);
+  def foCreateFromAddress(cStack, oCrashInfo, oProcess, pAddress, uSize):
+    oStack = cStack(oProcess);
+    uStackFramesCount = min(dxCrashInfoConfig["uMaxStackFramesCount"], uSize);
     asStack = oCrashInfo._fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
     if not oCrashInfo._bCdbRunning: return None;
     # Here are some lines you might expect to parse:
@@ -75,15 +75,15 @@ class cStack(object):
       uSymbolOffset = sSymbolOffset and int(sSymbolOffset.replace("`", ""), 16);
       assert uFrameNumber < uStackFramesCount, \
           "Got more frames than requested";
-      oSelf._fAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
+      oStack.fCreateAndAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
       if not oCrashInfo._bCdbRunning: return None;
       uFrameNumber += 1;
-    return oSelf;
+    return oStack;
   
   @classmethod
-  def foCreate(cSelf, oCrashInfo, oProcess):
-    oSelf = cSelf(oProcess);
-    uStackFramesCount = dxCrashInfoConfig.get("uMaxStackFramesCount", 50);
+  def foCreate(cStack, oCrashInfo, oProcess):
+    oStack = cStack(oProcess);
+    uStackFramesCount = dxCrashInfoConfig["uMaxStackFramesCount"];
     asStack = oCrashInfo._fasSendCommandAndReadOutput("kn 0x%X" % uStackFramesCount);
     if not oCrashInfo._bCdbRunning: return None;
     sHeader = asStack.pop(0);
@@ -129,7 +129,7 @@ class cStack(object):
         uAddress = sAddress and int(sAddress.replace("`", ""), 16);
         uModuleOffset = sModuleOffset is not None and int(sModuleOffset.replace("`", ""), 16);
         uSymbolOffset = sSymbolOffset is not None and int(sSymbolOffset.replace("`", ""), 16);
-        oSelf._fAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
+        oStack.fCreateAndAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
         if not oCrashInfo._bCdbRunning: return None;
         uFrameNumber += 1;
-    return oSelf;
+    return oStack;

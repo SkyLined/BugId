@@ -1,10 +1,12 @@
 
-def cErrorReport_foHandleException_STATUS_STACK_OVERFLOW(oErrorReport, oCrashInfo, oException, oStack):
+def cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW(oErrorReport, oCrashInfo):
+  oStack = oErrorReport.oStack;
   # Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call themselves
   # Figure out if this is the case and fide all frames at the top of the stack until the "first" frame in the loop.
-  oErrorReport.sExceptionTypeId = "StackExhaust";
-  oErrorReport.sExceptionDescription = "The process exhausted available stack memory";
+  oErrorReport.sErrorTypeId = "StackExhaust";
+  oErrorReport.sErrorDescription = "The process exhausted available stack memory";
   oErrorReport.sSecurityImpact = "This is not a security issue";
+  bLoopFound = False;
   for uFirstLoopStartIndex in xrange(len(oStack.aoFrames) - 1):
 #    print "*" * 80;
 #    print "Start index: %d" % uFirstLoopStartIndex;
@@ -31,6 +33,7 @@ def cErrorReport_foHandleException_STATUS_STACK_OVERFLOW(oErrorReport, oCrashInf
 #          print "      LOOP REPEAT MISMATCH";
           break;
       else:
+        bLoopFound = True;
         # A loop was found in the stack
         # Obviously a loop has no end and the stack will not be complete so the start of the loop may be unknown. This
         # means there is no obvious way to decide which of the functions involved in the loop is the first or last.
@@ -55,11 +58,13 @@ def cErrorReport_foHandleException_STATUS_STACK_OVERFLOW(oErrorReport, oCrashInf
         # All frames in the loop are part of the hash:
         oStack.uHashFramesCount = uLoopSize;
         # The error id and description are adjusted to explain the recursive function call as its cause.
-        oErrorReport.sExceptionTypeId = "RecursiveCall";
+        oErrorReport.sErrorTypeId = "RecursiveCall";
         if uLoopSize == 1:
-          oErrorReport.sExceptionDescription = "A recursive function call exhausted available stack memory";
+          oErrorReport.sErrorDescription = "A recursive function call exhausted available stack memory";
         else:
-          oErrorReport.sExceptionDescription = "A recursive function call involving %d functions exhausted available stack memory" % uLoopSize;
-        return oException;
+          oErrorReport.sErrorDescription = "A recursive function call involving %d functions exhausted available stack memory" % uLoopSize;
+        break;
+    if bLoopFound:
+      break;
     uFirstLoopStartIndex += 1;
-  return oException;
+  return oErrorReport;

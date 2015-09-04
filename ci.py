@@ -46,7 +46,9 @@ if __name__ == "__main__":
         assert sSettingName in dxConfigGroup, \
             "Unknown setting name %s%s." % (sSettingName, \
                 len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
-        if dxConfigGroup[sSettingName] != xValue:
+        if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
+          print "* The default value for config setting %s is %s." % (sFullName, repr(dxConfigGroup[sSettingName]));
+        else:
           print "* Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
           dxConfigGroup[sSettingName] = xValue;
     else:
@@ -89,7 +91,7 @@ if __name__ == "__main__":
     if oErrorReport:
       print;
       print "Id:               %s" % oErrorReport.sId;
-      print "Description:      %s" % oErrorReport.sExceptionDescription;
+      print "Description:      %s" % oErrorReport.sErrorDescription;
       print "Process binary:   %s" % oErrorReport.sProcessBinaryName;
       print "Location:         %s" % oErrorReport.sLocationDescription;
       print "Security impact:  %s" % oErrorReport.sSecurityImpact;

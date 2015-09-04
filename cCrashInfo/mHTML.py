@@ -50,15 +50,15 @@ sHTMLDetailsTemplate = """
     </code>
     <div>Stack</div>
     <code>%(sStack)s</code>
-    %(sAdditionalInformation)s
+    %(sBinaryInformation)s
     <div>Debugger input/output</div>
     <code>%(sCdbIO)s</code>
   </body>
 </html>""".strip();
 
-sHTMLAdditionalInformationTemplate = """
-    <div>%(sName)s</div>
-    <code>%(sDetails)s</code>
+sHTMLBinaryInformationTemplate = """
+    <div>Binary %(sName)s details</div>
+    <code>%(sInformation)s</code>
 """.strip();
 
 def fsHTMLEncode(sData):

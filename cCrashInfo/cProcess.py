@@ -1,22 +1,41 @@
 import os, re;
 from cModule import cModule;
-from cCrashInfo_fsGetCurrentProcessISA import cCrashInfo_fsGetCurrentProcessISA;
 
 class cProcess(object):
-  def __init__(oSelf, uProcessId, sBinaryName, sISA):
-    oSelf.uProcessId = uProcessId;
-    oSelf.sBinaryName = sBinaryName;
-    oSelf.sISA = sISA;
-    oSelf._doModules_sCdbId = {};
+  def __init__(oProcess, oCrashInfo, uProcessId, sBinaryName):
+    oProcess.oCrashInfo = oCrashInfo;
+    oProcess.uProcessId = uProcessId;
+    oProcess.sBinaryName = sBinaryName;
+    oProcess._doModules_sCdbId = None;
   
-  def __str__(oSelf):
-    return 'Process(%s #%d %s)' % (oSelf.sBinaryName, oSelf.uProcessId, oSelf.sISA);
+  def __str__(oProcess):
+    return 'Process(%s #%d)' % (oProcess.sBinaryName, oProcess.uProcessId);
   
-  def foGetModule(oSelf, sCdbModuleId):
-    return oSelf._doModules_sCdbId[sCdbModuleId];
+  def foGetModule(oProcess, sCdbModuleId):
+    if oProcess._doModules_sCdbId is None:
+      oProcess._doModules_sCdbId = {};
+      # Gather start and end address and binary name information for loaded modules.
+      asModules = oProcess.oCrashInfo._fasSendCommandAndReadOutput("lm on");
+      if not oProcess.oCrashInfo._bCdbRunning: return None;
+      sHeader = asModules.pop(0);
+      assert re.sub(r"\s+", " ", sHeader.strip()) in ["start end module name"], \
+          "Unknown modules header: %s" % repr(sHeader);
+      for sLine in asModules:
+        oMatch = re.match(r"^\s*%s\s*$" % "\s+".join([
+          r"([0-9A-F`]+)",         # (start_address)
+          r"([0-9A-F`]+)",         # (end_address)
+          r"(\w+)",               # (cdb_module_id)
+          r"(.*?)",               # (binary_name)
+        ]), sLine, re.I);
+        assert oMatch, "Unexpected modules output: %s" % sLine;
+        sStartAddress, sEndAddress, sCdbModuleId, sBinaryName, = oMatch.groups();
+        uStartAddress = int(sStartAddress.replace("`", ""), 16);
+        uEndAddress = int(sEndAddress.replace("`", ""), 16);
+        oProcess._doModules_sCdbId[sCdbModuleId] = cModule(oProcess, sCdbModuleId, sBinaryName, uStartAddress, uEndAddress);
+    return oProcess._doModules_sCdbId[sCdbModuleId];
   
   @classmethod
-  def ftxGetCurrentProcessIdAndBinaryName(cSelf, oCrashInfo):
+  def ftxGetCurrentProcessIdAndBinaryName(cProcess, oCrashInfo):
     # Gather process id and binary name for the current process.
     asProcessesOutput = oCrashInfo._fasSendCommandAndReadOutput("|.");
     if not oCrashInfo._bCdbRunning: return None, None;
@@ -39,29 +58,7 @@ class cProcess(object):
     return (uProcessId, sBinaryName);
   
   @classmethod
-  def foCreate(cSelf, oCrashInfo):
-    (uProcessId, sBinaryName) = cSelf.ftxGetCurrentProcessIdAndBinaryName(oCrashInfo);
-    # Gather instruction set architecture for current process.
-    sISA = cCrashInfo_fsGetCurrentProcessISA(oCrashInfo);
+  def foCreate(cProcess, oCrashInfo):
+    (uProcessId, sBinaryName) = cProcess.ftxGetCurrentProcessIdAndBinaryName(oCrashInfo);
     if not oCrashInfo._bCdbRunning: return None;
-    # Create a cProcess instance
-    oSelf = cSelf(uProcessId, sBinaryName, sISA);
-    # Gather start and end address and binary name information for loaded modules.
-    asModules = oCrashInfo._fasSendCommandAndReadOutput("lm on");
-    if not oCrashInfo._bCdbRunning: return None;
-    sHeader = asModules.pop(0);
-    assert re.sub(r"\s+", " ", sHeader.strip()) in ["start end module name"], \
-        "Unknown modules header: %s" % repr(sHeader);
-    for sLine in asModules:
-      oMatch = re.match(r"^\s*%s\s*$" % "\s+".join([
-        r"([0-9A-F`]+)",         # (start_address)
-        r"([0-9A-F`]+)",         # (end_address)
-        r"(\w+)",               # (cdb_module_id)
-        r"(.*?)",               # (binary_name)
-      ]), sLine, re.I);
-      assert oMatch, "Unexpected modules output: %s" % sLine;
-      sStartAddress, sEndAddress, sCdbModuleId, sBinaryName, = oMatch.groups();
-      uStartAddress = int(sStartAddress.replace("`", ""), 16);
-      uEndAddress = int(sEndAddress.replace("`", ""), 16);
-      oSelf._doModules_sCdbId[sCdbModuleId] = cModule(oSelf, sBinaryName, uStartAddress, uEndAddress);
-    return oSelf;
+    return cProcess(oCrashInfo, uProcessId, sBinaryName);

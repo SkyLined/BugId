@@ -1,5 +1,4 @@
 import re;
-from cCrashInfo_fHandleCreateExitProcess import cCrashInfo_fHandleCreateExitProcess;
 from cErrorReport import cErrorReport;
 from cException import cException;
 from cProcess import cProcess;
@@ -11,7 +10,9 @@ daxExceptionHandling = {
     # To be able to track which processes are running at any given time while the application being debugged, cpr and
     # epr must be enabled. Additionally, if epr is disabled the debugger will silently exit when the application
     # terminates. To distinguish this from other unexpected terminations of the debugger, epr must also be enabled.
-    "cpr", "epr", "wkd", 
+    "cpr", "ibp", "epr",
+    "wkd", # Wake debugger
+    "aph", # Application has stopped responding
     STATUS_ACCESS_VIOLATION,
     STATUS_ARRAY_BOUNDS_EXCEEDED,
     STATUS_BREAKPOINT,
@@ -27,12 +28,15 @@ daxExceptionHandling = {
     STATUS_WX86_SINGLE_STEP,
   ],
   "sxd": [ # break on second chance exceptions
-    "ibp", 
-    "asrt", "aph", "dz", "eh", "iov", 
-    "isc", "lsq", "sov", "vcpp", 
+    CPP_EXCEPTION_CODE,
+    STATUS_ASSERTION_FAILURE,
+    STATUS_INTEGER_DIVIDE_BY_ZERO,
+    STATUS_INTEGER_OVERFLOW, 
+    STATUS_STACK_OVERFLOW,
+    STATUS_INVALID_HANDLE,
   ],
   "sxi": [ # ignored
-    "ch", "hc", "ld", "ud",
+    "ld", "ud", # Load/unload module
   ],
 };
 
@@ -82,11 +86,11 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
     bValidLastEventOutput = len(asLastEventOutput) == 2 and re.match(r"^\s*debugger time: .*$", asLastEventOutput[1]);
     oEventMatch = bValidLastEventOutput and re.match(
       "".join([
-        r"^Last event: ([0-9A-F]+)\.[0-9A-F]+: ",
+        r"^Last event: ([0-9a-f]+)\.[0-9a-f]+: ",
         r"(?:",
-          r"(Create|Exit) process [0-9A-F]+\:([0-9A-F]+)(?:, code [0-9A-F]+)?",
+          r"(Create|Exit) process [0-9a-f]+\:([0-9a-f]+)(?:, code [0-9a-f]+)?",
         r"|",
-          r"(.*?) \- code ([0-9A-F]+) \(!*\s*(?:first|second) chance\s*!*\)",
+          r"(.*?) \- code ([0-9a-f]+) \(!*\s*(?:first|second) chance\s*!*\)",
         r")\s*$",
       ]),
       asLastEventOutput[0],
@@ -98,19 +102,21 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
         sCreateExitProcess, sCreateExitProcessIdHex,
         sExceptionDescription, sExceptionCode
     ) = oEventMatch.groups();
-    uProcessId = int(sProcessIdHex, 16);
+    uProcessId = long(sProcessIdHex, 16);
     if sCreateExitProcess:
       # Make sure the created/exited process is the current process.
       assert sProcessIdHex == sCreateExitProcessIdHex, "%s vs %s" % (sProcessIdHex, sCreateExitProcessIdHex);
-      cCrashInfo_fHandleCreateExitProcess(oCrashInfo, sCreateExitProcess, uProcessId);
+      oCrashInfo.fHandleCreateExitProcess(sCreateExitProcess, uProcessId);
       if len(oCrashInfo._auProcessIds) == 0:
         break; # The last process was terminated.
     else:
       uExceptionCode = int(sExceptionCode, 16);
       if uExceptionCode == STATUS_BREAKPOINT and uProcessId not in oCrashInfo._auProcessIds:
-        # This is the initial breakpoint after starting/attaching to the first process or after a new process was
-        # created by the application.
-        cCrashInfo_fHandleCreateExitProcess(oCrashInfo, "Create", uProcessId);
+        # This is assumed to be the initial breakpoint after starting/attaching to the first process or after a new
+        # process was created by the application. This assumption may not be correct, in which case the code needs to
+        # be modifed to check the stack to determine if this really is the initial breakpoint. But that comes at a
+        # performance cost, so until proven otherwise, the code is based on this assumption.
+        oCrashInfo.fHandleCreateExitProcess("Create", uProcessId);
       else:
         # Report that analysis is starting...
         oCrashInfo._fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
@@ -128,7 +134,7 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
         if oErrorReport is not None:
           break;
         # Turn noizy symbol loading back on if it was enabled.
-        if dxCrashInfoConfig.get("bDebugSymbolLoading", False):
+        if dxCrashInfoConfig["bDebugSymbolLoading"]:
           asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym noizy");
           if not oCrashInfo._bCdbRunning: return None;
     # If there are more processes to attach to, do so:

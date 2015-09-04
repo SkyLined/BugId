@@ -171,7 +171,7 @@ ddtxExceptionTranslation_xExceptionCodeOrTypeId = {
   },
 };
 
-def cErrorReport_foHandleSpecialCases(oErrorReport, uExceptionCode, oStack):
+def cErrorReport_foTranslateSpecialErrorReport(oErrorReport, uExceptionCode, oStack):
   # See if we have a translationtable for this exception:
   for (xExceptionCodeOrTypeId, dtxExceptionTranslation) in ddtxExceptionTranslation_xExceptionCodeOrTypeId.items():
     if xExceptionCodeOrTypeId in (oErrorReport.sExceptionTypeId, uExceptionCode):

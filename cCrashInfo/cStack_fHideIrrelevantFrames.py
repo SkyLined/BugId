@@ -4,20 +4,7 @@
 from NTSTATUS import *;
 
 dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
-  "*": [
-    "KERNELBASE.dll!RaiseException",
-    "ntdll.dll!KiUserExceptionDispatch",
-    "ntdll.dll!NtRaiseException",
-    "ntdll.dll!RtlDispatchException",
-    "ntdll.dll!RtlpExecuteHandlerForException",
-    "ntdll.dll!ZwRaiseException",
-  ],
-  STATUS_ACCESS_VIOLATION: [
-    "chrome_child.dll!memcpy",
-  ],
-  "AVE:NULL": [
-    "0x0",
-  ],
+  "*": ,
   STATUS_FAIL_FAST_EXCEPTION: [
     "EDGEHTML.dll!Abandonment::InduceAbandonment",
   ],
@@ -30,14 +17,14 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "ntdll.dll!RtlFailFast2",
     "ntdll.dll!RtlpHandleInvalidUserCallTarget",
   ],
-  CPP_EXCEPTION_CODE: [
+  "C++": [
     "KERNELBASE.dll!RaiseException",
     "msvcrt.dll!CxxThrowException",
     "msvcrt.dll!_CxxThrowException",
     "MSVCR110.dll!CxxThrowException",
     "MSVCR110.dll!_CxxThrowException",
   ],
-  STATUS_BREAKPOINT: [
+  "Breakpoint": [
     "kernel32.dll!DebugBreak",
     "ntdll.dll!DbgBreakPoint",
     "EDGEHTML.dll!Abandonment::InduceAbandonment",
@@ -195,7 +182,7 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
   ],
 };
 
-def cStack_fHideIrrelevantFrames(oStack, sExceptionTypeId, uExceptionCode):
+def cStack_fHideTopFrames(oStack, asFrameAddresses):
   asIrrelevantTopFrameFunctions = (
     dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get("*", []) +
     dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId.get(sExceptionTypeId, []) +
@@ -203,15 +190,12 @@ def cStack_fHideIrrelevantFrames(oStack, sExceptionTypeId, uExceptionCode):
   );
   # For each frame
   for oFrame in oStack.aoFrames:
-    # if it's not marked as irrelevant yet:
+    # if it's not yet hidden,
     if not oFrame.bIsHidden:
-      # go through all irrelevant top frame functions:
-      for sIrrelevantTopFrameFunction in asIrrelevantTopFrameFunctions:
-        # and see if one of them is a match:
-        if sIrrelevantTopFrameFunction in (oFrame.sAddress, oFrame.sSimplifiedAddress):
-          oFrame.bIsHidden = True;
-          # yes!, go to the next frame
-          break;
+      # and it should be,
+      if oFrame.sAddress in asFrameAddresses or oFrame.sSimplifiedAddress in asFrameAddresses:
+        # hide it.
+        oFrame.bIsHidden = True;
       else:
-        # no match found: this is not irrelevant
+        # this should not be hidden, stop looking.
         return;

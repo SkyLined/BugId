@@ -1,3 +1,13 @@
+# Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
+asHiddenTopFrames = [
+  "ntdll.dll!KiUserExceptionDispatcher",
+  "ntdll.dll!LdrpValidateUserCallTarget",
+  "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
+  "ntdll.dll!LdrpValidateUserCallTargetBitMapRet",
+  "ntdll.dll!LdrpValidateUserCallTargetEH",
+  "ntdll.dll!RtlFailFast2",
+  "ntdll.dll!RtlpHandleInvalidUserCallTarget",
+];
 # Source: winnt.h (codemachine.com/downloads/win81/winnt.h)
 # I couldn't find much information on most of these exceptions, so this may be incorrect or at least incomplete.
 dsFailFastErrorCodes = {
@@ -27,7 +37,8 @@ dsFailFastErrorCodes = {
   26: ("ExtCall",       "FAST_FAIL_UNSAFE_EXTENSION_CALL",                            "Potentially exploitable security issue"),
 };
 
-def cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCrashInfo, oException, oStack):
+def cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCrashInfo):
+  oException = oErrorReport.oException;
   # Parameter[0] = fail fast code
   assert len(oException.auParameters) == 1, \
       "Unexpected number of fail fast exception parameters (%d vs 1)" % len(oException.auParameters);
@@ -35,11 +46,12 @@ def cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCr
   sFailFastCodeId, sFailFastCodeDescription, sSecurityImpact = dsFailFastErrorCodes.get( \
       uFailFastCode, ("Unknown", "unknown code", "May be a security issue"));
   
-  oErrorReport.sExceptionTypeId += ":%s" % sFailFastCodeId;
+  oErrorReport.sErrorTypeId += ":%s" % sFailFastCodeId;
   if sFailFastCodeDescription.startswith("FAIL_FAST_"):
-    oErrorReport.sExceptionDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
+    oErrorReport.sErrorDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
         (oException.uCode, uFailFastCode, sFailFastCodeDefinition);
   else:
-    oErrorReport.sExceptionDescription = sFailFastCodeDescription;
+    oErrorReport.sErrorDescription = sFailFastCodeDescription;
   oErrorReport.sSecurityImpact = sSecurityImpact;
-  return oException;
+  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oErrorReport;

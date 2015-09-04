@@ -17,7 +17,7 @@ class cStackFrame(object):
       else:
         oSelf.sAddress = oSelf.oFunction.sName;
       oSelf.sSimplifiedAddress = oSelf.oFunction.sSimplifiedName;
-      if uFunctionOffset in xrange(dxCrashInfoConfig.get("uMaxFunctionOffset", 0xFFF)):
+      if uFunctionOffset in xrange(dxCrashInfoConfig["uMaxFunctionOffset"]):
         oSelf.sIdAddress = oSelf.oFunction.sName;
       else:
         # The offset is negative or too large: this is the closest symbol, but probably not the correct symbol.
