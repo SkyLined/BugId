@@ -2,23 +2,37 @@ import re;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 # Hide some functions at the top of the stack that are not relevant to the error:
-asHiddenTopFrames = {
+asHiddenTopFrames = [
   "0x0", # AVE:NULL
-};
+  "msvcrt.dll!memcpy",
+];
 # Some access violations may not be an error:
-dtxErrorTranslations = {
-  # corpol.dll can test if DEP is enabled by storing a RET instruction in RW memory and calling it. This causes an
-  # access violation if DEP is enabled, which is caught and handled. Therefore this exception should be ignored:
-  None: (
-    None,
-    None,
-    [
+ddtxErrorTranslations = {
+  "AVE:Arbitrary": {
+    # corpol.dll can test if DEP is enabled by storing a RET instruction in RW memory and calling it. This causes an
+    # access violation if DEP is enabled, which is caught and handled. Therefore this exception should be ignored:
+    None: (
+      None,
+      None,
       [
-        "(unknown)", # The location where the RET instruction is stored is not inside a module and has no symbol.
-        "corpol.dll!IsNxON",
+        [
+          "(unknown)", # The location where the RET instruction is stored is not inside a module and has no symbol.
+          "corpol.dll!IsNxON",
+        ],
       ],
-    ],
-  ),
+    ),
+  },
+  "AVW:NULL": {
+    "OOM": (
+      "The process caused an access violation by writing to NULL to indicate it was unable to allocate enough memory",
+      None,
+      [
+        [
+          "chrome_child.dll!WTF::partitionOutOfMemory"
+        ],
+      ],
+    ),
+  },
 };
 dsId_uAddress = {     # Short             Pointer description                                   Security impact
           0x00000000: ('NULL',            "a NULL ptr",                                         None),
@@ -157,4 +171,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
   oErrorReport.sErrorDescription = sErrorDescription;
   oErrorReport.sSecurityImpact = sSecurityImpact;
   oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport.foTranslateError(dtxErrorTranslations);
+  dtxErrorTranslations = ddtxErrorTranslations[oErrorReport.sErrorTypeId];
+  if dtxErrorTranslations:
+    oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
+  return oErrorReport;

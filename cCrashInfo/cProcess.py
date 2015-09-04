@@ -6,14 +6,14 @@ class cProcess(object):
     oProcess.oCrashInfo = oCrashInfo;
     oProcess.uProcessId = uProcessId;
     oProcess.sBinaryName = sBinaryName;
-    oProcess._doModules_sCdbId = None;
+    oProcess._doModules_by_sCdbId = None;
   
   def __str__(oProcess):
     return 'Process(%s #%d)' % (oProcess.sBinaryName, oProcess.uProcessId);
   
-  def foGetModule(oProcess, sCdbModuleId):
-    if oProcess._doModules_sCdbId is None:
-      oProcess._doModules_sCdbId = {};
+  def fdoGetModules_by_sCdbId(oProcess):
+    if oProcess._doModules_by_sCdbId is None:
+      oProcess._doModules_by_sCdbId = {};
       # Gather start and end address and binary name information for loaded modules.
       asModules = oProcess.oCrashInfo._fasSendCommandAndReadOutput("lm on");
       if not oProcess.oCrashInfo._bCdbRunning: return None;
@@ -31,8 +31,11 @@ class cProcess(object):
         sStartAddress, sEndAddress, sCdbModuleId, sBinaryName, = oMatch.groups();
         uStartAddress = int(sStartAddress.replace("`", ""), 16);
         uEndAddress = int(sEndAddress.replace("`", ""), 16);
-        oProcess._doModules_sCdbId[sCdbModuleId] = cModule(oProcess, sCdbModuleId, sBinaryName, uStartAddress, uEndAddress);
-    return oProcess._doModules_sCdbId[sCdbModuleId];
+        oProcess._doModules_by_sCdbId[sCdbModuleId] = cModule(oProcess, sCdbModuleId, sBinaryName, uStartAddress, uEndAddress);
+    return oProcess._doModules_by_sCdbId;
+  
+  def foGetModule(oProcess, sCdbModuleId):
+    return oProcess.fdoGetModules_by_sCdbId()[sCdbModuleId];
   
   @classmethod
   def ftxGetCurrentProcessIdAndBinaryName(cProcess, oCrashInfo):

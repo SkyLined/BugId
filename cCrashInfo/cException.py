@@ -6,10 +6,11 @@ from cStowedException import cStowedException;
 from NTSTATUS import *;
 
 class cException(object):
-  def __init__(oSelf, oProcess, uCode, sCodeDescription):
+  def __init__(oSelf, oProcess, uCode, sCodeDescription, _asExceptionRecord):
     oSelf.oProcess = oProcess;
     oSelf.uCode = uCode;
     oSelf.sCodeDescription = sCodeDescription;
+    oSelf._asExceptionRecord = _asExceptionRecord; # This is here merely to be able to debug issues - it is not used.
     oSelf.uAddress = None;
     oSelf.sAddressSymbol = None;
     oSelf.uFlags = None;
@@ -27,8 +28,8 @@ class cException(object):
   
   @classmethod
   def foCreate(cSelf, oCrashInfo, oProcess, uCode, sCodeDescription):
-    oSelf = cSelf(oProcess, uCode, sCodeDescription);
     asExceptionRecord = oCrashInfo._fasSendCommandAndReadOutput(".exr -1");
+    oSelf = cSelf(oProcess, uCode, sCodeDescription, asExceptionRecord);
     if not oCrashInfo._bCdbRunning: return None;
     uParameterCount = None;
     uParameterIndex = None;

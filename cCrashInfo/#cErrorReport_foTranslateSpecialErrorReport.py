@@ -53,8 +53,6 @@ ddtxExceptionTranslation_xExceptionCodeOrTypeId = {
         ], [
           "chrome_child.dll!WTF::ArrayBuffer::create",
         ], [
-          "chrome_child.dll!WTF::partitionOutOfMemory"
-        ], [
           "mozglue.dll!mozalloc_abort",
           "mozglue.dll!mozalloc_handle_oom",
         ], [
