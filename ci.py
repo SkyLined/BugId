@@ -31,9 +31,9 @@ if __name__ == "__main__":
       if asArguments[0].startswith("--pids="):
         auApplicationProcessIds = [int(x) for x in asArguments[0].split("=", 1)[1].split(",")];
       else:
-        sSettingName, sValue = asArguments[0].split("=", 1);
+        sSettingName, sValue = asArguments[0][2:].split("=", 1);
         xValue = json.loads(sValue);
-        asGroupNames = sSettingName[2:].split("."); # last element is not a group name
+        asGroupNames = sSettingName.split("."); # last element is not a group name
         sFullName = ".".join(asGroupNames);
         sSettingName = asGroupNames.pop();          # so pop it.
         dxConfigGroup = dxConfig;
@@ -118,7 +118,6 @@ if __name__ == "__main__":
   oCrashInfo = cCrashInfo(
     asApplicationCommandLine = asApplicationCommandLine,
     auApplicationProcessIds = auApplicationProcessIds,
-    sApplicationISA = "irrelevant",
     asSymbolServerURLs = [],
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,

@@ -3,17 +3,16 @@ import os, re, subprocess, threading, time;
 from cCrashInfo_foCdbRunApplicationAndGetErrorReport import cCrashInfo_foCdbRunApplicationAndGetErrorReport;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
-sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # AMD64 or x86
+sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # "x86" or "AMD64"
 sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
 class cCrashInfo(object):
-  def __init__(oSelf, asApplicationCommandLine, auApplicationProcessIds, sApplicationISA, asSymbolServerURLs, \
+  def __init__(oSelf, asApplicationCommandLine, auApplicationProcessIds, asSymbolServerURLs, \
       fApplicationRunningCallback, fExceptionDetectedCallback, fFinishedCallback, fInternalExceptionCallback):
     oSelf._fApplicationRunningCallback = fApplicationRunningCallback;
     oSelf._fExceptionDetectedCallback = fExceptionDetectedCallback;
     oSelf._fFinishedCallback = fFinishedCallback;
     oSelf._fInternalExceptionCallback = fInternalExceptionCallback;
-    oSelf._sApplicationISA = sApplicationISA;
     uSymbolOptions = sum([
       0x00000001, # SYMOPT_CASE_INSENSITIVE
       0x00000002, # SYMOPT_UNDNAME

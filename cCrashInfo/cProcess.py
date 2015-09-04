@@ -1,5 +1,6 @@
 import os, re;
 from cModule import cModule;
+from cCrashInfo_fsGetCurrentProcessISA import cCrashInfo_fsGetCurrentProcessISA;
 
 class cProcess(object):
   def __init__(oSelf, uProcessId, sBinaryName, sISA):
@@ -41,11 +42,8 @@ class cProcess(object):
   def foCreate(cSelf, oCrashInfo):
     (uProcessId, sBinaryName) = cSelf.ftxGetCurrentProcessIdAndBinaryName(oCrashInfo);
     # Gather instruction set architecture for current process.
-    asEffmach = oCrashInfo._fasSendCommandAndReadOutput(".effmach");
+    sISA = cCrashInfo_fsGetCurrentProcessISA(oCrashInfo);
     if not oCrashInfo._bCdbRunning: return None;
-    oEffmachMatch = len(asEffmach) == 1 and re.match(r"^Effective machine: (x\d{2}) .*$", asEffmach[0]);
-    assert oEffmachMatch, "Unexpected .effmach output: %s" % repr(asEffmach);
-    sISA = oEffmachMatch.group(1);
     # Create a cProcess instance
     oSelf = cSelf(uProcessId, sBinaryName, sISA);
     # Gather start and end address and binary name information for loaded modules.
