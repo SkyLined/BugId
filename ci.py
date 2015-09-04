@@ -43,10 +43,9 @@ if __name__ == "__main__":
           assert sGroupName in dxConfigGroup, \
               "Unknown config group %s in setting name %s." % (repr(".".join(asHandledGroupNames)), repr(sFullName));
           dxConfigGroup = dxConfigGroup.get(sGroupName, {});
-          asHandledGroupNames.append(sGroupName);
         assert sSettingName in dxConfigGroup, \
             "Unknown setting name %s%s." % (sSettingName, \
-                len(asHandledGroupNames) > 0 and " in config group %s" % repr(".".join(asHandledGroupNames)) or "");
+                len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
         if dxConfigGroup[sSettingName] != xValue:
           print "* Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
           dxConfigGroup[sSettingName] = xValue;

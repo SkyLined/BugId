@@ -38,7 +38,8 @@ class cProcess(object):
     return (uProcessId, sBinaryName);
   
   @classmethod
-  def foCreate(cSelf, oCrashInfo, uProcessId, sBinaryName):
+  def foCreate(cSelf, oCrashInfo):
+    (uProcessId, sBinaryName) = cSelf.ftxGetCurrentProcessIdAndBinaryName(oCrashInfo);
     # Gather instruction set architecture for current process.
     asEffmach = oCrashInfo._fasSendCommandAndReadOutput(".effmach");
     if not oCrashInfo._bCdbRunning: return None;

@@ -3,28 +3,28 @@ from dxCrashInfoConfig import dxCrashInfoConfig;
 
 dsId_uAddress = {     # Short             Pointer description                                   Security impact
           0x00000000: ('NULL',            "a NULL ptr",                                         None),
-          0XBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
-          0XBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0XBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0XCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0XCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0XC0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0XC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0XCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0XCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0XD0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0XD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0XDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-  0XDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-          0XF0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-  0XF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-          0XFDFDFDFD: ('Canary',          "a pointer read from an out-of-bounds memory canary", "Potentially exploitable security issue"),
-  0XF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-          0XF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-  0XF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-          0XF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-  0XFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-          0XFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+          0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
+          0xBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+  0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+          0xCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+  0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+          0xC0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+  0xC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+          0xCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+  0xCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+          0xD0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+  0xD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+          0xDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+  0xDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+          0xF0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+  0xF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+          0xFDFDFDFD: ('Canary',          "a pointer read from an out-of-bounds memory canary", "Potentially exploitable security issue"),
+  0xF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+          0xF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+  0xF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+          0xF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+  0xFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+          0xFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
 };
 
 def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
@@ -34,7 +34,7 @@ def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
     or dsFunctionName_sSpecialTypeId.get(oFrame.sSimplifiedAddress)
   );
 
-def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oException):
+def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashInfo, oException, oStack):
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
   # Parameter[1] = address
   assert len(oException.auParameters) == 2, \
@@ -46,6 +46,8 @@ def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashI
   uAddress = oException.auParameters[1];
   uMaxAddressOffset = dxCrashInfoConfig.get("uMaxAddressOffset", 0xFFF);
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dsId_uAddress.items():
+    sExceptionDescription = "Access violation while %s memory at 0x%X using %s" % \
+        (sViolationTypeDescription, uAddress, sAddressDescription);
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
       break;
@@ -72,23 +74,66 @@ def cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION(oErrorReport, oCrashI
     # |    77cf5d2c ntdll!RtlpFreeHeapInternal+0x0000027e
     # |    77c90a3c ntdll!RtlFreeHeap+0x0000002c
     # <snip> no 0-day information for you!
-    if (
-      len(asPageHeapReport) >= 3 and \
-      re.match(r"^\s+address [0-9`a-f]+ found in\s*$", asPageHeapReport[0]) and \
-      re.match(r"^\s+\w+ @ [0-9`a-f]+\s*$", asPageHeapReport[1]) and \
-      re.match(r"^\s+in free\-ed allocation \(\s+\w+:\s+VirtAddr\s+VirtSize\)\s*$", asPageHeapReport[2])
-    ):
-      # Page heap tells us the memory was freed:
-      sAddressId = "Free";
-      sAddressDescription = "a pointer to freed memory";
+    # |    address 07fd1000 found in
+    # |    _DPH_HEAP_ROOT @ 4fd1000
+    # |    in busy allocation (  DPH_HEAP_BLOCK:         UserAddr         UserSize -         VirtAddr         VirtSize)
+    # |                                 7f51d9c:          7fd0fc0               40 -          7fd0000             2000
+    # |    6c469abc verifier!AVrfDebugPageHeapAllocate+0x0000023c
+    # <snip> no 0-day information for you!
+    if len(asPageHeapReport) >= 4:
+      assert re.match(r"^\s+address [0-9`a-f]+ found in\s*$", asPageHeapReport[0]), \
+          "Unrecognized page heap report first line:\r\n%s" % "\r\n".join(asPageHeapReport);
+      assert re.match(r"^\s+\w+ @ [0-9`a-f]+\s*$", asPageHeapReport[1]), \
+          "Unrecognized page heap report second line:\r\n%s" % "\r\n".join(asPageHeapReport);
+      oBlockTypeMatch = re.match(                       # line #3
+          r"^\s+in (free-ed|busy) allocation \("        # space "in" space ("free-ed" | "busy") space  "allocation ("
+          r"\s*\w+:"                                    #   [space] DPH_HEAP_BLOCK ":"
+          r"(?:\s+UserAddr\s+UserSize\s+\-)?"           #   optional{ space "UserAddr" space "UserSize" space "-" }
+          r"\s+VirtAddr\s+VirtSize"                     #   space "VirtAddr" space "VirtSize"
+          r"\)\s*$",                                    # ")" [space]
+          asPageHeapReport[2]);
+      assert oBlockTypeMatch, \
+          "Unrecognized page heap report third line:\r\n%s" % "\r\n".join(asPageHeapReport);
+      oBlockAdressAndSizeMatch = re.match(              # line #4
+          r"^\s+[0-9`a-f]+:"                            # space heap_header_address ":"
+          r"(?:\s+([0-9`a-f]+)\s+([0-9`a-f]+)\s+\-)?"   # optional{ space (heap_block_address) space (heap_block_size) space "-" }
+          r"\s+[0-9`a-f]+\s+[0-9`a-f]+"                 # space heap_pages_address space heap_pages_size
+          r"\s*$",                                      # [space]
+          asPageHeapReport[3]);
+      assert oBlockAdressAndSizeMatch, \
+          "Unrecognized page heap report fourth line:\r\n%s" % "\r\n".join(asPageHeapReport);
+      sBlockType = oBlockTypeMatch.group(1);
+      sBlockAddress, sBlockSize = oBlockAdressAndSizeMatch.groups();
+      if sBlockType == "free-ed":
+        # Page heap tells us the memory was freed:
+        sAddressId = "Free";
+        sExceptionDescription = "Access violation while %s freed memory at 0x%X" % \
+            (sViolationTypeDescription, uAddress);
+      elif sBlockType == "busy":
+        # This can only happen if the read was beyond the end of the heap block:
+        uBlockAddress = int(sBlockAddress.replace("`", ""), 16);
+        uBlockSize = int(sBlockSize.replace("`", ""), 16);
+        uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
+        sAddressId = "OOB";
+        bBlockAlignsWithEndOfPage = (uBlockAddress + uBlockSize) & 0xFFF == 0;
+        bReadAlignsWithEndOfPage = uAddress & 0xFFF == 0;
+        if not bReadAlignsWithEndOfPage and bBlockAlignsWithEndOfPage:
+          # The block ends at a page boundary, but the read was not at offset 0 in the next page. It is assumed that
+          # this means this is not a simple sequential buffer read/write overflowing, but that a bad index/offset into
+          # an object is used. It is therefore assumed the object has the same size each time this issue is reproduced
+          # and that the offset will not change, so this information is added to the address id.
+          sAddressId += "[0x%X]+0x%X" % (uBlockSize, uOffsetPastEndOfBlock);
+        sOffset = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
+        sExceptionDescription = "Access violation while %s memory at 0x%X; " \
+            "%s a %d/0x%X byte memory block at 0x%X" % \
+            (sViolationTypeDescription, uAddress, sOffset, uBlockSize, uBlockSize, uBlockAddress);
+      oErrorReport.atsAdditionalInformation.append(("Page heap report for address 0x%X:" % uAddress, asPageHeapReport));
     else:
-      sAddressId = "Arbitrary";
-      sAddressDescription = "an invalid pointer";
-    oErrorReport.atsAdditionalInformation.append(("Page heap report for address 0x%X:" % uAddress, asPageHeapReport));
+      sExceptionDescription = "Access violation while %s memory at 0x%X" % (sViolationTypeDescription, uAddress);
+    # No matter what, this is potentially exploitable.
     sSecurityImpact = "Potentially exploitable security issue";
   sTypeId = "%s%s:%s" % (oErrorReport.sExceptionTypeId, sViolationTypeId, sAddressId);
   oErrorReport.sExceptionTypeId = sTypeId;
-  oErrorReport.sExceptionDescription = "Access violation while %s memory at 0x%X using %s" % \
-      (sViolationTypeDescription, uAddress, sAddressDescription);
+  oErrorReport.sExceptionDescription = sExceptionDescription;
   oErrorReport.sSecurityImpact = sSecurityImpact;
   return oException;

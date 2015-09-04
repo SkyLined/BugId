@@ -8,6 +8,7 @@ class cStack(object):
     oSelf.oProcess = oProcess;
     oSelf.aoFrames = [];
     oSelf.bPartialStack = False;
+    oSelf.uHashFramesCount = dxCrashInfoConfig.get("uStackHashFramesCount", 3);
   
   def fHideIrrelevantFrames(oSelf, sExceptionTypeId, uExceptionCode):
     return cStack_fHideIrrelevantFrames(oSelf, sExceptionTypeId, uExceptionCode);

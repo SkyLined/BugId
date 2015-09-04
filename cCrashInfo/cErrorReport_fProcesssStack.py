@@ -1,13 +1,10 @@
 import hashlib;
 from dxCrashInfoConfig import dxCrashInfoConfig;
+from NTSTATUS import *;
 from mHTML import *;
 
 def cErrorReport_fProcesssStack(oErrorReport, oCrashInfo, oStack, oException):
   # Find out which frame should be the "main" frame and get stack id.
-  # * Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call
-  #   themselves. If possible, this is detected, and the alphabetically first functions is chosen as the main function
-  #   The stack hash is created using only the looping functions.
-  #   ^^^^ THIS IS NOT YET IMPLEMENTED ^^^
   oTopmostRelevantFrame = None;          # topmost relevant frame
   oTopmostRelevantFunctionFrame = None;  # topmost relevant frame that has a function symbol
   oTopmostRelevantModuleFrame = None;    # topmost relevant frame that has no function symbol but a module
@@ -25,7 +22,7 @@ def cErrorReport_fProcesssStack(oErrorReport, oCrashInfo, oStack, oException):
       if not oFrame.oFunction:
         sHTMLAddress = "<i>%s</i>" % sHTMLAddress;
       # Hash frame address for id and output frame to html
-      if uFramesHashed == dxCrashInfoConfig.get("uStackHashFramesCount", 3):
+      if uFramesHashed == oStack.uHashFramesCount:
         # no more hashing is needed: just output as is:
         asHTMLStack.append("%s<br/>" % sHTMLAddress);
       elif oFrame.sIdAddress:

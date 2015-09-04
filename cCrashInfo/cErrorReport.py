@@ -2,6 +2,7 @@ from NTSTATUS import *;
 from cErrorReport_foHandleException_CppException import cErrorReport_foHandleException_CppException;
 from cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION import cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION;
 from cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN import cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN;
+from cErrorReport_foHandleException_STATUS_STACK_OVERFLOW import cErrorReport_foHandleException_STATUS_STACK_OVERFLOW;
 from cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION import cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION;
 from cErrorReport_foHandleSpecialCases import cErrorReport_foHandleSpecialCases;
 from cErrorReport_fProcesssStack import cErrorReport_fProcesssStack;
@@ -11,6 +12,7 @@ dfoSpecialErrorReport_uExceptionCode = {
   STATUS_ACCESS_VIOLATION: cErrorReport_foHandleException_STATUS_ACCESS_VIOLATION,
   STATUS_STACK_BUFFER_OVERRUN: cErrorReport_foHandleException_STATUS_STACK_BUFFER_OVERRUN,
   STATUS_STOWED_EXCEPTION: cErrorReport_foHandleException_STATUS_STOWED_EXCEPTION,
+  STATUS_STACK_OVERFLOW: cErrorReport_foHandleException_STATUS_STACK_OVERFLOW,
 };
 
 class cErrorReport(object):
@@ -76,14 +78,15 @@ class cErrorReport(object):
     # The first two lines can be skipped.
     oSelf.atsAdditionalInformation.append(("%s version information" % oException.oProcess.sBinaryName, asBinaryVersionOutput[2:]));
     
-    foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);
-    if foSpecialErrorReport:
-      oException = foSpecialErrorReport(oSelf, oCrashInfo, oException);
-      if not oCrashInfo._bCdbRunning: return None;
-    
     # Get the stack
     oStack = oException.foGetStack(oCrashInfo);
     if not oCrashInfo._bCdbRunning: return None;
+    # Update the exception in specific cases:
+    foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);
+    if foSpecialErrorReport:
+      oException = foSpecialErrorReport(oSelf, oCrashInfo, oException, oStack);
+      if not oCrashInfo._bCdbRunning: return None;
+    
     # Based on the exception and stack, potentially translate the exception details (eg. Firefox triggers a write
     # access violation at NULL in xul.dll!js::CrashAtUnhandlableOOM when an OOM is detected; this should be reported
     # as OOM and not AVR@NULL. MSIE 8 tests is DEP is enabled by attempting to execute RW memory, this should not be

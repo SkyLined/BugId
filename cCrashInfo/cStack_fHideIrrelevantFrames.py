@@ -15,6 +15,9 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
   STATUS_ACCESS_VIOLATION: [
     "chrome_child.dll!memcpy",
   ],
+  "AVE:NULL": [
+    "0x0",
+  ],
   STATUS_FAIL_FAST_EXCEPTION: [
     "EDGEHTML.dll!Abandonment::InduceAbandonment",
   ],
@@ -34,13 +37,22 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "MSVCR110.dll!CxxThrowException",
     "MSVCR110.dll!_CxxThrowException",
   ],
-  "Breakpoint": [
+  STATUS_BREAKPOINT: [
     "kernel32.dll!DebugBreak",
     "ntdll.dll!DbgBreakPoint",
+    "EDGEHTML.dll!Abandonment::InduceAbandonment",
   ],
-  "FatalError": [
-    "chrome_child.dll!blink::reportFatalErrorInMainThread",
-    "chrome_child.dll!v8::Utils::ReportApiFailure",
+  "HeapCorrupt": [
+    "chrome_child.dll!_aligned_free",
+    "chrome_child.dll!`anonymous namespace'::win_heap_free",
+    "kernel32.dll!HeapFree",
+    "ntdll.dll!RtlDebugFreeHeap",
+    "ntdll.dll!RtlFreeHeap",
+    "ntdll.dll!RtlpFreeHeap",
+    "verifier.dll!AVrfDebugPageHeapFree",
+    "verifier.dll!AVrfpDphCheckPageHeapBlock",
+    "verifier.dll!AVrfpDphFindBusyMemory",
+    "verifier.dll!AVrfpDphFindBusyMemoryAndRemoveFromBusyList",
   ],
   "OOM": [
     "chrome.dll!`anonymous namespace'::call_new_handler",
@@ -138,6 +150,7 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "chrome_child.dll!WTF::VectorBuffer<...>::allocateExpandedBuffer",
     "chrome_child.dll!WTF::VectorBufferBase<...>::allocateBuffer",
     "chrome_child.dll!WTF::VectorBufferBase<...>::allocateExpandedBuffer",
+    "EDGEHTML.dll!Abandonment::OutOfMemory",
     "EDGEHTML.dll!CAttrArray::Set",
     "EDGEHTML.dll!CBuffer::GrowBuffer",
     "EDGEHTML.dll!CHtPvPvBaseT<...>::Grow",
@@ -179,9 +192,6 @@ dasIrrelevantTopFrameFunctions_xExceptionCodeOrTypeId = {
     "xul.dll!std::basic_string<...>::assign",
     "xul.dll!std::vector<...>::_Reallocate",
     "xul.dll!std::vector<...>::_Reserve",
-  ],
-  "AVE:NULL": [
-    "0x0",
   ],
 };
 

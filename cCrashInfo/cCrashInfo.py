@@ -1,6 +1,5 @@
 import os, re, subprocess, threading, time;
 
-from cCrashInfo_fCdbInitialize import cCrashInfo_fCdbInitialize;
 from cCrashInfo_foCdbRunApplicationAndGetErrorReport import cCrashInfo_foCdbRunApplicationAndGetErrorReport;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
@@ -58,6 +57,7 @@ class cCrashInfo(object):
     if dxCrashInfoConfig.get("bOutputCommandLine", False):
       print "* Starting %s" % " ".join(asCommandLine);
     oSelf.asCdbIO = [];
+    oSelf._asCdbStdErrIO = [];
     oSelf._oErrorReport = None;
     oSelf._uLastProcessId = None;
     oSelf._oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine), stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
@@ -66,6 +66,9 @@ class cCrashInfo(object):
     # Create a thread that interacts with the debugger to debug the application
     oSelf._oCdbDebuggerThread = threading.Thread(target = oSelf._fCdbDebuggerThread);
     oSelf._oCdbDebuggerThread.start();
+    # Create a thread that reads stderr output and shows it in the console
+    oSelf._oCdbStdErrThread = threading.Thread(target = oSelf._fCdbStdErrThread);
+    oSelf._oCdbStdErrThread.start();
     # Create a thread that waits for the debugger to terminate and cleans up after it.
     oSelf._oCdbCleanupThread = threading.Thread(target = oSelf._fCdbCleanupThread);
     oSelf._oCdbCleanupThread.start();
@@ -91,9 +94,10 @@ class cCrashInfo(object):
   
   def _fCdbDebuggerThread(oSelf):
     try:
-      cCrashInfo_fCdbInitialize(oSelf);
+      # Read the initial cdb output related to starting/attaching to the first process.
+      asIntialOutput = oSelf._fasReadOutput();
       if not oSelf._bCdbRunning: return;
-      oSelf._oErrorReport = cCrashInfo_foCdbRunApplicationAndGetErrorReport(oSelf);
+      oSelf._oErrorReport = cCrashInfo_foCdbRunApplicationAndGetErrorReport(oSelf, asIntialOutput);
     except Exception, oException:
       oSelf._fInternalExceptionCallback(oException);
       oSelf._bCdbTerminated = True;
@@ -104,6 +108,8 @@ class cCrashInfo(object):
     try:
       # wait for debugger thread to terminate.
       oSelf._oCdbDebuggerThread.join();
+      # wait for stderr thread to terminate.
+      oSelf._oCdbStdErrThread.join();
       # wait for debugger to terminate.
       oSelf._oCdbProcess.wait();
       # wait for any processes that were being debugged to terminate
@@ -133,6 +139,28 @@ class cCrashInfo(object):
       oSelf._fInternalExceptionCallback(oException);
       raise;
   
+  def _fCdbStdErrThread(oSelf):
+    sLine = "";
+    while 1:
+      sChar = oSelf._oCdbProcess.stderr.read(1);
+      if sChar == "\r":
+        pass; # ignored.
+      elif sChar in ("\n", ""):
+        if sChar == "\n" or sLine:
+          oSelf._asCdbStdErrIO.append(sLine);
+          if dxCrashInfoConfig.get("bOutputErrIO", False):
+            print "cdb:stderr>%s" % repr(sLine)[1:-1];
+        if sChar == "":
+          break;
+        sLine = "";
+      else:
+        sLine += sChar;
+    # Cdb stdout was closed: the process is terminating.
+    assert oSelf._bCdbTerminated or len(oSelf._auProcessIds) == 0, \
+        "Cdb terminated unexpectedly! Output:\r\n%s" % "\r\n".join(oSelf.asCdbStdErrIO);
+    oSelf._bCdbRunning = False;
+    return None;
+    
   def _fasReadOutput(oSelf):
     # Read cdb output until an input prompt is detected, or cdb terminates.
     # This is a bit more complex than one might expect because I attempted to make it work with noizy symbol loading.
@@ -147,10 +175,13 @@ class cCrashInfo(object):
       sChar = oSelf._oCdbProcess.stdout.read(1);
       if sChar == "\r":
         pass; # ignored.
-      elif sChar in ["\n", ""]:
-        if dxCrashInfoConfig.get("bOutputIO", False) and sChar in ["\n", ""]:
-          print "cdb>%s" % repr(sLine)[1:-1];
-        oSelf.asCdbIO.append(sLine);
+      elif sChar in ("\n", ""):
+        if sChar == "\n" or sLine:
+          oSelf.asCdbIO.append(sLine);
+          if dxCrashInfoConfig.get("bOutputIO", False):
+            print "cdb>%s" % repr(sLine)[1:-1];
+        if sChar == "":
+          break;
         sLine = "";
         if sCleanedLine:
           oLineEndsWithWarning = re.match(r"^(.*)\*\*\* WARNING: Unable to verify checksum for .*$", sCleanedLine);
@@ -166,24 +197,30 @@ class cCrashInfo(object):
             oSymbolLoaderMessageMatch = re.match(r"^(?:%s)$" % "|".join([
               r"SYMSRV: .+",
               r"\s*\x08+\s+(?:copied\s*|\d+ percentSYMSRV: .+)",
-              r"DBGHELP: .+?( \- (?:private|public) symbols(?: & lines)?)?\s*",
-              r"\*\*\* ERROR: Module load completed but symbols could not be loaded for .*$",
+              r"DBGHELP: .+?( \- (?:private|public) symbols(?: & lines)?)?\s*", # matched
+              r"\*\*\*.*",
              ]), sCleanedLine);
+            # Sample output:
+            # |SYMSRV:  c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb not found
+            # |DBGHELP: \\server\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb cached to c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
+            # |DBGHELP: chakra - public symbols  
+            # |        c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
+            # |*** ERROR: Module load completed but symbols could not be loaded for C:\Windows\System32\Macromed\Flash\Flash.ocx
+            # |*************************************************************************
+            # |***                                                                   ***
+            # |***                                                                   ***
+            # |***    Either you specified an unqualified symbol, or your debugger   ***
+            # |***    doesn't have full symbol information.  Unqualified symbol      ***
+            # |***    resolution is turned off by default. Please either specify a   ***
+            # |***    fully qualified symbol module!symbolname, or enable resolution ***
             if oSymbolLoaderMessageMatch:
-              # Sample output:
-              # |SYMSRV:  c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb not found
-              # |DBGHELP: \\server\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb cached to c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
-              # |DBGHELP: chakra - public symbols  
-              # |        c:\symbols\chakra.pdb\5249D6A2684341B79F239B9E6150169C1\chakra.pdb
-              # |*** ERROR: Module load completed but symbols could not be loaded for C:\Windows\System32\Macromed\Flash\Flash.ocx
+              # The "DBGHELP:..." line may indicate that another symbol loader message line is to follow:
               bNextLineIsSymbolLoaderMessage = oSymbolLoaderMessageMatch.group(1) is not None;
             elif bNextLineIsSymbolLoaderMessage:
               bNextLineIsSymbolLoaderMessage = False;
             else:
               asCleanedLines.append(sCleanedLine);
             sCleanedLine = "";
-        if sChar == "":
-          break;
       else:
         sLine += sChar;
         sCleanedLine += sChar;

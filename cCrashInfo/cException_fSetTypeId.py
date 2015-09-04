@@ -1,8 +1,8 @@
 from NTSTATUS import *;
 
 dsId_uCode = {
-  STATUS_WX86_SINGLE_STEP:          "WoW64SingleStep",
-  STATUS_WX86_BREAKPOINT:           "WoW64Breakpoint",
+  STATUS_WX86_SINGLE_STEP:          "SingleStep",
+  STATUS_WX86_BREAKPOINT:           "Breakpoint",
   0x40080201:                       "WRTOriginate",
   0x406D1388:                       "ThreadName",
   STATUS_GUARD_PAGE_VIOLATION:      "GuardPage",

@@ -1,6 +1,6 @@
 import re;
 
-def cErrorReport_foHandleException_CppException(oErrorReport, oCrashInfo, oException):
+def cErrorReport_foHandleException_CppException(oErrorReport, oCrashInfo, oException, oStack):
   assert len(oException.auParameters) >= 3, \
       "Expected a C++ Exception to have at least 3 parameters, got %d" % len(oException.auParameters);
   
