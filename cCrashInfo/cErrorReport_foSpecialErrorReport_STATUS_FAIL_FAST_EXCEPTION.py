@@ -31,6 +31,7 @@ dtxErrorTranslations = {
 
 def cErrorReport_foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION(oErrorReport, oCrashInfo):
   oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  if oErrorReport:
+    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;
 

@@ -202,5 +202,6 @@ dtxErrorTranslations = {
 
 def cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT(oErrorReport, oCrashInfo):
   oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  if oErrorReport:
+    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;

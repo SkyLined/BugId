@@ -42,5 +42,6 @@ def cErrorReport_foSpecialErrorReport_CppException(oErrorReport, oCrashInfo):
     oErrorReport.sErrorTypeId += ":%s" % sExceptionClassName;
     break;
   oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  if oErrorReport:
+    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;
