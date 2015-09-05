@@ -35,7 +35,9 @@ class cProcess(object):
     return oProcess._doModules_by_sCdbId;
   
   def foGetModule(oProcess, sCdbModuleId):
-    return oProcess.fdoGetModules_by_sCdbId()[sCdbModuleId];
+    doModules_by_sCdbId = oProcess.fdoGetModules_by_sCdbId();
+    if not oProcess.oCrashInfo._bCdbRunning: return None;
+    return doModules_by_sCdbId[sCdbModuleId];
   
   @classmethod
   def ftxGetCurrentProcessIdAndBinaryName(cProcess, oCrashInfo):
