@@ -114,6 +114,16 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
     # |                                 7f51d9c:          7fd0fc0               40 -          7fd0000             2000
     # |    6c469abc verifier!AVrfDebugPageHeapAllocate+0x0000023c
     # <snip> no 0-day information for you!
+    # There may be errors, sample output:
+    # |ReadMemory error for address 5b59c3d0
+    # |Use `!address 5b59c3d0' to check validity of the address.
+    asPageHeapReport = [
+      x for x in asPageHeapReport
+      if not re.match(r"^(%s)\s*$" % "|".join([
+        "ReadMemory error for address [0-9`a-f]+",
+        "Use `!address [0-9`a-f]+' to check validity of the address.",
+      ]), x)
+    ];
     if len(asPageHeapReport) >= 4:
       assert re.match(r"^\s+address [0-9`a-f]+ found in\s*$", asPageHeapReport[0]), \
           "Unrecognized page heap report first line:\r\n%s" % "\r\n".join(asPageHeapReport);
@@ -170,8 +180,9 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
   oErrorReport.sErrorTypeId = "%s%s:%s" % (oErrorReport.sErrorTypeId, sViolationTypeId, sAddressId);
   oErrorReport.sErrorDescription = sErrorDescription;
   oErrorReport.sSecurityImpact = sSecurityImpact;
-  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  dtxErrorTranslations = ddtxErrorTranslations[oErrorReport.sErrorTypeId];
+  dtxErrorTranslations = ddtxErrorTranslations.get(oErrorReport.sErrorTypeId, None);
   if dtxErrorTranslations:
     oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
+  if oErrorReport:
+    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;

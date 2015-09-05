@@ -41,5 +41,6 @@ def cErrorReport_foSpecialErrorReport_CppException(oErrorReport, oCrashInfo):
     sCdbModuleId, sExceptionClassName = sExceptionObjectSymbol.split("!", 1);
     oErrorReport.sErrorTypeId += ":%s" % sExceptionClassName;
     break;
+  oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
   oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport.foTranslateError(dtxErrorTranslations);
+  return oErrorReport;

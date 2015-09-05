@@ -46,6 +46,7 @@ asHiddenTopFrames = [
   "chrome.dll!std::vector<...>::_Insert_n",
   "chrome.dll!std::vector<...>::_Reallocate",
   "chrome.dll!std::_Wrap_alloc<...>::allocate",
+  "chrome_child.dll!base::debug::BreakDebugger",
   "chrome_child.dll!blink::DOMArrayBuffer::create",
   "chrome_child.dll!blink::DOMTypedArray<...>::create",
   "chrome_child.dll!blink::PurgeableVector::append",
@@ -62,6 +63,7 @@ asHiddenTopFrames = [
   "chrome_child.dll!blink::ContiguousContainerBase::allocateNewBufferForNextAllocation",
   "chrome_child.dll!blink::ContiguousContainerBase::Buffer::Buffer",
   "chrome_child.dll!blink::ContiguousContainerBase::ContiguousContainerBase",
+  "chrome_child.dll!content::`anonymous namespace'::CrashOnMapFailure",
   "chrome_child.dll!v8::internal::Factory::NewRawOneByteString",
   "chrome_child.dll!v8::internal::Factory::NewRawTwoByteString",
   "chrome_child.dll!v8::internal::Factory::NewUninitializedFixedArray",
@@ -199,6 +201,6 @@ dtxErrorTranslations = {
 };
 
 def cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT(oErrorReport, oCrashInfo):
+  oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
   oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport.foTranslateError(dtxErrorTranslations);
-
+  return oErrorReport;
