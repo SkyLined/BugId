@@ -16,7 +16,7 @@ for (sName, xValue) in {
   "uMaxStackFramesCount": 50,   # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
   "asSymbolCachePaths": [],     # Where are symbols cached?
-  "bDebugSymbolLoading": False, # Enable noizy symbol reloading before exception analysis. This will detect, delete and
+  "bDebugSymbolLoading": True,  # Enable noizy symbol reloading before exception analysis. This will detect, delete and
                                 # attempt to reload corrupted pdb files. It impacts performance a bit, but improves
                                 # results if you frequently have symbol loading issues that you do not want to fix
                                 # manually.
