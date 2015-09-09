@@ -131,7 +131,7 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
             bCorruptPDBDeleted = False;
             for sLine in asOutput:
               # If there are any corrupt PDB symbol files, try to delete them.
-              oCorruptPDBMatch = re.match(r"^DBGHELP: (.*?) - E_PDB_CORRUPT$", sLine);
+              oCorruptPDBMatch = re.match(r"^DBGHELP: (.*?) \- E_PDB_CORRUPT\s*$", sLine);
               if oCorruptPDBMatch:
                 sPDBPath = oCorruptPDBMatch.group(1);
                 try:
