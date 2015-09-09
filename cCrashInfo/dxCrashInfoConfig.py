@@ -14,9 +14,12 @@ for (sName, xValue) in {
   "uMaxAddressOffset": 0x1000,  # How far from an address can a pointer be offset and still be considered to point to it?
   "uMaxFunctionOffset": 0xFFF,  # How far from a function symbol can a pointer be offset and still be cosidered to point to it?
   "uMaxStackFramesCount": 50,   # How many stack frames are retreived for analysis?
-  "uStackHashFramesCount": 3,   # How many stack frames are hashed for the crash id?
+  "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
   "asSymbolCachePaths": [],     # Where are symbols cached?
-  "bDebugSymbolLoading": False, # Enable noizy symbol loading in cdb. Warning: will probably break CrashInfo's cdb command output parsing.
+  "bDebugSymbolLoading": False, # Enable noizy symbol reloading before exception analysis. This will detect, delete and
+                                # attempt to reload corrupted pdb files. It impacts performance a bit, but improves
+                                # results if you frequently have symbol loading issues that you do not want to fix
+                                # manually.
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
   "sCdbBinaryPath_AMD64": dsCdbBinaryPath_sISA.get("AMD64"),
 }.items():
