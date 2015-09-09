@@ -1,8 +1,71 @@
+# Some breakpoints may indicate an out-of-memory error, heap corruption, or no error at all:
+dtxErrorTranslations = {
+  "OOM": (
+    "The process triggered a breakpoint to indicate it was unable to allocate enough memory",
+    None,
+    [
+      [     # Chrome
+        "chrome.dll!base::`anonymous namespace'::OnNoMemory",
+      ], [
+        "chrome_child.dll!base::`anonymous namespace'::OnNoMemory",
+      ], [
+        "chrome_child.dll!base::debug::BreakDebugger",
+        "chrome_child.dll!logging::LogMessage::~LogMessage",
+        "chrome_child.dll!base::`anonymous namespace'::OnNoMemory",
+      ], [
+        "chrome_child.dll!blink::reportFatalErrorInMainThread",
+        "chrome_child.dll!v8::Utils::ReportApiFailure",
+        "chrome_child.dll!v8::Utils::ApiCheck",
+        "chrome_child.dll!v8::internal::V8::FatalProcessOutOfMemory",
+      ], [  # Edge
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::OutOfMemory",
+      ], [  # Firefox
+        "mozglue.dll!mozalloc_abort",
+        "mozglue.dll!mozalloc_handle_oom",
+      ], [
+        "xul.dll!js::CrashAtUnhandlableOOM",
+      ], [
+        "xul.dll!NS_ABORT_OOM",
+      ], [  # MSIE
+        "KERNELBASE.dll!DebugBreak",
+        "script9.dll!ReportFatalException",
+        "jscript9.dll!JavascriptDispatch_OOM_fatal_error",
+      ],
+    ],
+  ),
+  "HeapCorrupt": (
+    "A corrupted heap block was detected",
+    "This is probably an exploitable security issue",
+    [
+      [
+        "verifier.dll!VerifierStopMessage",
+        "verifier.dll!AVrfpDphReportCorruptedBlock",
+      ],
+    ],
+  ),
+  # When a 32-bit application is running on a 64-bit OS, any new processes will generate a STATUS_BREAKPOINT and
+  # a status STATUS_WX86_BREAKPOINT exception. The former is recognized as the initial process breakpoint, and the
+  # new process is registered. The later is not, but it can be recognized by its stack and should be ignored:
+  None: (
+    None,
+    None,
+    [
+      [
+        "ntdll.dll!LdrpDoDebuggerBreak",
+        "ntdll.dll!LdrpInitializeProcess",
+      ],
+    ],
+  ),
+};
+
 # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
 asHiddenTopFrames = [
   "kernel32.dll!DebugBreak",
   "ntdll.dll!DbgBreakPoint",
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
+  "chrome_child.dll!base::debug::BreakDebugger",
   # Special "HeapCorrupt" cases:
   "chrome_child.dll!_aligned_free",
   "chrome_child.dll!`anonymous namespace'::win_heap_free",
@@ -46,7 +109,6 @@ asHiddenTopFrames = [
   "chrome.dll!std::vector<...>::_Insert_n",
   "chrome.dll!std::vector<...>::_Reallocate",
   "chrome.dll!std::_Wrap_alloc<...>::allocate",
-  "chrome_child.dll!base::debug::BreakDebugger",
   "chrome_child.dll!blink::DOMArrayBuffer::create",
   "chrome_child.dll!blink::DOMTypedArray<...>::create",
   "chrome_child.dll!blink::PurgeableVector::append",
@@ -142,64 +204,6 @@ asHiddenTopFrames = [
   "xul.dll!std::vector<...>::_Reallocate",
   "xul.dll!std::vector<...>::_Reserve",
 ];
-# Some breakpoints may indicate an out-of-memory error, heap corruption, or no error at all:
-dtxErrorTranslations = {
-  "OOM": (
-    "The process triggered a breakpoint to indicate it was unable to allocate enough memory",
-    None,
-    [
-      [     # Chrome
-        "chrome.dll!base::`anonymous namespace'::OnNoMemory",
-      ], [
-        "chrome_child.dll!base::`anonymous namespace'::OnNoMemory",
-      ], [
-        "chrome_child.dll!blink::reportFatalErrorInMainThread",
-        "chrome_child.dll!v8::Utils::ReportApiFailure",
-        "chrome_child.dll!v8::Utils::ApiCheck",
-        "chrome_child.dll!v8::internal::V8::FatalProcessOutOfMemory",
-      ], [  # Edge
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::OutOfMemory",
-      ], [  # Firefox
-        "mozglue.dll!mozalloc_abort",
-        "mozglue.dll!mozalloc_handle_oom",
-      ], [
-        "xul.dll!js::CrashAtUnhandlableOOM",
-      ], [
-        "xul.dll!NS_ABORT_OOM",
-      ], [  # MSIE
-        "KERNELBASE.dll!DebugBreak",
-        "script9.dll!ReportFatalException",
-        "jscript9.dll!JavascriptDispatch_OOM_fatal_error",
-      ],
-    ],
-  ),
-  "HeapCorrupt": (
-    "A corrupted heap block was detected",
-    "This is probably an exploitable security issue",
-    [
-      [
-        "verifier.dll!VerifierStopMessage",
-        "verifier.dll!AVrfpDphReportCorruptedBlock",
-      ],
-    ],
-  ),
-  # When a 32-bit application is running on a 64-bit OS, any new processes will generate a STATUS_BREAKPOINT and
-  # a status STATUS_WX86_BREAKPOINT exception. The former is recognized as the initial process breakpoint, and the
-  # new process is registered. The later is not, but it can be recognized by its stack and should be ignored:
-  None: (
-    None,
-    None,
-    [
-      [
-        "ntdll.dll!LdrpDoDebuggerBreak",
-        "ntdll.dll!LdrpInitializeProcess",
-      ],
-    ],
-  ),
-};
-
 def cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT(oErrorReport, oCrashInfo):
   oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
   if oErrorReport:

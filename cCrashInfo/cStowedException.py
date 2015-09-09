@@ -17,7 +17,7 @@ class cStowedException(object):
   
   @classmethod
   def foCreate(cSelf, oCrashInfo, oProcess, pAddress):
-    asData = oCrashInfo._fasSendCommandAndReadData("dd /c0xA @@masm(poi(0x%X)) L0xA" % pAddress);
+    asData = oCrashInfo._fasSendCommandAndReadOutput("dd /c0xA @@masm(poi(0x%X)) L0xA" % pAddress);
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600343%28v=vs.85%29.aspx
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600342%28v=vs.85%29.aspx
     #StowedExceptionInformation = {

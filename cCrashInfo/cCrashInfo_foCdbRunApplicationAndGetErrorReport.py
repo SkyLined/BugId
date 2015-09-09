@@ -11,7 +11,6 @@ daxExceptionHandling = {
     # epr must be enabled. Additionally, if epr is disabled the debugger will silently exit when the application
     # terminates. To distinguish this from other unexpected terminations of the debugger, epr must also be enabled.
     "cpr", "ibp", "epr",
-    "wkd", # Wake debugger
     "aph", # Application has stopped responding
     STATUS_ACCESS_VIOLATION,
     STATUS_ARRAY_BOUNDS_EXCEEDED,
@@ -24,6 +23,7 @@ daxExceptionHandling = {
     STATUS_PRIVILEGED_INSTRUCTION,
     STATUS_SINGLE_STEP,
     STATUS_STACK_BUFFER_OVERRUN,
+    STATUS_WAKE_SYSTEM_DEBUGGER,
     STATUS_WX86_BREAKPOINT,
     STATUS_WX86_SINGLE_STEP,
   ],
@@ -111,7 +111,7 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
         break; # The last process was terminated.
     else:
       uExceptionCode = int(sExceptionCode, 16);
-      if uExceptionCode == STATUS_BREAKPOINT and uProcessId not in oCrashInfo._auProcessIds:
+      if uExceptionCode in (STATUS_BREAKPOINT, STATUS_WAKE_SYSTEM_DEBUGGER) and uProcessId not in oCrashInfo._auProcessIds:
         # This is assumed to be the initial breakpoint after starting/attaching to the first process or after a new
         # process was created by the application. This assumption may not be correct, in which case the code needs to
         # be modifed to check the stack to determine if this really is the initial breakpoint. But that comes at a
@@ -120,9 +120,32 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
       else:
         # Report that analysis is starting...
         oCrashInfo._fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
-        # Turn off noizy symbol loading; it can mess up the output of commands, making it unparsable.
-        asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
-        if not oCrashInfo._bCdbRunning: return None;
+        if dxCrashInfoConfig["bDebugSymbolLoading"]:
+          # Temporarily turn on noisy symbol loading
+          asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
+          if not oCrashInfo._bCdbRunning: return None;
+          # Try to reload all modules and their PDB symbol files up to 10 times.
+          for x in xrange(10):
+            asOutput = oCrashInfo._fasSendCommandAndReadOutput(".reload");
+            if not oCrashInfo._bCdbRunning: return None;
+            bCorruptPDBDeleted = False;
+            for sLine in asOutput:
+              # If there are any corrupt PDB symbol files, try to delete them.
+              oCorruptPDBMatch = re.match(r"^DBGHELP: (.*?) - E_PDB_CORRUPT$", sLine);
+              if oCorruptPDBMatch:
+                sPDBPath = oCorruptPDBMatch.group(1);
+                try:
+                  os.remove(sPDBPath);
+                except Exception:
+                  pass;
+                else:
+                  bCorruptPDBDeleted = True;
+            if not bCorruptPDBDeleted:
+              # If no corrupt PDB symbol files were deleted, stop reloading modules.
+              break;
+          # Disable noisy symbol loading again
+          asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
+          if not oCrashInfo._bCdbRunning: return None;
         # Gather relevant information...
         oProcess = cProcess.foCreate(oCrashInfo);
         oException = cException.foCreate(oCrashInfo, oProcess, uExceptionCode, sExceptionDescription);
@@ -133,10 +156,6 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
         # Stop the debugger if there was a fatal error that needs to be reported.
         if oErrorReport is not None:
           break;
-        # Turn noizy symbol loading back on if it was enabled.
-        if dxCrashInfoConfig["bDebugSymbolLoading"]:
-          asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym noizy");
-          if not oCrashInfo._bCdbRunning: return None;
     # If there are more processes to attach to, do so:
     if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
       asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % oCrashInfo._auProcessIdsPendingAttach[0]);
@@ -149,7 +168,7 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
         # attached to all processes. But do so before resuming the threads. Otherwise one or more of the processes can
         # end up having only one thread that has a suspend count of 2 and no amount of resuming will cause the process
         # to run. The reason for this is unknown, but if things are done in the correct order, this problem is avoided.
-        bExceptionHandlersHaveBeenSet = False;
+        bExceptionHandlersHaveBeenSet = True;
         oCrashInfo._fasSendCommandAndReadOutput(sExceptionHandlingCommands);
         if not oCrashInfo._bCdbRunning: return;
       # If the debugger attached to processes, mark that as done and resume threads in all processes.
@@ -159,6 +178,7 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
           oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m;~" % uProcessId);
           if not oCrashInfo._bCdbRunning: return;
     # Run the application
+    oCrashInfo._fApplicationRunningCallback();
     asRunApplicationOutput = oCrashInfo._fasSendCommandAndReadOutput("g");
     if not oCrashInfo._bCdbRunning: return;
     # If cdb is attaching to a process, make sure it worked.

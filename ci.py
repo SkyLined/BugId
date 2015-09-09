@@ -71,12 +71,9 @@ if __name__ == "__main__":
   oFinishedEvent = threading.Event();
   
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
-  def fApplicationRunningHandler(bApplicationIsRunning):
+  def fApplicationRunningHandler():
     global bApplicationIsStarted;
-    if not bApplicationIsRunning:
-      # Paused.
-      print "* The application was paused and an event is being analyzed...";
-    elif not bApplicationIsStarted:
+    if not bApplicationIsStarted:
       # Running for the first time after being started.
       print "* The application was started successfully and is running...";
       bApplicationIsStarted = True;

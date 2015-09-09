@@ -1,6 +1,6 @@
 import re;
 
-def cCrashInfo_fuEvaluateExpression(oCrashInfo, sExpression):
+def cCrashInfo_fiEvaluateExpression(oCrashInfo, sExpression):
   asEvaluateExpressionOutput = oCrashInfo._fasSendCommandAndReadOutput("? %s" % sExpression);
   if not oCrashInfo._bCdbRunning: return;
   oEvaluateExpressionOutputMatch = (
@@ -10,6 +10,6 @@ def cCrashInfo_fuEvaluateExpression(oCrashInfo, sExpression):
   assert oEvaluateExpressionOutputMatch, \
       "Unknown evaluate expression output:\r\n%s" % "\r\n".join(asEvaluateExpressionOutput);
   sValue, sValueHex = oEvaluateExpressionOutputMatch.groups();
-  uValueHex = long(sValueHex.replace("`", ""), 16);
-  return uValueHex;
+  iValue = long(sValue);
+  return iValue;
 

@@ -10,22 +10,17 @@ class cStackFrame(object):
     oSelf.uFunctionOffset = uFunctionOffset;
     oSelf.bIsHidden = False; # Set to true if this frame should be hidden because it is not relevant.
     if oSelf.oFunction:
+      oSelf.sAddress = oSelf.oFunction.sName;
       if oSelf.uFunctionOffset > 0:
-        oSelf.sAddress = "%s + 0x%X" % (oSelf.oFunction.sName, oSelf.uFunctionOffset);
+        oSelf.sAddress += " + 0x%X" % oSelf.uFunctionOffset;
       elif oSelf.uFunctionOffset:
-        oSelf.sAddress = "%s - 0x%X" % (oSelf.oFunction.sName, abs(oSelf.uFunctionOffset));
-      else:
-        oSelf.sAddress = oSelf.oFunction.sName;
+        oSelf.sAddress += " - 0x%X" % abs(oSelf.uFunctionOffset);
       oSelf.sSimplifiedAddress = oSelf.oFunction.sSimplifiedName;
-      if uFunctionOffset in xrange(dxCrashInfoConfig["uMaxFunctionOffset"]):
-        oSelf.sIdAddress = oSelf.oFunction.sName;
-      else:
-        # The offset is negative or too large: this is the closest symbol, but probably not the correct symbol.
-        # This probably means there are not enough symbols to distinguish different functions. The only thing that
-        # can be done to create a unique stack hash for this frame is add the offset. Unfortunately, this offset will
-        # likely be different in a different build of the same application, so the stack hash will be different as well.
-        oSelf.sIdAddress = oSelf.sAddress;
-        oSelf.sAddress += " (this symbol may not be correct)";
+      oSelf.sIdAddress = oSelf.oFunction.sName;
+      if uFunctionOffset not in xrange(dxCrashInfoConfig["uMaxFunctionOffset"]):
+        # The offset is negative or very large: this may not be the correct symbol. If it is, the offset is very likely
+        # to change between builds. The offset should not be part of the id and a warning about the symbol is added.
+        oSelf.sAddress += " (this may not be correct)";
     elif oSelf.oModule:
       oSelf.sAddress = "%s + 0x%X" % (oSelf.oModule.sBinaryName, oSelf.uModuleOffset);
       oSelf.sSimplifiedAddress = "%s+0x%X" % (oSelf.oModule.sBinaryName, oSelf.uModuleOffset);

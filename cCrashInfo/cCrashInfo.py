@@ -29,7 +29,7 @@ class cCrashInfo(object):
       0x00010000, # SYMOPT_AUTO_PUBLICS
 #      0x00020000, # SYMOPT_NO_IMAGE_SEARCH
       0x00080000, # SYMOPT_NO_PROMPTS
-      dxCrashInfoConfig["bDebugSymbolLoading"] and 0x80000000 or 0, # SYMOPT_DEBUG
+#      0x80000000, # SYMOPT_DEBUG
     ]);
     # For historic reasons, the ISA of the OS is used to determine which ISA version of cdb to use. It is not known if
     # this was originally done to avoid problems with x86 cdb debugging x86 applications of AMD64 windows, or if it
@@ -190,6 +190,10 @@ class cCrashInfo(object):
     assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*\^ .*$", asOutput[0]), \
         "There was a problem executing the command %s: %s" % (repr(sCommand), repr(asOutput));
     return asOutput;
+  
+  def fiEvaluateExpression(oSelf, sExpression):
+    from cCrashInfo_fiEvaluateExpression import cCrashInfo_fiEvaluateExpression;
+    return cCrashInfo_fiEvaluateExpression(oSelf, sExpression);
   
   def fuEvaluateExpression(oSelf, sExpression):
     from cCrashInfo_fuEvaluateExpression import cCrashInfo_fuEvaluateExpression;

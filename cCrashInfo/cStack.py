@@ -41,6 +41,7 @@ class cStack(object):
         sSymbol = None;
         uSymbolOffset = None;
       oModule = sCdbModuleId and oStack.oProcess.foGetModule(sCdbModuleId);
+      if not oCrashInfo._bCdbRunning: return None;
       oFunction = oModule and sSymbol and oModule.foGetOrCreateFunction(sSymbol);
       oStack.aoFrames.append(cStackFrame(uNumber, uAddress, oModule, uModuleOffset, oFunction, uSymbolOffset));
     
@@ -110,18 +111,23 @@ class cStack(object):
       ]), sLine):
         oMatch = re.match(r"^\s*%s\s*$" % (
           r"([0-9A-F]+)"               r"\s+" # frame_number whitespace
-          r"(?:[0-9A-F`]+|\(Inline\))" r"\s+" # {stack_address || "(Inline)"} whitespace
-          r"(?:[0-9A-F`]+|\-{8})"      r"\s+" # {ret_address || "--------"} whitespace
-          "(?:"                               # either {
-            r"(0x[0-9A-F`]+)"                 #   ("0x" address)
-          "|"                                 # } or {
-            r"(\w+)"                          #   (cdb_module_id)
-            "(?:"                             #   either {
-              "(\+0x[0-9A-F]+)"               #     ("+0x" offset_in_module)
-            "|"                               #   } or {
-              r"!(.+?)([\+\-]0x[0-9A-F]+)?"   #     "!" (function_name) optional{(["+" || "-"] "0x" offset)}
-            ")"                               #   }
-          ")"                                 # }
+          r"(?:"                                # either {
+            r"[0-9A-F`]+" r"\s+"                #   stack_address whitespace
+            r"[0-9A-F`]+" r"\s+"                #   ret_address whitespace
+          r"|"                                  # } or {
+            r"\(Inline(?: Function)?\)" r"\s+"  #   "(Inline" [" Function"] ")" whitespace
+            r"\-{8}(?:`\-{8})?" r"\s+"          #   "--------" [`--------] whitespace
+          r")"                                  # }
+          r"(?:"                                # either {
+            r"(0x[0-9A-F`]+)"                   #   ("0x" address)
+          r"|"                                  # } or {
+            r"(\w+)"                            #   (cdb_module_id)
+            r"(?:"                              #   either {
+              r"(\+0x[0-9A-F]+)"                #     ("+0x" offset_in_module)
+            r"|"                                #   } or {
+              r"!(.+?)([\+\-]0x[0-9A-F]+)?"     #     "!" (function_name) optional{(["+" || "-"] "0x" offset)}
+            r")"                                #   }
+          r")"                                  # }
         ), sLine, re.I);
         assert oMatch, "Unknown stack output: %s" % repr(sLine);
         (sFrameNumber, sAddress, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
