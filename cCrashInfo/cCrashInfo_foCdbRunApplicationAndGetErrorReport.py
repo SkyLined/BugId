@@ -175,7 +175,7 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
       if bDebuggerIsAttachingToProcesses:
         bDebuggerIsAttachingToProcesses = False;
         for uProcessId in oCrashInfo._auProcessIds:
-          oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m;~" % uProcessId);
+          oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
           if not oCrashInfo._bCdbRunning: return;
     # Run the application
     oCrashInfo._fApplicationRunningCallback();
