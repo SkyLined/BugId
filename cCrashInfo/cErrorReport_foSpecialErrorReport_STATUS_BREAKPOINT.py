@@ -65,6 +65,7 @@ asHiddenTopFrames = [
   "kernel32.dll!DebugBreak",
   "ntdll.dll!DbgBreakPoint",
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
+  "chrome.dll!base::debug::BreakDebugger",
   "chrome_child.dll!base::debug::BreakDebugger",
   # Special "HeapCorrupt" cases:
   "chrome_child.dll!_aligned_free",
