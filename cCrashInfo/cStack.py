@@ -49,8 +49,16 @@ class cStack(object):
   def foCreateFromAddress(cStack, oCrashInfo, oProcess, pAddress, uSize):
     oStack = cStack(oProcess);
     uStackFramesCount = min(dxCrashInfoConfig["uMaxStackFramesCount"], uSize);
+    if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+      # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
+      asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
+      if not oCrashInfo._bCdbRunning: return None;
     asStack = oCrashInfo._fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
     if not oCrashInfo._bCdbRunning: return None;
+    if if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+      # Turn noisy symbol loading back on
+      oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
+      if not oCrashInfo._bCdbRunning: return None;
     # Here are some lines you might expect to parse:
     # |TODO put something here...
     uFrameNumber = 0;
@@ -85,10 +93,18 @@ class cStack(object):
   def foCreate(cStack, oCrashInfo, oProcess):
     oStack = cStack(oProcess);
     uStackFramesCount = dxCrashInfoConfig["uMaxStackFramesCount"];
+    if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+      # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
+      asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
+      if not oCrashInfo._bCdbRunning: return None;
     asStack = oCrashInfo._fasSendCommandAndReadOutput("kn 0x%X" % uStackFramesCount);
     if not oCrashInfo._bCdbRunning: return None;
+    if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+      # Turn noisy symbol loading back on
+      oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
+      if not oCrashInfo._bCdbRunning: return None;
     sHeader = asStack.pop(0);
-    assert re.sub(r"\s+", " ", sHeader.strip()) in ["# ChildEBP RetAddr", "# Child-SP RetAddr Call Site"], \
+    assert re.sub(r"\s+", " ", sHeader.strip()) in ["# ChildEBP RetAddr", "# Child-SP RetAddr Call Site", "Could not allocate memory for stack trace"], \
         "Unknown stack header: %s" % repr(sHeader);
     # Here are some lines you might expect to parse:
     # |00 (Inline) -------- chrome_child!WTF::RawPtr<blink::Document>::operator*+0x11
@@ -107,7 +123,7 @@ class cStack(object):
       if not re.match(r"^(?:%s)$" % "|".join([
         r"WARNING: Frame IP not in any known module\. Following frames may be wrong\.",
         r"WARNING: Stack unwind information not available\. Following frames may be wrong\.",
-        r"Could not allocate memory for stack trace",
+        r"\*\*\* ERROR: Module load completed but symbols could not be loaded for .*",
       ]), sLine):
         oMatch = re.match(r"^\s*%s\s*$" % (
           r"([0-9A-F]+)"               r"\s+" # frame_number whitespace
@@ -129,7 +145,7 @@ class cStack(object):
             r")"                                #   }
           r")"                                  # }
         ), sLine, re.I);
-        assert oMatch, "Unknown stack output: %s" % repr(sLine);
+        assert oMatch, "Unknown stack output: %s\r\n%s" % (repr(sLine), "\r\n".join(asStack));
         (sFrameNumber, sAddress, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
         assert uFrameNumber == int(sFrameNumber, 16), "Unexpected frame number: %s vs %d" % (sFrameNumber, uFrameNumber);
         uAddress = sAddress and int(sAddress.replace("`", ""), 16);

@@ -7,6 +7,8 @@ from cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN import cError
 from cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW import cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW;
 from cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION import cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION;
 from cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT import cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT;
+from cException import cException;
+from cProcess import cProcess;
 from mHTML import *;
 from NTSTATUS import *;
 
@@ -67,7 +69,13 @@ class cErrorReport(object):
         oErrorReport.oStack.fHideTopFrames(asHiddenFrames);
   
   @classmethod
-  def foCreateFromException(cSelf, oCrashInfo, oException):
+  def foCreate(cSelf, oCrashInfo, uExceptionCode, sExceptionDescription):
+    # Get current process details
+    oProcess = cProcess.foCreate(oCrashInfo);
+    if not oCrashInfo._bCdbRunning: return None;
+    # Get exception details
+    oException = cException.foCreate(oCrashInfo, oProcess, uExceptionCode, sExceptionDescription);
+    if not oCrashInfo._bCdbRunning: return None;
     # Get the stack
     oStack = oException.foGetStack(oCrashInfo);
     if not oCrashInfo._bCdbRunning: return None;

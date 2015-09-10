@@ -1,7 +1,5 @@
-import re;
+import os, re;
 from cErrorReport import cErrorReport;
-from cException import cException;
-from cProcess import cProcess;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 from NTSTATUS import *;
 
@@ -73,6 +71,9 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
   bExceptionHandlersHaveBeenSet = False;
   # While no error has been reported:
   oErrorReport = None;
+  # Only fire _fApplicationRunningCallback if the application was started or resumed. 
+  bFireApplicationRunningCallback = True;
+  if not oCrashInfo._bCdbRunning: return None;
   while oErrorReport is None:
     # Find out what event caused the debugger break
     asLastEventOutput = oCrashInfo._fasSendCommandAndReadOutput(".lastevent");
@@ -120,42 +121,39 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
       else:
         # Report that analysis is starting...
         oCrashInfo._fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
-        if dxCrashInfoConfig["bDebugSymbolLoading"]:
-          # Temporarily turn on noisy symbol loading
-          asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
-          if not oCrashInfo._bCdbRunning: return None;
-          # Try to reload all modules and their PDB symbol files up to 10 times.
+        # And potentially report that the application is resumed later
+        bFireApplicationRunningCallback = True;
+        if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+          # Try to reload all modules and their PDB files up to 10 times until there are no more corrupt files.
           for x in xrange(10):
-            asOutput = oCrashInfo._fasSendCommandAndReadOutput(".reload");
+            asOutput = oCrashInfo._fasSendCommandAndReadOutput(".reload /f /v");
             if not oCrashInfo._bCdbRunning: return None;
-            bCorruptPDBDeleted = False;
+            asCorruptPDBFilePaths = set();
             for sLine in asOutput:
-              # If there are any corrupt PDB symbol files, try to delete them.
-              oCorruptPDBMatch = re.match(r"^DBGHELP: (.*?) \- E_PDB_CORRUPT\s*$", sLine);
-              if oCorruptPDBMatch:
-                sPDBPath = oCorruptPDBMatch.group(1);
-                try:
-                  os.remove(sPDBPath);
-                except Exception:
-                  pass;
-                else:
-                  bCorruptPDBDeleted = True;
-            if not bCorruptPDBDeleted:
-              # If no corrupt PDB symbol files were deleted, stop reloading modules.
+              # If there are any corrupt PDB files, try to delete them.
+              oCorruptPDBFilePathMatch = re.match(r"^DBGHELP: (.*?) \- E_PDB_CORRUPT\s*$", sLine);
+              if oCorruptPDBFilePathMatch:
+                sPDBFilePath = oCorruptPDBFilePathMatch.group(1);
+                asCorruptPDBFilePaths.add(sPDBFilePath);
+            bCorruptPDBFilesDeleted = False;
+            for sCorruptPDBFilePath in asCorruptPDBFilePaths:
+              print "* Deleting corrupt pdb file: %s" % sCorruptPDBFilePath;
+              try:
+                os.remove(sCorruptPDBFilePath);
+              except Exception, oException:
+                print "- Cannot delete corrupt pdb file: %s" % repr(oException);
+              else:
+                bCorruptPDBFilesDeleted = True;
+            if not bCorruptPDBFilesDeleted:
+              # If no corrupt PDB files were deleted, stop reloading modules.
               break;
-          # Disable noisy symbol loading again
-          asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
-          if not oCrashInfo._bCdbRunning: return None;
-        # Gather relevant information...
-        oProcess = cProcess.foCreate(oCrashInfo);
-        oException = cException.foCreate(oCrashInfo, oProcess, uExceptionCode, sExceptionDescription);
+        # Create an error report, if the exception is fatal.
+        oErrorReport = cErrorReport.foCreate(oCrashInfo, uExceptionCode, sExceptionDescription);
         if not oCrashInfo._bCdbRunning: return None;
-        # Save the exception report for returning when we're finished.
-        oErrorReport = cErrorReport.foCreateFromException(oCrashInfo, oException);
-        if not oCrashInfo._bCdbRunning: return None;
-        # Stop the debugger if there was a fatal error that needs to be reported.
+        # Stop the debugger if there was a fatal error.
         if oErrorReport is not None:
           break;
+
     # If there are more processes to attach to, do so:
     if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
       asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % oCrashInfo._auProcessIdsPendingAttach[0]);
@@ -178,7 +176,8 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
           oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
           if not oCrashInfo._bCdbRunning: return;
     # Run the application
-    oCrashInfo._fApplicationRunningCallback();
+    if bFireApplicationRunningCallback:
+      oCrashInfo._fApplicationRunningCallback();
     asRunApplicationOutput = oCrashInfo._fasSendCommandAndReadOutput("g");
     if not oCrashInfo._bCdbRunning: return;
     # If cdb is attaching to a process, make sure it worked.

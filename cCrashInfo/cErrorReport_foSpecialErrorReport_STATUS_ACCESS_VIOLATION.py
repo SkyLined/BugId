@@ -31,25 +31,25 @@ ddtxErrorTranslations = {
           "chrome_child.dll!WTF::partitionOutOfMemory",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsingLessThan16M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsingLessThan16M",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsing16M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsing16M",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsing32M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsing32M",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsing64M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsing64M",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsing128M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsing128M",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsing256M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsing256M",
         ],
         [
-          "chrome_child.dll!WTF::partitionOutOfMemoryUsing512M",
+          "chrome_child.dll!WTF::partitionsOutOfMemoryUsing512M",
         ],
       ],
     ),
@@ -136,21 +136,30 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
     # |    77cfe0da ntdll!RtlpFreeHeap+0x0006c97a
     # |    77cf5d2c ntdll!RtlpFreeHeapInternal+0x0000027e
     # |    77c90a3c ntdll!RtlFreeHeap+0x0000002c
-    # <snip> no 0-day information for you!
+    # <<<snip>>> no 0-day information for you!
     # |    address 07fd1000 found in
     # |    _DPH_HEAP_ROOT @ 4fd1000
     # |    in busy allocation (  DPH_HEAP_BLOCK:         UserAddr         UserSize -         VirtAddr         VirtSize)
     # |                                 7f51d9c:          7fd0fc0               40 -          7fd0000             2000
     # |    6c469abc verifier!AVrfDebugPageHeapAllocate+0x0000023c
-    # <snip> no 0-day information for you!
+    # <<<snip>>> no 0-day information for you!
     # There may be errors, sample output:
     # |ReadMemory error for address 5b59c3d0
     # |Use `!address 5b59c3d0' to check validity of the address.
+    # <<<snip>>>
+    # |*************************************************************************
+    # |***                                                                   ***
+    # |***                                                                   ***
+    # |***    Either you specified an unqualified symbol, or your debugger   ***
+    # |***    doesn't have full symbol information.  Unqualified symbol      ***
+    # |***    resolution is turned off by default. Please either specify a   ***
+    # |***    fully qualified symbol module!symbolname, or enable resolution ***
     asPageHeapReport = [
       x for x in asPageHeapReport
       if not re.match(r"^(%s)\s*$" % "|".join([
         "ReadMemory error for address [0-9`a-f]+",
         "Use `!address [0-9`a-f]+' to check validity of the address.",
+        "\*\*\*.*\*\*\*",
       ]), x)
     ];
     if len(asPageHeapReport) >= 4:

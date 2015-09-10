@@ -16,10 +16,10 @@ for (sName, xValue) in {
   "uMaxStackFramesCount": 50,   # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
   "asSymbolCachePaths": [],     # Where are symbols cached?
-  "bDebugSymbolLoading": True,  # Enable noizy symbol reloading before exception analysis. This will detect, delete and
-                                # attempt to reload corrupted pdb files. It impacts performance a bit, but improves
-                                # results if you frequently have symbol loading issues that you do not want to fix
-                                # manually.
+  "bEnhancedSymbolLoading": False, # Enable noizy symbol loading and reload symbols for all modules before exception
+                                # analysis. This will also detect and delete corrupted pdb files and try to reload
+                                # them. It has a large impact on performance, but improves the accuracy of results if
+                                # you frequently have corrupt symbol files in an automated testing environment.
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
   "sCdbBinaryPath_AMD64": dsCdbBinaryPath_sISA.get("AMD64"),
 }.items():

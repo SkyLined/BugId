@@ -29,7 +29,7 @@ class cCrashInfo(object):
       0x00010000, # SYMOPT_AUTO_PUBLICS
 #      0x00020000, # SYMOPT_NO_IMAGE_SEARCH
       0x00080000, # SYMOPT_NO_PROMPTS
-#      0x80000000, # SYMOPT_DEBUG
+      dxCrashInfoConfig["bEnhancedSymbolLoading"] and 0x80000000 or 0, # SYMOPT_DEBUG
     ]);
     # For historic reasons, the ISA of the OS is used to determine which ISA version of cdb to use. It is not known if
     # this was originally done to avoid problems with x86 cdb debugging x86 applications of AMD64 windows, or if it
