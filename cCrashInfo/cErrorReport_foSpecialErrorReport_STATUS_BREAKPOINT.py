@@ -74,6 +74,7 @@ dtxErrorTranslations = {
 # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
 asHiddenTopFrames = [
   "kernel32.dll!DebugBreak",
+  "KERNELBASE.dll!DebugBreak",
   "ntdll.dll!DbgBreakPoint",
   "EDGEHTML.dll!Abandonment::AssertionFailed",
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
