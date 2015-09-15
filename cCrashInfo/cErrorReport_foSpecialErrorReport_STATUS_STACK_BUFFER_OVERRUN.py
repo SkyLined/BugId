@@ -7,10 +7,14 @@ asHiddenTopFrames = [
   "ntdll.dll!LdrpValidateUserCallTargetEH",
   "ntdll.dll!RtlFailFast2",
   "ntdll.dll!RtlpHandleInvalidUserCallTarget",
+  # Edge
+  "EMODEL.dll!wil::details::ReportFailure",
+  "EMODEL.dll!wil::details::ReportFailure_Hr",
+  "EMODEL.dll!wil::details::in1diag3::FailFast_Hr",
 ];
 # Source: winnt.h (codemachine.com/downloads/win81/winnt.h)
 # I couldn't find much information on most of these exceptions, so this may be incorrect or at least incomplete.
-dsFailFastErrorCodes = {
+dsFastFailErrorCodes = {
   0:  ("LegacyGS",      "/GS detected that a stack cookie was modified",              "Potentially exploitable security issue"),
   1:  ("VTGuard",       "VTGuard detected an invalid virtual function table cookie",  "Potentially exploitable security issue"),
   2:  ("StackCookie",   "FAST_FAIL_STACK_COOKIE_CHECK_FAILURE",                       "Potentially exploitable security issue"),
@@ -37,19 +41,31 @@ dsFailFastErrorCodes = {
   26: ("ExtCall",       "FAST_FAIL_UNSAFE_EXTENSION_CALL",                            "Potentially exploitable security issue"),
 };
 # Some fast fail exceptions may indicate other errors:
-ddtxErrorTranslations_by_sFailFastCodeId = {
+ddtxErrorTranslations_by_sFastFailCodeId = {
   "AppExit": {
     "PureCall": (
       "Pure virtual function call (R6025)",
       "This is a potentially exploitable security issue",
       [
-        [
+        [ # MSVCRT
           "*!abort",
           "*!_purecall",
         ],
         [
           "*!abort",
           "*!purecall",
+        ],
+      ],
+    ),
+    None: (
+      None,
+      None,
+      [
+        [ # Edge - error which appears every now and then, that I think can be ignored.
+          "EMODEL.dll!wil::details::ReportFailure",
+          "EMODEL.dll!wil::details::ReportFailure_Hr",
+          "EMODEL.dll!wil::details::in1diag3::FailFast_Hr",
+          "EMODEL.dll!LCIEStartAsTabProcess",
         ],
       ],
     ),
@@ -62,21 +78,21 @@ def cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, 
   # Parameter[0] = fail fast code
   assert len(oException.auParameters) == 1, \
       "Unexpected number of fail fast exception parameters (%d vs 1)" % len(oException.auParameters);
-  uFailFastCode = oException.auParameters[0];
-  sFailFastCodeId, sFailFastCodeDescription, sSecurityImpact = dsFailFastErrorCodes.get( \
-      uFailFastCode, ("Unknown", "unknown code", "May be a security issue"));
+  uFastFailCode = oException.auParameters[0];
+  sFastFailCodeId, sFastFailCodeDescription, sSecurityImpact = dsFastFailErrorCodes.get( \
+      uFastFailCode, ("Unknown", "unknown code", "May be a security issue"));
   sOriginalErrorTypeId = oErrorReport.sErrorTypeId;
-  dtxErrorTranslations = ddtxErrorTranslations_by_sFailFastCodeId.get(sFailFastCodeId);
+  dtxErrorTranslations = ddtxErrorTranslations_by_sFastFailCodeId.get(sFastFailCodeId);
   if dtxErrorTranslations:
     oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
   # If the error was not translated, continue to treat it as a fast fail call:
   if oErrorReport and oErrorReport.sErrorTypeId == sOriginalErrorTypeId:
-    oErrorReport.sErrorTypeId += ":%s" % sFailFastCodeId;
-    if sFailFastCodeDescription.startswith("FAIL_FAST_"):
+    oErrorReport.sErrorTypeId += ":%s" % sFastFailCodeId;
+    if sFastFailCodeDescription.startswith("FAST_FAIL_"):
       oErrorReport.sErrorDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
-          (oException.uCode, uFailFastCode, sFailFastCodeDefinition);
+          (oException.uCode, uFastFailCode, sFastFailCodeDefinition);
     else:
-      oErrorReport.sErrorDescription = sFailFastCodeDescription;
+      oErrorReport.sErrorDescription = sFastFailCodeDescription;
     oErrorReport.sSecurityImpact = sSecurityImpact;
     oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;
