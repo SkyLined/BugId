@@ -2,6 +2,9 @@ import os, re, sys, threading;
 from cCrashInfo import cCrashInfo;
 from dxConfig import dxConfig;
 dxConfig.setdefault("CrashInfo", {})["bOutputProcesses"] = False;
+bDebug = False;
+if bDebug:
+  dxConfig.setdefault("CrashInfo", {})["bOutputIO"] = True;
 
 sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # "x86" or "AMD64"
 if sOSISA == "AMD64":
@@ -17,7 +20,7 @@ dsBinaries_by_sISA = {
 
 bFailed = False;
 oOutputLock = threading.Lock();
-oConcurrentTestsSemaphore = threading.Semaphore(20);
+oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 50);
 class cTest(object):
   def __init__(oTest, sISA, asCommandLineArguments, srBugId):
     oTest.sISA = sISA;
@@ -53,7 +56,7 @@ class cTest(object):
   
   def fFinishedHandler(oTest, oErrorReport):
     global bFailed;
-    if not bFailed or True:
+    if not bFailed:
       oOutputLock.acquire();
       if oTest.srBugId:
         if not oErrorReport:
@@ -73,6 +76,8 @@ class cTest(object):
       elif not bFailed:
         print "+ %s" % oTest;
       oOutputLock.release();
+    if bFailed:
+      os._exit(1);
     oTest.fFinished();
   
   def fInternalExceptionHandler(oTest, oException):
