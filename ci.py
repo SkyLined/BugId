@@ -93,14 +93,24 @@ if __name__ == "__main__":
       print "Location:         %s" % oErrorReport.sLocationDescription;
       print "Security impact:  %s" % oErrorReport.sSecurityImpact;
       if dxCIConfig.get("bSaveReport", True):
-        dsMap = {'"': "''", "<": "[", ">": "]", "\\": "!", "/": "!", "?": "!", "*": ".", ":": ";", "|": "!"};
-        sFileName = "".join([dsMap.get(sChar, sChar) for sChar in oErrorReport.sId]) + ".html";
-        oFile = open(sFileName, "wb");
-        try:
-          oFile.write(oErrorReport.sHTMLDetails);
-        finally:
-          oFile.close();
-        print "Error report:     %s (%d bytes)" % (sFileName, len(oErrorReport.sHTMLDetails));
+        dsMap = {'"': "''", "<": "[", ">": "]", "\\": "#", "/": "#", "?": "#", "*": "#", ":": ".", "|": "#"};
+        sFileNameBase = "".join([dsMap.get(sChar, sChar) for sChar in oErrorReport.sId]);
+        # File name may be too long, keep trying to 
+        while len(sFileNameBase) > 0:
+          sFileName = sFileNameBase + ".html";
+          try:
+            oFile = open(sFileName, "wb");
+          except IOError:
+            sFileNameBase = sFileNameBase[:-1];
+            continue;
+          try:
+            oFile.write(oErrorReport.sHTMLDetails);
+          finally:
+            oFile.close();
+          print "Error report:     %s (%d bytes)" % (sFileName, len(oErrorReport.sHTMLDetails));
+          break;
+        else:
+          print "Error report:     cannot be saved";
     else:
       print "* The application has terminated without crashing.";
     oFinishedEvent.set();
