@@ -51,38 +51,35 @@ for sCommand, axExceptions in daxExceptionHandling.items():
 sExceptionHandlingCommands = ";".join(asExceptionHandlingCommands);
 
 def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialCdbOutput):
-  # cdb can either start an application, or attach to paused processes; which is it?
-  bCdbStartedAnApplication = len(oCrashInfo._auProcessIdsPendingAttach) == 0;
-  oCrashInfo._bDebuggerIsAttachingToProcesses = not bCdbStartedAnApplication;
   # Exception handlers need to be set up.
   oCrashInfo._bExceptionHandlersHaveBeenSet = False;
-  # The debugger must be initialized before it is ready to debug the application. 
-  oCrashInfo._bReadyToDebugApplication = False;
   # Only fire _fApplicationRunningCallback if the application was started for the first time or resumed after it was
   # paused to analyze an exception. 
   bInitialApplicationRunningCallbackFired = False;
+  bDebuggerNeedsToResumeAttachedProcesses = len(oCrashInfo._auProcessIdsPendingAttach) > 0;
   bApplicationWasPausedToAnalyzeAnException = False;
   # An error report will be created when needed; it is returned at the end
   oErrorReport = None;
-  while not oCrashInfo._bReadyToDebugApplication or len(oCrashInfo._auProcessIds) > 0:
-    if oCrashInfo._bDebuggerIsAttachingToProcesses or oCrashInfo._bReadyToDebugApplication:
-      # Start or resume the application
-      if bApplicationWasPausedToAnalyzeAnException or not bInitialApplicationRunningCallbackFired:
-        # Application was resumed
+  while asIntialCdbOutput or len(oCrashInfo._auProcessIdsPendingAttach) + len(oCrashInfo._auProcessIds) > 0:
+    if asIntialCdbOutput:
+      # First parse the intial output
+      asCdbOutput = asIntialCdbOutput;
+      asIntialCdbOutput = None;
+    else:
+      # Then attach to a process, or start or resume the application
+      if not bInitialApplicationRunningCallbackFired or bApplicationWasPausedToAnalyzeAnException:
+        # Application was started or resumed after an exception
         oCrashInfo._fApplicationRunningCallback();
         bInitialApplicationRunningCallbackFired = True;
       asCdbOutput = oCrashInfo._fasSendCommandAndReadOutput("g");
       if not oCrashInfo._bCdbRunning: return None;
-    else:
-      asCdbOutput = asIntialCdbOutput;
     # If cdb is attaching to a process, make sure it worked.
-    if oCrashInfo._bDebuggerIsAttachingToProcesses:
-      for sLine in asCdbOutput:
-        oFailedAttachMatch = re.match(r"^Cannot debug pid (\d+),\s*(.*?)\s*$", sLine);
-        assert not oFailedAttachMatch, "\r\n".join(
-            ["Failed to attach to process %s: %s" % oFailedAttachMatch.groups()] + 
-            asCdbOutput
-        );
+    for sLine in asCdbOutput:
+      oFailedAttachMatch = re.match(r"^Cannot debug pid (\d+),\s*(.*?)\s*$", sLine);
+      assert not oFailedAttachMatch, "\r\n".join(
+          ["Failed to attach to process %s: %s" % oFailedAttachMatch.groups()] + 
+          asCdbOutput
+      );
     # Find out what event caused the debugger break
     asLastEventOutput = oCrashInfo._fasSendCommandAndReadOutput(".lastevent");
     if not oCrashInfo._bCdbRunning: return None;
@@ -139,13 +136,11 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialCdbOutpu
           oCrashInfo._fasSendCommandAndReadOutput(sExceptionHandlingCommands);
           if not oCrashInfo._bCdbRunning: return;
         # If the debugger attached to processes, mark that as done and resume threads in all processes.
-        if oCrashInfo._bDebuggerIsAttachingToProcesses:
-          oCrashInfo._bDebuggerIsAttachingToProcesses = False;
+        if bDebuggerNeedsToResumeAttachedProcesses:
+          bDebuggerNeedsToResumeAttachedProcesses = False;
           for uProcessId in oCrashInfo._auProcessIds:
             oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
             if not oCrashInfo._bCdbRunning: return;
-        # The debugger is now ready to debug the application (if it wasn't already).
-        oCrashInfo._bReadyToDebugApplication = True;
       continue;
     # Report that the application is paused for analysis...
     oCrashInfo._fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
