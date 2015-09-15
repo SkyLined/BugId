@@ -4,16 +4,16 @@ from cException_fSetTypeId import cException_fSetTypeId;
 from cException_fSetSecurityImpact import cException_fSetSecurityImpact;
 
 class cStowedException(object):
-  def __init__(oSelf, oProcess, uCode, uAddress = None, pStackTrace = None, uStackTraceSize = 0, sErrorText = None):
-    oSelf.oProcess = oProcess;
-    oSelf.uCode = uCode;
-    oSelf.uAddress = uAddress;
-    oSelf.pStackTrace = pStackTrace; # dpS {pStackTrace} L{uStackTraceSize}
-    oSelf.uStackTraceSize = uStackTraceSize;
-    oSelf.sErrorText = sErrorText;
-    oSelf.sTypeId = None;
-    oSelf.sDescription = None;
-    oSelf.sSecurityImpact = None;
+  def __init__(oStowedException, oProcess, uCode, uAddress = None, pStackTrace = None, uStackTraceSize = 0, sErrorText = None):
+    oStowedException.oProcess = oProcess;
+    oStowedException.uCode = uCode;
+    oStowedException.uAddress = uAddress;
+    oStowedException.pStackTrace = pStackTrace; # dpS {pStackTrace} L{uStackTraceSize}
+    oStowedException.uStackTraceSize = uStackTraceSize;
+    oStowedException.sErrorText = sErrorText;
+    oStowedException.sTypeId = None;
+    oStowedException.sDescription = None;
+    oStowedException.sSecurityImpact = None;
   
   @classmethod
   def foCreate(cSelf, oCrashInfo, oProcess, pAddress):
@@ -49,22 +49,22 @@ class cStowedException(object):
     uExceptionForm = adwData[3] & 3;
     assert uExceptionForm in [1, 2], "Unexpected exception form %d" % uExceptionForm;
     if uExceptionForm == 1:
-      oSelf = cSelf(oProcess, uCode, uAddress = adwData[4], pStackTrace = adwData[7], uStackTraceSize = adwData[6]);
+      oStowedException = cSelf(oProcess, uCode, uAddress = adwData[4], pStackTrace = adwData[7], uStackTraceSize = adwData[6]);
     else:
-      oSelf = cSelf(oProcess, uCode, sErrorText = adwData[4]);
+      oStowedException = cSelf(oProcess, uCode, sErrorText = adwData[4]);
     uNestedExceptionType = adwData[8];
     assert dwSignature == 0x53453031 or uNestedExceptionType == 0, "Unexpected nested exception type 0x%X" % adwData[8];
     
     # Create an exception id that uniquely identifies the exception and a description of the exception.
-    cException_fSetTypeId(oSelf);
-    oSelf.sTypeId += "(Stowed)";
-    oSelf.sDescription = "Stowed exception code 0x%08X" % oSelf.uCode;
-    cException_fSetSecurityImpact(oSelf);
+    cException_fSetTypeId(oStowedException);
+    oStowedException.sTypeId += "(Stowed)";
+    oStowedException.sDescription = "Stowed exception code 0x%08X" % oStowedException.uCode;
+    cException_fSetSecurityImpact(oStowedException);
     
-    return oSelf;
+    return oStowedException;
   
-  def foGetStack(oSelf, oCrashInfo):
+  def foGetStack(oStowedException, oCrashInfo):
     # This is not going to chance, so we can cache it:
-    if not hasattr(oSelf, "oStack"):
-      oSelf.oStack = cStack.foCreateFromAddress(oCrashInfo, oSelf.oProcess, oSelf.pStackTrace, oSelf.uStackTraceSize);
-    return oSelf.oStack;
+    if not hasattr(oStowedException, "oStack"):
+      oStowedException.oStack = cStack.foCreateFromAddress(oCrashInfo, oStowedException.oProcess, oStowedException.pStackTrace, oStowedException.uStackTraceSize);
+    return oStowedException.oStack;

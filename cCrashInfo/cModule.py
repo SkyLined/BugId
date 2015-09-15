@@ -1,16 +1,16 @@
 from cFunction import cFunction;
 
 class cModule(object):
-  def __init__(oSelf, oProcess, sCdbId, sBinaryName, uStartAddress, uEndAddress):
-    oSelf.sCdbId = sCdbId;
-    oSelf.oProcess = oProcess;
-    oSelf.sBinaryName = sBinaryName;
-    oSelf.uStartAddress = uStartAddress;
-    oSelf.uEndAddress = uEndAddress;
-    oSelf._doFunction_by_sSymbol = {};
+  def __init__(oModule, oProcess, sCdbId, sBinaryName, uStartAddress, uEndAddress):
+    oModule.sCdbId = sCdbId;
+    oModule.oProcess = oProcess;
+    oModule.sBinaryName = sBinaryName;
+    oModule.uStartAddress = uStartAddress;
+    oModule.uEndAddress = uEndAddress;
+    oModule._doFunction_by_sSymbol = {};
   
-  def foGetOrCreateFunction(oSelf, sSymbol):
-    if sSymbol not in oSelf._doFunction_by_sSymbol:
-      oSelf._doFunction_by_sSymbol[sSymbol] = cFunction(oSelf, sSymbol);
-    return oSelf._doFunction_by_sSymbol[sSymbol];
+  def foGetOrCreateFunction(oModule, sSymbol):
+    if sSymbol not in oModule._doFunction_by_sSymbol:
+      oModule._doFunction_by_sSymbol[sSymbol] = cFunction(oModule, sSymbol);
+    return oModule._doFunction_by_sSymbol[sSymbol];
   

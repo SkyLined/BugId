@@ -3,7 +3,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW(oErrorReport, oCrash
   oStack = oErrorReport.oStack;
   # Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call themselves
   # Figure out if this is the case and fide all frames at the top of the stack until the "first" frame in the loop.
-  oErrorReport.sErrorTypeId = "StackExhaust";
+  oErrorReport.sErrorTypeId = "StackExhaustion";
   oErrorReport.sErrorDescription = "The process exhausted available stack memory";
   oErrorReport.sSecurityImpact = "This is not a security issue";
   bLoopFound = False;

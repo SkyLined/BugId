@@ -45,6 +45,17 @@ dtxErrorTranslations = {
       ],
     ],
   ),
+  "Assert": (
+    "An assertion failed",
+    None,
+    [
+      [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::AssertionFailed",
+      ],
+    ],
+  ),
   # When a 32-bit application is running on a 64-bit OS, any new processes will generate a STATUS_BREAKPOINT and
   # a status STATUS_WX86_BREAKPOINT exception. The former is recognized as the initial process breakpoint, and the
   # new process is registered. The later is not, but it can be recognized by its stack and should be ignored:
@@ -64,6 +75,7 @@ dtxErrorTranslations = {
 asHiddenTopFrames = [
   "kernel32.dll!DebugBreak",
   "ntdll.dll!DbgBreakPoint",
+  "EDGEHTML.dll!Abandonment::AssertionFailed",
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
   "chrome.dll!base::debug::BreakDebugger",
   "chrome_child.dll!base::debug::BreakDebugger",

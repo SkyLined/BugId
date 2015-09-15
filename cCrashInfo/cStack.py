@@ -17,7 +17,7 @@ class cStack(object):
         else:
           break; # this should not be hidden, stop looking.
   
-  def fCreateAndAddStackFrame(oStack, oCrashInfo, uNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset):
+  def fCreateAndAddStackFrame(oStack, oCrashInfo, uNumber, uAddress, sUnloadedModuleFileName, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset):
     # frames must be created in order:
     assert uNumber == len(oStack.aoFrames), \
         "Unexpected frame number %d vs %d" % (uNumber, len(oStack.aoFrames));
@@ -43,7 +43,7 @@ class cStack(object):
       oModule = sCdbModuleId and oStack.oProcess.foGetModule(sCdbModuleId);
       if not oCrashInfo._bCdbRunning: return None;
       oFunction = oModule and sSymbol and oModule.foGetOrCreateFunction(sSymbol);
-      oStack.aoFrames.append(cStackFrame(uNumber, uAddress, oModule, uModuleOffset, oFunction, uSymbolOffset));
+      oStack.aoFrames.append(cStackFrame(uNumber, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uSymbolOffset));
     
   @classmethod
   def foCreateFromAddress(cStack, oCrashInfo, oProcess, pAddress, uSize):
@@ -55,7 +55,7 @@ class cStack(object):
       if not oCrashInfo._bCdbRunning: return None;
     asStack = oCrashInfo._fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
     if not oCrashInfo._bCdbRunning: return None;
-    if if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+    if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
       # Turn noisy symbol loading back on
       oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
       if not oCrashInfo._bCdbRunning: return None;
@@ -64,27 +64,35 @@ class cStack(object):
     uFrameNumber = 0;
     for sLine in asStack:
       oMatch = re.match(r"^\s*%s\s*$" % (
-        r"(?:[0-9A-F`]+|\(Inline\))" r"\s+" # {stack_address || "(Inline)"} whitespace
-        r"(?:[0-9A-F`]+|\-{8})"      r"\s+" # {ret_address || "--------"} whitespace
-        "(?:"                               # either {
-          r"(0x[0-9A-F`]+)"                 #   ("0x" address)
-        "|"                                 # } or {
-          r"(\w+)"                          #   (cdb_module_id)
-          "(?:"                             #   either {
-            "(\+0x[0-9A-F`]+)"              #     ("+0x" offset_in_module)
-          "|"                               #   } or {
-            r"!(.+?)([\+\-]0x[0-9A-F]+)?"   #     "!" (function_name) optional{({"+" || "-"} "0x" offset)}
-          ")"                               #   }
-        ")"                                 # }
+        r"(?:"                                  # either {
+          r"[0-9A-F`]+" r"\s+"                  #   stack_address whitespace
+          r"[0-9A-F`]+" r"\s+"                  #   ret_address whitespace
+        r"|"                                    # } or {
+          r"\(Inline(?: Function)?\)" r"\s+"    #   "(Inline" [" Function"] ")" whitespace
+          r"\-{8}(?:`\-{8})?" r"\s+"            #   "--------" [`--------] whitespace
+        r")"                                    # }
+        "(?:"                                   # either {
+          r"(0x[0-9A-F`]+)"                     #   ("0x" address)
+        "|"                                     # } or {
+          r"<Unloaded_(.*)>"                    #   "<Unloaded_" module_file_name ">"
+        "|"                                     # } or {
+          r"(\w+)"                              #   (cdb_module_id)
+          "(?:"                                 #   either {
+            "(\+0x[0-9A-F`]+)"                  #     ("+0x" offset_in_module)
+          "|"                                   #   } or {
+            r"!(.+?)([\+\-]0x[0-9A-F]+)?"       #     "!" (function_name) optional{({"+" || "-"} "0x" offset)}
+          ")"                                   #   }
+        ")"                                     # }
       ), sLine, re.I);
       assert oMatch, "Unknown stack output: %s" % sLine;
-      (sAddress, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
+      (sAddress, sUnloadedModuleFileName, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
       uAddress = sAddress and int(sAddress.replace("`", ""), 16);
       uModuleOffset = sModuleOffset and int(sModuleOffset.replace("`", ""), 16);
       uSymbolOffset = sSymbolOffset and int(sSymbolOffset.replace("`", ""), 16);
       assert uFrameNumber < uStackFramesCount, \
           "Got more frames than requested";
-      oStack.fCreateAndAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
+      oStack.fCreateAndAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sUnloadedModuleFileName, \
+          sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
       if not oCrashInfo._bCdbRunning: return None;
       uFrameNumber += 1;
     return oStack;
@@ -124,9 +132,10 @@ class cStack(object):
         r"WARNING: Frame IP not in any known module\. Following frames may be wrong\.",
         r"WARNING: Stack unwind information not available\. Following frames may be wrong\.",
         r"\*\*\* ERROR: Module load completed but symbols could not be loaded for .*",
+        r"\*\*\* WARNING: Unable to verify checksum for .*",
       ]), sLine):
         oMatch = re.match(r"^\s*%s\s*$" % (
-          r"([0-9A-F]+)"               r"\s+" # frame_number whitespace
+          r"([0-9A-F]+)" r"\s+"                 # frame_number whitespace
           r"(?:"                                # either {
             r"[0-9A-F`]+" r"\s+"                #   stack_address whitespace
             r"[0-9A-F`]+" r"\s+"                #   ret_address whitespace
@@ -137,6 +146,8 @@ class cStack(object):
           r"(?:"                                # either {
             r"(0x[0-9A-F`]+)"                   #   ("0x" address)
           r"|"                                  # } or {
+            r"<Unloaded_(.*)>"                  #   "<Unloaded_" module_file_name ">"
+          "|"                                   # } or {
             r"(\w+)"                            #   (cdb_module_id)
             r"(?:"                              #   either {
               r"(\+0x[0-9A-F]+)"                #     ("+0x" offset_in_module)
@@ -146,12 +157,13 @@ class cStack(object):
           r")"                                  # }
         ), sLine, re.I);
         assert oMatch, "Unknown stack output: %s\r\n%s" % (repr(sLine), "\r\n".join(asStack));
-        (sFrameNumber, sAddress, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
+        (sFrameNumber, sAddress, sUnloadedModuleFileName, sCdbModuleId, sModuleOffset, sSymbol, sSymbolOffset) = oMatch.groups();
         assert uFrameNumber == int(sFrameNumber, 16), "Unexpected frame number: %s vs %d" % (sFrameNumber, uFrameNumber);
-        uAddress = sAddress and int(sAddress.replace("`", ""), 16);
-        uModuleOffset = sModuleOffset is not None and int(sModuleOffset.replace("`", ""), 16);
-        uSymbolOffset = sSymbolOffset is not None and int(sSymbolOffset.replace("`", ""), 16);
-        oStack.fCreateAndAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
+        uAddress = sAddress and long(sAddress.replace("`", ""), 16);
+        uModuleOffset = sModuleOffset is not None and long(sModuleOffset.replace("`", ""), 16);
+        uSymbolOffset = sSymbolOffset is not None and long(sSymbolOffset.replace("`", ""), 16);
+        oStack.fCreateAndAddStackFrame(oCrashInfo, uFrameNumber, uAddress, sUnloadedModuleFileName, \
+            sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset);
         if not oCrashInfo._bCdbRunning: return None;
         uFrameNumber += 1;
     return oStack;

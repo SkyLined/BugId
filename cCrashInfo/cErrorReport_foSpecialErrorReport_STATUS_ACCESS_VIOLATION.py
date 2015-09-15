@@ -22,6 +22,21 @@ ddtxErrorTranslations = {
       ],
     ),
   },
+  "AVE:NULL": {
+    "OOM": (
+      "The process caused an access violation by calling NULL to indicate it was unable to allocate enough memory",
+      None,
+      [
+        [
+          "0x0",
+          "chrome_child.dll!v8::base::OS::Abort",
+          "chrome_child.dll!v8::Utils::ReportApiFailure",
+          "chrome_child.dll!v8::Utils::ApiCheck",
+          "chrome_child.dll!v8::internal::V8::FatalProcessOutOfMemory",
+        ],
+      ],
+    ),
+  },
   "AVW:NULL": {
     "OOM": (
       "The process caused an access violation by writing to NULL to indicate it was unable to allocate enough memory",
@@ -55,30 +70,35 @@ ddtxErrorTranslations = {
     ),
   },
 };
-dsId_uAddress = {     # Short             Pointer description                                   Security impact
-          0x00000000: ('NULL',            "a NULL ptr",                                         None),
-          0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
-          0xBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0xCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0xC0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0xC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0xCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0xCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0xD0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-  0xD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-          0xDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-  0xDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-          0xF0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-  0xF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-          0xFDFDFDFD: ('Canary',          "a pointer read from an out-of-bounds memory canary", "Potentially exploitable security issue"),
-  0xF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-          0xF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-  0xF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-          0xF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-  0xFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-          0xFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+ddtsDetails_uAddress_sISA = {
+  "x86": {              # Id                 Description                                           Security impact
+            0x00000000: ('NULL',            "a NULL ptr",                                         None),
+            0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
+            0xBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xC0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xD0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            0xF0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            0xFDFDFDFD: ('Canary',          "a pointer read from an out-of-bounds memory canary", "Potentially exploitable security issue"),
+            0xF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+            0xF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+            0xFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+  },
+  "AMD64": {            # Id                 Description                                           Security impact
+    0x0000000000000000: ('NULL',            "a NULL ptr",                                         None),
+    0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+    0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+    0xC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+    0xCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+    0xD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+    0xDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+    0xF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+    0xF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+    0xF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+    0xFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+  },
 };
 
 def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
@@ -97,19 +117,75 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
   # Access violation: add the type of operation and the location to the exception id.
   sViolationTypeId = {0:"R", 1:"W", 8:"E"}.get(oException.auParameters[0], "?");
   sViolationTypeDescription = {0:"reading", 1:"writing", 8:"executing"}.get( \
-        oException.auParameters[0], "0x%X-ing" % oException.auParameters[0]);
-  uAddress = oException.auParameters[1];
+        oException.auParameters[0], "accessing");
+  sViolationTypeNotes = sViolationTypeId == "?" and " (the type-of-accesss code was 0x%X)" % oException.auParameters[0] or "";
+  if oCrashInfo._sCurrentISA == "x86":
+    uAddress = oException.auParameters[1];
+  else:
+    # In AMD64 mode, cdb reports incorrect information in the exception parameters if the address is larger than
+    # 0x7FFFFFFFFFFF. A work-around is to get the address from the last instruction output, which can be retreived by
+    # setting the current thread.
+    asLastInstructionAndAddress = oCrashInfo._fasSendCommandAndReadOutput("~s");
+    if not oCrashInfo._bCdbRunning: return None;
+    # Sample output:
+    # |ntdll!LdrpValidateUserCallTarget+0xe:
+    # |00007ffd`420b213e 488b14c2        mov     rdx,qword ptr [rdx+rax*8] ds:00007df5`ffb60000=????????????????
+    # or
+    # |chrome_child!WTF::HashTable<unsigned int,WTF::KeyValuePair<unsigned int,unsigned int>,WTF::KeyValuePairKeyExtractor,WTF::IntHash<unsigned int>,WTF::HashMapValueTraits<WTF::HashTraits<unsigned int>,WTF::HashTraits<unsigned int> >,WTF::HashTraits<unsigned int>,WTF::DefaultAllocator>::lookup+0x9 [inlined in chrome_child!blink::AXObjectCacheImpl::isAriaOwned+0xc]:
+    # |60053594 ff7008          push    dword ptr [eax+8]    ds:002b:00000008=????????
+    # or
+    # |Tests_x64!fJMP+0x4:
+    # |00007ff6`e7ab1204 ffe1            jmp     rcx {c0c0c0c0`c0c0c0c0}
+    # or
+    # |00000000`7fffffff ??              ???
+    if len(asLastInstructionAndAddress) == 1:
+      oEIPOutsideAllocatedMemoryMatch = re.match("^%s$" % "".join([
+        r"([0-9a-f`]+)", r"\s+", r"\?\?", r"\s+", r"\?\?\?" # address   spaces "??" spaces "???"
+      ]), asLastInstructionAndAddress[0]);
+      assert oEIPOutsideAllocatedMemoryMatch, \
+          "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
+      sAddress = oEIPOutsideAllocatedMemoryMatch.group(1);
+    else:
+      assert len(asLastInstructionAndAddress) == 2, \
+          "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
+      oLastInstructionMatch = re.match("^%s$" % "".join([
+        r"[0-9a-f`]+", r"\s+",      # address   spaces
+        r"[0-9a-f`]+", r"\s+",      # opcode   spaces
+        r"\w+", r"\s+",             # instruction   spaces
+        r".*", r"\s+",              # arguments   spaces
+        r"(?:",                     # either{
+          r"\ws:",                  #   segment register ":"
+          r"(?:[0-9a-f`]{4}:)?",    #   segment value ":"
+          r"([0-9a-f`]+)",          #   (address)
+          r"=\?+",                  #   "=???????"
+        r"|",                       # }or{
+          r"\{([0-9a-f`]+)\}",      #   "{" (address) "}"
+        r")",                       # }
+      ]), asLastInstructionAndAddress[1]);
+      assert oLastInstructionMatch, \
+          "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
+      sAddress = oLastInstructionMatch.group(1) or oLastInstructionMatch.group(2);
+    uAddress = long(sAddress.replace("`", ""), 16);
+    # The correct address can be checked against the one in the exception parameters, if they do not match, the
+    # parameters contain invalid information:
+    if uAddress != oException.auParameters[1]:
+      sViolationTypeId = "?";
+      sViolationTypeDescription = "accessing";
+      sViolationTypeNotes = " (the type of accesss cannot be determined)";
   uMaxAddressOffset = dxCrashInfoConfig["uMaxAddressOffset"];
-  for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dsId_uAddress.items():
+  
+  dtsDetails_uAddress = ddtsDetails_uAddress_sISA[oCrashInfo._sCurrentISA];
+  for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
     sErrorDescription = "Access violation while %s memory at 0x%X using %s" % \
         (sViolationTypeDescription, uAddress, sAddressDescription);
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
       break;
+    uOverflow = {"x86": 1 << 32, "AMD64": 1 << 64}[oCrashInfo._sCurrentISA];
     if iOffset > uMaxAddressOffset: # Maybe this is wrapping:
-      iOffset -= 0x100000000;
+      iOffset -= uOverflow;
     elif iOffset < -uMaxAddressOffset: # Maybe this is wrapping:
-      iOffset += 0x100000000;
+      iOffset += uOverflow;
     uOffset = abs(iOffset);
     if uOffset <= uMaxAddressOffset:
       sAddressId += "%s0x%X" % (iOffset < 0 and "-" or "+", uOffset);
@@ -195,8 +271,8 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
       elif sBlockType == "busy":
         # Page heap says the region is allocated,  only logical explanation known is that the read was beyond the
         # end of the heap block, inside a guard page:
-        uBlockAddress = int(sBlockAddress.replace("`", ""), 16);
-        uBlockSize = int(sBlockSize.replace("`", ""), 16);
+        uBlockAddress = long(sBlockAddress.replace("`", ""), 16);
+        uBlockSize = long(sBlockSize.replace("`", ""), 16);
         uGuardPageAddress = (uBlockAddress & 0xFFF) + 1; # Follows the page in which the block is located.
         sAddressId = "OOB";
         bAccessIsBeyondBlock = uAddress >= uBlockAddress + uBlockSize;
@@ -228,6 +304,8 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
         sErrorDescription = "Access violation while %s memory at 0x%X; " \
             "%s a %d/0x%X byte memory block at 0x%X" % \
             (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
+      else:
+        raise NotImplemented("NOT REACHED");
       oErrorReport.atsAdditionalInformation.append(("Page heap report for address 0x%X:" % uAddress, asPageHeapReport));
     else:
       sAddressId = "Arbitrary";
@@ -235,7 +313,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
     # No matter what, this is potentially exploitable.
     sSecurityImpact = "Potentially exploitable security issue";
   oErrorReport.sErrorTypeId = "%s%s:%s" % (oErrorReport.sErrorTypeId, sViolationTypeId, sAddressId);
-  oErrorReport.sErrorDescription = sErrorDescription;
+  oErrorReport.sErrorDescription = sErrorDescription + sViolationTypeNotes;
   oErrorReport.sSecurityImpact = sSecurityImpact;
   dtxErrorTranslations = ddtxErrorTranslations.get(oErrorReport.sErrorTypeId, None);
   if dtxErrorTranslations:

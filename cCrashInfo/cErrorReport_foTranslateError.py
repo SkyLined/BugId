@@ -1,4 +1,6 @@
-def cErrorRepor_foTranslateError(oErrorReport, dtxTranslations):
+def cErrorReport_foTranslateError(oErrorReport, dtxTranslations):
+  if len(oErrorReport.oStack.aoFrames) == 0:
+    return oErrorReport;
   for (sErrorTypeId, txTranslation) in dtxTranslations.items():
     (sErrorDescription, sSecurityImpact, aasStackTopFrameAddresses) = txTranslation;
     # See if we have a matching stack top:
@@ -7,7 +9,14 @@ def cErrorRepor_foTranslateError(oErrorReport, dtxTranslations):
       for sStackTopFrameAddress in asStackTopFrameAddresses:
         oTopFrame = oErrorReport.oStack.aoFrames[uFrameIndex];
         uFrameIndex += 1;
-        if oTopFrame.sSimplifiedAddress != sStackTopFrameAddress:
+        # "*!" means match only the function and not the module.
+        if sStackTopFrameAddress[:2] == "*!":
+          tsSimplifiedAddress = oTopFrame.sSimplifiedAddress.split("!", 1);
+          # Compare the function names:
+          if len(tsSimplifiedAddress) != 2 or tsSimplifiedAddress[1] != sStackTopFrameAddress[2:]:
+            # These frames don't match: stop checking frames
+            break;
+        elif oTopFrame.sSimplifiedAddress != sStackTopFrameAddress:
           # These frames don't match: stop checking frames
           break;
       else:

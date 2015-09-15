@@ -12,7 +12,7 @@ def cCrashInfo_fasReadOutput(oCrashInfo):
       if sChar == "\n" or sLine:
         if dxCrashInfoConfig["bOutputIO"]:
           print "cdb>%s" % repr(sLine)[1:-1];
-        oCrashInfo.asCdbIO.append(sLine);
+        oCrashInfo._asCdbStdIO.append(sLine);
         asLines.append(sLine);
       if sChar == "":
         break;
@@ -22,12 +22,13 @@ def cCrashInfo_fasReadOutput(oCrashInfo):
       # Detect the prompt.
       oPromptMatch = re.match("^\d+:\d+(:x86)?> $", sLine);
       if oPromptMatch:
+        oCrashInfo._sCurrentISA = oPromptMatch.group(1) and "x86" or oCrashInfo.sCdbISA;
         if dxCrashInfoConfig["bOutputIO"]:
           print "cdb>%s" % repr(sLine)[1:-1];
-        oCrashInfo.asCdbIO.append(sLine);
+        oCrashInfo._asCdbStdIO.append(sLine);
         return asLines;
   # Cdb stdout was closed: the process is terminating.
   assert oCrashInfo._bCdbTerminated or len(oCrashInfo._auProcessIds) == 0, \
-      "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oCrashInfo.asCdbIO[-20:]);
+      "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oCrashInfo._asCdbStdIO[-20:]);
   oCrashInfo._bCdbRunning = False;
   return None;

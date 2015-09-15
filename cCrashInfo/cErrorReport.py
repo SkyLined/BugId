@@ -60,8 +60,8 @@ class cErrorReport(object):
     return cErrorReport_foTranslateSpecialErrorReport(oErrorReport);
   
   def foTranslateError(oErrorReport, dtxTranslations):
-    from cErrorRepor_foTranslateError import cErrorRepor_foTranslateError;
-    return cErrorRepor_foTranslateError(oErrorReport, dtxTranslations);
+    from cErrorReport_foTranslateError import cErrorReport_foTranslateError;
+    return cErrorReport_foTranslateError(oErrorReport, dtxTranslations);
   
   def fHideTopStackFrames(oErrorReport, dasHiddenFrames_by_sErrorTypeIdRegExp):
     for (sErrorTypeIdRegExp, asHiddenFrames) in dasHiddenFrames_by_sErrorTypeIdRegExp.items():
@@ -200,6 +200,6 @@ class cErrorReport(object):
       "sSecurityImpact": oErrorReport.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
       "sStack": "".join(asHTMLStack),
       "sBinaryInformation": "".join(asHTMLBinaryInformation),
-      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo.asCdbIO]),
+      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCrashInfo._asCdbStdIO]),
     };
     return oErrorReport;

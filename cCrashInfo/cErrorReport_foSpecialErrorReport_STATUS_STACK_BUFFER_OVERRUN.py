@@ -36,6 +36,26 @@ dsFailFastErrorCodes = {
   25: ("DLoadProt",     "FAST_FAIL_DLOAD_PROTECTION_FAILURE",                         "Potentially exploitable security issue"),
   26: ("ExtCall",       "FAST_FAIL_UNSAFE_EXTENSION_CALL",                            "Potentially exploitable security issue"),
 };
+# Some fast fail exceptions may indicate other errors:
+ddtxErrorTranslations_by_sFailFastCodeId = {
+  "AppExit": {
+    "PureCall": (
+      "Pure virtual function call (R6025)",
+      "This is a potentially exploitable security issue",
+      [
+        [
+          "*!abort",
+          "*!_purecall",
+        ],
+        [
+          "*!abort",
+          "*!purecall",
+        ],
+      ],
+    ),
+  },
+};
+
 
 def cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCrashInfo):
   oException = oErrorReport.oException;
@@ -45,13 +65,18 @@ def cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, 
   uFailFastCode = oException.auParameters[0];
   sFailFastCodeId, sFailFastCodeDescription, sSecurityImpact = dsFailFastErrorCodes.get( \
       uFailFastCode, ("Unknown", "unknown code", "May be a security issue"));
-  
-  oErrorReport.sErrorTypeId += ":%s" % sFailFastCodeId;
-  if sFailFastCodeDescription.startswith("FAIL_FAST_"):
-    oErrorReport.sErrorDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
-        (oException.uCode, uFailFastCode, sFailFastCodeDefinition);
-  else:
-    oErrorReport.sErrorDescription = sFailFastCodeDescription;
-  oErrorReport.sSecurityImpact = sSecurityImpact;
-  oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  sOriginalErrorTypeId = oErrorReport.sErrorTypeId;
+  dtxErrorTranslations = ddtxErrorTranslations_by_sFailFastCodeId.get(sFailFastCodeId);
+  if dtxErrorTranslations:
+    oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
+  # If the error was not translated, continue to treat it as a fast fail call:
+  if oErrorReport and oErrorReport.sErrorTypeId == sOriginalErrorTypeId:
+    oErrorReport.sErrorTypeId += ":%s" % sFailFastCodeId;
+    if sFailFastCodeDescription.startswith("FAIL_FAST_"):
+      oErrorReport.sErrorDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
+          (oException.uCode, uFailFastCode, sFailFastCodeDefinition);
+    else:
+      oErrorReport.sErrorDescription = sFailFastCodeDescription;
+    oErrorReport.sSecurityImpact = sSecurityImpact;
+    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;

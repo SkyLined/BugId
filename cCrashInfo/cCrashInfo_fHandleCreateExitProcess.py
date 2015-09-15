@@ -2,6 +2,8 @@ import re;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 def cCrashInfo_fHandleCreateExitProcess(oCrashInfo, sCreateExit, uProcessId):
+  # Returns true if the debugger is ready to debug the application and false if the debugger is still attaching to the
+  # intial processes.
   if sCreateExit == "Create":
     # A new process was created, or attached to.
     oCrashInfo._auProcessIds.append(uProcessId);
@@ -9,7 +11,6 @@ def cCrashInfo_fHandleCreateExitProcess(oCrashInfo, sCreateExit, uProcessId):
     # This may be superfluous, as I believe this is a global flag, not per-process, but it should have negligable
     # affect on performance and would prevent bugs if this assumption is not true.
     oCrashInfo._fasSendCommandAndReadOutput(".childdbg 1");
-    if not oCrashInfo._bCdbRunning: return;
     if not oCrashInfo._bCdbRunning: return;
     # If the debugger attached to this process, remove it from the list of pending attaches:
     if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
@@ -23,7 +24,7 @@ def cCrashInfo_fHandleCreateExitProcess(oCrashInfo, sCreateExit, uProcessId):
         print "* New process %d." % uProcessId;
   elif sCreateExit == "Exit":
     assert uProcessId in oCrashInfo._auProcessIds, \
-        "Missing process id: %d\r\n%s" % (uProcessId, "\r\n".join(oCrashInfo.asCdbIO));
+        "Missing process id: %d\r\n%s" % (uProcessId, "\r\n".join(oCrashInfo._asCdbStdIO));
     oCrashInfo._auProcessIds.remove(uProcessId);
     oCrashInfo._uLastProcessId = uProcessId;
     if dxCrashInfoConfig["bOutputProcesses"]:

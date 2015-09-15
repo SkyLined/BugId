@@ -1,11 +1,11 @@
 class cFunction(object):
-  def __init__(oSelf, oModule, sSymbol):
-    oSelf.oModule = oModule;
-    oSelf.sSymbol = sSymbol;
-    oSelf.sName = "%s!%s" % (oSelf.oModule.sBinaryName, oSelf.sSymbol);
+  def __init__(oFunction, oModule, sSymbol):
+    oFunction.oModule = oModule;
+    oFunction.sSymbol = sSymbol;
+    oFunction.sName = "%s!%s" % (oFunction.oModule.sBinaryName, oFunction.sSymbol);
     # Replace complex template stuff with "<...>" to make a symbol easier to read.
     asComponents = [""];
-    for sChar in oSelf.sSymbol:
+    for sChar in oFunction.sSymbol:
       if sChar == "<":
         asComponents.append("");
       elif sChar == ">":
@@ -17,4 +17,4 @@ class cFunction(object):
       else:
         asComponents[-1] += sChar;
     sSimpifiedSymbol = "<".join(asComponents);
-    oSelf.sSimplifiedName = "%s!%s" % (oSelf.oModule.sBinaryName, sSimpifiedSymbol);
+    oFunction.sSimplifiedName = "%s!%s" % (oFunction.oModule.sBinaryName, sSimpifiedSymbol);

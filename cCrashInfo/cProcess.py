@@ -15,22 +15,28 @@ class cProcess(object):
     if oProcess._doModules_by_sCdbId is None:
       oProcess._doModules_by_sCdbId = {};
       # Gather start and end address and binary name information for loaded modules.
+      # See also cCrashInfo_fasGetModuleCdbNames.py
       asModules = oProcess.oCrashInfo._fasSendCommandAndReadOutput("lm on");
       if not oProcess.oCrashInfo._bCdbRunning: return None;
       sHeader = asModules.pop(0);
       assert re.sub(r"\s+", " ", sHeader.strip()) in ["start end module name"], \
           "Unknown modules header: %s" % repr(sHeader);
       for sLine in asModules:
+        if re.match(r"^\s*(%s)\s*$" % r"|".join([
+          r"",
+          r"Unable to enumerate user\-mode unloaded modules, Win32 error 0n\d+"
+        ]), sLine):
+          continue;
         oMatch = re.match(r"^\s*%s\s*$" % "\s+".join([
-          r"([0-9A-F`]+)",         # (start_address)
-          r"([0-9A-F`]+)",         # (end_address)
+          r"([0-9A-f`]+)",         # (start_address)
+          r"([0-9A-f`]+)",         # (end_address)
           r"(\w+)",               # (cdb_module_id)
           r"(.*?)",               # (binary_name)
-        ]), sLine, re.I);
+        ]), sLine);
         assert oMatch, "Unexpected modules output: %s" % sLine;
         sStartAddress, sEndAddress, sCdbModuleId, sBinaryName, = oMatch.groups();
-        uStartAddress = int(sStartAddress.replace("`", ""), 16);
-        uEndAddress = int(sEndAddress.replace("`", ""), 16);
+        uStartAddress = long(sStartAddress.replace("`", ""), 16);
+        uEndAddress = long(sEndAddress.replace("`", ""), 16);
         oProcess._doModules_by_sCdbId[sCdbModuleId] = cModule(oProcess, sCdbModuleId, sBinaryName, uStartAddress, uEndAddress);
     return oProcess._doModules_by_sCdbId;
   

@@ -50,31 +50,39 @@ for sCommand, axExceptions in daxExceptionHandling.items():
       asExceptionHandlingCommands.append("%s 0x%08X" % (sCommand, xException));
 sExceptionHandlingCommands = ";".join(asExceptionHandlingCommands);
 
-def fDetectFailedAttach(asLines):
-  # Attaching to a process may fail, this code detects that failure and throws an assertion failure.
-  for sLine in asLines:
-    oFailedAttachMatch = re.match(r"^Cannot debug pid (\d+),\s*(.*?)\s*$", sLine);
-    assert not oFailedAttachMatch, "\r\n".join(
-        ["Failed to attach to process %s: %s" % oFailedAttachMatch.groups()] + 
-        asLines
-    );
-
-def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
+def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialCdbOutput):
   # cdb can either start an application, or attach to paused processes; which is it?
   bCdbStartedAnApplication = len(oCrashInfo._auProcessIdsPendingAttach) == 0;
-  bDebuggerIsAttachingToProcesses = not bCdbStartedAnApplication;
-  # If cdb was asked to attach to a process, make sure it worked.
-  if bDebuggerIsAttachingToProcesses:
-    fDetectFailedAttach(asIntialOutput);
-  # If the debugger started a process, we should set up exception handling now. Otherwise wait until the debugger has
-  # attached to all the processes.
-  bExceptionHandlersHaveBeenSet = False;
-  # While no error has been reported:
+  oCrashInfo._bDebuggerIsAttachingToProcesses = not bCdbStartedAnApplication;
+  # Exception handlers need to be set up.
+  oCrashInfo._bExceptionHandlersHaveBeenSet = False;
+  # The debugger must be initialized before it is ready to debug the application. 
+  oCrashInfo._bReadyToDebugApplication = False;
+  # Only fire _fApplicationRunningCallback if the application was started for the first time or resumed after it was
+  # paused to analyze an exception. 
+  bInitialApplicationRunningCallbackFired = False;
+  bApplicationWasPausedToAnalyzeAnException = False;
+  # An error report will be created when needed; it is returned at the end
   oErrorReport = None;
-  # Only fire _fApplicationRunningCallback if the application was started or resumed. 
-  bFireApplicationRunningCallback = True;
-  if not oCrashInfo._bCdbRunning: return None;
-  while oErrorReport is None:
+  while not oCrashInfo._bReadyToDebugApplication or len(oCrashInfo._auProcessIds) > 0:
+    if oCrashInfo._bDebuggerIsAttachingToProcesses or oCrashInfo._bReadyToDebugApplication:
+      # Start or resume the application
+      if bApplicationWasPausedToAnalyzeAnException or not bInitialApplicationRunningCallbackFired:
+        # Application was resumed
+        oCrashInfo._fApplicationRunningCallback();
+        bInitialApplicationRunningCallbackFired = True;
+      asCdbOutput = oCrashInfo._fasSendCommandAndReadOutput("g");
+      if not oCrashInfo._bCdbRunning: return None;
+    else:
+      asCdbOutput = asIntialCdbOutput;
+    # If cdb is attaching to a process, make sure it worked.
+    if oCrashInfo._bDebuggerIsAttachingToProcesses:
+      for sLine in asCdbOutput:
+        oFailedAttachMatch = re.match(r"^Cannot debug pid (\d+),\s*(.*?)\s*$", sLine);
+        assert not oFailedAttachMatch, "\r\n".join(
+            ["Failed to attach to process %s: %s" % oFailedAttachMatch.groups()] + 
+            asCdbOutput
+        );
     # Find out what event caused the debugger break
     asLastEventOutput = oCrashInfo._fasSendCommandAndReadOutput(".lastevent");
     if not oCrashInfo._bCdbRunning: return None;
@@ -104,89 +112,78 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialOutput):
         sExceptionDescription, sExceptionCode
     ) = oEventMatch.groups();
     uProcessId = long(sProcessIdHex, 16);
+    uExceptionCode = sExceptionCode and int(sExceptionCode, 16);
+    if uExceptionCode in (STATUS_BREAKPOINT, STATUS_WAKE_SYSTEM_DEBUGGER) and uProcessId not in oCrashInfo._auProcessIds:
+      # This is assumed to be the initial breakpoint after starting/attaching to the first process or after a new
+      # process was created by the application. This assumption may not be correct, in which case the code needs to
+      # be modifed to check the stack to determine if this really is the initial breakpoint. But that comes at a
+      # performance cost, so until proven otherwise, the code is based on this assumption.
+      sCreateExitProcess = "Create";
+      sCreateExitProcessIdHex = sProcessIdHex;
     if sCreateExitProcess:
       # Make sure the created/exited process is the current process.
       assert sProcessIdHex == sCreateExitProcessIdHex, "%s vs %s" % (sProcessIdHex, sCreateExitProcessIdHex);
       oCrashInfo.fHandleCreateExitProcess(sCreateExitProcess, uProcessId);
-      if len(oCrashInfo._auProcessIds) == 0:
-        break; # The last process was terminated.
-    else:
-      uExceptionCode = int(sExceptionCode, 16);
-      if uExceptionCode in (STATUS_BREAKPOINT, STATUS_WAKE_SYSTEM_DEBUGGER) and uProcessId not in oCrashInfo._auProcessIds:
-        # This is assumed to be the initial breakpoint after starting/attaching to the first process or after a new
-        # process was created by the application. This assumption may not be correct, in which case the code needs to
-        # be modifed to check the stack to determine if this really is the initial breakpoint. But that comes at a
-        # performance cost, so until proven otherwise, the code is based on this assumption.
-        oCrashInfo.fHandleCreateExitProcess("Create", uProcessId);
-      else:
-        # Report that analysis is starting...
-        oCrashInfo._fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
-        # And potentially report that the application is resumed later
-        bFireApplicationRunningCallback = True;
-        if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
-          # Try to reload all modules and their PDB files up to 10 times until there are no more corrupt files.
-          for x in xrange(10):
-            asOutput = oCrashInfo._fasSendCommandAndReadOutput(".reload /f /v");
-            if not oCrashInfo._bCdbRunning: return None;
-            asCorruptPDBFilePaths = set();
-            for sLine in asOutput:
-              # If there are any corrupt PDB files, try to delete them.
-              oCorruptPDBFilePathMatch = re.match(r"^DBGHELP: (.*?) \- E_PDB_CORRUPT\s*$", sLine);
-              if oCorruptPDBFilePathMatch:
-                sPDBFilePath = oCorruptPDBFilePathMatch.group(1);
-                asCorruptPDBFilePaths.add(sPDBFilePath);
-            bCorruptPDBFilesDeleted = False;
-            for sCorruptPDBFilePath in asCorruptPDBFilePaths:
-              print "* Deleting corrupt pdb file: %s" % sCorruptPDBFilePath;
-              try:
-                os.remove(sCorruptPDBFilePath);
-              except Exception, oException:
-                print "- Cannot delete corrupt pdb file: %s" % repr(oException);
-              else:
-                bCorruptPDBFilesDeleted = True;
-            if not bCorruptPDBFilesDeleted:
-              # If no corrupt PDB files were deleted, stop reloading modules.
-              break;
-        # Create an error report, if the exception is fatal.
-        oErrorReport = cErrorReport.foCreate(oCrashInfo, uExceptionCode, sExceptionDescription);
-        if not oCrashInfo._bCdbRunning: return None;
-        # Stop the debugger if there was a fatal error.
-        if oErrorReport is not None:
-          break;
-
-    # If there are more processes to attach to, do so:
-    if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
-      asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % oCrashInfo._auProcessIdsPendingAttach[0]);
-      if not oCrashInfo._bCdbRunning: return;
-    else:
-      # The debugger has started the process or attached to all processes.
-      # Set up exception handling if this has not beenm done yet.
-      if not bExceptionHandlersHaveBeenSet:
-        # Note to self: when rewriting the code, make sure not to set up exception handling before the debugger has
-        # attached to all processes. But do so before resuming the threads. Otherwise one or more of the processes can
-        # end up having only one thread that has a suspend count of 2 and no amount of resuming will cause the process
-        # to run. The reason for this is unknown, but if things are done in the correct order, this problem is avoided.
-        bExceptionHandlersHaveBeenSet = True;
-        oCrashInfo._fasSendCommandAndReadOutput(sExceptionHandlingCommands);
+      # If there are more processes to attach to, do so:
+      if len(oCrashInfo._auProcessIdsPendingAttach) > 0:
+        asAttachToProcess = oCrashInfo._fasSendCommandAndReadOutput(".attach 0n%d" % oCrashInfo._auProcessIdsPendingAttach[0]);
         if not oCrashInfo._bCdbRunning: return;
-      # If the debugger attached to processes, mark that as done and resume threads in all processes.
-      if bDebuggerIsAttachingToProcesses:
-        bDebuggerIsAttachingToProcesses = False;
-        for uProcessId in oCrashInfo._auProcessIds:
-          oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
+      else:
+        # Set up exception handling if this has not been done yet.
+        if not oCrashInfo._bExceptionHandlersHaveBeenSet:
+          # Note to self: when rewriting the code, make sure not to set up exception handling before the debugger has
+          # attached to all processes. But do so before resuming the threads. Otherwise one or more of the processes can
+          # end up having only one thread that has a suspend count of 2 and no amount of resuming will cause the process
+          # to run. The reason for this is unknown, but if things are done in the correct order, this problem is avoided.
+          oCrashInfo._bExceptionHandlersHaveBeenSet = True;
+          oCrashInfo._fasSendCommandAndReadOutput(sExceptionHandlingCommands);
           if not oCrashInfo._bCdbRunning: return;
-    # Run the application
-    if bFireApplicationRunningCallback:
-      oCrashInfo._fApplicationRunningCallback();
-    asRunApplicationOutput = oCrashInfo._fasSendCommandAndReadOutput("g");
-    if not oCrashInfo._bCdbRunning: return;
-    # If cdb is attaching to a process, make sure it worked.
-    if bDebuggerIsAttachingToProcesses:
-      fDetectFailedAttach(asRunApplicationOutput);
+        # If the debugger attached to processes, mark that as done and resume threads in all processes.
+        if oCrashInfo._bDebuggerIsAttachingToProcesses:
+          oCrashInfo._bDebuggerIsAttachingToProcesses = False;
+          for uProcessId in oCrashInfo._auProcessIds:
+            oCrashInfo._fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
+            if not oCrashInfo._bCdbRunning: return;
+        # The debugger is now ready to debug the application (if it wasn't already).
+        oCrashInfo._bReadyToDebugApplication = True;
+      continue;
+    # Report that the application is paused for analysis...
+    oCrashInfo._fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
+    # And potentially report that the application is resumed later...
+    bApplicationWasPausedToAnalyzeAnException = True;
+    if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
+      # Try to reload all modules and their PDB files up to 10 times until there are no more corrupt files.
+      for x in xrange(10):
+        asOutput = oCrashInfo._fasSendCommandAndReadOutput(".reload /v");
+        if not oCrashInfo._bCdbRunning: return None;
+        asCorruptPDBFilePaths = set();
+        for sLine in asOutput:
+          # If there are any corrupt PDB files, try to delete them.
+          oCorruptPDBFilePathMatch = re.match(r"^DBGHELP: (.*?) (\- E_PDB_CORRUPT|dia error 0x[0-9a-f]+)\s*$", sLine);
+          if oCorruptPDBFilePathMatch:
+            sPDBFilePath = oCorruptPDBFilePathMatch.group(1);
+            asCorruptPDBFilePaths.add(sPDBFilePath);
+        bCorruptPDBFilesDeleted = False;
+        for sCorruptPDBFilePath in asCorruptPDBFilePaths:
+          print "* Deleting corrupt pdb file: %s" % sCorruptPDBFilePath;
+          try:
+            os.remove(sCorruptPDBFilePath);
+          except Exception, oException:
+            print "- Cannot delete corrupt pdb file: %s" % repr(oException);
+          else:
+            bCorruptPDBFilesDeleted = True;
+        if not bCorruptPDBFilesDeleted:
+          # If no corrupt PDB files were deleted, stop reloading modules.
+          break;
+    # Create an error report, if the exception is fatal.
+    oErrorReport = cErrorReport.foCreate(oCrashInfo, uExceptionCode, sExceptionDescription);
+    if not oCrashInfo._bCdbRunning: return None;
+    if oErrorReport is not None:
+      break;
+
   # Terminate cdb.
   oCrashInfo._bCdbTerminated = True;
   oCrashInfo._fasSendCommandAndReadOutput("q");
   assert not oCrashInfo._bCdbRunning, "Debugger did not terminate when requested";
   return oErrorReport;
 
-  # For each process that was started/attached to, do the following:
