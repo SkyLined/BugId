@@ -6,11 +6,11 @@ if __name__ == "__main__":
   asArguments = sys.argv[1:];
   if len(asArguments) == 0:
     print "Usage:";
-    print "  ci.py [options] --pids=[comma separated list of process ids]";
+    print "  BugId.py [options] path\\to\\binary.exe [arguments]";
+    print "    Start the executable in the debugger with the provided arguments.";
+    print "  BugId.py [options] --pids=[comma separated list of process ids]";
     print "    Attach debugger to the process(es) provided in the list. The processes must";
     print "    all have been suspended, as they will be resumed by the debugger.";
-    print "  ci.py [options] path\\to\\executable.exe [arguments]";
-    print "    Start the executable in the debugger with the provided arguments.";
     print;
     print "Options:";
     print "  --bSaveReport=false";
@@ -26,36 +26,33 @@ if __name__ == "__main__":
     os._exit(0);
   auApplicationProcessIds = None;
   while len(asArguments) and asArguments[0].startswith("--"):
-    if asArguments[0].startswith("--"):
-      if asArguments[0].startswith("--pids="):
-        auApplicationProcessIds = [int(x) for x in asArguments[0].split("=", 1)[1].split(",")];
-      else:
-        sSettingName, sValue = asArguments[0][2:].split("=", 1);
-        xValue = json.loads(sValue);
-        asGroupNames = sSettingName.split("."); # last element is not a group name
-        sFullName = ".".join(asGroupNames);
-        sSettingName = asGroupNames.pop();          # so pop it.
-        dxConfigGroup = dxBugIdConfig;
-        asHandledGroupNames = [];
-        for sGroupName in asGroupNames:
-          asHandledGroupNames.append(sGroupName);
-          assert sGroupName in dxConfigGroup, \
-              "Unknown config group %s in setting name %s." % (repr(".".join(asHandledGroupNames)), repr(sFullName));
-          dxConfigGroup = dxConfigGroup.get(sGroupName, {});
-        assert sSettingName in dxConfigGroup, \
-            "Unknown setting name %s%s." % (sSettingName, \
-                len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
-        if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
-          print "* The default value for config setting %s is %s." % (sFullName, repr(dxConfigGroup[sSettingName]));
-        else:
-          print "* Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
-          dxConfigGroup[sSettingName] = xValue;
+    if asArguments[0].startswith("--pids="):
+      auApplicationProcessIds = [int(x) for x in asArguments[0].split("=", 1)[1].split(",")];
     else:
-      raise AssertionError("Unknown switch %s" % repr(asArguments[0]));
+      sSettingName, sValue = asArguments[0][2:].split("=", 1);
+      xValue = json.loads(sValue);
+      asGroupNames = sSettingName.split("."); # last element is not a group name
+      sFullName = ".".join(asGroupNames);
+      sSettingName = asGroupNames.pop();          # so pop it.
+      dxConfigGroup = dxBugIdConfig;
+      asHandledGroupNames = [];
+      for sGroupName in asGroupNames:
+        asHandledGroupNames.append(sGroupName);
+        assert sGroupName in dxConfigGroup, \
+            "Unknown config group %s in setting name %s." % (repr(".".join(asHandledGroupNames)), repr(sFullName));
+        dxConfigGroup = dxConfigGroup.get(sGroupName, {});
+      assert sSettingName in dxConfigGroup, \
+          "Unknown setting name %s%s." % (sSettingName, \
+              len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
+      if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
+        print "* The default value for config setting %s is %s." % (sFullName, repr(dxConfigGroup[sSettingName]));
+      else:
+        print "* Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
+        dxConfigGroup[sSettingName] = xValue;
     asArguments.pop(0);
   asApplicationCommandLine = len(asArguments) and asArguments or None;
   if asApplicationCommandLine and len(asApplicationCommandLine) == 1:
-    sURL = "http://%s:28876" % os.getenv("COMPUTERNAME");
+    sURL = "http://%s:28876/" % os.getenv("COMPUTERNAME");
     sProgramFilesPath = os.getenv("ProgramFiles");
     sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
     sProgramFilesPath_AMD64 = os.getenv("ProgramW6432");

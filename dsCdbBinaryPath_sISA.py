@@ -6,13 +6,13 @@ dasPotentialCdbBinaryPaths_sISA = {"x86": [], "AMD64": []};
 # Add "cdb", "cdb_x86" and "cdb_x64" environment variables if provided:
 sCdb = os.getenv("cdb");
 if sCdb:
-  dasPotentialCdbBinaryPaths_sISA[sOSISA].append(sCdb);
+  dasPotentialCdbBinaryPaths_sISA[sOSISA].append(sCdb.strip('"'));
 sCdb_x86 = os.getenv("cdb_x86");
 if sCdb_x86:
-  dasPotentialCdbBinaryPaths_sISA["x86"].append(sCdb_x86);
+  dasPotentialCdbBinaryPaths_sISA["x86"].append(sCdb_x86.strip('"'));
 sCdb_x64 = os.getenv("cdb_x64");
 if sCdb_x64:
-  dasPotentialCdbBinaryPaths_sISA["AMD64"].append(sCdb_x64);
+  dasPotentialCdbBinaryPaths_sISA["AMD64"].append(sCdb_x64.strip('"'));
 
 # Add default installation paths:
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
