@@ -18,15 +18,18 @@ same bug as their root cause. It is used in automated fuzzing frameworks to
 allow "bucketizing" crashes to skip known issues and focus on bugs that have
 not been found before.
 
-The information collected can be stored in HTML format, and can be useful when
-manually analyzing bugs. The code attempts to determine the security risk of
-the bug it detected, so even novice users may be able to determine whether or
-not a particular bug is likely to be a security issue.
+The information collected about the bug is stored in HTML format, and can be
+useful when manually analyzing bugs. The code attempts to determine the security
+risk of the bug it detected, so even novice users may be able to determine
+whether or not a particular bug is likely to be a security issue.
 
-Usage
------
-There are multiple ways to use the code. First, you can simply start BugId from
-the command line in the following ways:
+BugId can be used as a command-line utility through BugId.py and integrated into
+your own Python project using cBugId.py.
+
+BugId.py
+--------
+BugId.py is a command-line utility to start an application in BugId. It can be
+used in the following ways:
 
     BugId.py [options] path\to\binary.exe [arguments]
 
@@ -39,19 +42,24 @@ Attach debugger to the process(es) provided in the list. Not that the processes
 
     BugId.py [options] [known application] [additional arguments]
 
-A number of "known" applications have been defined, which includes the path to
-the binary to be executed and any default arguments to be provided to the
-application. This makes it possible to execute these applications with those
-argument in BugId by using a single keyword. Currently the know applications
-are:
+Start the given "known" application in the debugger with default argument and
+optional additional arguments. A number of "known" applications have been
+pre-defined for which BugId.py knows the path to the binary to be executed and
+and optionally a number of default arguments to be passed to the application. 
+Currently the know applications are:
 * firefox: Mozilla Firefox
 * chrome: Google Chrome 
 * msie: Microsoft Internet Explorer
 * msie86: Microsoft Internet Explorer, 32-bit application
 * msie64: Microsoft Internet Explorer, 64-bit application
+You may want to add your own application if you don't want to have to type the
+entire binary path every time you use BugId, or if you want to run it with
+cetain default arguments. 
 
-Second, you can use BugId directly in your own python script by putting it in a
-sub-folder (ee.g. "BugId") of your project and importing the cBugId class:
+cBugId.py
+---------
+You can integrate BugId with your own python prooject by putting it in a
+sub-folder (e.g. "BugId") of your project and importing the cBugId class:
 
     from BugId import cBugId;
     
@@ -60,6 +68,9 @@ sub-folder (ee.g. "BugId") of your project and importing the cBugId class:
     oBugId.fWait();
     if oBugId.oErrorReport:
       print "Error: %s" % oErrorReport.sId;
+
+You can either wait for BugId to finish by calling `fWait`, or perform other
+functions until the `fFinishedCallback` is called (see below).
 
 cBugId takes the following optional named arguments:
     asApplicationCommandLine
@@ -85,15 +96,9 @@ cBugId takes the following optional named arguments:
       unattended.
 
 Please note that either `asApplicationCommandLine` or `auApplicationProcessIds`
-must be provided and that they are mutually exclusive. 
-
-EdgeDbg
--------
-To facilitate usage of BugId with Microsoft Edge, the [EdgeDbg]
-(https://github.com/SkyLined/EdgeDbg) project includes the `EdgeBugId.cmd`
-script, which can be used to run Edge in BugId. More information is available
-in the [README](https://github.com/SkyLined/EdgeDbg/blob/master/README.md) file
-for that project.
+must be provided and that they are mutually exclusive. Also note that the
+callbacks are called from separate threads, so your code needs to be
+thread-safe in order to function properly when using these callbacks.
 
 Example
 -------
@@ -124,6 +129,14 @@ The exact same thing, done using the "msie" known application keyword:
 
     H:\dev\py\BugId>BugId.py msie
     <<<snip>>>
+
+EdgeDbg
+-------
+To facilitate usage of BugId with Microsoft Edge, the [EdgeDbg]
+(https://github.com/SkyLined/EdgeDbg) project includes the `EdgeBugId.cmd`
+script, which can be used to run Edge in BugId. More information is available
+in the [README](https://github.com/SkyLined/EdgeDbg/blob/master/README.md) file
+for that project.
 
 Unit tests
 ----------
