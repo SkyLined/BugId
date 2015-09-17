@@ -28,7 +28,7 @@ your own Python project using cBugId.py.
 
 BugId.py
 --------
-BugId.py is a command-line utility to start an application in BugId. It can be
+`BugId.py` is a command-line utility to start an application in BugId. It can be
 used in the following ways:
 
     BugId.py [options] path\to\binary.exe [arguments]
@@ -58,8 +58,8 @@ cetain default arguments.
 
 cBugId.py
 ---------
-You can integrate BugId with your own python prooject by putting it in a
-sub-folder (e.g. "BugId") of your project and importing the cBugId class:
+You can integrate BugId with your own python project by putting it in a
+sub-folder (e.g. "BugId") of your project and importing the `cBugId` class:
 
     from BugId import cBugId;
     
@@ -69,8 +69,13 @@ sub-folder (e.g. "BugId") of your project and importing the cBugId class:
     if oBugId.oErrorReport:
       print "Error: %s" % oErrorReport.sId;
 
-You can either wait for BugId to finish by calling `fWait`, or perform other
-functions until the `fFinishedCallback` is called (see below).
+(You can either wait for BugId to finish by calling `fWait`, or perform other
+functions until the `fFinishedCallback` is called. See below for more details
+on that callback).
+
+An example of a python file that uses the `cBugId` class can be found in
+`BugId.py`: the later is a wrapper for the former that makes it into a
+command-line untility.
 
 cBugId takes the following optional named arguments:
     asApplicationCommandLine
