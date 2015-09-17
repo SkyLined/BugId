@@ -9,18 +9,32 @@ asHiddenTopFrames = [
   "MSVCR110.dll!_CxxThrowException",
 ]
 # Some C++ exceptions may be out-of-memory errors.
-dtxErrorTranslations = {
-  "OOM": (
-    "The process triggered a C++ exception to indicate it was unable to allocate enough memory",
-    None,
-    [
+ddtxErrorTranslations_by_sExceptionCallName = {
+  "Unknown": { # This entry was created before the code determined the exception class name...
+    "OOM": (
+      "The process triggered a C++ exception to indicate it was unable to allocate enough memory",
+      None,
       [
-        "KERNELBASE.dll!RaiseException",
-        "msvcrt.dll!_CxxThrowException",
-        "jscript9.dll!Js::Throw::OutOfMemory",
+        [
+          "KERNELBASE.dll!RaiseException",
+          "msvcrt.dll!_CxxThrowException",
+          "jscript9.dll!Js::Throw::OutOfMemory",
+        ],
       ],
-    ],
-  ),
+    ),
+  },
+  "std::bad_alloc": {
+    "OOM": (
+      "The process triggered a std::bad_alloc C++ exception to indicate it was unable to allocate enough memory",
+      None,
+      [
+        [
+          "KERNELBASE.dll!RaiseException",
+          "msvcrt.dll!_CxxThrowException",
+        ],
+      ],
+    ),
+  },
 };
 
 def cErrorReport_foSpecialErrorReport_CppException(oErrorReport, oCrashInfo):
@@ -40,8 +54,10 @@ def cErrorReport_foSpecialErrorReport_CppException(oErrorReport, oCrashInfo):
     sExceptionObjectSymbol = sExceptionObjectVFTablePointerSymbol.rstrip("::`vftable'");
     sCdbModuleId, sExceptionClassName = sExceptionObjectSymbol.split("!", 1);
     oErrorReport.sErrorTypeId += ":%s" % sExceptionClassName;
+    dtxErrorTranslations = ddtxErrorTranslations_by_sExceptionCallName.get(sExceptionClassName);
+    if dtxErrorTranslations:
+      oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
     break;
-  oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
   if oErrorReport:
     oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oErrorReport;

@@ -10,12 +10,10 @@ class cStack(object):
     oStack.uHashFramesCount = dxCrashInfoConfig["uStackHashFramesCount"];
   
   def fHideTopFrames(oStack, asFrameAddresses):
-    for oFrame in oStack.aoFrames: # For each frame
-      if not oFrame.bIsHidden: # if it's not yet hidden,
-        if oFrame.sAddress in asFrameAddresses or oFrame.sSimplifiedAddress in asFrameAddresses: # and it should be,
-          oFrame.bIsHidden = True; # hide it.
-        else:
-          break; # this should not be hidden, stop looking.
+    for oStackFrame in oStack.aoFrames: # For each frame
+      if not oStackFrame.bIsHidden: # if it's not yet hidden,
+        if not oStackFrame.fbHide(asFrameAddresses): # see if it should be hidden and do so
+          break; # or stop looking.
   
   def fCreateAndAddStackFrame(oStack, oCrashInfo, uNumber, uAddress, sUnloadedModuleFileName, sCdbModuleId, uModuleOffset, sSymbol, uSymbolOffset):
     # frames must be created in order:
@@ -51,13 +49,13 @@ class cStack(object):
     uStackFramesCount = min(dxCrashInfoConfig["uMaxStackFramesCount"], uSize);
     if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
       # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
-      asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
+      asOutput = oCrashInfo._fasSendCommandAndReadOutput(".symopt- 0x80000000");
       if not oCrashInfo._bCdbRunning: return None;
     asStack = oCrashInfo._fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
     if not oCrashInfo._bCdbRunning: return None;
     if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
       # Turn noisy symbol loading back on
-      oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
+      oCrashInfo._fasSendCommandAndReadOutput(".symopt+ 0x80000000");
       if not oCrashInfo._bCdbRunning: return None;
     # Here are some lines you might expect to parse:
     # |TODO put something here...
@@ -103,13 +101,13 @@ class cStack(object):
     uStackFramesCount = dxCrashInfoConfig["uMaxStackFramesCount"];
     if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
       # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
-      asOutput = oCrashInfo._fasSendCommandAndReadOutput("!sym quiet");
+      asOutput = oCrashInfo._fasSendCommandAndReadOutput(".symopt- 0x80000000");
       if not oCrashInfo._bCdbRunning: return None;
     asStack = oCrashInfo._fasSendCommandAndReadOutput("kn 0x%X" % uStackFramesCount);
     if not oCrashInfo._bCdbRunning: return None;
     if dxCrashInfoConfig["bEnhancedSymbolLoading"]:
       # Turn noisy symbol loading back on
-      oCrashInfo._fasSendCommandAndReadOutput("!sym noisy");
+      oCrashInfo._fasSendCommandAndReadOutput(".symopt+ 0x80000000");
       if not oCrashInfo._bCdbRunning: return None;
     sHeader = asStack.pop(0);
     assert re.sub(r"\s+", " ", sHeader.strip()) in ["# ChildEBP RetAddr", "# Child-SP RetAddr Call Site", "Could not allocate memory for stack trace"], \

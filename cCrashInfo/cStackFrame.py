@@ -1,3 +1,4 @@
+import hashlib;
 from dxCrashInfoConfig import dxCrashInfoConfig;
 
 class cStackFrame(object):
@@ -17,7 +18,7 @@ class cStackFrame(object):
       elif oStackFrame.uFunctionOffset:
         oStackFrame.sAddress += " - 0x%X" % abs(oStackFrame.uFunctionOffset);
       oStackFrame.sSimplifiedAddress = oStackFrame.oFunction.sSimplifiedName;
-      oStackFrame.sIdAddress = oStackFrame.oFunction.sName;
+      sIdInput = oStackFrame.oFunction.sName;
       if uFunctionOffset not in xrange(dxCrashInfoConfig["uMaxFunctionOffset"]):
         # The offset is negative or very large: this may not be the correct symbol. If it is, the offset is very likely
         # to change between builds. The offset should not be part of the id and a warning about the symbol is added.
@@ -25,12 +26,23 @@ class cStackFrame(object):
     elif oStackFrame.oModule:
       oStackFrame.sAddress = "%s + 0x%X" % (oStackFrame.oModule.sBinaryName, oStackFrame.uModuleOffset);
       oStackFrame.sSimplifiedAddress = "%s+0x%X" % (oStackFrame.oModule.sBinaryName, oStackFrame.uModuleOffset);
-      oStackFrame.sIdAddress = oStackFrame.sAddress;
+      sIdInput = oStackFrame.sAddress;
     elif sUnloadedModuleFileName:
       oStackFrame.sAddress = "%s + ??" % sUnloadedModuleFileName;
       oStackFrame.sSimplifiedAddress = "sUnloadedModuleFileName+??";
-      oStackFrame.sIdAddress = None;
+      sIdInput = None;
     else:
       oStackFrame.sAddress = "0x%X" % oStackFrame.uAddress;
       oStackFrame.sSimplifiedAddress = "(unknown)";
-      oStackFrame.sIdAddress = None;
+      sIdInput = None;
+    if sIdInput is None:
+      oStackFrame.sId = None;
+    else:
+      oHasher = hashlib.md5();
+      oHasher.update(sIdInput);
+      oStackFrame.sId = "%02X" % ord(oHasher.digest()[0]);
+
+  def fbHide(oStackFrame, asFrameAddresses):
+    if oStackFrame.sAddress in asFrameAddresses or oStackFrame.sSimplifiedAddress in asFrameAddresses: # and it should be,
+      oStackFrame.bIsHidden = True; # hide it.
+    return oStackFrame.bIsHidden;

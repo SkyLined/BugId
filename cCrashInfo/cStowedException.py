@@ -16,8 +16,9 @@ class cStowedException(object):
     oStowedException.sSecurityImpact = None;
   
   @classmethod
-  def foCreate(cSelf, oCrashInfo, oProcess, pAddress):
-    asData = oCrashInfo._fasSendCommandAndReadOutput("dd /c0xA @@masm(poi(0x%X)) L0xA" % pAddress);
+  def foCreate(cSelf, oCrashInfo, oProcess, pAddresses):
+    pFirstAddress = oCrashInfo.fuEvaluateExpression("poi(0x%X)" % pAddresses);
+    asData = oCrashInfo._fasSendCommandAndReadOutput("dd /c0xA @@masm(poi(0x%X)) L0xA" % pFirstAddress);
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600343%28v=vs.85%29.aspx
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600342%28v=vs.85%29.aspx
     #StowedExceptionInformation = {

@@ -30,7 +30,7 @@ dtxErrorTranslations = {
         "xul.dll!NS_ABORT_OOM",
       ], [  # MSIE
         "KERNELBASE.dll!DebugBreak",
-        "script9.dll!ReportFatalException",
+        "jscript9.dll!ReportFatalException",
         "jscript9.dll!JavascriptDispatch_OOM_fatal_error",
       ],
     ],
@@ -77,6 +77,7 @@ asHiddenTopFrames = [
   "KERNELBASE.dll!DebugBreak",
   "ntdll.dll!DbgBreakPoint",
   "EDGEHTML.dll!Abandonment::AssertionFailed",
+  "EDGEHTML.dll!Abandonment::Fail",
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
   "chrome.dll!base::debug::BreakDebugger",
   "chrome_child.dll!base::debug::BreakDebugger",

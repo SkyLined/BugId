@@ -20,7 +20,7 @@ dsBinaries_by_sISA = {
 
 bFailed = False;
 oOutputLock = threading.Lock();
-oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 50);
+oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 32);
 class cTest(object):
   def __init__(oTest, sISA, asCommandLineArguments, srBugId):
     oTest.sISA = sISA;
@@ -63,7 +63,7 @@ class cTest(object):
           bFailed = True;
           print "- %s" % oTest;
           print "    => got no error";
-        elif not re.match("^(%s) .+\.exe!.* ([0-9A-F_]{2})+$" % re.escape(oTest.srBugId), oErrorReport.sId):
+        elif not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
           bFailed = True;
           print "- %s" % oTest;
           print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
@@ -86,13 +86,17 @@ class cTest(object):
     oTest.fFinished();
 
 aoTests = [
- cTest("x86", ["AccessViolation", "READ", "FFFFFFFF"], "AVR:NULL-0x1"),
- cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFF"], "AVR:NULL-0x1"),
+ cTest("x86", ["AccessViolation", "READ", "1"], "AVR:NULL+X"),
+ cTest("AMD64", ["AccessViolation", "READ", "1"], "AVR:NULL+X"),
+ cTest("x86", ["AccessViolation", "READ", "FFFFFFFF"], "AVR:NULL-X"),
+ cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFF"], "AVR:NULL-X"),
  cTest("AMD64", ["PureCall"], "PureCall"), # x86 test not functioning as expected yet
- cTest("AMD64", ["UseAfterFree", "Read", "20"], "AVR:Free"), # x86 test not functioning as expected yet
- cTest("AMD64", ["UseAfterFree", "Write", "20"], "AVW:Free"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Read", "20"], "AVR:OOB"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Write", "20"], "AVW:OOB"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["UseAfterFree", "Read", "20", "0"], "AVR:Free"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["UseAfterFree", "Write", "20", "0"], "AVW:Free"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Read", "20", "0"], "AVR:OOB"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Write", "20", "0"], "AVW:OOB"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Read", "20", "1"], "AVR:OOB+X"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Write", "20", "1"], "AVW:OOB+X"), # x86 test not functioning as expected yet
 ];
 for sISA in asTestISAs:
   aoTests.append(cTest(sISA, ["Breakpoint"], "Breakpoint"));

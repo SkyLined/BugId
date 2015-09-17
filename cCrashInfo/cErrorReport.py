@@ -51,8 +51,8 @@ class cErrorReport(object):
   def fsGetId(oErrorReport):
     if not oErrorReport.sProcessBinaryName or oErrorReport.sFunctionId.startswith(oErrorReport.sProcessBinaryName + "!"):
       # If we do not know the process binary ot it's the module in which the error happened, do not mentioning it.
-      return "%s %s %s" % (oErrorReport.sErrorTypeId, oErrorReport.sFunctionId, oErrorReport.sStackId);
-    return "%s %s!%s %s" % (oErrorReport.sErrorTypeId, oErrorReport.sProcessBinaryName, oErrorReport.sFunctionId, oErrorReport.sStackId);
+      return "%s %s %s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sFunctionId);
+    return "%s %s %s!%s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sProcessBinaryName, oErrorReport.sFunctionId);
   sId = property(fsGetId);
   
   def foTranslateSpecialErrorReport(oErrorReport):
@@ -105,38 +105,37 @@ class cErrorReport(object):
     uFramesHashed = 0;
     asHTMLStack = [];
     sStackId = "";
-    for oFrame in oStack.aoFrames:
-      if oFrame.bIsHidden:
+    for oStackFrame in oStack.aoFrames:
+      if oStackFrame.bIsHidden:
         # This frame is hidden (because it is irrelevant to the crash)
-        asHTMLStack.append("<s>%s</s><br/>" % fsHTMLEncode(oFrame.sAddress));
+        asHTMLStack.append("<s>%s</s><br/>" % fsHTMLEncode(oStackFrame.sAddress));
       else:
-        oTopmostRelevantFrame = oTopmostRelevantFrame or oFrame;
-        sHTMLAddress = fsHTMLEncode(oFrame.sAddress);
+        oTopmostRelevantFrame = oTopmostRelevantFrame or oStackFrame;
+        sHTMLAddress = fsHTMLEncode(oStackFrame.sAddress);
         # Make stack frames without a function symbol italic
-        if not oFrame.oFunction:
+        if not oStackFrame.oFunction:
           sHTMLAddress = "<i>%s</i>" % sHTMLAddress;
         # Hash frame address for id and output frame to html
         if uFramesHashed == oStack.uHashFramesCount:
           # no more hashing is needed: just output as is:
           asHTMLStack.append("%s<br/>" % sHTMLAddress);
-        elif oFrame.sIdAddress:
-          # frame is part of id: add hash and output bold
-          oHasher = hashlib.md5();
-          oHasher.update(oFrame.sIdAddress);
-          sFrameId = "%02X" % ord(oHasher.digest()[0]);
-          sStackId += sFrameId;
-          uFramesHashed += 1;
-          asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, sFrameId));
-          # Determine the top frame for the id:
-          if oFrame.oFunction:
-            oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oFrame;
-          elif oFrame.oModule:
-            oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oFrame;
         else:
-          # This is not part of the id, but between frames that are: add "__" to id and output strike-through
-          sStackId += "__";
-          asHTMLStack.append("<s>%s</s><br/>" % sHTMLAddress);
-    oErrorReport.sStackId = uFramesHashed == 0 and "##" or sStackId;
+          sStackId += oStackFrame.sId or "__";
+          if oStackFrame.sId:
+            # frame adds useful infoormation to the id: add hash and output bold
+            uFramesHashed += 1;
+            asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, oStackFrame.sId));
+            # Determine the top frame for the id:
+            if oStackFrame.oFunction:
+              oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
+            elif oStackFrame.oModule:
+              oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
+          else:
+            # This is not part of the id, but between frames that are: add "__" to id and output strike-through
+            asHTMLStack.append("<s>%s</s><br/>" % sHTMLAddress);
+    # If there are not enouogh id-able stack frames, there may be many trailing "_"-s; remove these. Also, if there
+    # was not id, or nothing is left after removing the "_"-s, use the id "##".
+    oErrorReport.sStackId = sStackId.rstrip("_") or "##";
     if oStack.bPartialStack:
       asHTMLStack.append("... (rest of the stack was ignored)<br/>");
     # Use a function for the id

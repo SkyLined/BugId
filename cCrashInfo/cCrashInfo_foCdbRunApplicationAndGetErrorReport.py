@@ -75,11 +75,8 @@ def cCrashInfo_foCdbRunApplicationAndGetErrorReport(oCrashInfo, asIntialCdbOutpu
       if not oCrashInfo._bCdbRunning: return None;
     # If cdb is attaching to a process, make sure it worked.
     for sLine in asCdbOutput:
-      oFailedAttachMatch = re.match(r"^Cannot debug pid (\d+),\s*(.*?)\s*$", sLine);
-      assert not oFailedAttachMatch, "\r\n".join(
-          ["Failed to attach to process %s: %s" % oFailedAttachMatch.groups()] + 
-          asCdbOutput
-      );
+      oFailedAttachMatch = re.match(r"^Cannot debug pid \d+, Win32 error 0n\d+\s*$", sLine);
+      assert not oFailedAttachMatch, "Failed to attach to process!\r\n%s" % "\r\n".join(asCdbOutput);
     # Find out what event caused the debugger break
     asLastEventOutput = oCrashInfo._fasSendCommandAndReadOutput(".lastevent");
     if not oCrashInfo._bCdbRunning: return None;

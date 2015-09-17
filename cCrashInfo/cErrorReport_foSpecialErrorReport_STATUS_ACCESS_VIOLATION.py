@@ -188,7 +188,10 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
       iOffset += uOverflow;
     uOffset = abs(iOffset);
     if uOffset <= uMaxAddressOffset:
-      sAddressId += "%s0x%X" % (iOffset < 0 and "-" or "+", uOffset);
+      # One bug may result in different offsets for 32-bit and 64-bit versions of an application, so the value of the
+      # offset cannot be used in the id. However, the fact that there is an offset is unique to the bug, so that can
+      # be added:
+      sAddressId += (iOffset < 0 and "-X" or "+X");
       break;
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
@@ -273,33 +276,25 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCra
         # end of the heap block, inside a guard page:
         uBlockAddress = long(sBlockAddress.replace("`", ""), 16);
         uBlockSize = long(sBlockSize.replace("`", ""), 16);
-        uGuardPageAddress = (uBlockAddress & 0xFFF) + 1; # Follows the page in which the block is located.
-        sAddressId = "OOB";
+        uGuardPageAddress = (uBlockAddress | 0xFFF) + 1; # Follows the page in which the block is located.
         bAccessIsBeyondBlock = uAddress >= uBlockAddress + uBlockSize;
-        bAccessIsBeyondStartOfGuardPage = uAddress > uGuardPageAddress;
-        if bAccessIsBeyondStartOfGuardPage:
-          # The access was not at offset 0 in the next page. It is assumed that this is not a simple sequential buffer
-          # read/write overrun, as the AV would have happened at or before the start of the guard page, but rather a
-          # read/write at a bad index/offset, e.g. a bad cast to a smaller object followed by an attempt to read a
-          # property that's not in the object. This means the object should have the same size each time and the offset
-          # is the same each time as well, so this information is unique to the error and can be used in the id.
-          uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
-          sAddressId = "OOB";
-          sOffsetDescription = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
-        elif bAccessIsBeyondBlock:
-          # The access was beyond the block, but it cannot be determined if this is a sequenctial read/write that ran
-          # out of bounds, or a single out-of-bounds read/write at a bad offset, so the offset of the read/write beyond
-          # the block cannot be used in the id. Also, the block may be a dynamically allocated buffer and its size may
-          # not be relevant to the issue either, so it's also not used in the id.
-          sAddressId = "OOB";
+        # The same type of block may have different sizes for 32-bit and 64-bit versions of an application, so the size
+        # cannot be used in the id. The same is true for the offset, but the fact that there is an offset is unique to
+        # the bug, so that can be added.
+        if bAccessIsBeyondBlock:
+          # The access was beyond the end of the block (out-of-bounds, OOB) It can be a simple sequential buffer
+          # overrun, or use of a bad offset/index. If the AV was at an address beyond the start of the guard page,
+          # it cannot be the former, as the previous buffer access would have resulted in an AV as well. In this case
+          # the fact that a bad index/offset was used is unique to the bug and can be added to the id:
+          bAccessIsBeyondStartOfGuardPage = uAddress > uGuardPageAddress;
+          sAddressId = "OOB" + (bAccessIsBeyondStartOfGuardPage and "+X" or "");
           uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
           sOffsetDescription = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
         else:
-          # The access was inside the block. It must be an attempt to write to read only memory, or execute read/write
-          # memory. It is assumed this only happens with a block of a predetermined size (e.g. an object) and that the
-          # offset is the same each time (e.g. the offset of a property).
-          uOffsetFromStartOfBlock = uAddress - uBlockAddress;
-          sAddressId = "[0x%X]+0x%X" % (uBlockSize, uOffsetFromStartOfBlock);
+          # The access was inside the block but apparently the kind of access attempted is not allowed (e.g. write to
+          # read-only memory). The fact that it was at the start of the block or not is unique to the bug and can be
+          # added to the id:
+          sAddressId = "AccessDenied" + (uOffsetFromStartOfBlock > 0 and "+X" or "");
           sOffsetDescription = "%d/0x%X bytes into" % (uOffsetFromStartOfBlock, uOffsetFromStartOfBlock);
         sErrorDescription = "Access violation while %s memory at 0x%X; " \
             "%s a %d/0x%X byte memory block at 0x%X" % \

@@ -57,8 +57,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     _tprintf(_T("    e.g. AccessViolation CALL DEADBEEF\r\n"));
     _tprintf(_T("  UseAfterFree [READ|WRITE] SIZE\r\n"));
     _tprintf(_T("    e.g. UseAfterFree READ 20\r\n"));
-    _tprintf(_T("  OutOfBounds [READ|WRITE] SIZE\r\n"));
-    _tprintf(_T("    e.g. UseAfterFree READ 20\r\n"));
+    _tprintf(_T("  OutOfBounds [READ|WRITE] SIZE OFFSET\r\n"));
+    _tprintf(_T("    e.g. UseAfterFree READ 20 1\r\n"));
     _tprintf(_T("  Breakpoint\r\n"));
     _tprintf(_T("  C++\r\n"));
     _tprintf(_T("  IntegerDivideByZero\r\n"));
@@ -117,11 +117,12 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     }
   } else if (_tcsicmp(asArguments[1], _T("OutOfBounds")) == 0) {
     DWORD dwSize = (DWORD) _tcstodw(asArguments[3], NULL, 16);
+    DWORD dwOffset = (DWORD) _tcstodw(asArguments[4], NULL, 16);
     BYTE* pMemory = new BYTE[dwSize];
     if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
-      BYTE x = *(BYTE*)(pMemory + dwSize + 0x10);
+      BYTE x = *(BYTE*)(pMemory + dwSize + dwOffset);
     } else if (_tcsicmp(asArguments[2], _T("Write")) == 0) {
-      *(BYTE*)(pMemory + dwSize + 0x10) = 0;
+      *(BYTE*)(pMemory + dwSize + dwOffset) = 0;
     } else {
       _tprintf(_T("Please use Read or Write, not %s\r\n"), asArguments[2]);
     }
