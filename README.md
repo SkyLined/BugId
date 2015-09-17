@@ -52,9 +52,10 @@ Currently the know applications are:
 * msie: Microsoft Internet Explorer
 * msie86: Microsoft Internet Explorer, 32-bit application
 * msie64: Microsoft Internet Explorer, 64-bit application
-You may want to add your own application if you don't want to have to type the
-entire binary path every time you use BugId, or if you want to run it with
-cetain default arguments. 
+
+You can add your own applications if you don't want to type the entire binary
+path every time you use BugId, or if you want to run it with certain arguments
+by default. 
 
 cBugId.py
 ---------
@@ -75,7 +76,7 @@ on that callback).
 
 An example of a python file that uses the `cBugId` class can be found in
 `BugId.py`: the later is a wrapper for the former that makes it into a
-command-line untility.
+command-line utility.
 
 cBugId takes the following optional named arguments:
     asApplicationCommandLine
@@ -104,6 +105,65 @@ Please note that either `asApplicationCommandLine` or `auApplicationProcessIds`
 must be provided and that they are mutually exclusive. Also note that the
 callbacks are called from separate threads, so your code needs to be
 thread-safe in order to function properly when using these callbacks.
+
+oErrorReport
+------------
+When BugId detects a bug in the application, it is analyzed and an error report
+is created that contains useful information about the bug. This information is
+stored in an `cErrorReport` object, specifically in the following properties:
+
+    sId (string)
+      Contains a string that is unique to this bug in this application. If
+      symbols are available, and compile-time optimizations do not make radical
+      changes to the binary, the id should be consistently the same for the
+      same bug triggered in different versions of the application and builds
+      for different architectures (eg. x86 v.s. AMD64).
+    sErrorTypeId (string)
+      Contains a string that is unique to this type of bug, e.g. "OOM" for an
+      crash triggered by the process running out-of-memory, or "AVR:NULL" for
+      a NULL pointer access violation. This is used as part of sId.
+    sErrorDescription (string)
+      Contains a human readable description of the error caused by the bug.
+    sSecurityImpact (string/None)
+      Contains a human readable description of the possible security impact of
+      this bug, or None if the bug is not a security issue. *Please note* that
+      this is a best-guess and not a guarantee!
+    sStackId (string)
+      Contains a unique id for the stack for the bug. This is created by
+      concatinating parts of hashes of the return addresses for some of the
+      top stack frames. If that sounds complex, you should see the source for
+      the exact details. The HTML details may also make this more clear, see
+      below for details on those. This is used as part of sId.
+    sCodeId (string)
+      Contains a unique id for the code that is considered the cause of the bug.
+      This is based on the function name as extracted from the symbol file
+      (.pdb) if available, or the name of the module in which the code resides
+      if not. This is used as part of sId.
+    sCodeDescription (string)
+      Contains a human readable string that describes where in the code the bug
+      was found.
+    sProcessBinaryName (string)
+      The name of the binary for the process in which the bug was detected.
+      This is used as part of sId.
+    sHTMLDetails (string)
+      Contains detailed information, including all the information in the
+      properties mention above as well as version information for the
+      binaries involved and a complete log of the debugging session. This
+      is stored in HTML format and can be saved to file for use during
+      manual analysis.
+
+Notes
+-----
+Certain bugs that do not result in an exception immediately, but may
+result in various exceptions later on during execution may result in
+different bug ids. For instance, a bug that slowly consumes all available
+memory can trigger an out-of-memory crash in many different functions, in
+many different threads in the application. Also, timing based issues, so
+as thread safty issues may result in different crashes too, based on
+timing. In these cases, there may be a number of bug ids that are
+associated with a particular bug, and two distinct bugs may result in the
+same bug id. However, more often than not, such a bug will result in a
+limited number of bug ids that are still unique to that bug, so using
 
 Example
 -------
