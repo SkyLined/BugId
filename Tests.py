@@ -1,10 +1,13 @@
 import os, re, sys, threading;
-from cCrashInfo import cCrashInfo;
-from dxConfig import dxConfig;
-dxConfig.setdefault("CrashInfo", {})["bOutputProcesses"] = False;
+from cBugId import cBugId;
+from dxBugIdConfig import dxBugIdConfig;
+dxBugIdConfig["bOutputProcesses"] = False;
 bDebug = False;
 if bDebug:
-  dxConfig.setdefault("CrashInfo", {})["bOutputIO"] = True;
+  dxBugIdConfig["bOutputStdIO"] = True;
+  dxBugIdConfig["bOutputStdErr"] = True;
+else:
+  dxBugIdConfig["bOutputStdErr"] = False;
 
 sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # "x86" or "AMD64"
 if sOSISA == "AMD64":
@@ -35,25 +38,14 @@ class cTest(object):
     oConcurrentTestsSemaphore.acquire();
     sBinary = dsBinaries_by_sISA[oTest.sISA];
     asApplicationCommandLine = [sBinary] + oTest.asCommandLineArguments;
-    oCrashInfo = cCrashInfo(
+    oBugId = cBugId(
       asApplicationCommandLine = asApplicationCommandLine,
-      auApplicationProcessIds = None,
-      asSymbolServerURLs = [],
-      fApplicationRunningCallback = oTest.fApplicationRunningHandler,
-      fExceptionDetectedCallback = oTest.fExceptionDetectedHandler,
       fFinishedCallback = oTest.fFinishedHandler,
       fInternalExceptionCallback = oTest.fInternalExceptionHandler,
     );
   
   def fFinished(oTest):
     oConcurrentTestsSemaphore.release();
-  
-  def fApplicationRunningHandler(oTest):
-    pass;
-  
-  def fExceptionDetectedHandler(oTest, uCode, sDescription):
-    pass;
-  
   def fFinishedHandler(oTest, oErrorReport):
     global bFailed;
     if not bFailed:
@@ -125,7 +117,7 @@ for sISA in asTestISAs:
         cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AV?:Arbitrary"),
       ]);
 
-from cCrashInfo.cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 for (sISA, dtsDetails_uAddress) in ddtsDetails_uAddress_sISA.items():
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
     if uBaseAddress < (1 << 32) or (sISA == "AMD64" and uBaseAddress < (1 << 47)):
