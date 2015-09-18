@@ -5,8 +5,8 @@ class cBugId(object):
   def __init__(oBugId, **dxArguments):
     oBugId.__fExternalFinishedCallback = dxArguments.get("fFinishedCallback");
     dxArguments["fFinishedCallback"] = oBugId.__fInternalFinishedHandler;
-    oBugId.__oCdbWrapper = cCdbWrapper(**dxArguments);
     oBugId.__oFinishedEvent = threading.Event();
+    oBugId.__oCdbWrapper = cCdbWrapper(**dxArguments);
   
   def fStop(oBugId):
     oBugId.__oCdbWrapper.fStop();
