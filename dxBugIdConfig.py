@@ -17,7 +17,7 @@ for (sName, xValue) in {
   "bOutputProcesses": True,     # Output process details whenever one is created/attached to/terminated.
   "uMaxAddressOffset": 0x1000,  # How far from an address can a pointer be offset and still be considered to point to it?
   "uMaxFunctionOffset": 0xFFF,  # How far from a function symbol can a pointer be offset and still be cosidered to point to it?
-  "uMaxStackFramesCount": 50,   # How many stack frames are retreived for analysis?
+  "uMaxStackFramesCount": 100,  # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
   "asSymbolCachePaths": [],     # Where are symbols cached?
   "bEnhancedSymbolLoading": False, # Enable noizy symbol loading and reload symbols for all modules before exception
