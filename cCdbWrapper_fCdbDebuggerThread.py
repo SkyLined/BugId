@@ -150,14 +150,13 @@ def cCdbWrapper_fCdbDebuggerThread(oCdbWrapper):
     oCdbWrapper.fEnhancedSymbolReload();
     if not oCdbWrapper.bCdbRunning: return;
     # Create an error report, if the exception is fatal.
-    oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
+    oCdbWrapper.oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
     if not oCdbWrapper.bCdbRunning: return;
-    if oErrorReport is not None:
+    if oCdbWrapper.oErrorReport is not None:
       break;
-
+  
   # Terminate cdb.
   oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
   oCdbWrapper.fasSendCommandAndReadOutput("q");
   assert not oCdbWrapper.bCdbRunning, "Debugger did not terminate when requested";
-  oCdbWrapper.oErrorReport = oErrorReport;
 
