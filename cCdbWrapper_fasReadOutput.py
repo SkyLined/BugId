@@ -12,7 +12,8 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper):
       if sChar == "\n" or sLine:
         if dxBugIdConfig["bOutputStdIO"]:
           print "cdb>%s" % repr(sLine)[1:-1];
-        oCdbWrapper.asCdbStdIO.append(sLine);
+        # Add the line to the current block of I/O
+        oCdbWrapper.aasCdbStdIO[-1].append(sLine);
         asLines.append(sLine);
       if sChar == "":
         break;
@@ -25,7 +26,8 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper):
         oCdbWrapper.sCurrentISA = oPromptMatch.group(1) and "x86" or oCdbWrapper.sCdbISA;
         if dxBugIdConfig["bOutputStdIO"]:
           print "cdb>%s" % repr(sLine)[1:-1];
-        oCdbWrapper.asCdbStdIO.append(sLine);
+        # The prompt is stored in a new block of I/O
+        oCdbWrapper.aasCdbStdIO.append([sLine]);
         return asLines;
   oCdbWrapper.bCdbRunning = False;
   return None;

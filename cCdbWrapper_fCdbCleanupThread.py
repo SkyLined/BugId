@@ -26,5 +26,7 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # report that we're finished.
   oCdbWrapper.fFinishedCallback and oCdbWrapper.fFinishedCallback(oCdbWrapper.oErrorReport);
   assert bTerminationWasExpected, \
-      "Cdb terminated unexpectedly! StdIO:\r\n%s\r\nStdErr:\r\n%s" % \
-      ("\r\n".join(oCdbWrapper.asCdbStdIO), "\r\n".join(oCdbWrapper.asCdbStdErr));
+      "Cdb terminated unexpectedly! StdIO:\r\n%s\r\nStdErr:\r\n%s" % (
+        "\r\n".join(["\r\n".join(asCdbStdIO) for asCdbStdIO in oCdbWrapper.aasCdbStdIO]),
+        "\r\n".join(oCdbWrapper.asCdbStdErr)
+      );

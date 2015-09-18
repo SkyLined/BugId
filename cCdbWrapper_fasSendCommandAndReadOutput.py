@@ -4,13 +4,14 @@ from dxBugIdConfig import dxBugIdConfig;
 def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand):
   if dxBugIdConfig["bOutputStdIO"] or dxBugIdConfig["bOutputCommands"]:
     print "cdb<%s" % repr(sCommand)[1:-1];
-  # Add command to last line, which should contain the prompt.
-  oCdbWrapper.asCdbStdIO[-1] += sCommand;
   try:
     oCdbWrapper.oCdbProcess.stdin.write("%s\r\n" % sCommand);
   except Exception, oException:
     oCdbWrapper.bCdbRunning = False;
     return None;
+  # Add the command to the last line of the current output block; this block should contain only one line that has the
+  # cdb prompt.
+  oCdbWrapper.aasCdbStdIO[-1][-1] += sCommand;
   asOutput = oCdbWrapper.fasReadOutput();
   # Detect obvious errors executing the command. (this will not catch everything, but does help development)
   assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*\^ .*$", asOutput[0]), \

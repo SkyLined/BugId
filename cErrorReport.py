@@ -191,6 +191,13 @@ class cErrorReport(object):
         "sInformation": "".join(["%s<br/>" % fsHTMLEncode(x) for x in asModuleInformationOutput[2:]]),
       });
     
+    # Turn cdb I/O into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
+    # command executed.
+    asHTMLBlocks = [];
+    for asBlock in oCdbWrapper.aasCdbStdIO:
+      asHTMLBlocks.append("".join(["%s<br/>" % fsHTMLEncode(sLine) for sLine in asBlock]));
+    sHTMLCdbStdIO = "<hr/>".join(asHTMLBlocks);
+    sHTMLCdbStdErr = "".join(["%s<br/>" % fsHTMLEncode(sLine) for sLine in oCdbWrapper.asCdbStdErr]);
     # Create HTML details
     oErrorReport.sHTMLDetails = sHTMLDetailsTemplate % {
       "sId": fsHTMLEncode(oErrorReport.sId),
@@ -200,6 +207,7 @@ class cErrorReport(object):
       "sSecurityImpact": oErrorReport.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
       "sStack": "".join(asHTMLStack),
       "sBinaryInformation": "".join(asHTMLBinaryInformation),
-      "sCdbIO": "".join(["%s<br/>" % fsHTMLEncode(x) for x in oCdbWrapper.asCdbStdIO]),
+      "sCdbStdErr": sHTMLCdbStdErr,
+      "sCdbStdIO": sHTMLCdbStdIO,
     };
     return oErrorReport;

@@ -64,7 +64,7 @@ class cCdbWrapper(object):
       print "* Starting %s" % " ".join(asCommandLine);
     # Initialize some variables
     oCdbWrapper.sCurrentISA = None; # During exception handling, this is set to the ISA for the code that caused it.
-    oCdbWrapper.asCdbStdIO = []; # Logs all stdin/stdout communication with cdb.
+    oCdbWrapper.aasCdbStdIO = [[]]; # Logs all stdin/stdout communication with cdb. Create a sub-list for each executed command.
     oCdbWrapper.asCdbStdErr = []; # Logs all stderr output from cdb.
     oCdbWrapper.oErrorReport = None; # Set to an error report if a bug was detected in the application
     oCdbWrapper.uLastProcessId = None; # Set to the id of the last process to be reported as terminated by cdb.

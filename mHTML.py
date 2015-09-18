@@ -51,8 +51,10 @@ sHTMLDetailsTemplate = """
     <div>Stack</div>
     <code>%(sStack)s</code>
     %(sBinaryInformation)s
-    <div>Debugger input/output</div>
-    <code>%(sCdbIO)s</code>
+    <div>Error output (stderr)</div>
+    <code>%(sCdbStdErr)s</code>
+    <div>Debugger input/output (stdin/stdout)</div>
+    <code>%(sCdbStdIO)s</code>
   </body>
 </html>""".strip();
 
