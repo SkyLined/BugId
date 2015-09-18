@@ -9,8 +9,6 @@ def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand):
   try:
     oCdbWrapper.oCdbProcess.stdin.write("%s\r\n" % sCommand);
   except Exception, oException:
-    assert oCdbWrapper.bCdbTerminated or len(oCdbWrapper.auProcessIds) == 0, \
-        "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oCdbWrapper.asCdbStdIO[-20:]);
     oCdbWrapper.bCdbRunning = False;
     return None;
   asOutput = oCdbWrapper.fasReadOutput();

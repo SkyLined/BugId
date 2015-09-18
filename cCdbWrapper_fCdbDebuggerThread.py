@@ -156,7 +156,7 @@ def cCdbWrapper_fCdbDebuggerThread(oCdbWrapper):
       break;
 
   # Terminate cdb.
-  oCdbWrapper.bCdbTerminated = True;
+  oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
   oCdbWrapper.fasSendCommandAndReadOutput("q");
   assert not oCdbWrapper.bCdbRunning, "Debugger did not terminate when requested";
   oCdbWrapper.oErrorReport = oErrorReport;

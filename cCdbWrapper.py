@@ -69,7 +69,7 @@ class cCdbWrapper(object):
     oCdbWrapper.oErrorReport = None; # Set to an error report if a bug was detected in the application
     oCdbWrapper.uLastProcessId = None; # Set to the id of the last process to be reported as terminated by cdb.
     oCdbWrapper.bCdbRunning = True; # Set to False after cdb terminated, used to terminate the debugger thread.
-    oCdbWrapper.bCdbTerminated = False; # Set to True before terminating cdb, used to detect unexpected termination.
+    oCdbWrapper.bCdbWasTerminatedOnPurpose = False; # Set to True when cdb is terminated on purpose, used to detect unexpected termination.
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
@@ -93,7 +93,7 @@ class cCdbWrapper(object):
     except Exception, oException:
       oCdbWrapper.fInternalExceptionCallback and oCdbWrapper.fInternalExceptionCallback(oException);
       if oCdbWrapper.bCdbRunning:
-        oCdbWrapper.bCdbTerminated = True;
+        oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
         oCdbWrapper.oCdbProcess.terminate();
       raise;
   
@@ -107,7 +107,7 @@ class cCdbWrapper(object):
     oProcess.terminate();
   
   def fStop(oCdbWrapper):
-    oCdbWrapper.bCdbTerminated = True;
+    oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbWrapper.oCdbProcess.terminate();
     oCdbWrapper.oCdbDebuggerThread.join();
     oCdbWrapper.oCdbStdErrThread.join();

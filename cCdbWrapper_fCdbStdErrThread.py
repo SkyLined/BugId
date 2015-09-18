@@ -16,8 +16,5 @@ def cCdbWrapper_fCdbStdErrThread(oCdbWrapper):
       sLine = "";
     else:
       sLine += sChar;
-  # Cdb stdout was closed: the process is terminating.
-  assert oCdbWrapper.bCdbTerminated or len(oCdbWrapper.auProcessIds) == 0, \
-      "Cdb terminated unexpectedly! Output:\r\n%s" % "\r\n".join(oCdbWrapper.asCdbStdErrIO);
   oCdbWrapper.bCdbRunning = False;
-  return None;
+

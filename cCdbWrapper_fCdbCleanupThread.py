@@ -7,6 +7,9 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   oCdbWrapper.oCdbStdErrThread.join();
   # wait for debugger to terminate.
   oCdbWrapper.oCdbProcess.wait();
+  # Determine if the debugger was terminated or if the application terminated. If not, an exception is thrown later, as
+  # the debugger was not expected to stop, which is an unexpected error.
+  bTerminationWasExpected = oCdbWrapper.bCdbWasTerminatedOnPurpose or len(oCdbWrapper.auProcessIds) == 0;
   # wait for any processes that were being debugged to terminate
   sTasklistBinaryPath = os.path.join(os.getenv("WinDir"), "System32", "tasklist.exe");
   # The last process that terminated was open when cdb reported it and may not have been closed by the OS yet.
@@ -22,3 +25,6 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
       time.sleep(0.1);
   # report that we're finished.
   oCdbWrapper.fFinishedCallback and oCdbWrapper.fFinishedCallback(oCdbWrapper.oErrorReport);
+  assert bTerminationWasExpected, \
+      "Cdb terminated unexpectedly! StdIO:\r\n%s\r\nStdErr:\r\n%s" % \
+      ("\r\n".join(oCdbWrapper.asCdbStdIO), "\r\n".join(oCdbWrapper.asCdbStdErr));

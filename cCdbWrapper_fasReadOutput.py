@@ -27,8 +27,5 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper):
           print "cdb>%s" % repr(sLine)[1:-1];
         oCdbWrapper.asCdbStdIO.append(sLine);
         return asLines;
-  # Cdb stdout was closed: the process is terminating.
-  assert oCdbWrapper.bCdbTerminated or len(oCdbWrapper.auProcessIds) == 0, \
-      "Cdb terminated unexpectedly! Last output:\r\n%s" % "\r\n".join(oCdbWrapper.asCdbStdIO[-20:]);
   oCdbWrapper.bCdbRunning = False;
   return None;
