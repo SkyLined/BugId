@@ -29,6 +29,7 @@ def cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
           "\r\n".join(["\r\n".join(asCdbStdIO) for asCdbStdIO in oCdbWrapper.aasCdbStdIO]),
           "\r\n".join(oCdbWrapper.asCdbStdErr)
         );
+    oCdbWrapper.auProcessIds.remove(uProcessId);
     oCdbWrapper.uLastProcessId = uProcessId;
     if dxBugIdConfig["bOutputProcesses"]:
       print "* Terminated process %d" % uProcessId;
