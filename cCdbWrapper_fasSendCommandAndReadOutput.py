@@ -15,5 +15,7 @@ def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand):
   asOutput = oCdbWrapper.fasReadOutput();
   # Detect obvious errors executing the command. (this will not catch everything, but does help development)
   assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*\^ .*$", asOutput[0]), \
-      "There was a problem executing the command %s: %s" % (repr(sCommand), repr(asOutput));
+      "There was a problem executing the command %s: %s\r\n%s" % \
+      (repr(sCommand), repr(asOutput), \
+          "\r\n".join(["\r\n".join(asCdbStdIO) for asCdbStdIO in oCdbWrapper.aasCdbStdIO]));
   return asOutput;
