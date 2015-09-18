@@ -43,7 +43,7 @@ sHTMLDetailsTemplate = """
           <tr><td>Id:               </td><td><b>%(sId)s</b></td></tr>
           <tr><td>Description:      </td><td><b>%(sExceptionDescription)s</b></td></tr>
           <tr><td>Process binary:   </td><td>%(sProcessBinaryName)s</td></tr>
-          <tr><td>Location:         </td><td>%(sLocationDescription)s</td></tr>
+          <tr><td>Code:             </td><td>%(sCodeDescription)s</td></tr>
           <tr><td>Security impact:  </td><td>%(sSecurityImpact)s</td></tr>
         </table>
       </tbody>

@@ -39,8 +39,8 @@ class cErrorReport(object):
     oErrorReport.oException = oException;
     oErrorReport.oStack = oStack;
     oErrorReport.sStackId = None;
-    oErrorReport.sFunctionId = None;
-    oErrorReport.sLocationDescription = None;
+    oErrorReport.sCodeId = None;
+    oErrorReport.sCodeDescription = None;
     oErrorReport.atsAdditionalInformation = [];
     oErrorReport.sHTMLDetails = None;
   
@@ -49,10 +49,10 @@ class cErrorReport(object):
     return oErrorReport.oException.oProcess and oErrorReport.oException.oProcess.sBinaryName;
   
   def fsGetId(oErrorReport):
-    if not oErrorReport.sProcessBinaryName or oErrorReport.sFunctionId.startswith(oErrorReport.sProcessBinaryName + "!"):
+    if not oErrorReport.sProcessBinaryName or oErrorReport.sCodeId.startswith(oErrorReport.sProcessBinaryName + "!"):
       # If we do not know the process binary ot it's the module in which the error happened, do not mentioning it.
-      return "%s %s %s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sFunctionId);
-    return "%s %s %s!%s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sProcessBinaryName, oErrorReport.sFunctionId);
+      return "%s %s %s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sCodeId);
+    return "%s %s %s!%s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sProcessBinaryName, oErrorReport.sCodeId);
   sId = property(fsGetId);
   
   def foTranslateSpecialErrorReport(oErrorReport):
@@ -139,11 +139,11 @@ class cErrorReport(object):
     if oStack.bPartialStack:
       asHTMLStack.append("... (rest of the stack was ignored)<br/>");
     # Use a function for the id
-    oIdFrame = oTopmostRelevantFunctionFrame or oTopmostRelevantModuleFrame;
-    oErrorReport.sFunctionId = oIdFrame and oIdFrame.sSimplifiedAddress or "(unknown)";
+    oCodeIdFrame = oTopmostRelevantFunctionFrame or oTopmostRelevantModuleFrame;
+    oErrorReport.sCodeId = oCodeIdFrame and oCodeIdFrame.sSimplifiedAddress or "(unknown)";
     
     # Create the location description 
-    oErrorReport.sLocationDescription = oTopmostRelevantFrame and oTopmostRelevantFrame.sAddress or "(unknown)";
+    oErrorReport.sCodeDescription = oTopmostRelevantFrame and oTopmostRelevantFrame.sAddress or "(unknown)";
     
     # Get the binary's cdb name for retreiving version information:
     asBinaryCdbNames = oCdbWrapper.fasGetCdbIdsForModuleFileNameInCurrentProcess(oErrorReport.sProcessBinaryName);
@@ -153,8 +153,8 @@ class cErrorReport(object):
     # executed.
     dsGetVersionCdbId_by_sBinaryName = {oErrorReport.sProcessBinaryName: asBinaryCdbNames[0]};
     # Get the id frame's module cdb name for retreiving version information:
-    if oIdFrame:
-      dsGetVersionCdbId_by_sBinaryName[oIdFrame.oModule.sBinaryName] = oIdFrame.oModule.sCdbId;
+    if oCodeIdFrame:
+      dsGetVersionCdbId_by_sBinaryName[oCodeIdFrame.oModule.sBinaryName] = oCodeIdFrame.oModule.sCdbId;
     asHTMLBinaryInformation = [];
     for sBinaryName, sCdbId in dsGetVersionCdbId_by_sBinaryName.items():
       asModuleInformationOutput = oCdbWrapper.fasSendCommandAndReadOutput("lmv m *%s" % sCdbId);
@@ -196,7 +196,7 @@ class cErrorReport(object):
       "sId": fsHTMLEncode(oErrorReport.sId),
       "sExceptionDescription": fsHTMLEncode(oErrorReport.sErrorDescription),
       "sProcessBinaryName": fsHTMLEncode(oErrorReport.sProcessBinaryName),
-      "sLocationDescription": fsHTMLEncode(oErrorReport.sLocationDescription),
+      "sCodeDescription": fsHTMLEncode(oErrorReport.sCodeDescription),
       "sSecurityImpact": oErrorReport.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
       "sStack": "".join(asHTMLStack),
       "sBinaryInformation": "".join(asHTMLBinaryInformation),

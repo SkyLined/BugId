@@ -99,7 +99,7 @@ if __name__ == "__main__":
     print "Id:               %s" % oBugId.oErrorReport.sId;
     print "Description:      %s" % oBugId.oErrorReport.sErrorDescription;
     print "Process binary:   %s" % oBugId.oErrorReport.sProcessBinaryName;
-    print "Location:         %s" % oBugId.oErrorReport.sLocationDescription;
+    print "Code:             %s" % oBugId.oErrorReport.sCodeDescription;
     print "Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
     if dxBugIdConfig["bSaveReport"]:
       dsMap = {'"': "''", "<": "[", ">": "]", "\\": "#", "/": "#", "?": "#", "*": "#", ":": ".", "|": "#"};
