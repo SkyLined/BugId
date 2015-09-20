@@ -78,17 +78,23 @@ class cTest(object):
     oTest.fFinished();
 
 aoTests = [
- cTest("x86", ["AccessViolation", "READ", "1"], "AVR:NULL+X"),
- cTest("AMD64", ["AccessViolation", "READ", "1"], "AVR:NULL+X"),
- cTest("x86", ["AccessViolation", "READ", "FFFFFFFF"], "AVR:NULL-X"),
- cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFF"], "AVR:NULL-X"),
+ cTest("x86", ["AccessViolation", "READ", "1"], "AVR:NULL+ODD"),
+ cTest("AMD64", ["AccessViolation", "READ", "1"], "AVR:NULL+ODD"),
+ cTest("x86", ["AccessViolation", "READ", "2"], "AVR:NULL+EVEN"),
+ cTest("AMD64", ["AccessViolation", "READ", "2"], "AVR:NULL+EVEN"),
+ cTest("x86", ["AccessViolation", "READ", "FFFFFFFF"], "AVR:NULL-ODD"),
+ cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFF"], "AVR:NULL-ODD"),
+ cTest("x86", ["AccessViolation", "READ", "FFFFFFFE"], "AVR:NULL-EVEN"),
+ cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFE"], "AVR:NULL-EVEN"),
  cTest("AMD64", ["PureCall"], "PureCall"), # x86 test not functioning as expected yet
  cTest("AMD64", ["UseAfterFree", "Read", "20", "0"], "AVR:Free"), # x86 test not functioning as expected yet
  cTest("AMD64", ["UseAfterFree", "Write", "20", "0"], "AVW:Free"), # x86 test not functioning as expected yet
  cTest("AMD64", ["OutOfBounds", "Read", "20", "0"], "AVR:OOB"), # x86 test not functioning as expected yet
  cTest("AMD64", ["OutOfBounds", "Write", "20", "0"], "AVW:OOB"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Read", "20", "1"], "AVR:OOB+X"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Write", "20", "1"], "AVW:OOB+X"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Read", "20", "1"], "AVR:OOB+ODD"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Write", "20", "1"], "AVW:OOB+ODD"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Read", "20", "2"], "AVR:OOB+EVEN"), # x86 test not functioning as expected yet
+ cTest("AMD64", ["OutOfBounds", "Write", "20", "2"], "AVW:OOB+EVEN"), # x86 test not functioning as expected yet
 ];
 for sISA in asTestISAs:
   aoTests.append(cTest(sISA, ["Breakpoint"], "Breakpoint"));
