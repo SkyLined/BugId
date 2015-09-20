@@ -191,7 +191,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
       # One bug may result in different offsets for 32-bit and 64-bit versions of an application, so the value of the
       # offset cannot be used in the id. However, the fact that there is an offset is unique to the bug, so that can
       # be added:
-      sAddressId += (iOffset < 0 and "-X" or "+X");
+      sAddressId += (iOffset < 0 and "-" or "+") + (uAddress & 1 and "ODD" or "EVEN");
       break;
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
@@ -287,14 +287,16 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
           # it cannot be the former, as the previous buffer access would have resulted in an AV as well. In this case
           # the fact that a bad index/offset was used is unique to the bug and can be added to the id:
           bAccessIsBeyondStartOfGuardPage = uAddress > uGuardPageAddress;
-          sAddressId = "OOB" + (bAccessIsBeyondStartOfGuardPage and "+X" or "");
+          sOffsetOddEven = "+" + (uAddress & 1 and "ODD" or "EVEN");
+          sAddressId = "OOB" + (bAccessIsBeyondStartOfGuardPage and sOffsetOddEven or "");
           uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
           sOffsetDescription = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
         else:
           # The access was inside the block but apparently the kind of access attempted is not allowed (e.g. write to
           # read-only memory). The fact that it was at the start of the block or not is unique to the bug and can be
           # added to the id:
-          sAddressId = "AccessDenied" + (uOffsetFromStartOfBlock > 0 and "+X" or "");
+          sOffsetOddEven = "+" + (uOffsetFromStartOfBlock & 1 and "ODD" or "EVEN");
+          sAddressId = "AccessDenied" + (uOffsetFromStartOfBlock > 0 and sOffsetOddEven or "");
           sOffsetDescription = "%d/0x%X bytes into" % (uOffsetFromStartOfBlock, uOffsetFromStartOfBlock);
         sErrorDescription = "Access violation while %s memory at 0x%X; " \
             "%s a %d/0x%X byte memory block at 0x%X" % \

@@ -24,6 +24,9 @@ dtxErrorTranslations = {
       ], [  # Firefox
         "mozglue.dll!mozalloc_abort",
         "mozglue.dll!mozalloc_handle_oom",
+      ], [  # Firefox
+        "mozglue.dll!moz_abort",
+        "mozglue.dll!pages_commit",
       ], [
         "xul.dll!js::CrashAtUnhandlableOOM",
       ], [
@@ -199,6 +202,7 @@ asHiddenTopFrames = [
   "mozglue.dll!moz_xrealloc",
   "mozglue.dll!mozalloc_abort",
   "mozglue.dll!mozalloc_handle_oom",
+  "mozglue.dll!pages_commit",
   "xul.dll!js::CrashAtUnhandlableOOM",
   "xul.dll!js::MallocProvider<...>",
   "xul.dll!mozilla::CircularByteBuffer::SetCapacity",
