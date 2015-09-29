@@ -52,19 +52,19 @@ class cTest(object):
       oOutputLock.acquire();
       if oTest.srBugId:
         if not oErrorReport:
-          bFailed = True;
           print "- %s" % oTest;
           print "    => got no error";
-        elif not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
           bFailed = True;
+        elif not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
           print "- %s" % oTest;
           print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
+          bFailed = True;
         elif not bFailed:
           print "+ %s" % oTest;
       elif oErrorReport:
-        bFailed = True;
         print "- %s" % oTest;
         print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
+        bFailed = True;
       elif not bFailed:
         print "+ %s" % oTest;
       oOutputLock.release();
@@ -77,26 +77,14 @@ class cTest(object):
     bFailed = True;
     oTest.fFinished();
 
-aoTests = [
- cTest("x86", ["AccessViolation", "READ", "1"], "AVR:NULL+ODD"),
- cTest("AMD64", ["AccessViolation", "READ", "1"], "AVR:NULL+ODD"),
- cTest("x86", ["AccessViolation", "READ", "2"], "AVR:NULL+EVEN"),
- cTest("AMD64", ["AccessViolation", "READ", "2"], "AVR:NULL+EVEN"),
- cTest("x86", ["AccessViolation", "READ", "FFFFFFFF"], "AVR:NULL-ODD"),
- cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFF"], "AVR:NULL-ODD"),
- cTest("x86", ["AccessViolation", "READ", "FFFFFFFE"], "AVR:NULL-EVEN"),
- cTest("AMD64", ["AccessViolation", "READ", "FFFFFFFFFFFFFFFE"], "AVR:NULL-EVEN"),
- cTest("AMD64", ["PureCall"], "PureCall"), # x86 test not functioning as expected yet
- cTest("AMD64", ["UseAfterFree", "Read", "20", "0"], "AVR:Free"), # x86 test not functioning as expected yet
- cTest("AMD64", ["UseAfterFree", "Write", "20", "0"], "AVW:Free"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Read", "20", "0"], "AVR:OOB"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Write", "20", "0"], "AVW:OOB"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Read", "20", "1"], "AVR:OOB+ODD"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Write", "20", "1"], "AVW:OOB+ODD"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Read", "20", "2"], "AVR:OOB+EVEN"), # x86 test not functioning as expected yet
- cTest("AMD64", ["OutOfBounds", "Write", "20", "2"], "AVW:OOB+EVEN"), # x86 test not functioning as expected yet
-];
+aoTests = [];
 for sISA in asTestISAs:
+  sMinusOne = {"x86": "FFFFFFFF", "AMD64": "FFFFFFFFFFFFFFFF"}[sISA];
+  sMinusTwo = {"x86": "FFFFFFFE", "AMD64": "FFFFFFFFFFFFFFFE"}[sISA];
+  aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+ODD"));
+  aoTests.append(cTest(sISA, ["AccessViolation", "READ", "2"], "AVR:NULL+EVEN"));
+  aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusOne], "AVR:NULL-ODD"));
+  aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusTwo], "AVR:NULL-EVEN"));
   aoTests.append(cTest(sISA, ["Breakpoint"], "Breakpoint"));
   aoTests.append(cTest(sISA, ["C++"], "C++:cException"));
   aoTests.append(cTest(sISA, ["IntegerDivideByZero"], "IntegerDivideByZero"));
@@ -105,6 +93,23 @@ for sISA in asTestISAs:
   aoTests.append(cTest(sISA, ["PrivilegedInstruction"], "PrivilegedInstruction"));
   aoTests.append(cTest(sISA, ["StackExhaustion"], "StackExhaustion"));
   aoTests.append(cTest(sISA, ["RecursiveCall"], "RecursiveCall"));
+  aoTests.append(cTest(sISA, ["StaticBufferOverrun10", "Write", "20"], "FailFast2:StackCookie"));
+  if sISA not in ["x86"]:
+    # x86 test not functioning as expected yet. TODO: fix this.
+    aoTests.append(cTest(sISA, ["PureCall"], "PureCall"));
+    aoTests.append(cTest(sISA, ["UseAfterFree", "Read", "20", "0"], "AVR:Free"));
+    aoTests.append(cTest(sISA, ["UseAfterFree", "Write", "20", "0"], "AVW:Free"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "20", "0"], "AVR:OOB"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "20", "0"], "AVW:OOB"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "20", "1"], "AVR:OOB+ODD"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "20", "1"], "AVW:OOB+ODD"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "20", "2"], "AVR:OOB+EVEN"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "20", "2"], "AVW:OOB+EVEN"));
+    aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "20", "4"], "AVR:OOB"));
+    aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "20", "4"], "AVW:OOB"));
+  if False:
+    # This does not appear to work at all. TODO: fix this.
+    aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "AVW:OOB"));
   
   for uBaseAddress in [(1 << 31) - 1, (1 << 31), (1 << 32), (1 << 47) - 1, (1 << 47), (1 << 63) - 1, (1 << 63)]:
     if uBaseAddress < (1 << 32) or (sISA == "AMD64" and uBaseAddress < (1 << 47)):

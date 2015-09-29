@@ -55,10 +55,23 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     _tprintf(_T("Exceptions and arguments:\r\n"));
     _tprintf(_T("  AccessViolation [CALL|JMP|READ|WRITE] ADDRESS\r\n"));
     _tprintf(_T("    e.g. AccessViolation CALL DEADBEEF\r\n"));
-    _tprintf(_T("  UseAfterFree [READ|WRITE] SIZE\r\n"));
-    _tprintf(_T("    e.g. UseAfterFree READ 20\r\n"));
-    _tprintf(_T("  OutOfBounds [READ|WRITE] SIZE OFFSET\r\n"));
-    _tprintf(_T("    e.g. UseAfterFree READ 20 1\r\n"));
+    _tprintf(_T("         (attempt to execute code at address 0xDEADBEEF using a CALL instruction)\r\n"));
+    _tprintf(_T("  UseAfterFree [READ|WRITE] SIZE OFFSET\r\n"));
+    _tprintf(_T("    e.g. UseAfterFree READ 20 4\r\n"));
+    _tprintf(_T("         (free a 0x20 byte heap buffer and read from offset 4 of the free memory)\r\n"));
+    _tprintf(_T("  OutOfBounds [Heap|Stack] [READ|WRITE] SIZE OFFSET\r\n"));
+    _tprintf(_T("    e.g. OutOfBounds Heap READ 20 1\r\n"));
+    _tprintf(_T("         (read from an address 1 byte past the end of a 20 byte heap buffer)\r\n"));
+    _tprintf(_T("    -or- OutOfBounds Stack Write 20 4\r\n"));
+    _tprintf(_T("         (write to an address 4 bytes past the end of a 20 byte stack buffer)\r\n"));
+    _tprintf(_T("  BufferOverrun [Heap|Stack] [READ|WRITE] SIZE OVERRUN\r\n"));
+    _tprintf(_T("    e.g. BufferOverrun Heap READ 20 4\r\n"));
+  	_tprintf(_T("         (read 4 bytes past the end of a 0x20 byte heap buffer)\r\n"));
+    _tprintf(_T("    -or- BufferOverrun Stack Write 30 1\r\n"));
+    _tprintf(_T("         (read 1 byte past the end of a 0x30 byte stack buffer)\r\n"));
+    _tprintf(_T("  StaticStaticBufferOverrun [READ|WRITE] SIZE OVERRUN\r\n"));
+    _tprintf(_T("    e.g. BufferOverrun Heap READ 20 24\r\n"));
+    _tprintf(_T("    -or- BufferOverrun Stack Write 20 21\r\n"));
     _tprintf(_T("  Breakpoint\r\n"));
     _tprintf(_T("  C++\r\n"));
     _tprintf(_T("  IntegerDivideByZero\r\n"));
@@ -80,7 +93,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     } else if (_tcsicmp(asArguments[2], _T("Write")) == 0) {
       *(BYTE*)pAddress = 0;
     } else {
-      _tprintf(_T("Please use Call, Jmp, Read or Write, not %s\r\n"), asArguments[2]);
+      _ftprintf(stderr, _T("Please use Call, Jmp, Read or Write, not %s\r\n"), asArguments[2]);
+      return 1;
     }
   } else if (_tcsicmp(asArguments[1], _T("Breakpoint")) == 0) {
     __debugbreak();
@@ -113,21 +127,71 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     } else if (_tcsicmp(asArguments[2], _T("Write")) == 0) {
       *(BYTE*)pMemory = 0;
     } else {
-      _tprintf(_T("Please use Read or Write, not %s\r\n"), asArguments[2]);
+      _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[2]);
+      return 1;
     }
   } else if (_tcsicmp(asArguments[1], _T("OutOfBounds")) == 0) {
-    DWORD dwSize = (DWORD) _tcstodw(asArguments[3], NULL, 16);
-    DWORD dwOffset = (DWORD) _tcstodw(asArguments[4], NULL, 16);
-    BYTE* pMemory = new BYTE[dwSize];
-    if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
+    DWORD dwSize = (DWORD) _tcstodw(asArguments[4], NULL, 16);
+    DWORD dwOffset = (DWORD) _tcstodw(asArguments[5], NULL, 16);
+    BYTE* pMemory = NULL;
+    if (_tcsicmp(asArguments[2], _T("Heap")) == 0) {
+      pMemory = new BYTE[dwSize];
+    } else if (_tcsicmp(asArguments[2], _T("Stack")) == 0) {
+      pMemory = (BYTE*)alloca(dwSize);
+    } else {
+      _ftprintf(stderr, _T("Please use Heap or Stack, not %s\r\n"), asArguments[2]);
+      return 1;
+    }
+    if (_tcsicmp(asArguments[3], _T("Read")) == 0) {
       BYTE x = *(BYTE*)(pMemory + dwSize + dwOffset);
-    } else if (_tcsicmp(asArguments[2], _T("Write")) == 0) {
+    } else if (_tcsicmp(asArguments[3], _T("Write")) == 0) {
       *(BYTE*)(pMemory + dwSize + dwOffset) = 0;
     } else {
-      _tprintf(_T("Please use Read or Write, not %s\r\n"), asArguments[2]);
+      _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[3]);
+      return 1;
+    }
+  } else if (_tcsicmp(asArguments[1], _T("BufferOverrun")) == 0) {
+    DWORD dwSize = (DWORD) _tcstodw(asArguments[4], NULL, 16);
+    DWORD dwOverrun = (DWORD) _tcstodw(asArguments[5], NULL, 16);
+    BYTE* pMemory;
+    if (_tcsicmp(asArguments[2], _T("Heap")) == 0) {
+      pMemory = new BYTE[dwSize];
+    } else if (_tcsicmp(asArguments[2], _T("Stack")) == 0) {
+      pMemory = (BYTE*)alloca(dwSize);
+    } else {
+      _ftprintf(stderr, _T("Please use Heap or Stack, not %s\r\n"), asArguments[2]);
+      return 1;
+    }
+    if (_tcsicmp(asArguments[3], _T("Read")) == 0) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + dwSize + dwOverrun; pAddress++) {
+        BYTE x = *pAddress;
+      }
+    } else if (_tcsicmp(asArguments[3], _T("Write")) == 0) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + dwSize + dwOverrun; pAddress++) {
+        *pAddress = 0;
+      }
+    } else {
+      _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[3]);
+      return 1;
+    }
+  } else if (_tcsicmp(asArguments[1], _T("StaticBufferOverrun10")) == 0) {
+    DWORD dwOverrun = (DWORD) _tcstodw(asArguments[3], NULL, 16);
+    BYTE pMemory[10];
+    if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + dwOverrun; pAddress++) {
+        BYTE x = *pAddress;
+      }
+    } else if (_tcsicmp(asArguments[2], _T("Write")) == 0) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + dwOverrun; pAddress++) {
+        *pAddress = 0;
+      }
+    } else {
+      _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[2]);
+      return 1;
     }
   } else {
-    _tprintf(_T("Invalid exception type %s\r\n"), asArguments[1]);
+    _ftprintf(stderr, _T("Invalid test type %s\r\n"), asArguments[1]);
+    return 1;
   }
   return 0;
 }
