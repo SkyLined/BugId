@@ -26,14 +26,31 @@ whether or not a particular bug is likely to be a security issue.
 BugId can be used as a command-line utility through BugId.py and integrated into
 your own Python project using cBugId.py.
 
+PageHeap.cmd
+------------
+Page heap should be enabled for the target application to make detection and
+analysis of bugs more reliable and detailed. This can be done using the
+gflags.exe application that is distributed with Microsoft's Debugging Tools for
+Windows. The preferred flags to use are +02109870, see the page heap
+documentation foor an explanation of the switches in use. The command-line
+utility PageHeap.cmd is provided to facilitate enabling/disabling page heap
+for an application, it can be used in the following way:
+
+    PageHeap.cmd binary.exe [ON|OFF]
+
+This will enable (ON, default) or disable (OFF) page heap for the provided
+binary. Note that some applications, especially those that run parts of
+their code in a sandbox, may execute multiple binaries. Page heap should be
+enabled for all these binaries.
+
 BugId.py
 --------
 `BugId.py` is a command-line utility to start an application in BugId. It can be
 used in the following ways:
 
-    BugId.py [options] path\to\binary.exe [arguments]
+    BugId.py [options] path\to\application.exe [arguments]
 
-Runs the binary in the debugger with the provided arguments.
+Runs the application in the debugger with the provided arguments.
 
     BugId.py [options] --pids=[comma separated list of process ids]
 
