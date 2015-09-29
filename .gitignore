@@ -48,3 +48,4 @@ Tests/Temp
 *.pyc
 *.suo
 \#*
+*.user
