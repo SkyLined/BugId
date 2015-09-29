@@ -195,13 +195,6 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
       break;
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
-    # See if it is a stack overflow:
-    iOffsetFromStackBottom = oCdbWrapper.fiEvaluateExpression("@$csp-0x%X" % uAddress);
-    if not oCdbWrapper.bCdbRunning: return None;
-    if iOffsetFromStackBottom > -0x1000 and iOffsetFromStackBottom < 0:
-      # The access violation was in the guard page below the stack, so this should be treated as a stack overflow and
-      # not an access violation.
-      return cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW(oErrorReport, oCdbWrapper);
     # See is page heap has more details on the address at which the access violation happened:
     asPageHeapReport = oCdbWrapper.fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
     if not oCdbWrapper.bCdbRunning: return None;
