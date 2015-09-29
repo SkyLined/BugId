@@ -17,7 +17,7 @@ asHiddenTopFrames = [
 dsFastFailErrorCodes = {
   0:  ("LegacyGS",      "/GS detected that a stack cookie was modified",              "Potentially exploitable security issue"),
   1:  ("VTGuard",       "VTGuard detected an invalid virtual function table cookie",  "Potentially exploitable security issue"),
-  2:  ("StackCookie",   "FAST_FAIL_STACK_COOKIE_CHECK_FAILURE",                       "Potentially exploitable security issue"),
+  2:  ("StackCookie",   "/GS detected that a stack cookie was modified",              "Potentially exploitable security issue"),
   3:  ("CorruptList",   "Safe unlinking detected a corrupted LIST_ENTRY",             "Potentially exploitable security issue"),
   4:  ("BadStack",      "FAST_FAIL_INCORRECT_STACK",                                  "Potentially exploitable security issue"),
   5:  ("InvalidArg",    "FAST_FAIL_INVALID_ARG",                                      "Potentially exploitable security issue"),
