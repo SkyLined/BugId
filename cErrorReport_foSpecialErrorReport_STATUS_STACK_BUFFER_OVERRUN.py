@@ -90,7 +90,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, 
     oErrorReport.sErrorTypeId += ":%s" % sFastFailCodeId;
     if sFastFailCodeDescription.startswith("FAST_FAIL_"):
       oErrorReport.sErrorDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
-          (oException.uCode, uFastFailCode, sFastFailCodeDefinition);
+          (oException.uCode, uFastFailCode, sFastFailCodeDescription);
     else:
       oErrorReport.sErrorDescription = sFastFailCodeDescription;
     oErrorReport.sSecurityImpact = sSecurityImpact;
