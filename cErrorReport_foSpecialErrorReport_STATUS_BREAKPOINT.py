@@ -9,9 +9,16 @@ dtxErrorTranslations = {
       ], [
         "chrome_child.dll!base::`anonymous namespace'::OnNoMemory",
       ], [
+        "chrome.dll!base::debug::BreakDebugger",
+        "chrome.dll!logging::LogMessage::~LogMessage",
+        "chrome.dll!base::`anonymous namespace'::OnNoMemory",
+      ], [
         "chrome_child.dll!base::debug::BreakDebugger",
         "chrome_child.dll!logging::LogMessage::~LogMessage",
         "chrome_child.dll!base::`anonymous namespace'::OnNoMemory",
+      ], [
+        "chrome_child.dll!base::debug::BreakDebugger",
+        "chrome_child.dll!content::`anonymous namespace'::CrashOnMapFailure",
       ], [
         "chrome_child.dll!blink::reportFatalErrorInMainThread",
         "chrome_child.dll!v8::Utils::ReportApiFailure",
