@@ -11,28 +11,32 @@ class cStackFrame(object):
     oStackFrame.oFunction = oFunction;
     oStackFrame.uFunctionOffset = uFunctionOffset;
     oStackFrame.bIsHidden = False; # Set to true if this frame should be hidden because it is not relevant.
-    if oStackFrame.oFunction:
-      oStackFrame.sAddress = oStackFrame.oFunction.sName;
-      if oStackFrame.uFunctionOffset > 0:
-        oStackFrame.sAddress += " + 0x%X" % oStackFrame.uFunctionOffset;
-      elif oStackFrame.uFunctionOffset:
-        oStackFrame.sAddress += " - 0x%X" % abs(oStackFrame.uFunctionOffset);
-      oStackFrame.sSimplifiedAddress = oStackFrame.oFunction.sSimplifiedName;
-      sIdInput = oStackFrame.oFunction.sName;
+    if oFunction:
+      oStackFrame.sAddress = oFunction.sName;
+      if uFunctionOffset > 0:
+        oStackFrame.sAddress += " + 0x%X" % uFunctionOffset;
+      elif uFunctionOffset < 0:
+        oStackFrame.sAddress += " - 0x%X" % abs(uFunctionOffset);
+      oStackFrame.sSimplifiedAddress = oFunction.sSimplifiedName;
+      sIdInput = oFunction.sName;
       if uFunctionOffset not in xrange(dxBugIdConfig["uMaxFunctionOffset"]):
         # The offset is negative or very large: this may not be the correct symbol. If it is, the offset is very likely
         # to change between builds. The offset should not be part of the id and a warning about the symbol is added.
         oStackFrame.sAddress += " (this may not be correct)";
-    elif oStackFrame.oModule:
-      oStackFrame.sAddress = "%s + 0x%X" % (oStackFrame.oModule.sBinaryName, oStackFrame.uModuleOffset);
-      oStackFrame.sSimplifiedAddress = "%s+0x%X" % (oStackFrame.oModule.sBinaryName, oStackFrame.uModuleOffset);
+    elif oModule:
+      oStackFrame.sAddress = "%s + 0x%X" % (oModule.sBinaryName, uModuleOffset);
+      oStackFrame.sSimplifiedAddress = "%s+0x%X" % (oModule.sBinaryName, uModuleOffset);
       sIdInput = oStackFrame.sAddress;
     elif sUnloadedModuleFileName:
-      oStackFrame.sAddress = "%s + ??" % sUnloadedModuleFileName;
-      oStackFrame.sSimplifiedAddress = "sUnloadedModuleFileName+??";
+      if uModuleOffset is not None:
+        oStackFrame.sAddress = "%s + 0x%X" % (sUnloadedModuleFileName, uModuleOffset);
+        oStackFrame.sSimplifiedAddress = "%s+0x%X" % (sUnloadedModuleFileName, uModuleOffset);
+      else:
+        oStackFrame.sAddress = "%s + ??" % sUnloadedModuleFileName;
+        oStackFrame.sSimplifiedAddress = "sUnloadedModuleFileName+??";
       sIdInput = None;
     else:
-      oStackFrame.sAddress = "0x%X" % oStackFrame.uAddress;
+      oStackFrame.sAddress = "0x%X" % uAddress;
       oStackFrame.sSimplifiedAddress = "(unknown)";
       sIdInput = None;
     if sIdInput is None:
