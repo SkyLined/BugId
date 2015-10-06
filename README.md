@@ -32,7 +32,7 @@ Page heap should be enabled for the target application to make detection and
 analysis of bugs more reliable and detailed. This can be done using the
 gflags.exe application that is distributed with Microsoft's Debugging Tools for
 Windows. The preferred flags to use are +02109870, see the page heap
-documentation foor an explanation of the switches in use. The command-line
+documentation for an explanation of the switches in use. The command-line
 utility PageHeap.cmd is provided to facilitate enabling/disabling page heap
 for an application, it can be used in the following way:
 
