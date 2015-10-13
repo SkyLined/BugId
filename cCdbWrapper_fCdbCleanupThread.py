@@ -5,8 +5,13 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   oCdbWrapper.oCdbDebuggerThread.join();
   # wait for stderr thread to terminate.
   oCdbWrapper.oCdbStdErrThread.join();
-  # wait for debugger to terminate.
+  # Make sure all stdio pipes are closed and wait for debugger to terminate.
+  oCdbWrapper.oCdbProcess.stdout.close();
+  oCdbWrapper.oCdbProcess.stderr.close();
+  oCdbWrapper.oCdbProcess.stdin.close();
   oCdbWrapper.oCdbProcess.wait();
+  # Destroy the subprocess object to make even more sure all stdio pipes are closed.
+  del oCdbWrapper.oCdbProcess;
   # Determine if the debugger was terminated or if the application terminated. If not, an exception is thrown later, as
   # the debugger was not expected to stop, which is an unexpected error.
   bTerminationWasExpected = oCdbWrapper.bCdbWasTerminatedOnPurpose or len(oCdbWrapper.auProcessIds) == 0;
