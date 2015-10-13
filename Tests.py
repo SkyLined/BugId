@@ -23,7 +23,8 @@ dsBinaries_by_sISA = {
 
 bFailed = False;
 oOutputLock = threading.Lock();
-oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 32);
+# If you see "[Errno 24] Too many open files", try lowering the number of paralel tests:
+oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 64);
 class cTest(object):
   def __init__(oTest, sISA, asCommandLineArguments, srBugId):
     oTest.sISA = sISA;
@@ -35,41 +36,52 @@ class cTest(object):
     return "%s =%s=> %s" % (" ".join(oTest.asCommandLineArguments), oTest.sISA, oTest.srBugId);
   
   def fRun(oTest):
+    global bFailed, oOutputLock;
     oConcurrentTestsSemaphore.acquire();
     sBinary = dsBinaries_by_sISA[oTest.sISA];
     asApplicationCommandLine = [sBinary] + oTest.asCommandLineArguments;
-    oBugId = cBugId(
-      asApplicationCommandLine = asApplicationCommandLine,
-      fFinishedCallback = oTest.fFinishedHandler,
-      fInternalExceptionCallback = oTest.fInternalExceptionHandler,
-    );
+    try:
+      oBugId = cBugId(
+        asApplicationCommandLine = asApplicationCommandLine,
+        fFinishedCallback = oTest.fFinishedHandler,
+        fInternalExceptionCallback = oTest.fInternalExceptionHandler,
+      );
+    except Exception, oException:
+      if not bFailed:
+        bFailed = True;
+        oOutputLock.acquire();
+        print "- %s" % oTest;
+        print "    => Exception: %s" % oException;
+        oOutputLock.release();
+        os._exit(1);
   
   def fFinished(oTest):
     oConcurrentTestsSemaphore.release();
   def fFinishedHandler(oTest, oErrorReport):
-    global bFailed;
+    global bFailed, oOutputLock;
+    fbExit = False;
     if not bFailed:
       oOutputLock.acquire();
       if oTest.srBugId:
         if not oErrorReport:
           print "- %s" % oTest;
           print "    => got no error";
-          bFailed = True;
-        elif not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
+          fbExit = bFailed = True;
+        if not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
           print "- %s" % oTest;
           print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
-          bFailed = True;
-        elif not bFailed:
+          fbExit = bFailed = True;
+        else:
           print "+ %s" % oTest;
       elif oErrorReport:
         print "- %s" % oTest;
         print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
-        bFailed = True;
-      elif not bFailed:
+        fbExit = bFailed = True;
+      else:
         print "+ %s" % oTest;
       oOutputLock.release();
-    if bFailed:
-      os._exit(1);
+      if fbExit:
+        os._exit(1);
     oTest.fFinished();
   
   def fInternalExceptionHandler(oTest, oException):
@@ -94,19 +106,22 @@ for sISA in asTestISAs:
   aoTests.append(cTest(sISA, ["StackExhaustion"], "StackExhaustion"));
   aoTests.append(cTest(sISA, ["RecursiveCall"], "RecursiveCall"));
   aoTests.append(cTest(sISA, ["StaticBufferOverrun10", "Write", "20"], "FailFast2:StackCookie"));
+  aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "-1"], "HeapCorrupt"));  # Write the byte at offset -1 from the start of the buffer.
+  aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "d"], "HeapCorrupt"));   # Write the byte at offset 0 from the end of the buffer.
   if sISA not in ["x86"]:
-    # x86 test not functioning as expected yet. TODO: fix this.
+    # x86 test results in "0BA2 FailFast2:AppExit Tests_x86.exe!abort (A critical issue was detected (code C0000409, fail fast code 7: FAST_FAIL_FATAL_APP_EXIT))"
     aoTests.append(cTest(sISA, ["PureCall"], "PureCall"));
+    # Page heap does not appear to work for x86 tests on x64 platform.
     aoTests.append(cTest(sISA, ["UseAfterFree", "Read", "20", "0"], "AVR:Free"));
     aoTests.append(cTest(sISA, ["UseAfterFree", "Write", "20", "0"], "AVW:Free"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "20", "0"], "AVR:OOB"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "20", "0"], "AVW:OOB"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "20", "1"], "AVR:OOB+ODD"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "20", "1"], "AVW:OOB+ODD"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "20", "2"], "AVR:OOB+EVEN"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "20", "2"], "AVW:OOB+EVEN"));
     aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "20", "4"], "AVR:OOB"));
     aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "20", "4"], "AVW:OOB"));
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "10"], "AVR:OOB"));       # Read byte at offset 0 in the guard page.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "11"], "AVR:OOB+ODD"));   # Read byte at offset 1 in the guard page.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "12"], "AVR:OOB+EVEN"));  # Read byte at offset 2 in the guard page.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "10"], "AVW:OOB"));      # Write byte at offset 0 in the guard page.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "11"], "AVW:OOB+ODD"));  # Write byte at offset 1 in the guard page.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "12"], "AVW:OOB+EVEN")); # Write byte at offset 2 in the guard page.
   if False:
     # This does not appear to work at all. TODO: fix this.
     aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "AVW:OOB"));
@@ -147,3 +162,4 @@ for oTest in aoTests:
   if bFailed:
     break;
   oTest.fRun();
+

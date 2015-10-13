@@ -1,6 +1,3 @@
-// Tests.cpp : Defines the entry point for the console application.
-//
-
 #include <SDKDDKVer.h>
 #include <stdio.h>
 #include <tchar.h>
@@ -8,12 +5,14 @@
 #include <exception>
 
 #ifdef _WIN64
-  #define _tcstop _tcstoui64
+  #define fpFromHexString(a,b,c) ((VOID*)_tcstoui64(a,b,c))
 #else
-  #define _tcstop _tcstoul
+  #define fpFromHexString(a,b,c) ((VOID*)_tcstoul(a,b,c))
 #endif
 
-#define _tcstodw _tcstoul
+#define fdwFromHexString(a,b,c) ((DWORD)_tcstoul(a,b,c))
+#define fuFromHexString(a,b,c) ((UINT)_tcstoul(a,b,c))
+#define fiFromHexString(a,b,c) ((INT)_tcstol(a,b,c))
 
 extern "C" {
   VOID __stdcall fCall(VOID*);
@@ -49,6 +48,7 @@ VOID fStackRecursion() {
 }
 
 UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
+  _set_abort_behavior( 0, _WRITE_ABORT_MSG);
   if (uArgumentsCount < 2) {
     _tprintf(_T("Usage:\r\n"));
     _tprintf(_T("  %s exception [arguments]\r\n"), asArguments[0]);
@@ -83,7 +83,7 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     _tprintf(_T("  StackExhaustion\r\n"));
     _tprintf(_T("  RecursiveCall\r\n"));
   } else if (_tcsicmp(asArguments[1], _T("AccessViolation")) == 0) {
-    VOID* pAddress = (VOID*) _tcstop(asArguments[3], NULL, 16);
+    VOID* pAddress = fpFromHexString(asArguments[3], NULL, 16);
     if (_tcsicmp(asArguments[2], _T("Call")) == 0) {
       fCall(pAddress);
     } else if (_tcsicmp(asArguments[2], _T("Jump")) == 0) {
@@ -104,8 +104,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     volatile UINT uN = 0;
     uN = 0 / uN;
   } else if (_tcsicmp(asArguments[1], _T("Numbered")) == 0) {
-    DWORD dwCode = (DWORD) _tcstodw(asArguments[2], NULL, 16);
-    DWORD dwFlags = (DWORD) _tcstodw(asArguments[3], NULL, 16);
+    DWORD dwCode = fdwFromHexString(asArguments[2], NULL, 16);
+    DWORD dwFlags = fdwFromHexString(asArguments[3], NULL, 16);
     // TODO: implement arguments?
     RaiseException(dwCode, dwFlags, 0, NULL);
   } else if (_tcsicmp(asArguments[1], _T("IllegalInstruction")) == 0) {
@@ -119,8 +119,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
   } else if (_tcsicmp(asArguments[1], _T("RecursiveCall")) == 0) {
     fStackRecursion();
   } else if (_tcsicmp(asArguments[1], _T("UseAfterFree")) == 0) {
-    DWORD dwSize = (DWORD) _tcstodw(asArguments[3], NULL, 16);
-    BYTE* pMemory = new BYTE[dwSize];
+    DWORD uSize = fuFromHexString(asArguments[3], NULL, 16);
+    BYTE* pMemory = new BYTE[uSize];
     delete pMemory;
     if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
       BYTE x = *(BYTE*)pMemory;
@@ -131,58 +131,68 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
       return 1;
     }
   } else if (_tcsicmp(asArguments[1], _T("OutOfBounds")) == 0) {
-    DWORD dwSize = (DWORD) _tcstodw(asArguments[4], NULL, 16);
-    DWORD dwOffset = (DWORD) _tcstodw(asArguments[5], NULL, 16);
+    UINT uSize = fuFromHexString(asArguments[4], NULL, 16);
+    INT iOffset = fiFromHexString(asArguments[5], NULL, 16);
     BYTE* pMemory = NULL;
+    BOOL bDelete = FALSE;
     if (_tcsicmp(asArguments[2], _T("Heap")) == 0) {
-      pMemory = new BYTE[dwSize];
+      pMemory = new BYTE[uSize];
+      bDelete = TRUE;
     } else if (_tcsicmp(asArguments[2], _T("Stack")) == 0) {
-      pMemory = (BYTE*)alloca(dwSize);
+      pMemory = (BYTE*)alloca(uSize);
     } else {
       _ftprintf(stderr, _T("Please use Heap or Stack, not %s\r\n"), asArguments[2]);
       return 1;
     }
     if (_tcsicmp(asArguments[3], _T("Read")) == 0) {
-      BYTE x = *(BYTE*)(pMemory + dwSize + dwOffset);
+      BYTE x = *(BYTE*)(pMemory + iOffset);
     } else if (_tcsicmp(asArguments[3], _T("Write")) == 0) {
-      *(BYTE*)(pMemory + dwSize + dwOffset) = 0;
+      *(BYTE*)(pMemory + iOffset) = 0;
     } else {
       _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[3]);
       return 1;
     }
+    if (bDelete) {
+      delete pMemory;
+    }
   } else if (_tcsicmp(asArguments[1], _T("BufferOverrun")) == 0) {
-    DWORD dwSize = (DWORD) _tcstodw(asArguments[4], NULL, 16);
-    DWORD dwOverrun = (DWORD) _tcstodw(asArguments[5], NULL, 16);
+    UINT uSize = fuFromHexString(asArguments[4], NULL, 16);
+    UINT uOverrun = fuFromHexString(asArguments[5], NULL, 16);
     BYTE* pMemory;
+    BOOL bDelete = FALSE;
     if (_tcsicmp(asArguments[2], _T("Heap")) == 0) {
-      pMemory = new BYTE[dwSize];
+      pMemory = new BYTE[uSize];
+      bDelete = TRUE;
     } else if (_tcsicmp(asArguments[2], _T("Stack")) == 0) {
-      pMemory = (BYTE*)alloca(dwSize);
+      pMemory = (BYTE*)alloca(uSize);
     } else {
       _ftprintf(stderr, _T("Please use Heap or Stack, not %s\r\n"), asArguments[2]);
       return 1;
     }
     if (_tcsicmp(asArguments[3], _T("Read")) == 0) {
-      for (BYTE* pAddress = pMemory; pAddress < pMemory + dwSize + dwOverrun; pAddress++) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + uSize + uOverrun; pAddress++) {
         BYTE x = *pAddress;
       }
     } else if (_tcsicmp(asArguments[3], _T("Write")) == 0) {
-      for (BYTE* pAddress = pMemory; pAddress < pMemory + dwSize + dwOverrun; pAddress++) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + uSize + uOverrun; pAddress++) {
         *pAddress = 0;
       }
     } else {
       _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[3]);
       return 1;
     }
+    if (bDelete) {
+      delete pMemory;
+    }
   } else if (_tcsicmp(asArguments[1], _T("StaticBufferOverrun10")) == 0) {
-    DWORD dwOverrun = (DWORD) _tcstodw(asArguments[3], NULL, 16);
+    UINT uOverrun = fuFromHexString(asArguments[3], NULL, 16);
     BYTE pMemory[10];
     if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
-      for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + dwOverrun; pAddress++) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + uOverrun; pAddress++) {
         BYTE x = *pAddress;
       }
     } else if (_tcsicmp(asArguments[2], _T("Write")) == 0) {
-      for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + dwOverrun; pAddress++) {
+      for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + uOverrun; pAddress++) {
         *pAddress = 0;
       }
     } else {
