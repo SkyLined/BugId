@@ -99,16 +99,15 @@ class cCdbWrapper(object):
   
   def __del__(oCdbWrapper):
     # Check to make sure the debugger process is not running
-    if not hasattr(oCdbWrapper, "oCdbProcess"): return;
-    oProcess = oCdbWrapper.oCdbProcess;
-    if oProcess is None: return;
-    if oProcess.poll() != None: return;
-    print "*** INTERNAL ERROR: cCdbWrapper did not terminate, the cdb process is still running.";
-    oProcess.terminate();
+    oCdbProcess = getattr(oCdbWrapper, "oCdbProcess");
+    if oCdbProcess and oCdbProcess.poll() is None:
+      print "*** INTERNAL ERROR: cCdbWrapper did not terminate, the cdb process is still running.";
+      oCdbProcess.terminate();
   
   def fStop(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
-    oCdbWrapper.oCdbProcess.terminate();
+    oCdbProcess = getattr(oCdbWrapper, "oCdbProcess");
+    if oCdbProcess: oCdbProcess.terminate();
     oCdbWrapper.oCdbDebuggerThread.join();
     oCdbWrapper.oCdbStdErrThread.join();
     oCdbWrapper.oCdbCleanupThread.join();
