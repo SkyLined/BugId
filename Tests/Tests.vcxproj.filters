@@ -29,10 +29,10 @@
     <MASM Include="fIntegerOverflow.asm">
       <Filter>Source Files</Filter>
     </MASM>
-    <MASM Include="fJMP.asm">
+    <MASM Include="fPrivilegedInstruction.asm">
       <Filter>Source Files</Filter>
     </MASM>
-    <MASM Include="fPrivilegedInstruction.asm">
+    <MASM Include="fJump.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>
