@@ -1,6 +1,7 @@
 import json, re, os, sys, threading;
 from cBugId import cBugId;
 from dxBugIdConfig import dxBugIdConfig;
+from fsCreateFileName import fsCreateFileName;
 
 if __name__ == "__main__":
   asArguments = sys.argv[1:];
@@ -15,6 +16,8 @@ if __name__ == "__main__":
     print "Options:";
     print "  --bSaveReport=false";
     print "    Do not save a HTML formatted crash report.";
+    print "  --bSaveDump=true";
+    print "    Save a dump file when a crash is detected.";
     print "  --bOutputStdIO=true";
     print "    Show verbose cdb output and input during debugging.";
     print "  --asSymbolCachePaths=[\"C:\\Symbols\"]";
@@ -102,8 +105,7 @@ if __name__ == "__main__":
     print "Code:             %s" % oBugId.oErrorReport.sCodeDescription;
     print "Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
     if dxBugIdConfig["bSaveReport"]:
-      dsMap = {'"': "''", "<": "[", ">": "]", "\\": "#", "/": "#", "?": "#", "*": "#", ":": ".", "|": "#"};
-      sFileNameBase = "".join([dsMap.get(sChar, sChar) for sChar in oBugId.oErrorReport.sId]);
+      sFileNameBase = fsCreateFileName(oBugId.oErrorReport.sId);
       # File name may be too long, keep trying to 
       while len(sFileNameBase) > 0:
         sFileName = sFileNameBase + ".html";

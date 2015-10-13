@@ -15,16 +15,43 @@ should be the same.
 
 The bug id can be useful when trying to determine whether two crashes have the
 same bug as their root cause. It is used in automated fuzzing frameworks to
-allow "bucketizing" crashes to skip known issues and focus on bugs that have
-not been found before.
+allow "bucketizing" crashes to skip known bugs and focus on bugs that have not
+been found before.
 
-The information collected about the bug is stored in HTML format, and can be
-useful when manually analyzing bugs. The code attempts to determine the security
-risk of the bug it detected, so even novice users may be able to determine
-whether or not a particular bug is likely to be a security issue.
+A human-readable report containing information collected about the bug is 
+available in HTML format, for use when manually analyzing bugs. The code
+attempts to determine the security risk of the bug it detected, so even novice
+users may be able to determine whether or not a particular bug is likely to be
+a security vulnerability.
 
 BugId can be used as a command-line utility through BugId.py and integrated into
 your own Python project using cBugId.py.
+
+The bug id format
+-----------------
+The bug id follows the format `XX BugType Binary.exe![Module.dll!]FunctionName`,
+where:
+* `XX` is a stack hash; a number of hexadecimal digits that represent hash(es)
+  of the name(s) of the function(s) on the call stack that are considered to be
+  uniquely relevant to the bug. In most cases (and with default settings) this
+  includes the function in which the bug is considered to be located and its
+  caller. For recursive function calls, this includes all functions involved in
+  the call loop, which may be any number of functions.
+* `BugType` is a keyword that identifies the type of bug that was detected.
+* `Binary.exe` is the process' main binary
+* `Module.dll` is the module that contains the function in which the bug is
+  considered to be located, if it was not found in the process' main binary.
+* `FunctionName` is the name of the function in which the bug is considered to
+  be located.
+
+Note that the function in which the bug is considered to be located may not
+be the same as the function in which the detected exception occurred. For
+instance, if a function `A` calls `KERNELBASE.dll!RaiseException` to raise an
+exception, `KERNELBASE.dll!RaiseException` is not considered relevant to the
+bug, but the caller, `A`, is considered to be the function in which the bug is
+located. For some OOM bugs, a large number of function calls from the top of the
+stack may be considered irrelevant because they are part of the OOM handling or
+memory allocation code and not specific to that bug.
 
 PageHeap.cmd
 ------------
@@ -73,6 +100,32 @@ Currently the know applications are:
 You can add your own applications if you don't want to type the entire binary
 path every time you use BugId, or if you want to run it with certain arguments
 by default. 
+
+### Options
+The file `dxBugIdConfig.py` contains a number of configuration options that
+allow you to easily change certain behavior of BugId. You can modify this file
+to change the default settings for these options, or you can specify these
+options on the command line. Each option takes this form:
+
+    --[option name]=[JSON option value]
+
+The any option specified in `dxBugIdConfig.py` can be used as the `option name`;
+see the file for a complete list of options. The following options are probably
+the most interesting ones:
+
+    --bSaveReport=true
+
+Tell BugId to save a html formatted report for the crash it detects.
+
+    --bSaveDump=true
+    --bOverwriteDump=true
+
+Tell BugId to save a dump file, and to overwrite any existing dump file. The
+file name of the dump file is based on the crash id.
+
+    --sCdbBinaryPath_x86="path\to\cdb.exe"
+
+Tell BugId to use a cdb.exe binary from a specific location.
 
 cBugId.py
 ---------

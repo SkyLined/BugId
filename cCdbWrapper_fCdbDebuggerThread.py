@@ -1,6 +1,7 @@
 import re;
 from cErrorReport import cErrorReport;
 from dxBugIdConfig import dxBugIdConfig;
+from fsCreateFileName import fsCreateFileName;
 from NTSTATUS import *;
 
 daxExceptionHandling = {
@@ -153,6 +154,11 @@ def cCdbWrapper_fCdbDebuggerThread(oCdbWrapper):
     oCdbWrapper.oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
     if not oCdbWrapper.bCdbRunning: return;
     if oCdbWrapper.oErrorReport is not None:
+      if dxBugIdConfig["bSaveDump"]:
+        sDumpFileName = fsCreateFileName(oCdbWrapper.oErrorReport.sId);
+        sOverwrite = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
+        oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s.dmp\"" % (sOverwrite, sDumpFileName));
+        if not oCdbWrapper.bCdbRunning: return;
       break;
   
   # Terminate cdb.

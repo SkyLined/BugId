@@ -9,6 +9,8 @@ dxBugIdConfig = dxConfig.setdefault("BugId", {});
 # Add default values where no values have been supplied:
 for (sName, xValue) in {
   "bSaveReport": True,          # Output a HTML formatted crash report (only for use with bugid.py).
+  "bSaveDump": False,           # Save a dump file.
+  "bOverwriteDump": False,      # Overwrite any existing dump file.
   "bOutputStdIO": False,        # Output cdb i/o while debugging application
   "bOutputErrIO": True,         # Output anything cdb or the debugged application sends to stderr.
   "bOutputCommands": False,     # Output commands send to cdb while debugging application
