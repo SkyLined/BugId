@@ -1,7 +1,7 @@
 import json, re, os, sys, threading;
-from cBugId import cBugId;
-from dxBugIdConfig import dxBugIdConfig;
-from fsCreateFileName import fsCreateFileName;
+from src import cBugId;
+from dxConfig import dxConfig;
+from src.fsCreateFileName import fsCreateFileName;
 
 if __name__ == "__main__":
   asArguments = sys.argv[1:];
@@ -22,9 +22,9 @@ if __name__ == "__main__":
     print "    Show verbose cdb output and input during debugging.";
     print "  --asSymbolCachePaths=[\"C:\\Symbols\"]";
     print "    Use C:\\Symbols to cache symbol (.pdb) files.";
-    print "  See dxBugIdConfig.py for a list of settings that you can change.";
-    print "  All values must be valid JSON of the appropriate type. No checks are made";
-    print "  to ensure this. Providing illegal values may result in exceptions at any";
+    print "  See dxConfig.py and srv\dxBugIdConfig.py for a list of settings that you can";
+    print "  change. All values must be valid JSON of the appropriate type. No checks are";
+    print "  made to ensure this. Providing illegal values may result in exceptions at any";
     print "  time during execution. You have been warned.";
     os._exit(0);
   auApplicationProcessIds = None;
@@ -37,7 +37,7 @@ if __name__ == "__main__":
       asGroupNames = sSettingName.split("."); # last element is not a group name
       sFullName = ".".join(asGroupNames);
       sSettingName = asGroupNames.pop();          # so pop it.
-      dxConfigGroup = dxBugIdConfig;
+      dxConfigGroup = dxConfig;
       asHandledGroupNames = [];
       for sGroupName in asGroupNames:
         asHandledGroupNames.append(sGroupName);
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     print "Process binary:   %s" % oBugId.oErrorReport.sProcessBinaryName;
     print "Code:             %s" % oBugId.oErrorReport.sCodeDescription;
     print "Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
-    if dxBugIdConfig["bSaveReport"]:
+    if dxConfig["bSaveReport"]:
       sFileNameBase = fsCreateFileName(oBugId.oErrorReport.sId);
       # File name may be too long, keep trying to 
       while len(sFileNameBase) > 0:

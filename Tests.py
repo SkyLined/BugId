@@ -1,6 +1,7 @@
 import os, re, sys, threading;
-from cBugId import cBugId;
-from dxBugIdConfig import dxBugIdConfig;
+from src import cBugId;
+from dxConfig import dxConfig;
+dxBugIdConfig = dxConfig["BugId"];
 dxBugIdConfig["bOutputProcesses"] = False;
 bDebug = False;
 if bDebug:
@@ -17,14 +18,14 @@ else:
 
 sBaseFolderPath = os.path.dirname(__file__);
 dsBinaries_by_sISA = {
-  "x86": os.path.join(sBaseFolderPath, r"Tests\Tests_x86.exe"),
-  "AMD64": os.path.join(sBaseFolderPath, r"Tests\Tests_x64.exe"),
+  "x86": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x86.exe"),
+  "AMD64": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x64.exe"),
 };
 
 bFailed = False;
 oOutputLock = threading.Lock();
-# If you see "[Errno 24] Too many open files", try lowering the number of paralel tests:
-oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 64);
+# If you see weird exceptions, try lowering the number of parallel tests:
+oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 32);
 class cTest(object):
   def __init__(oTest, sISA, asCommandLineArguments, srBugId):
     oTest.sISA = sISA;
@@ -67,7 +68,7 @@ class cTest(object):
           print "- %s" % oTest;
           print "    => got no error";
           fbExit = bFailed = True;
-        if not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
+        elif not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
           print "- %s" % oTest;
           print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
           fbExit = bFailed = True;
@@ -143,7 +144,7 @@ for sISA in asTestISAs:
         cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AV?:Arbitrary"),
       ]);
 
-from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from src.cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 for (sISA, dtsDetails_uAddress) in ddtsDetails_uAddress_sISA.items():
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
     if uBaseAddress < (1 << 32) or (sISA == "AMD64" and uBaseAddress < (1 << 47)):

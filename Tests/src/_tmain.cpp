@@ -5,14 +5,14 @@
 #include <exception>
 
 #ifdef _WIN64
-  #define fpFromHexString(a,b,c) ((VOID*)_tcstoui64(a,b,c))
+  #define fpFromHexString(sInput) ((VOID*)_tcstoui64(sInput, NULL, 16))
 #else
-  #define fpFromHexString(a,b,c) ((VOID*)_tcstoul(a,b,c))
+  #define fpFromHexString(sInput) ((VOID*)_tcstoul(sInput, NULL, 16))
 #endif
 
-#define fdwFromHexString(a,b,c) ((DWORD)_tcstoul(a,b,c))
-#define fuFromHexString(a,b,c) ((UINT)_tcstoul(a,b,c))
-#define fiFromHexString(a,b,c) ((INT)_tcstol(a,b,c))
+#define fdwFromHexString(sInput) ((DWORD)_tcstoul(sInput, NULL, 16))
+#define fuFromHexString(sInput) ((UINT)_tcstoul(sInput, NULL, 16))
+#define fiFromHexString(sInput) ((INT)_tcstol(sInput, NULL, 16))
 
 extern "C" {
   VOID __stdcall fCall(VOID*);
@@ -83,7 +83,7 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     _tprintf(_T("  StackExhaustion\r\n"));
     _tprintf(_T("  RecursiveCall\r\n"));
   } else if (_tcsicmp(asArguments[1], _T("AccessViolation")) == 0) {
-    VOID* pAddress = fpFromHexString(asArguments[3], NULL, 16);
+    VOID* pAddress = fpFromHexString(asArguments[3]);
     if (_tcsicmp(asArguments[2], _T("Call")) == 0) {
       fCall(pAddress);
     } else if (_tcsicmp(asArguments[2], _T("Jump")) == 0) {
@@ -104,8 +104,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
     volatile UINT uN = 0;
     uN = 0 / uN;
   } else if (_tcsicmp(asArguments[1], _T("Numbered")) == 0) {
-    DWORD dwCode = fdwFromHexString(asArguments[2], NULL, 16);
-    DWORD dwFlags = fdwFromHexString(asArguments[3], NULL, 16);
+    DWORD dwCode = fdwFromHexString(asArguments[2]);
+    DWORD dwFlags = fdwFromHexString(asArguments[3]);
     // TODO: implement arguments?
     RaiseException(dwCode, dwFlags, 0, NULL);
   } else if (_tcsicmp(asArguments[1], _T("IllegalInstruction")) == 0) {
@@ -119,7 +119,7 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
   } else if (_tcsicmp(asArguments[1], _T("RecursiveCall")) == 0) {
     fStackRecursion();
   } else if (_tcsicmp(asArguments[1], _T("UseAfterFree")) == 0) {
-    DWORD uSize = fuFromHexString(asArguments[3], NULL, 16);
+    DWORD uSize = fuFromHexString(asArguments[3]);
     BYTE* pMemory = new BYTE[uSize];
     delete pMemory;
     if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
@@ -131,8 +131,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
       return 1;
     }
   } else if (_tcsicmp(asArguments[1], _T("OutOfBounds")) == 0) {
-    UINT uSize = fuFromHexString(asArguments[4], NULL, 16);
-    INT iOffset = fiFromHexString(asArguments[5], NULL, 16);
+    UINT uSize = fuFromHexString(asArguments[4]);
+    INT iOffset = fiFromHexString(asArguments[5]);
     BYTE* pMemory = NULL;
     BOOL bDelete = FALSE;
     if (_tcsicmp(asArguments[2], _T("Heap")) == 0) {
@@ -156,8 +156,8 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
       delete pMemory;
     }
   } else if (_tcsicmp(asArguments[1], _T("BufferOverrun")) == 0) {
-    UINT uSize = fuFromHexString(asArguments[4], NULL, 16);
-    UINT uOverrun = fuFromHexString(asArguments[5], NULL, 16);
+    UINT uSize = fuFromHexString(asArguments[4]);
+    UINT uOverrun = fuFromHexString(asArguments[5]);
     BYTE* pMemory;
     BOOL bDelete = FALSE;
     if (_tcsicmp(asArguments[2], _T("Heap")) == 0) {
@@ -185,7 +185,7 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
       delete pMemory;
     }
   } else if (_tcsicmp(asArguments[1], _T("StaticBufferOverrun10")) == 0) {
-    UINT uOverrun = fuFromHexString(asArguments[3], NULL, 16);
+    UINT uOverrun = fuFromHexString(asArguments[3]);
     BYTE pMemory[10];
     if (_tcsicmp(asArguments[2], _T("Read")) == 0) {
       for (BYTE* pAddress = pMemory; pAddress < pMemory + 10 + uOverrun; pAddress++) {

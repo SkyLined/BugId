@@ -1,4 +1,5 @@
 from dsCdbBinaryPath_sISA import dsCdbBinaryPath_sISA;
+from dsKillBinaryPath_sISA import dsKillBinaryPath_sISA;
 # Load base config file
 try:
   from dxConfig import dxConfig;
@@ -8,7 +9,6 @@ except:
 dxBugIdConfig = dxConfig.setdefault("BugId", {});
 # Add default values where no values have been supplied:
 for (sName, xValue) in {
-  "bSaveReport": True,          # Output a HTML formatted crash report (only for use with bugid.py).
   "bSaveDump": False,           # Save a dump file.
   "bOverwriteDump": False,      # Overwrite any existing dump file.
   "bOutputStdIO": False,        # Output cdb i/o while debugging application
@@ -28,6 +28,8 @@ for (sName, xValue) in {
                                 # you frequently have corrupt symbol files in an automated testing environment.
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
   "sCdbBinaryPath_AMD64": dsCdbBinaryPath_sISA.get("AMD64"),
+  "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
+  "sKillBinaryPath_AMD64": dsKillBinaryPath_sISA.get("AMD64"),
 }.items():
   if sName not in dxBugIdConfig:
     dxBugIdConfig[sName] = xValue;

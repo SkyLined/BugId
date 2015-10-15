@@ -1,1 +1,1 @@
-from cBugId import cBugId;
+from src import *;
