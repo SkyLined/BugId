@@ -1,6 +1,9 @@
 import os, re, sys, threading;
-from src import cBugId;
+from src.cBugId import cBugId;
+from src.sOSISA import sOSISA;
+from src.cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 from dxConfig import dxConfig;
+
 dxBugIdConfig = dxConfig["BugId"];
 dxBugIdConfig["bOutputProcesses"] = False;
 bDebug = False;
@@ -10,16 +13,14 @@ if bDebug:
 else:
   dxBugIdConfig["bOutputStdErr"] = False;
 
-sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # "x86" or "AMD64"
-if sOSISA == "AMD64":
-  asTestISAs = ["x86", "AMD64"];
-else:
-  asTestISAs = ["x86"];
+asTestISAs = [sOSISA];
+if sOSISA == "x64":
+  asTestISAs.append("x86");
 
 sBaseFolderPath = os.path.dirname(__file__);
 dsBinaries_by_sISA = {
   "x86": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x86.exe"),
-  "AMD64": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x64.exe"),
+  "x64": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x64.exe"),
 };
 
 bFailed = False;
@@ -92,8 +93,8 @@ class cTest(object):
 
 aoTests = [];
 for sISA in asTestISAs:
-  sMinusOne = {"x86": "FFFFFFFF", "AMD64": "FFFFFFFFFFFFFFFF"}[sISA];
-  sMinusTwo = {"x86": "FFFFFFFE", "AMD64": "FFFFFFFFFFFFFFFE"}[sISA];
+  sMinusOne = {"x86": "FFFFFFFF", "x64": "FFFFFFFFFFFFFFFF"}[sISA];
+  sMinusTwo = {"x86": "FFFFFFFE", "x64": "FFFFFFFFFFFFFFFE"}[sISA];
   aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+ODD"));
   aoTests.append(cTest(sISA, ["AccessViolation", "READ", "2"], "AVR:NULL+EVEN"));
   aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusOne], "AVR:NULL-ODD"));
@@ -128,14 +129,14 @@ for sISA in asTestISAs:
     aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "AVW:OOB"));
   
   for uBaseAddress in [(1 << 31) - 1, (1 << 31), (1 << 32), (1 << 47) - 1, (1 << 47), (1 << 63) - 1, (1 << 63)]:
-    if uBaseAddress < (1 << 32) or (sISA == "AMD64" and uBaseAddress < (1 << 47)):
+    if uBaseAddress < (1 << 32) or (sISA == "x64" and uBaseAddress < (1 << 47)):
       aoTests.extend([
         cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AVR:Arbitrary"),
         cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AVW:Arbitrary"),
         cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AVE:Arbitrary"),
         cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AVE:Arbitrary"),
       ]);
-    elif sISA == "AMD64":
+    elif sISA == "x64":
       # Above 0x7FFFFFFFFFFF the exception record no longer contains the correct address.
       aoTests.extend([
         cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AV?:Arbitrary"),
@@ -144,15 +145,14 @@ for sISA in asTestISAs:
         cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AV?:Arbitrary"),
       ]);
 
-from src.cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 for (sISA, dtsDetails_uAddress) in ddtsDetails_uAddress_sISA.items():
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
-    if uBaseAddress < (1 << 32) or (sISA == "AMD64" and uBaseAddress < (1 << 47)):
+    if uBaseAddress < (1 << 32) or (sISA == "x64" and uBaseAddress < (1 << 47)):
       aoTests.append(cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AVR:%s" % sAddressId));
       aoTests.append(cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AVW:%s" % sAddressId));
       aoTests.append(cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AVE:%s" % sAddressId));
       aoTests.append(cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AVE:%s" % sAddressId));
-    elif sISA == "AMD64":
+    elif sISA == "x64":
       aoTests.append(cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AV?:%s" % sAddressId));
       aoTests.append(cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AV?:%s" % sAddressId));
       aoTests.append(cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AV?:%s" % sAddressId));

@@ -27,9 +27,9 @@ for (sName, xValue) in {
                                 # them. It has a large impact on performance, but improves the accuracy of results if
                                 # you frequently have corrupt symbol files in an automated testing environment.
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
-  "sCdbBinaryPath_AMD64": dsCdbBinaryPath_sISA.get("AMD64"),
+  "sCdbBinaryPath_x64": dsCdbBinaryPath_sISA.get("x64"),
   "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
-  "sKillBinaryPath_AMD64": dsKillBinaryPath_sISA.get("AMD64"),
+  "sKillBinaryPath_x64": dsKillBinaryPath_sISA.get("x64"),
 }.items():
   if sName not in dxBugIdConfig:
     dxBugIdConfig[sName] = xValue;

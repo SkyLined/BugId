@@ -1,7 +1,8 @@
-import os, subprocess, threading;
+import subprocess, threading;
 from dxBugIdConfig import dxBugIdConfig;
+from fKillProcessesUntilTheyAreDead import fKillProcessesUntilTheyAreDead;
+from sOSISA import sOSISA;
 
-sOSISA = os.getenv("PROCESSOR_ARCHITEW6432") or os.getenv("PROCESSOR_ARCHITECTURE"); # "x86" or "AMD64"
 sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
 class cCdbWrapper(object):
@@ -91,11 +92,20 @@ class cCdbWrapper(object):
     try:
       fActivity(oCdbWrapper);
     except Exception, oException:
-      oCdbWrapper.fInternalExceptionCallback and oCdbWrapper.fInternalExceptionCallback(oException);
-      if oCdbWrapper.bCdbRunning:
-        oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
-        oCdbWrapper.oCdbProcess.terminate();
+      # Start another thread to handle this exception and then raise it.
+      oThread = threading.Thread(target = oCdbWrapper._fThreadExceptionHandler, args = (oException, threading.currentThread()));
+      oThread.start();
       raise;
+  
+  def _fThreadExceptionHandler(oCdbWrapper, oException, oExceptionThread):
+    # Wait for the exception thread to show an error and terminate and then handle it.
+    oExceptionThread.wait();
+    oCdbWrapper.fInternalExceptionCallback and oCdbWrapper.fInternalExceptionCallback(oException);
+    if oCdbWrapper.bCdbRunning:
+      oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
+      oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
+      if oCdbProcess:
+        fKillProcessesUntilTheyAreDead([oCdbProcess.pid]);
   
   def __del__(oCdbWrapper):
     # Check to make sure the debugger process is not running
@@ -107,7 +117,8 @@ class cCdbWrapper(object):
   def fStop(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
-    if oCdbProcess: oCdbProcess.terminate();
+    if oCdbProcess:
+      fKillProcessesUntilTheyAreDead([oCdbProcess.pid]);
     oCdbWrapper.oCdbDebuggerThread.join();
     oCdbWrapper.oCdbStdErrThread.join();
     oCdbWrapper.oCdbCleanupThread.join();

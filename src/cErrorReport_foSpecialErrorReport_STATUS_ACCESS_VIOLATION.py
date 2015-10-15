@@ -86,7 +86,7 @@ ddtsDetails_uAddress_sISA = {
             0xF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
             0xFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
   },
-  "AMD64": {            # Id                 Description                                           Security impact
+  "x64": {              # Id                 Description                                           Security impact
     0x0000000000000000: ('NULL',            "a NULL ptr",                                         None),
     0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
     0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
@@ -122,7 +122,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
   if oCdbWrapper.sCurrentISA == "x86":
     uAddress = oException.auParameters[1];
   else:
-    # In AMD64 mode, cdb reports incorrect information in the exception parameters if the address is larger than
+    # In x64 mode, cdb reports incorrect information in the exception parameters if the address is larger than
     # 0x7FFFFFFFFFFF. A work-around is to get the address from the last instruction output, which can be retreived by
     # setting the current thread.
     asLastInstructionAndAddress = oCdbWrapper.fasSendCommandAndReadOutput("~s");
@@ -181,7 +181,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
       break;
-    uOverflow = {"x86": 1 << 32, "AMD64": 1 << 64}[oCdbWrapper.sCurrentISA];
+    uOverflow = {"x86": 1 << 32, "x64": 1 << 64}[oCdbWrapper.sCurrentISA];
     if iOffset > uMaxAddressOffset: # Maybe this is wrapping:
       iOffset -= uOverflow;
     elif iOffset < -uMaxAddressOffset: # Maybe this is wrapping:

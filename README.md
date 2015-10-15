@@ -187,7 +187,7 @@ stored in an `cErrorReport` object, specifically in the following properties:
       symbols are available, and compile-time optimizations do not make radical
       changes to the binary, the id should be consistently the same for the
       same bug triggered in different versions of the application and builds
-      for different architectures (eg. x86 v.s. AMD64).
+      for different architectures (eg. x86 v.s. x64).
     sErrorTypeId (string)
       Contains a string that is unique to this type of bug, e.g. "OOM" for an
       crash triggered by the process running out-of-memory, or "AVR:NULL" for

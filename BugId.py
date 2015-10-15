@@ -58,12 +58,12 @@ if __name__ == "__main__":
     sURL = "http://%s:28876/" % os.getenv("COMPUTERNAME");
     sProgramFilesPath = os.getenv("ProgramFiles");
     sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
-    sProgramFilesPath_AMD64 = os.getenv("ProgramW6432");
+    sProgramFilesPath_x64 = os.getenv("ProgramW6432");
     asApplicationCommandLine = {
       "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
       "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, sURL, "--no-remote"],
       "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, sURL],
-      "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_AMD64, sURL],
+      "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64, sURL],
       "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, sURL],
     }.get(asApplicationCommandLine[0].lower(), asApplicationCommandLine)
   
