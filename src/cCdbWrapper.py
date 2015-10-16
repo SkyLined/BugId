@@ -102,7 +102,7 @@ class cCdbWrapper(object):
   
   def _fThreadExceptionHandler(oCdbWrapper, oException, oExceptionThread):
     # Wait for the exception thread to terminate and then clean up.
-    oExceptionThread.wait();
+    oExceptionThread.join();
     if oCdbWrapper.bCdbRunning:
       oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
       oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
@@ -120,7 +120,7 @@ class cCdbWrapper(object):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
     if oCdbProcess:
-      fKillProcessesUntilTheyAreDead([oCdbProcess.pid]);
+      oCdbProcess.terminate();
     oCdbWrapper.oCdbDebuggerThread.join();
     oCdbWrapper.oCdbStdErrThread.join();
     oCdbWrapper.oCdbCleanupThread.join();
