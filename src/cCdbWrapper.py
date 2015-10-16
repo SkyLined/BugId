@@ -1,7 +1,10 @@
 import subprocess, threading;
 from dxBugIdConfig import dxBugIdConfig;
-from fKillProcessesUntilTheyAreDead import fKillProcessesUntilTheyAreDead;
+from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
+from cCdbWrapper_fCdbDebuggerThread import cCdbWrapper_fCdbDebuggerThread;
+from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
+from cCdbWrapper_fCdbCleanupThread import cCdbWrapper_fCdbCleanupThread;
 
 sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
@@ -74,13 +77,10 @@ class cCdbWrapper(object):
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
-    from cCdbWrapper_fCdbDebuggerThread import cCdbWrapper_fCdbDebuggerThread;
     oCdbWrapper.oCdbDebuggerThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbDebuggerThread);
     # Create a thread that reads stderr output and shows it in the console
-    from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
     oCdbWrapper.oCdbStdErrThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdErrThread);
     # Create a thread that waits for the debugger to terminate and cleans up after it.
-    from cCdbWrapper_fCdbCleanupThread import cCdbWrapper_fCdbCleanupThread;
     oCdbWrapper.oCdbCleanupThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbCleanupThread);
   
   def _fStartThread(oCdbWrapper, fActivity):
@@ -92,15 +92,17 @@ class cCdbWrapper(object):
     try:
       fActivity(oCdbWrapper);
     except Exception, oException:
-      # Start another thread to handle this exception and then raise it.
+      # Start another thread to clean up after the exception was handled.
       oThread = threading.Thread(target = oCdbWrapper._fThreadExceptionHandler, args = (oException, threading.currentThread()));
       oThread.start();
-      raise;
+      if oCdbWrapper.fInternalExceptionCallback:
+        oCdbWrapper.fInternalExceptionCallback(oException);
+      else:
+        raise;
   
   def _fThreadExceptionHandler(oCdbWrapper, oException, oExceptionThread):
-    # Wait for the exception thread to show an error and terminate and then handle it.
+    # Wait for the exception thread to terminate and then clean up.
     oExceptionThread.wait();
-    oCdbWrapper.fInternalExceptionCallback and oCdbWrapper.fInternalExceptionCallback(oException);
     if oCdbWrapper.bCdbRunning:
       oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
       oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);

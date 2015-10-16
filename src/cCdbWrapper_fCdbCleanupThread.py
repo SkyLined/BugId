@@ -1,4 +1,4 @@
-from fKillProcessesUntilTheyAreDead import fKillProcessesUntilTheyAreDead;
+from Kill import fKillProcessesUntilTheyAreDead;
 
 def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # wait for debugger thread to terminate.

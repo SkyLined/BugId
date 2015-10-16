@@ -1,7 +1,9 @@
 import json, re, os, sys, threading;
-from src import cBugId;
 from dxConfig import dxConfig;
-from src.fsCreateFileName import fsCreateFileName;
+sBaseFolderPath = os.path.dirname(__file__);
+sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
+from cBugId import cBugId;
+from fsCreateFileName import fsCreateFileName;
 
 if __name__ == "__main__":
   asArguments = sys.argv[1:];

@@ -1,8 +1,10 @@
 import os, re, sys, threading;
-from src.cBugId import cBugId;
-from src.sOSISA import sOSISA;
-from src.cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 from dxConfig import dxConfig;
+sBaseFolderPath = os.path.dirname(__file__);
+sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
+from cBugId import cBugId;
+from sOSISA import sOSISA;
+from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 
 dxBugIdConfig = dxConfig["BugId"];
 dxBugIdConfig["bOutputProcesses"] = False;
