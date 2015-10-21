@@ -55,10 +55,6 @@ class cErrorReport(object):
     return "%s %s %s!%s" % (oErrorReport.sStackId, oErrorReport.sErrorTypeId, oErrorReport.sProcessBinaryName, oErrorReport.sCodeId);
   sId = property(fsGetId);
   
-  def foTranslateSpecialErrorReport(oErrorReport):
-    from cErrorReport_foTranslateSpecialErrorReport import cErrorReport_foTranslateSpecialErrorReport;
-    return cErrorReport_foTranslateSpecialErrorReport(oErrorReport);
-  
   def foTranslateError(oErrorReport, dtxTranslations):
     from cErrorReport_foTranslateError import cErrorReport_foTranslateError;
     return cErrorReport_foTranslateError(oErrorReport, dtxTranslations);
