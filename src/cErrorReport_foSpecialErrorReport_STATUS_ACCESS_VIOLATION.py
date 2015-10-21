@@ -22,6 +22,18 @@ ddtxErrorTranslations = {
       ],
     ),
   },
+  "AVW:NULL+EVEN": {
+    # Chrome can trigger this exception but appears to handle it as well. It's not considered a bug at this time.
+    None: (
+      None,
+      None,
+      [
+        [
+          "ntdll.dll!RtlpWaitOnCriticalSection",
+        ]
+      ]
+    )
+  },
   "AVE:NULL": {
     "OOM": (
       "The process caused an access violation by calling NULL to indicate it was unable to allocate enough memory",
