@@ -67,6 +67,10 @@ dtxErrorTranslations = {
         "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::CheckHRESULT",
+      ], [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
       ],
     ],
   ),
