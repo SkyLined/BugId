@@ -59,10 +59,14 @@ dtxErrorTranslations = {
     "An assertion failed",
     None,
     [
-      [
+      [ # Edge
         "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::AssertionFailed",
+      ], [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::CheckHRESULT",
       ],
     ],
   ),

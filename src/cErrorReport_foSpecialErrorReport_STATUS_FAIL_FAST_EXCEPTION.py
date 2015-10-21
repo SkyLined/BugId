@@ -21,15 +21,27 @@ dtxErrorTranslations = {
     "The process triggered a fail-fast exception to indicate it was unable to allocate enough memory",
     None,
     [
-      [
+      [ # Edge
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::OutOfMemory",
+      ],
+    ],
+  ),
+  "Assert": (
+    "An assertion failed",
+    None,
+    [
+      [ # Edge
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::CheckHRESULT",
       ],
     ],
   ),
 };
 
 def cErrorReport_foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION(oErrorReport, oCdbWrapper):
+  # cdb does not known this exception and reports "Unknown exception (code 0xC0000602)" as the description.
+  oErrorReport.sErrorDescription = "Fail fast exception (code 0x%X)" % oErrorReport.oException.uCode;
   oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
   if oErrorReport:
     oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
