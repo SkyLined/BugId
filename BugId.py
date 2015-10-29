@@ -1,7 +1,10 @@
 import json, re, os, sys, threading;
-from dxConfig import dxConfig;
+# The CWD may not be this script's folder; make sure it looks there for modules first:
 sBaseFolderPath = os.path.dirname(__file__);
-sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
+for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]:
+  sys.path.insert(0, sPath);
+
+from dxConfig import dxConfig;
 from cBugId import cBugId;
 from fsCreateFileName import fsCreateFileName;
 
