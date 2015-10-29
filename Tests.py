@@ -6,9 +6,10 @@ from cBugId import cBugId;
 from sOSISA import sOSISA;
 from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 
-dxBugIdConfig = dxConfig["BugId"];
-dxBugIdConfig["bOutputProcesses"] = False;
 bDebug = False;
+
+dxBugIdConfig = dxConfig["BugId"];
+dxBugIdConfig["bOutputProcesses"] = bDebug;
 if bDebug:
   dxBugIdConfig["bOutputStdIO"] = True;
   dxBugIdConfig["bOutputStdErr"] = True;

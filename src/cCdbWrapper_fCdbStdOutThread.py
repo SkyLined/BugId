@@ -12,8 +12,9 @@ daxExceptionHandling = {
     "cpr", "ibp", "epr",
     "aph", # Application has stopped responding
     STATUS_ACCESS_VIOLATION,
-    STATUS_ARRAY_BOUNDS_EXCEEDED,
+    STATUS_ASSERTION_FAILURE,
     STATUS_BREAKPOINT,
+    STATUS_ARRAY_BOUNDS_EXCEEDED,
     STATUS_DATATYPE_MISALIGNMENT,
     STATUS_FAIL_FAST_EXCEPTION,
     STATUS_GUARD_PAGE_VIOLATION,
@@ -22,36 +23,34 @@ daxExceptionHandling = {
     STATUS_PRIVILEGED_INSTRUCTION,
     STATUS_SINGLE_STEP,
     STATUS_STACK_BUFFER_OVERRUN,
-    STATUS_WAKE_SYSTEM_DEBUGGER,
     STATUS_WX86_BREAKPOINT,
     STATUS_WX86_SINGLE_STEP,
+    STATUS_WAKE_SYSTEM_DEBUGGER,
   ],
   "sxd": [ # break on second chance exceptions
     CPP_EXCEPTION_CODE,
-    STATUS_ASSERTION_FAILURE,
     STATUS_INTEGER_DIVIDE_BY_ZERO,
     STATUS_INTEGER_OVERFLOW, 
     STATUS_STACK_OVERFLOW,
-    STATUS_INVALID_HANDLE,
+    STATUS_INVALID_HANDLE, 
   ],
   "sxi": [ # ignored
     "ld", "ud", # Load/unload module
   ],
 };
 
-# Create a list of commands to set up event handling. The default for any exception not explicitly mentioned is to be
-# handled as a second chance exception.
-asExceptionHandlingCommands = ["sxd *"];
-# request second chance debugger break for certain exceptions that indicate the application has a bug.
-for sCommand, axExceptions in daxExceptionHandling.items():
-  for xException in axExceptions:
-    if isinstance(xException, str):
-      asExceptionHandlingCommands.append("%s %s" % (sCommand, xException));
-    else:
-      asExceptionHandlingCommands.append("%s 0x%08X" % (sCommand, xException));
-sExceptionHandlingCommands = ";".join(asExceptionHandlingCommands);
+def cCdbWrapper_fCdbStdOutThread(oCdbWrapper):
+  # Create a list of commands to set up event handling. The default for any exception not explicitly mentioned is to be
+  # handled as a second chance exception.
+  asExceptionHandlingCommands = ["sxd *"];
+  # request second chance debugger break for certain exceptions that indicate the application has a bug.
+  for sCommand, axExceptions in daxExceptionHandling.items():
+    for xException in axExceptions:
+      sException = isinstance(xException, str) and xException or ("0x%08X" % xException);
+      asExceptionHandlingCommands.append("%s %s" % (sCommand, sException));
+  sExceptionHandlingCommands = ";".join(asExceptionHandlingCommands);
+  
 
-def cCdbWrapper_fCdbDebuggerThread(oCdbWrapper):
   # Read the initial cdb output related to starting/attaching to the first process.
   asIntialCdbOutput = oCdbWrapper.fasReadOutput();
   if not oCdbWrapper.bCdbRunning: return;
@@ -77,6 +76,9 @@ def cCdbWrapper_fCdbDebuggerThread(oCdbWrapper):
         bInitialApplicationRunningCallbackFired = True;
       asCdbOutput = oCdbWrapper.fasSendCommandAndReadOutput("g");
       if not oCdbWrapper.bCdbRunning: return;
+    # Save the current number of blocks of StdIO; if this exception is not relevant it can be used to remove all blocks
+    # added while analyzing it. This can reduce the risk of OOM when irrelevant exceptions happens very often.
+    uOriginalCdbStdIOBlocks = len(oCdbWrapper.aasCdbStdIO);
     # If cdb is attaching to a process, make sure it worked.
     for sLine in asCdbOutput:
       oFailedAttachMatch = re.match(r"^Cannot debug pid \d+, Win32 error 0n\d+\s*$", sLine);
@@ -142,24 +144,29 @@ def cCdbWrapper_fCdbDebuggerThread(oCdbWrapper):
           for uProcessId in oCdbWrapper.auProcessIds:
             oCdbWrapper.fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
             if not oCdbWrapper.bCdbRunning: return;
-      continue;
-    # Report that the application is paused for analysis...
-    oCdbWrapper.fExceptionDetectedCallback and oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
-    # And potentially report that the application is resumed later...
-    bApplicationWasPausedToAnalyzeAnException = True;
-    # Optionally perform enhanced symbol reload
-    oCdbWrapper.fEnhancedSymbolReload();
-    if not oCdbWrapper.bCdbRunning: return;
-    # Create an error report, if the exception is fatal.
-    oCdbWrapper.oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
-    if not oCdbWrapper.bCdbRunning: return;
-    if oCdbWrapper.oErrorReport is not None:
-      if dxBugIdConfig["bSaveDump"]:
-        sDumpFileName = fsCreateFileName(oCdbWrapper.oErrorReport.sId);
-        sOverwrite = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
-        oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s.dmp\"" % (sOverwrite, sDumpFileName));
-        if not oCdbWrapper.bCdbRunning: return;
-      break;
+      # This exception and the commands executed to analyze it are not relevant to the analysis of the bug. As mentioned
+      # above, they commands and their output will be removed from the StdIO array to reduce the risk of OOM.
+      oCdbWrapper.aasCdbStdIO = oCdbWrapper.aasCdbStdIO[0:uOriginalCdbStdIOBlocks];
+      # But let's add a small block back to indicate this has happened.
+      oCdbWrapper.aasCdbStdIO.append(["<<<snip>>>"]);
+    else:
+      # Report that the application is paused for analysis...
+      oCdbWrapper.fExceptionDetectedCallback and oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
+      # And potentially report that the application is resumed later...
+      bApplicationWasPausedToAnalyzeAnException = True;
+      # Optionally perform enhanced symbol reload
+      oCdbWrapper.fEnhancedSymbolReload();
+      if not oCdbWrapper.bCdbRunning: return;
+      # Create an error report, if the exception is fatal.
+      oCdbWrapper.oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
+      if not oCdbWrapper.bCdbRunning: return;
+      if oCdbWrapper.oErrorReport is not None:
+        if dxBugIdConfig["bSaveDump"]:
+          sDumpFileName = fsCreateFileName(oCdbWrapper.oErrorReport.sId);
+          sOverwrite = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
+          oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s.dmp\"" % (sOverwrite, sDumpFileName));
+          if not oCdbWrapper.bCdbRunning: return;
+        break;
   
   # Terminate cdb.
   oCdbWrapper.bCdbWasTerminatedOnPurpose = True;

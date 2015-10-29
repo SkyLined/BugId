@@ -2,7 +2,7 @@ from Kill import fKillProcessesUntilTheyAreDead;
 
 def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # wait for debugger thread to terminate.
-  oCdbWrapper.oCdbDebuggerThread.join();
+  oCdbWrapper.oCdbStdOutThread.join();
   # wait for stderr thread to terminate.
   oCdbWrapper.oCdbStdErrThread.join();
   # Terminate the cdb process in case it somehow is still running.

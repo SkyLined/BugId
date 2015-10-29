@@ -2,6 +2,7 @@ import hashlib;
 from cErrorReport_foSpecialErrorReport_CppException import cErrorReport_foSpecialErrorReport_CppException;
 from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION;
 from cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT import cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT;
+from cErrorReport_foSpecialErrorReport_STATUS_INVALID_HANDLE import cErrorReport_foSpecialErrorReport_STATUS_INVALID_HANDLE;
 from cErrorReport_foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION import cErrorReport_foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION;
 from cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN import cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN;
 from cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW import cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW;
@@ -16,10 +17,11 @@ dfoSpecialErrorReport_uExceptionCode = {
   CPP_EXCEPTION_CODE: cErrorReport_foSpecialErrorReport_CppException,
   STATUS_ACCESS_VIOLATION: cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION,
   STATUS_BREAKPOINT: cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT,
+  STATUS_INVALID_HANDLE: cErrorReport_foSpecialErrorReport_STATUS_INVALID_HANDLE,
   STATUS_FAIL_FAST_EXCEPTION: cErrorReport_foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION,
   STATUS_STACK_BUFFER_OVERRUN: cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN,
-  STATUS_STOWED_EXCEPTION: cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION,
   STATUS_STACK_OVERFLOW: cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW,
+  STATUS_STOWED_EXCEPTION: cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION,
   STATUS_WX86_BREAKPOINT: cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT,
 };
 # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
@@ -32,7 +34,8 @@ asHiddenTopFrames = [
   "ntdll.dll!ZwRaiseException",
 ];
 class cErrorReport(object):
-  def __init__(oErrorReport, sErrorTypeId, sErrorDescription, sSecurityImpact, oException, oStack):
+  def __init__(oErrorReport, oCdbWrapper, sErrorTypeId, sErrorDescription, sSecurityImpact, oException, oStack):
+    oErrorReport.oCdbWrapper = oCdbWrapper;
     oErrorReport.sErrorTypeId = sErrorTypeId;
     oErrorReport.sErrorDescription = sErrorDescription;
     oErrorReport.sSecurityImpact = sSecurityImpact;
@@ -42,7 +45,6 @@ class cErrorReport(object):
     oErrorReport.sCodeId = None;
     oErrorReport.sCodeDescription = None;
     oErrorReport.atsAdditionalInformation = [];
-    oErrorReport.sHTMLDetails = None;
   
   @property
   def sProcessBinaryName(oErrorReport):
@@ -64,6 +66,36 @@ class cErrorReport(object):
       if re.match("^(%s)$" % sErrorTypeIdRegExp, oErrorReport.sErrorTypeId):
         oErrorReport.oStack.fHideTopFrames(asHiddenFrames);
   
+  @property
+  def sHTMLDetails(oErrorReport):
+    if not hasattr(oErrorReport, "_sHTMLDetails"):
+      # Turn cdb output into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
+      # command executed.
+      asHTMLCdbStdIOBlocks = [];
+      while oErrorReport.oCdbWrapper.aasCdbStdIO:
+        asCdbStdIOBlock = oErrorReport.oCdbWrapper.aasCdbStdIO.pop(0);
+        asHTMLCdbStdIOBlocks.append("".join(["%s<br/>" % fsHTMLEncode(sLine) for sLine in asCdbStdIOBlock]));
+      sHTMLCdbStdIO = "<hr/>".join(asHTMLCdbStdIOBlocks);
+      del asHTMLCdbStdIOBlocks;
+      asHTMLCdbStdErr = [];
+      while oErrorReport.oCdbWrapper.asCdbStdErr:
+        asHTMLCdbStdErr.append("%s<br/>" % fsHTMLEncode(oErrorReport.oCdbWrapper.asCdbStdErr.pop(0)));
+      sHTMLCdbStdErr = "".join(asHTMLCdbStdErr);
+      del asHTMLCdbStdErr;
+      # Create HTML details
+      oErrorReport._sHTMLDetails = sHTMLDetailsTemplate % {
+        "sId": fsHTMLEncode(oErrorReport.sId),
+        "sExceptionDescription": fsHTMLEncode(oErrorReport.sErrorDescription),
+        "sProcessBinaryName": fsHTMLEncode(oErrorReport.sProcessBinaryName),
+        "sCodeDescription": fsHTMLEncode(oErrorReport.sCodeDescription),
+        "sSecurityImpact": oErrorReport.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
+        "sStack": oErrorReport.sHTMLStack,
+        "sBinaryInformation": oErrorReport.sHTMLBinaryInformation,
+        "sCdbStdErr": sHTMLCdbStdErr,
+        "sCdbStdIO": sHTMLCdbStdIO,
+      };
+    return oErrorReport._sHTMLDetails;
+  
   @classmethod
   def foCreate(cSelf, oCdbWrapper, uExceptionCode, sExceptionDescription):
     # Get current process details
@@ -79,6 +111,7 @@ class cErrorReport(object):
     oStack.fHideTopFrames(asHiddenTopFrames);
     # Create a preliminary error report.
     oErrorReport = cSelf(
+      oCdbWrapper = oCdbWrapper,
       sErrorTypeId = oException.sTypeId,
       sErrorDescription = oException.sDescription,
       sSecurityImpact = oException.sSecurityImpact,
@@ -134,6 +167,7 @@ class cErrorReport(object):
     oErrorReport.sStackId = sStackId.rstrip("_") or "##";
     if oStack.bPartialStack:
       asHTMLStack.append("... (rest of the stack was ignored)<br/>");
+    oErrorReport.sHTMLStack = "".join(asHTMLStack);
     # Use a function for the id
     oCodeIdFrame = oTopmostRelevantFunctionFrame or oTopmostRelevantModuleFrame;
     oErrorReport.sCodeId = oCodeIdFrame and oCodeIdFrame.sSimplifiedAddress or "(unknown)";
@@ -147,6 +181,8 @@ class cErrorReport(object):
     assert len(asBinaryCdbNames) > 0, "Cannot find binary %s module" % oErrorReport.sProcessBinaryName;
     # If the binary is loaded as a module multiple times in the process, the first should be the binary that was
     # executed.
+    # If this turns out to be wrong, this code should be switch to use "u @$exentry L1" to determine the cdb id of the
+    # module in which the process's entry point is found.
     dsGetVersionCdbId_by_sBinaryName = {oErrorReport.sProcessBinaryName: asBinaryCdbNames[0]};
     # Get the id frame's module cdb name for retreiving version information:
     if oCodeIdFrame:
@@ -186,24 +222,7 @@ class cErrorReport(object):
         "sName": fsHTMLEncode(sBinaryName),
         "sInformation": "".join(["%s<br/>" % fsHTMLEncode(x) for x in asModuleInformationOutput[2:]]),
       });
+    oErrorReport.sHTMLBinaryInformation = "".join(asHTMLBinaryInformation);
+    # TODO: At some point the instruction that cause the exception could be added. Use "u @$eventip L1" to retreive it.
     
-    # Turn cdb I/O into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
-    # command executed.
-    asHTMLBlocks = [];
-    for asBlock in oCdbWrapper.aasCdbStdIO:
-      asHTMLBlocks.append("".join(["%s<br/>" % fsHTMLEncode(sLine) for sLine in asBlock]));
-    sHTMLCdbStdIO = "<hr/>".join(asHTMLBlocks);
-    sHTMLCdbStdErr = "".join(["%s<br/>" % fsHTMLEncode(sLine) for sLine in oCdbWrapper.asCdbStdErr]);
-    # Create HTML details
-    oErrorReport.sHTMLDetails = sHTMLDetailsTemplate % {
-      "sId": fsHTMLEncode(oErrorReport.sId),
-      "sExceptionDescription": fsHTMLEncode(oErrorReport.sErrorDescription),
-      "sProcessBinaryName": fsHTMLEncode(oErrorReport.sProcessBinaryName),
-      "sCodeDescription": fsHTMLEncode(oErrorReport.sCodeDescription),
-      "sSecurityImpact": oErrorReport.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
-      "sStack": "".join(asHTMLStack),
-      "sBinaryInformation": "".join(asHTMLBinaryInformation),
-      "sCdbStdErr": sHTMLCdbStdErr,
-      "sCdbStdIO": sHTMLCdbStdIO,
-    };
     return oErrorReport;

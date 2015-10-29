@@ -2,7 +2,7 @@ import subprocess, threading;
 from dxBugIdConfig import dxBugIdConfig;
 from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
-from cCdbWrapper_fCdbDebuggerThread import cCdbWrapper_fCdbDebuggerThread;
+from cCdbWrapper_fCdbStdOutThread import cCdbWrapper_fCdbStdOutThread;
 from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
 from cCdbWrapper_fCdbCleanupThread import cCdbWrapper_fCdbCleanupThread;
 
@@ -77,7 +77,7 @@ class cCdbWrapper(object):
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
-    oCdbWrapper.oCdbDebuggerThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbDebuggerThread);
+    oCdbWrapper.oCdbStdOutThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdOutThread);
     # Create a thread that reads stderr output and shows it in the console
     oCdbWrapper.oCdbStdErrThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdErrThread);
     # Create a thread that waits for the debugger to terminate and cleans up after it.
@@ -121,9 +121,10 @@ class cCdbWrapper(object):
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
     if oCdbProcess:
       oCdbProcess.terminate();
-    oCdbWrapper.oCdbDebuggerThread.join();
+    oCdbWrapper.oCdbStdOutThread.join();
     oCdbWrapper.oCdbStdErrThread.join();
     oCdbWrapper.oCdbCleanupThread.join();
+    oCdbProcess.wait();
   
   def fasReadOutput(oCdbWrapper):
     from cCdbWrapper_fasReadOutput import cCdbWrapper_fasReadOutput;
