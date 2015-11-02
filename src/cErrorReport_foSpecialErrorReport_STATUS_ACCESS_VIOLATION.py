@@ -136,30 +136,26 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
   else:
     # In x64 mode, cdb reports incorrect information in the exception parameters if the address is larger than
     # 0x7FFFFFFFFFFF. A work-around is to get the address from the last instruction output, which can be retreived by
-    # setting the current thread.
+    # setting the current thread, because in cCdbWrapper_fCdbStdInOutThread ".prompt_allow" was used to make sure the
+    # instruction and its address is shown:
     asLastInstructionAndAddress = oCdbWrapper.fasSendCommandAndReadOutput("~s");
     if not oCdbWrapper.bCdbRunning: return None;
     # Sample output:
-    # |ntdll!LdrpValidateUserCallTarget+0xe:
     # |00007ffd`420b213e 488b14c2        mov     rdx,qword ptr [rdx+rax*8] ds:00007df5`ffb60000=????????????????
     # or
-    # |chrome_child!WTF::HashTable<unsigned int,WTF::KeyValuePair<unsigned int,unsigned int>,WTF::KeyValuePairKeyExtractor,WTF::IntHash<unsigned int>,WTF::HashMapValueTraits<WTF::HashTraits<unsigned int>,WTF::HashTraits<unsigned int> >,WTF::HashTraits<unsigned int>,WTF::DefaultAllocator>::lookup+0x9 [inlined in chrome_child!blink::AXObjectCacheImpl::isAriaOwned+0xc]:
     # |60053594 ff7008          push    dword ptr [eax+8]    ds:002b:00000008=????????
     # or
-    # |Tests_x64!fJMP+0x4:
     # |00007ff6`e7ab1204 ffe1            jmp     rcx {c0c0c0c0`c0c0c0c0}
     # or
     # |00000000`7fffffff ??              ???
-    if len(asLastInstructionAndAddress) == 1:
-      oEIPOutsideAllocatedMemoryMatch = re.match("^%s$" % "".join([
-        r"([0-9a-f`]+)", r"\s+", r"\?\?", r"\s+", r"\?\?\?" # address   spaces "??" spaces "???"
-      ]), asLastInstructionAndAddress[0]);
-      assert oEIPOutsideAllocatedMemoryMatch, \
-          "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
+    assert len(asLastInstructionAndAddress) == 1, \
+        "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
+    oEIPOutsideAllocatedMemoryMatch = re.match("^%s$" % "".join([
+      r"([0-9a-f`]+)", r"\s+", r"\?\?", r"\s+", r"\?\?\?" # address   spaces "??" spaces "???"
+    ]), asLastInstructionAndAddress[0]);
+    if oEIPOutsideAllocatedMemoryMatch:
       sAddress = oEIPOutsideAllocatedMemoryMatch.group(1);
     else:
-      assert len(asLastInstructionAndAddress) == 2, \
-          "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
       oLastInstructionMatch = re.match("^%s$" % "".join([
         r"[0-9a-f`]+", r"\s+",      # address   spaces
         r"[0-9a-f`]+", r"\s+",      # opcode   spaces
@@ -173,7 +169,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
         r"|",                       # }or{
           r"\{([0-9a-f`]+)\}",      #   "{" (address) "}"
         r")",                       # }
-      ]), asLastInstructionAndAddress[1]);
+      ]), asLastInstructionAndAddress[0]);
       assert oLastInstructionMatch, \
           "Unexpected last instruction output:\r\n%r" % "\r\n".join(asLastInstructionAndAddress);
       sAddress = oLastInstructionMatch.group(1) or oLastInstructionMatch.group(2);

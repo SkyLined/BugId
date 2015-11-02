@@ -23,12 +23,7 @@ def cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
       if dxBugIdConfig["bOutputProcesses"]:
         print "* New process %d." % uProcessId;
   elif sCreateExit == "Exit":
-    assert uProcessId in oCdbWrapper.auProcessIds, \
-        "Missing process id: %d, StdIO:\r\n%s\r\nStdErr:\r\n%s" % (
-          uProcessId,
-          "\r\n".join(["\r\n".join(asCdbStdIO) for asCdbStdIO in oCdbWrapper.aasCdbStdIO]),
-          "\r\n".join(oCdbWrapper.asCdbStdErr)
-        );
+    assert uProcessId in oCdbWrapper.auProcessIds, "Missing process id: %d" % uProcessId;
     oCdbWrapper.auProcessIds.remove(uProcessId);
     oCdbWrapper.uLastProcessId = uProcessId;
     if dxBugIdConfig["bOutputProcesses"]:

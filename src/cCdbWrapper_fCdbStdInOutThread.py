@@ -39,7 +39,7 @@ daxExceptionHandling = {
   ],
 };
 
-def cCdbWrapper_fCdbStdOutThread(oCdbWrapper):
+def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # Create a list of commands to set up event handling. The default for any exception not explicitly mentioned is to be
   # handled as a second chance exception.
   asExceptionHandlingCommands = ["sxd *"];
@@ -54,6 +54,13 @@ def cCdbWrapper_fCdbStdOutThread(oCdbWrapper):
   # Read the initial cdb output related to starting/attaching to the first process.
   asIntialCdbOutput = oCdbWrapper.fasReadOutput();
   if not oCdbWrapper.bCdbRunning: return;
+  # Turn off prompt information - it's not parsed anyway and clutters output.
+  # Not that +dis and +ea are needed in cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION as this causes
+  # an exmpty command to output the 
+  oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis +ea -reg -src -sym");
+  if not oCdbWrapper.bCdbRunning: return;
+  oCdbWrapper.asHTMLCdbStdIOBlocks.pop(-1); # This command is not relevant, remove it from the log.
+  
   # Exception handlers need to be set up.
   oCdbWrapper.bExceptionHandlersHaveBeenSet = False;
   # Only fire _fApplicationRunningCallback if the application was started for the first time or resumed after it was
@@ -77,8 +84,10 @@ def cCdbWrapper_fCdbStdOutThread(oCdbWrapper):
       asCdbOutput = oCdbWrapper.fasSendCommandAndReadOutput("g");
       if not oCdbWrapper.bCdbRunning: return;
     # Save the current number of blocks of StdIO; if this exception is not relevant it can be used to remove all blocks
-    # added while analyzing it. This can reduce the risk of OOM when irrelevant exceptions happens very often.
-    uOriginalCdbStdIOBlocks = len(oCdbWrapper.aasCdbStdIO);
+    # added while analyzing it. These blocks are not considered to contain useful information and removing them can 
+    # reduce the risk of OOM when irrelevant exceptions happens very often. The last block contains a prompt, which
+    # will become the first analysis command's block, so it is not saved.
+    uOriginalHTMLCdbStdIOBlocks = len(oCdbWrapper.asHTMLCdbStdIOBlocks) - 1;
     # If cdb is attaching to a process, make sure it worked.
     for sLine in asCdbOutput:
       oFailedAttachMatch = re.match(r"^Cannot debug pid \d+, Win32 error 0n\d+\s*$", sLine);
@@ -145,18 +154,17 @@ def cCdbWrapper_fCdbStdOutThread(oCdbWrapper):
             oCdbWrapper.fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
             if not oCdbWrapper.bCdbRunning: return;
       # This exception and the commands executed to analyze it are not relevant to the analysis of the bug. As mentioned
-      # above, they commands and their output will be removed from the StdIO array to reduce the risk of OOM.
-      oCdbWrapper.aasCdbStdIO = oCdbWrapper.aasCdbStdIO[0:uOriginalCdbStdIOBlocks];
-      # But let's add a small block back to indicate this has happened.
-      oCdbWrapper.aasCdbStdIO.append(["<<<snip>>>"]);
+      # above, the commands and their output will be removed from the StdIO array to reduce the risk of OOM. 
+      oCdbWrapper.asHTMLCdbStdIOBlocks = (
+        oCdbWrapper.asHTMLCdbStdIOBlocks[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
+        ["<span class=\"CDBIgnoredException\">%s process %d exception.</span>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
+        oCdbWrapper.asHTMLCdbStdIOBlocks[-1:] # Last block contains prompt and must be conserved.
+      );
     else:
       # Report that the application is paused for analysis...
       oCdbWrapper.fExceptionDetectedCallback and oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
       # And potentially report that the application is resumed later...
       bApplicationWasPausedToAnalyzeAnException = True;
-      # Optionally perform enhanced symbol reload
-      oCdbWrapper.fEnhancedSymbolReload();
-      if not oCdbWrapper.bCdbRunning: return;
       # Create an error report, if the exception is fatal.
       oCdbWrapper.oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
       if not oCdbWrapper.bCdbRunning: return;
@@ -167,7 +175,11 @@ def cCdbWrapper_fCdbStdOutThread(oCdbWrapper):
           oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s.dmp\"" % (sOverwrite, sDumpFileName));
           if not oCdbWrapper.bCdbRunning: return;
         break;
-  
+      oCdbWrapper.asHTMLCdbStdIOBlocks = (
+        oCdbWrapper.asHTMLCdbStdIOBlocks[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
+        ["<span class=\"CDBIgnoredException\">Exception 0x%08X in process %d.</span>" % (uExceptionCode, uProcessId)] +
+        oCdbWrapper.asHTMLCdbStdIOBlocks[-1:] # Last block contains prompt and must be conserved.
+      );
   # Terminate cdb.
   oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
   oCdbWrapper.fasSendCommandAndReadOutput("q");

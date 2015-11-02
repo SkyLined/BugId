@@ -71,27 +71,18 @@ class cErrorReport(object):
     if not hasattr(oErrorReport, "_sHTMLDetails"):
       # Turn cdb output into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
       # command executed.
-      asHTMLCdbStdIOBlocks = [];
-      while oErrorReport.oCdbWrapper.aasCdbStdIO:
-        asCdbStdIOBlock = oErrorReport.oCdbWrapper.aasCdbStdIO.pop(0);
-        asHTMLCdbStdIOBlocks.append("".join(["%s<br/>" % fsHTMLEncode(sLine) for sLine in asCdbStdIOBlock]));
-      sHTMLCdbStdIO = "<hr/>".join(asHTMLCdbStdIOBlocks);
-      del asHTMLCdbStdIOBlocks;
-      asHTMLCdbStdErr = [];
-      while oErrorReport.oCdbWrapper.asCdbStdErr:
-        asHTMLCdbStdErr.append("%s<br/>" % fsHTMLEncode(oErrorReport.oCdbWrapper.asCdbStdErr.pop(0)));
-      sHTMLCdbStdErr = "".join(asHTMLCdbStdErr);
-      del asHTMLCdbStdErr;
+      sHTMLCdbStdIO = '<hr class="StdIOSeparator"/>'.join(oErrorReport.oCdbWrapper.asHTMLCdbStdIOBlocks);
+      del oErrorReport.oCdbWrapper.asHTMLCdbStdIOBlocks;
       # Create HTML details
       oErrorReport._sHTMLDetails = sHTMLDetailsTemplate % {
         "sId": fsHTMLEncode(oErrorReport.sId),
         "sExceptionDescription": fsHTMLEncode(oErrorReport.sErrorDescription),
         "sProcessBinaryName": fsHTMLEncode(oErrorReport.sProcessBinaryName),
         "sCodeDescription": fsHTMLEncode(oErrorReport.sCodeDescription),
-        "sSecurityImpact": oErrorReport.sSecurityImpact and "<b>%s</b>" % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
+        "sSecurityImpact": oErrorReport.sSecurityImpact and \
+              '<span class="SecurityImpact">%s</span>' % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
         "sStack": oErrorReport.sHTMLStack,
         "sBinaryInformation": oErrorReport.sHTMLBinaryInformation,
-        "sCdbStdErr": sHTMLCdbStdErr,
         "sCdbStdIO": sHTMLCdbStdIO,
       };
     return oErrorReport._sHTMLDetails;
@@ -137,23 +128,23 @@ class cErrorReport(object):
     for oStackFrame in oStack.aoFrames:
       if oStackFrame.bIsHidden:
         # This frame is hidden (because it is irrelevant to the crash)
-        asHTMLStack.append("<s>%s</s><br/>" % fsHTMLEncode(oStackFrame.sAddress));
+        asHTMLStack.append('<span class="StackIgnored">%s</span><br/>' % fsHTMLEncode(oStackFrame.sAddress));
       else:
         oTopmostRelevantFrame = oTopmostRelevantFrame or oStackFrame;
         sHTMLAddress = fsHTMLEncode(oStackFrame.sAddress);
         # Make stack frames without a function symbol italic
         if not oStackFrame.oFunction:
-          sHTMLAddress = "<i>%s</i>" % sHTMLAddress;
+          sHTMLAddress = '<span class="StackNoSymbol">%s</span><br/>' % sHTMLAddress;
         # Hash frame address for id and output frame to html
         if uFramesHashed == oStack.uHashFramesCount:
           # no more hashing is needed: just output as is:
-          asHTMLStack.append("%s<br/>" % sHTMLAddress);
+          asHTMLStack.append('<span class="Stack">%s</span><br/>' % sHTMLAddress);
         else:
           sStackId += oStackFrame.sId or "__";
           if oStackFrame.sId:
             # frame adds useful infoormation to the id: add hash and output bold
             uFramesHashed += 1;
-            asHTMLStack.append("<b>%s</b> (%s in id)<br/>" % (sHTMLAddress, oStackFrame.sId));
+            asHTMLStack.append('<span class="StackHash">%s</span> (%s in id)<br/>' % (sHTMLAddress, oStackFrame.sId));
             # Determine the top frame for the id:
             if oStackFrame.oFunction:
               oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
@@ -161,7 +152,7 @@ class cErrorReport(object):
               oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
           else:
             # This is not part of the id, but between frames that are: add "__" to id and output strike-through
-            asHTMLStack.append("<s>%s</s><br/>" % sHTMLAddress);
+            asHTMLStack.append('<span class="StackHashIgnored">%s</span><br/>' % sHTMLAddress);
     # If there are not enouogh id-able stack frames, there may be many trailing "_"-s; remove these. Also, if there
     # was not id, or nothing is left after removing the "_"-s, use the id "##".
     oErrorReport.sStackId = sStackId.rstrip("_") or "##";

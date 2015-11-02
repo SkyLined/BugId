@@ -1,67 +1,104 @@
-sHTMLDetailsTemplate = """
+def fsHTMLEncode(sData):
+  return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
+
+sHTMLDetailsTemplate = ("""
 <!doctype html>
 <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <style>
       * {
-        font-family: Courier New, courier, monospace;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        color: black;
+        background: white;
+        font-weight: normal;
+        font-size: 10pt;
+        font-family: "Courier New", courier, monospace;
       }
-      body {
-        margin: 5pt;
-      }
-      div {
-        color: white;
-        background: black;
-        padding: 5pt;
-        padding-left: 10pt;
-        margin-top: 10pt;
-        margin-bottom: 10pt;
-      }
-      code {
-        margin-left: 10pt;
-        display: block;
-      }
-      table, tbody, tr, td {
+      table {
         cell-padding: 0;
         cell-spacing: 0;
-        border: 0;
-        padding: 0;
-        margin: 0;
       }
-      s {
+      .Header {
+        color: white;
+        background: black;
+        padding: 5pt 5pt 5pt 10pt;
+        margin: 5pt;
+      }
+      .SubHeader {
+        margin: 10pt 10pt 0pt 15pt;
+        border-bottom: 1pt solid black;
+      }
+      .Content {
+        margin: 10pt 10pt 10pt 15pt;
+      }
+      .SecurityImpact {
+        color: Red;
+      }
+      .CDBStdIn {
+        font-weight: bold;
+      }
+      .CDBStdOut {
+      }
+      .CDBStdErr {
+        color: maroon;
+      }
+      .CDBIgnoredException {
+        color: grey;
+      }
+      .Stack {
+        color: grey;
+      }
+      .StackIgnored {
         color: silver;
-        text-decoration: line-through;
+      }
+      .StackHash {
+        font-weight: bold;
+      }
+      .StackHashIgnored {
+        color: silver;
+      }
+      .StackNoSymbol {
+        font-style: italic;
+      }
+      .StdIOSeparator {
+        border: 1pt groove silver;
+        margin: 1pt 5pt 1pt 5pt;
       }
     </style>
     <title>%(sId)s</title>
   </head>
   <body>
-    <div>Details</div>
-    <code>
-      <table>
-        <tbody>
-          <tr><td>Id:               </td><td><b>%(sId)s</b></td></tr>
-          <tr><td>Description:      </td><td><b>%(sExceptionDescription)s</b></td></tr>
-          <tr><td>Process binary:   </td><td>%(sProcessBinaryName)s</td></tr>
-          <tr><td>Code:             </td><td>%(sCodeDescription)s</td></tr>
-          <tr><td>Security impact:  </td><td>%(sSecurityImpact)s</td></tr>
-        </table>
-      </tbody>
-    </code>
-    <div>Stack</div>
-    <code>%(sStack)s</code>
+    <h1 class="Header">Details</h1>
+    <div class="Content">
+      """ + fsHTMLEncode("Id:               ") + """<b>%(sId)s</b><br/>
+      """ + fsHTMLEncode("Description:      ") + """<b>%(sExceptionDescription)s</b><br/>
+      """ + fsHTMLEncode("Process binary:   ") + """%(sProcessBinaryName)s<br/>
+      """ + fsHTMLEncode("Code:             ") + """%(sCodeDescription)s<br/>
+      """ + fsHTMLEncode("Security impact:  ") + """%(sSecurityImpact)s<br/>
+    </div>
+    
+    <h1 class="Header">Stack</h1>
+    <div class="Content">
+      %(sStack)s
+    </div>
+    
+    <h1 class="Header">Binary information</h1>
     %(sBinaryInformation)s
-    <div>Error output (stderr)</div>
-    <code>%(sCdbStdErr)s</code>
-    <div>Debugger input/output (stdin/stdout)</div>
-    <code>%(sCdbStdIO)s</code>
+    
+    <h1 class="Header">Debugger IO</h1>
+    <div class="Content">
+      %(sCdbStdIO)s
+    </div>
   </body>
-</html>""".strip();
+</html>""").strip();
 
 sHTMLBinaryInformationTemplate = """
-    <div>Binary %(sName)s details</div>
-    <code>%(sInformation)s</code>
+    <h2 class="SubHeader">%(sName)s</h2>
+    <div class="Content">
+      %(sInformation)s
+    </div>
 """.strip();
 
-def fsHTMLEncode(sData):
-  return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');

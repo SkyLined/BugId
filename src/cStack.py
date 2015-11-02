@@ -50,16 +50,8 @@ class cStack(object):
     # Create the stack object
     oStack = cStack();
     uStackFramesCount = min(dxBugIdConfig["uMaxStackFramesCount"], uSize);
-    if dxBugIdConfig["bEnhancedSymbolLoading"]:
-      # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
-      asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000");
-      if not oCdbWrapper.bCdbRunning: return None;
-    asStack = oCdbWrapper.fasSendCommandAndReadOutput("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
-    if not oCdbWrapper.bCdbRunning: return None;
-    if dxBugIdConfig["bEnhancedSymbolLoading"]:
-      # Turn noisy symbol loading back on
-      oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000");
-      if not oCdbWrapper.bCdbRunning: return None;
+    asStack = oCdbWrapper.fasGetStack("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
+    if not asStack: return None;
     # Here are some lines you might expect to parse:
     # |TODO put something here...
     uFrameNumber = 0;
@@ -106,16 +98,8 @@ class cStack(object):
     # Create the stack object
     oStack = cStack();
     uStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
-    if dxBugIdConfig["bEnhancedSymbolLoading"]:
-      # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
-      asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000");
-      if not oCdbWrapper.bCdbRunning: return None;
-    asStack = oCdbWrapper.fasSendCommandAndReadOutput("kn 0x%X" % uStackFramesCount);
-    if not oCdbWrapper.bCdbRunning: return None;
-    if dxBugIdConfig["bEnhancedSymbolLoading"]:
-      # Turn noisy symbol loading back on
-      oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000");
-      if not oCdbWrapper.bCdbRunning: return None;
+    asStack = oCdbWrapper.fasGetStack("kn 0x%X" % uStackFramesCount);
+    if not asStack: return None;
     sHeader = asStack.pop(0);
     assert re.sub(r"\s+", " ", sHeader.strip()) in ["# ChildEBP RetAddr", "# Child-SP RetAddr Call Site", "Could not allocate memory for stack trace"], \
         "Unknown stack header: %s" % repr(sHeader);

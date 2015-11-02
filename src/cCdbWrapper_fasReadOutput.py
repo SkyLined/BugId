@@ -1,5 +1,6 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
+from mHTML import fsHTMLEncode;
 
 def cCdbWrapper_fasReadOutput(oCdbWrapper):
   sLine = "";
@@ -10,10 +11,10 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper):
       pass; # ignored.
     elif sChar in ("\n", ""):
       if sChar == "\n" or sLine:
-        if dxBugIdConfig["bOutputStdIO"]:
+        if dxBugIdConfig["bOutputStdOut"]:
           print "cdb>%s" % repr(sLine)[1:-1];
         # Add the line to the current block of I/O
-        oCdbWrapper.aasCdbStdIO[-1].append(sLine);
+        oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBOutput\">%s</span><br/>" % fsHTMLEncode(sLine)
         asLines.append(sLine);
       if sChar == "":
         break;
@@ -24,10 +25,10 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper):
       oPromptMatch = re.match("^\d+:\d+(:x86)?> $", sLine);
       if oPromptMatch:
         oCdbWrapper.sCurrentISA = oPromptMatch.group(1) and "x86" or oCdbWrapper.sCdbISA;
-        if dxBugIdConfig["bOutputStdIO"]:
+        if dxBugIdConfig["bOutputStdOut"]:
           print "cdb>%s" % repr(sLine)[1:-1];
         # The prompt is stored in a new block of I/O
-        oCdbWrapper.aasCdbStdIO.append([sLine]);
+        oCdbWrapper.asHTMLCdbStdIOBlocks.append("<span class=\"CDBPrompt\">%s</span>" % fsHTMLEncode(sLine));
         return asLines;
   oCdbWrapper.bCdbRunning = False;
   return None;

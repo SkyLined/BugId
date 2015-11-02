@@ -1,4 +1,5 @@
 from dxBugIdConfig import dxBugIdConfig;
+from mHTML import fsHTMLEncode;
 
 def cCdbWrapper_fCdbStdErrThread(oCdbWrapper):
   sLine = "";
@@ -8,8 +9,8 @@ def cCdbWrapper_fCdbStdErrThread(oCdbWrapper):
       pass; # ignored.
     elif sChar in ("\n", ""):
       if sChar == "\n" or sLine:
-        oCdbWrapper.asCdbStdErr.append(sLine);
-        if dxBugIdConfig["bOutputErrIO"]:
+        oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBStdErr\">%s</span><br/>" % fsHTMLEncode(sLine);
+        if dxBugIdConfig["bOutputStdErr"]:
           print "cdb:stderr>%s" % repr(sLine)[1:-1];
       if sChar == "":
         break;

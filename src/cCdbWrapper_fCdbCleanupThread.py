@@ -2,7 +2,7 @@ from Kill import fKillProcessesUntilTheyAreDead;
 
 def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # wait for debugger thread to terminate.
-  oCdbWrapper.oCdbStdOutThread.join();
+  oCdbWrapper.oCdbStdInOutThread.join();
   # wait for stderr thread to terminate.
   oCdbWrapper.oCdbStdErrThread.join();
   # Terminate the cdb process in case it somehow is still running.
@@ -28,9 +28,5 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # should be terminated are killed until they are confirmed they have terminated:
   if oCdbWrapper.auProcessIds:
     fKillProcessesUntilTheyAreDead(oCdbWrapper.auProcessIds);
-  assert bTerminationWasExpected, \
-      "Cdb terminated unexpectedly! StdIO:\r\n%s\r\nStdErr:\r\n%s" % (
-        "\r\n".join(["\r\n".join(asCdbStdIO) for asCdbStdIO in oCdbWrapper.aasCdbStdIO]),
-        "\r\n".join(oCdbWrapper.asCdbStdErr)
-      );
+  assert bTerminationWasExpected, "Cdb terminated unexpectedly!";
   oCdbWrapper.fFinishedCallback and oCdbWrapper.fFinishedCallback(oCdbWrapper.oErrorReport);

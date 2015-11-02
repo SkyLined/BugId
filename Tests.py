@@ -6,15 +6,15 @@ from cBugId import cBugId;
 from sOSISA import sOSISA;
 from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 
-bDebug = False;
+bDebugStartFinish = False;
+bDebugIO = False;
+uSequentialTests = 32; # >32 will probably not work.
 
 dxBugIdConfig = dxConfig["BugId"];
-dxBugIdConfig["bOutputProcesses"] = bDebug;
-if bDebug:
+if bDebugIO:
   dxBugIdConfig["bOutputStdIO"] = True;
-  dxBugIdConfig["bOutputStdErr"] = True;
-else:
-  dxBugIdConfig["bOutputStdErr"] = False;
+dxBugIdConfig["bOutputStdErr"] = False;
+dxBugIdConfig["bOutputProcesses"] = False;
 
 asTestISAs = [sOSISA];
 if sOSISA == "x64":
@@ -29,7 +29,7 @@ dsBinaries_by_sISA = {
 bFailed = False;
 oOutputLock = threading.Lock();
 # If you see weird exceptions, try lowering the number of parallel tests:
-oConcurrentTestsSemaphore = threading.Semaphore(bDebug and 1 or 32);
+oConcurrentTestsSemaphore = threading.Semaphore(uSequentialTests);
 class cTest(object):
   def __init__(oTest, sISA, asCommandLineArguments, srBugId):
     oTest.sISA = sISA;
@@ -45,8 +45,12 @@ class cTest(object):
     oConcurrentTestsSemaphore.acquire();
     sBinary = dsBinaries_by_sISA[oTest.sISA];
     asApplicationCommandLine = [sBinary] + oTest.asCommandLineArguments;
+    if bDebugStartFinish:
+      oOutputLock.acquire();
+      print "@ Started %s" % oTest;
+      oOutputLock.release();
     try:
-      oBugId = cBugId(
+      oTest.oBugId = cBugId(
         asApplicationCommandLine = asApplicationCommandLine,
         fFinishedCallback = oTest.fFinishedHandler,
         fInternalExceptionCallback = oTest.fInternalExceptionHandler,
@@ -58,41 +62,50 @@ class cTest(object):
         print "- %s" % oTest;
         print "    => Exception: %s" % oException;
         oOutputLock.release();
-        os._exit(1);
+  
+  def fWait(oTest):
+    hasattr(oTest, "oBugId") and oTest.oBugId.fWait();
   
   def fFinished(oTest):
+    if bDebugStartFinish:
+      oOutputLock.acquire();
+      print "@ Finished %s" % oTest;
+      oOutputLock.release();
     oConcurrentTestsSemaphore.release();
+  
   def fFinishedHandler(oTest, oErrorReport):
     global bFailed, oOutputLock;
-    fbExit = False;
     if not bFailed:
       oOutputLock.acquire();
       if oTest.srBugId:
         if not oErrorReport:
           print "- %s" % oTest;
           print "    => got no error";
-          fbExit = bFailed = True;
+          bFailed = True;
         elif not re.match("^([0-9A-F_]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
           print "- %s" % oTest;
           print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
-          fbExit = bFailed = True;
+          bFailed = True;
         else:
           print "+ %s" % oTest;
       elif oErrorReport:
         print "- %s" % oTest;
         print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
-        fbExit = bFailed = True;
+        bFailed = True;
       else:
         print "+ %s" % oTest;
       oOutputLock.release();
-      if fbExit:
-        os._exit(1);
     oTest.fFinished();
   
   def fInternalExceptionHandler(oTest, oException):
     global bFailed;
-    bFailed = True;
     oTest.fFinished();
+    if not bFailed:
+      oOutputLock.acquire();
+      bFailed = True;
+      print "@ Exception in %s: %s" % (oTest, oException);
+      oOutputLock.release();
+      raise;
 
 aoTests = [];
 for sISA in asTestISAs:
@@ -166,4 +179,7 @@ for oTest in aoTests:
   if bFailed:
     break;
   oTest.fRun();
+for oTest in aoTests:
+  oTest.fWait();
+sys.exit(bFailed and 1 or 0);
 

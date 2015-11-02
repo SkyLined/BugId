@@ -11,9 +11,9 @@ dxBugIdConfig = dxConfig.setdefault("BugId", {});
 for (sName, xValue) in {
   "bSaveDump": False,           # Save a dump file.
   "bOverwriteDump": False,      # Overwrite any existing dump file.
-  "bOutputStdIO": False,        # Output cdb i/o while debugging application
-  "bOutputErrIO": True,         # Output anything cdb or the debugged application sends to stderr.
-  "bOutputCommands": False,     # Output commands send to cdb while debugging application
+  "bOutputStdIn": False,        # Output cdb input (commands) send to cdb while debugging application
+  "bOutputStdOut": False,       # Output cdb output while debugging application
+  "bOutputStdErr": True,        # Output cdb error output, which probably comes from the debugged application.
   "bOutputFirstChanceExceptions": False, # Are first chance exceptions detected and output?
   "bOutputCommandLine": False,  # Is the cbd.exe command line printed before execution?
   "bOutputProcesses": True,     # Output process details whenever one is created/attached to/terminated.
@@ -22,10 +22,10 @@ for (sName, xValue) in {
   "uMaxStackFramesCount": 100,  # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
   "asSymbolCachePaths": [],     # Where are symbols cached?
-  "bEnhancedSymbolLoading": False, # Enable noizy symbol loading and reload symbols for all modules before exception
-                                # analysis. This will also detect and delete corrupted pdb files and try to reload
-                                # them. It has a large impact on performance, but improves the accuracy of results if
-                                # you frequently have corrupt symbol files in an automated testing environment.
+  "bEnhancedSymbolLoading": False, # Enabled additional checks when getting a stack that can detect and fix errors in
+                                # symbol loading caused by corrupted pdb files. This turns on "noisy symbol loading"
+                                # which may provide useful information to fix symbol loading errors. It has a large
+                                # impact on performance, which is why it is disabled by default.
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
   "sCdbBinaryPath_x64": dsCdbBinaryPath_sISA.get("x64"),
   "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
