@@ -104,11 +104,11 @@ if __name__ == "__main__":
   if oBugId.oErrorReport:
     print "* A bug was detected in the application.";
     print;
-    print "Id:               %s" % oBugId.oErrorReport.sId;
-    print "Description:      %s" % oBugId.oErrorReport.sErrorDescription;
-    print "Process binary:   %s" % oBugId.oErrorReport.sProcessBinaryName;
-    print "Code:             %s" % oBugId.oErrorReport.sCodeDescription;
-    print "Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
+    print "  Id:               %s" % oBugId.oErrorReport.sId;
+    print "  Description:      %s" % oBugId.oErrorReport.sErrorDescription;
+    print "  Process binary:   %s" % oBugId.oErrorReport.sProcessBinaryName;
+    print "  Code:             %s" % oBugId.oErrorReport.sCodeDescription;
+    print "  Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
       sFileNameBase = fsCreateFileName(oBugId.oErrorReport.sId);
       # File name may be too long, keep trying to 
@@ -123,9 +123,9 @@ if __name__ == "__main__":
           oFile.write(oBugId.oErrorReport.sHTMLDetails);
         finally:
           oFile.close();
-        print "Error report:     %s (%d bytes)" % (sFileName, len(oBugId.oErrorReport.sHTMLDetails));
+        print "  Error report:     %s (%d bytes)" % (sFileName, len(oBugId.oErrorReport.sHTMLDetails));
         break;
       else:
-        print "Error report:     cannot be saved";
+        print "  Error report:     cannot be saved";
   else:
     print "* The application has terminated without crashing.";
