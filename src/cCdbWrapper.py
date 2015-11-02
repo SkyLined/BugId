@@ -2,7 +2,7 @@ import subprocess, threading;
 from dxBugIdConfig import dxBugIdConfig;
 from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
-from cCdbWrapper_fCdbStdOutThread import cCdbWrapper_fCdbStdOutThread;
+from cCdbWrapper_fCdbStdInOutThread import cCdbWrapper_fCdbStdInOutThread;
 from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
 from cCdbWrapper_fCdbCleanupThread import cCdbWrapper_fCdbCleanupThread;
 
@@ -36,7 +36,7 @@ class cCdbWrapper(object):
       0x00010000, # SYMOPT_AUTO_PUBLICS
 #      0x00020000, # SYMOPT_NO_IMAGE_SEARCH
       0x00080000, # SYMOPT_NO_PROMPTS
-      dxBugIdConfig["bEnhancedSymbolLoading"] and 0x80000000 or 0, # SYMOPT_DEBUG
+#      0x80000000, # SYMOPT_DEBUG (may be switched on and off in cStack.py/fbEnhancedSymbolLoading)
     ]);
     # Get the cdb binary path
     sCdbBinaryPath = dxBugIdConfig["sCdbBinaryPath_%s" % oCdbWrapper.sCdbISA];
@@ -68,8 +68,7 @@ class cCdbWrapper(object):
       print "* Starting %s" % " ".join(asCommandLine);
     # Initialize some variables
     oCdbWrapper.sCurrentISA = None; # During exception handling, this is set to the ISA for the code that caused it.
-    oCdbWrapper.aasCdbStdIO = [[]]; # Logs all stdin/stdout communication with cdb. Create a sub-list for each executed command.
-    oCdbWrapper.asCdbStdErr = []; # Logs all stderr output from cdb.
+    oCdbWrapper.asHTMLCdbStdIOBlocks = [""]; # Logs stdin/stdout/stderr for the cdb process, grouped by executed command.
     oCdbWrapper.oErrorReport = None; # Set to an error report if a bug was detected in the application
     oCdbWrapper.uLastProcessId = None; # Set to the id of the last process to be reported as terminated by cdb.
     oCdbWrapper.bCdbRunning = True; # Set to False after cdb terminated, used to terminate the debugger thread.
@@ -77,7 +76,7 @@ class cCdbWrapper(object):
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
-    oCdbWrapper.oCdbStdOutThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdOutThread);
+    oCdbWrapper.oCdbStdInOutThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdInOutThread);
     # Create a thread that reads stderr output and shows it in the console
     oCdbWrapper.oCdbStdErrThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdErrThread);
     # Create a thread that waits for the debugger to terminate and cleans up after it.
@@ -121,10 +120,11 @@ class cCdbWrapper(object):
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
     if oCdbProcess:
       oCdbProcess.terminate();
-    oCdbWrapper.oCdbStdOutThread.join();
+    oCdbWrapper.oCdbStdInOutThread.join();
     oCdbWrapper.oCdbStdErrThread.join();
     oCdbWrapper.oCdbCleanupThread.join();
-    oCdbProcess.wait();
+    if oCdbProcess:
+      oCdbProcess.wait();
   
   def fasReadOutput(oCdbWrapper):
     from cCdbWrapper_fasReadOutput import cCdbWrapper_fasReadOutput;
@@ -158,6 +158,6 @@ class cCdbWrapper(object):
     from cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess import cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess;
     return cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper);
   
-  def fEnhancedSymbolReload(oCdbWrapper):
-    from cCdbWrapper_fEnhancedSymbolReload import cCdbWrapper_fEnhancedSymbolReload;
-    return cCdbWrapper_fEnhancedSymbolReload(oCdbWrapper);
+  def fasGetStack(oCdbWrapper, sGetStackCommand):
+    from cCdbWrapper_fasGetStack import cCdbWrapper_fasGetStack;
+    return cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand);
