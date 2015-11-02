@@ -78,6 +78,9 @@ ddtxErrorTranslations = {
         [
           "chrome_child.dll!WTF::partitionsOutOfMemoryUsing512M",
         ],
+        [
+          "chrome_child.dll!WTF::partitionExcessiveAllocationSize",
+        ],
       ],
     ),
   },
