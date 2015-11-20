@@ -181,5 +181,10 @@ for oTest in aoTests:
   oTest.fRun();
 for oTest in aoTests:
   oTest.fWait();
-sys.exit(bFailed and 1 or 0);
 
+if bFailed:
+    print "* Tests failed."
+    sys.exit(1);
+else:
+    print "* All tests passed!"
+    sys.exit(0);
