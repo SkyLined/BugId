@@ -52,6 +52,7 @@ def cErrorReport_foSpecialErrorReport_CppException(oErrorReport, oCdbWrapper):
     sExceptionObjectVFTablePointerSymbol = oExceptionVFtablePointerMatch.group(1);
     if sExceptionObjectVFTablePointerSymbol is None: break;
     sExceptionObjectSymbol = sExceptionObjectVFTablePointerSymbol.rstrip("::`vftable'");
+    if "!" not in sExceptionObjectSymbol: break; # No symbol information available, just an address
     sModuleCdbId, sExceptionClassName = sExceptionObjectSymbol.split("!", 1);
     oErrorReport.sErrorTypeId += ":%s" % sExceptionClassName;
     dtxErrorTranslations = ddtxErrorTranslations_by_sExceptionCallName.get(sExceptionClassName);

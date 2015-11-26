@@ -14,7 +14,7 @@ def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand):
   oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBCommand\">%s</span><br/>" % fsHTMLEncode(sCommand);
   asOutput = oCdbWrapper.fasReadOutput();
   # Detect obvious errors executing the command. (this will not catch everything, but does help development)
-  assert asOutput is None or len(asOutput) != 1 or not re.match(r"^\s*\^ .*$", asOutput[0]), \
+  assert asOutput is None or len(asOutput) != 1 or not re.match(r"^(\s*\^ .*|Couldn't resolve error at .+)$", asOutput[0]), \
       "There was a problem executing the command %s:\r\n%s" % \
       (repr(sCommand), "\r\n".join([repr(sLine) for sLine in asOutput]));
   return asOutput;

@@ -1,4 +1,5 @@
 from Kill import fKillProcessesUntilTheyAreDead;
+from cCdbTerminatedUnexpectedlyErrorReport import cCdbTerminatedUnexpectedlyErrorReport;
 
 def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # wait for debugger thread to terminate.
@@ -12,7 +13,7 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   oCdbWrapper.oCdbProcess.stderr.close();
   oCdbWrapper.oCdbProcess.stdin.close();
   # Wait for the cdb process to terminate
-  oCdbWrapper.oCdbProcess.wait();
+  uExitCode = oCdbWrapper.oCdbProcess.wait();
   # Destroy the subprocess object to make even more sure all stdio pipes are closed.
   del oCdbWrapper.oCdbProcess;
   # Determine if the debugger was terminated or if the application terminated. If not, an exception is thrown later, as
@@ -28,5 +29,8 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # should be terminated are killed until they are confirmed they have terminated:
   if oCdbWrapper.auProcessIds:
     fKillProcessesUntilTheyAreDead(oCdbWrapper.auProcessIds);
-  assert bTerminationWasExpected, "Cdb terminated unexpectedly!";
+  if not bTerminationWasExpected:
+    oCdbWrapper.oErrorReport = cCdbTerminatedUnexpectedlyErrorReport(oCdbWrapper, uExitCode);
   oCdbWrapper.fFinishedCallback and oCdbWrapper.fFinishedCallback(oCdbWrapper.oErrorReport);
+
+

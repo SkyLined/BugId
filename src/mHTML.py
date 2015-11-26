@@ -12,27 +12,39 @@ sHTMLDetailsTemplate = ("""
         margin: 0;
         padding: 0;
         color: black;
-        background: white;
+        background: transparent;
         font-weight: normal;
         font-size: 10pt;
         font-family: "Courier New", courier, monospace;
+      }
+      html {
+        background: silver;
       }
       table {
         cell-padding: 0;
         cell-spacing: 0;
       }
+      .Block {
+        margin: 10pt;
+        border-radius: 0 0 30pt 5pt;
+        border: 1pt solid black;
+        background: white;
+        box-shadow: 5pt 5pt 5pt grey;
+      }
       .Header {
+        padding: 5pt 10pt 5pt 10pt;
         color: white;
         background: black;
-        padding: 5pt 5pt 5pt 10pt;
-        margin: 5pt;
       }
       .SubHeader {
-        margin: 10pt 10pt 0pt 15pt;
+        margin: 0 0 5pt 0;
         border-bottom: 1pt solid black;
       }
       .Content {
-        margin: 10pt 10pt 10pt 15pt;
+        padding: 5pt 10pt 5pt 10pt;
+        border-radius: 0 0 30pt 5pt;
+      }
+      .SubContent {
       }
       .SecurityImpact {
         color: Red;
@@ -64,40 +76,50 @@ sHTMLDetailsTemplate = ("""
         font-style: italic;
       }
       .StdIOSeparator {
-        border: 1pt groove silver;
-        margin: 1pt 5pt 1pt 5pt;
+        border: dotted black;
+        border-width: 0 0 1pt 0;
       }
     </style>
     <title>%(sId)s</title>
   </head>
   <body>
-    <h1 class="Header">Details</h1>
-    <div class="Content">
-      """ + fsHTMLEncode("Id:               ") + """<b>%(sId)s</b><br/>
-      """ + fsHTMLEncode("Description:      ") + """<b>%(sExceptionDescription)s</b><br/>
-      """ + fsHTMLEncode("Process binary:   ") + """%(sProcessBinaryName)s<br/>
-      """ + fsHTMLEncode("Code:             ") + """%(sCodeDescription)s<br/>
-      """ + fsHTMLEncode("Security impact:  ") + """%(sSecurityImpact)s<br/>
+    <div class="Block">
+      <h1 class="Header">Details</h1>
+      <div class="Content">
+        """ + fsHTMLEncode("Id:               ") + """<b>%(sId)s</b><br/>
+        """ + fsHTMLEncode("Description:      ") + """<b>%(sExceptionDescription)s</b><br/>
+        """ + fsHTMLEncode("Process binary:   ") + """%(sProcessBinaryName)s<br/>
+        """ + fsHTMLEncode("Code:             ") + """%(sCodeDescription)s<br/>
+        """ + fsHTMLEncode("Security impact:  ") + """%(sSecurityImpact)s<br/>
+      </div>
     </div>
     
-    <h1 class="Header">Stack</h1>
-    <div class="Content">
-      %(sStack)s
+    <div class="Block">
+      <h1 class="Header">Stack</h1>
+      <div class="Content">
+        %(sStack)s
+      </div>
     </div>
     
-    <h1 class="Header">Binary information</h1>
-    %(sBinaryInformation)s
+    <div class="Block">
+      <h1 class="Header">Binary information</h1>
+      <div class="Content">
+        %(sBinaryInformation)s
+      </div>
+    </div>
     
-    <h1 class="Header">Debugger IO</h1>
-    <div class="Content">
-      %(sCdbStdIO)s
+    <div class="Block">
+      <h1 class="Header">Debugger IO</h1>
+      <div class="Content">
+        %(sCdbStdIO)s
+      </div>
     </div>
   </body>
 </html>""").strip();
 
 sHTMLBinaryInformationTemplate = """
     <h2 class="SubHeader">%(sName)s</h2>
-    <div class="Content">
+    <div class="SubContent">
       %(sInformation)s
     </div>
 """.strip();

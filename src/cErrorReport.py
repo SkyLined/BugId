@@ -134,7 +134,7 @@ class cErrorReport(object):
         sHTMLAddress = fsHTMLEncode(oStackFrame.sAddress);
         # Make stack frames without a function symbol italic
         if not oStackFrame.oFunction:
-          sHTMLAddress = '<span class="StackNoSymbol">%s</span><br/>' % sHTMLAddress;
+          sHTMLAddress = '<span class="StackNoSymbol">%s</span>' % sHTMLAddress;
         # Hash frame address for id and output frame to html
         if uFramesHashed == oStack.uHashFramesCount:
           # no more hashing is needed: just output as is:
