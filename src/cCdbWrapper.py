@@ -5,6 +5,15 @@ from sOSISA import sOSISA;
 from cCdbWrapper_fCdbStdInOutThread import cCdbWrapper_fCdbStdInOutThread;
 from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
 from cCdbWrapper_fCdbCleanupThread import cCdbWrapper_fCdbCleanupThread;
+from cCdbWrapper_fasReadOutput import cCdbWrapper_fasReadOutput;
+from cCdbWrapper_fasSendCommandAndReadOutput import cCdbWrapper_fasSendCommandAndReadOutput;
+from cCdbWrapper_fHandleCreateExitProcess import cCdbWrapper_fHandleCreateExitProcess;
+from cCdbWrapper_fiEvaluateExpression import cCdbWrapper_fiEvaluateExpression;
+from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
+from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess;
+from cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess import cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess;
+from cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess import cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess;
+from cCdbWrapper_fasGetStack import cCdbWrapper_fasGetStack;
 
 sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
@@ -127,37 +136,28 @@ class cCdbWrapper(object):
       oCdbProcess.wait();
   
   def fasReadOutput(oCdbWrapper):
-    from cCdbWrapper_fasReadOutput import cCdbWrapper_fasReadOutput;
     return cCdbWrapper_fasReadOutput(oCdbWrapper);
   
   def fasSendCommandAndReadOutput(oCdbWrapper, sCommand):
-    from cCdbWrapper_fasSendCommandAndReadOutput import cCdbWrapper_fasSendCommandAndReadOutput;
     return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand);
   
   def fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
-    from cCdbWrapper_fHandleCreateExitProcess import cCdbWrapper_fHandleCreateExitProcess;
     return cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId);
   
   def fiEvaluateExpression(oCdbWrapper, sExpression):
-    from cCdbWrapper_fiEvaluateExpression import cCdbWrapper_fiEvaluateExpression;
     return cCdbWrapper_fiEvaluateExpression(oCdbWrapper, sExpression);
   
   def fuEvaluateExpression(oCdbWrapper, sExpression):
-    from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
     return cCdbWrapper_fuEvaluateExpression(oCdbWrapper, sExpression);
   
   def ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper):
-    from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess;
     return cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper);
   
   def fasGetCdbIdsForModuleFileNameInCurrentProcess(oCdbWrapper, sModuleFileName):
-    from cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess import cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess;
     return cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess(oCdbWrapper, sModuleFileName);
   
   def fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper):
-    from cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess import cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess;
     return cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper);
   
   def fasGetStack(oCdbWrapper, sGetStackCommand):
-    from cCdbWrapper_fasGetStack import cCdbWrapper_fasGetStack;
     return cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand);
