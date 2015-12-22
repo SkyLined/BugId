@@ -8,6 +8,7 @@ from cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN import cError
 from cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW import cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW;
 from cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION import cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION;
 from cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT import cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT;
+from cErrorReport_foTranslateError import cErrorReport_foTranslateError;
 from cException import cException;
 from cProcess import cProcess;
 from mHTML import *;
@@ -58,7 +59,6 @@ class cErrorReport(object):
   sId = property(fsGetId);
   
   def foTranslateError(oErrorReport, dtxTranslations):
-    from cErrorReport_foTranslateError import cErrorReport_foTranslateError;
     return cErrorReport_foTranslateError(oErrorReport, dtxTranslations);
   
   def fHideTopStackFrames(oErrorReport, dasHiddenFrames_by_sErrorTypeIdRegExp):
