@@ -47,10 +47,11 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
     if not oCdbWrapper.bCdbRunning: return None;
   # Get the stack for real.
   asStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
+  if not oCdbWrapper.bCdbRunning: return None;
+  assert asStack, "CDB did not return any stack information for command %s" % repr(sGetStackCommand);
   # Getting the stack twice does not always work: for unknown reasons the second time the stack may be truncated or
   # incorrect. So, if an error in symbol loading is detected while getting the stack, there is no reliable way to try
   # to reload the symbols and get the stack again: we must throw an exception.
   assert not re.match(r"^\*\*\* ERROR: Module load completed but symbols could not be loaded for .+$", asStack[0]), \
       "CDB failed to load symbols: %s" % asStack[0];
-  if not oCdbWrapper.bCdbRunning: return None;
   return asStack;
