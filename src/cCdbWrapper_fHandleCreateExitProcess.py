@@ -23,7 +23,7 @@ def cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
       if dxBugIdConfig["bOutputProcesses"]:
         print "* New process %d." % uProcessId;
   elif sCreateExit == "Exit":
-    if uProcessId == oCdbWrapper.auProcessIdsPendingAttach[0]:
+    if len(oCdbWrapper.auProcessIdsPendingAttach) > 0 and uProcessId == oCdbWrapper.auProcessIdsPendingAttach[0]:
       # The debugger attached to the process, but it terminated: first report the attach, then process the termination.
       if dxBugIdConfig["bOutputProcesses"]:
         print "* Attached to process %d." % uProcessId;
