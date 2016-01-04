@@ -110,6 +110,7 @@ asHiddenTopFrames = [
   "chrome_child.dll!`anonymous namespace'::win_heap_free",
   "kernel32.dll!HeapFree",
   "MSHTML.dll!MemoryProtection::HeapFree",
+  "msvcrt.dll!free",
   "ntdll.dll!RtlDebugFreeHeap",
   "ntdll.dll!RtlFreeHeap",
   "ntdll.dll!RtlpFreeHeap",
