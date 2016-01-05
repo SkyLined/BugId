@@ -1,7 +1,7 @@
 # Some breakpoints may indicate an out-of-memory error, heap corruption, or no error at all:
 dtxErrorTranslations = {
   "OOM": (
-    "The process triggered a breakpoint to indicate it was unable to allocate enough memory",
+    "A breakpoint was triggered because the program was unable to allocate enough memory",
     None,
     [
       [     # Chrome
@@ -46,7 +46,7 @@ dtxErrorTranslations = {
     ],
   ),
   "HeapCorrupt": (
-    "A corrupted heap block was detected",
+    "A breakpoint was triggered because a corrupted heap block was detected",
     "This is probably an exploitable security issue",
     [
       [
@@ -56,7 +56,7 @@ dtxErrorTranslations = {
     ],
   ),
   "Assert": (
-    "An assertion failed",
+    "A breakpoint was triggered because an assertion failed",
     None,
     [
       [ # Edge
@@ -97,6 +97,7 @@ dtxErrorTranslations = {
 
 # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
 asHiddenTopFrames = [
+  # Functions that are used to trigger a breakpoint:
   "kernel32.dll!DebugBreak",
   "KERNELBASE.dll!DebugBreak",
   "ntdll.dll!DbgBreakPoint",
@@ -105,7 +106,7 @@ asHiddenTopFrames = [
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
   "chrome.dll!base::debug::BreakDebugger",
   "chrome_child.dll!base::debug::BreakDebugger",
-  # Special "HeapCorrupt" cases:
+  # Heap allocation and checking functions for "HeapCorrupt" cases:
   "chrome_child.dll!_aligned_free",
   "chrome_child.dll!`anonymous namespace'::win_heap_free",
   "kernel32.dll!HeapFree",
@@ -116,13 +117,14 @@ asHiddenTopFrames = [
   "ntdll.dll!RtlpFreeHeap",
   "verifier.dll!AVrfDebugPageHeapFree",
   "verifier.dll!AVrfpDphCheckNormalFreeHeapBlock",
+  "verifier.dll!AVrfpDphCheckNormalHeapBlock",
   "verifier.dll!AVrfpDphCheckPageHeapBlock",
   "verifier.dll!AVrfpDphFindBusyMemory",
   "verifier.dll!AVrfpDphFindBusyMemoryAndRemoveFromBusyList",
   "verifier.dll!AVrfpDphNormalHeapFree",
   "verifier.dll!AVrfpDphPlaceOnDelayFree",
   "verifier.dll!AVrfpDphRemoveFromDelayFree",
-  # Special "OOM" cases
+  # Heap allocation functions for "OOM" cases:
   "chrome.dll!`anonymous namespace'::call_new_handler",
   "chrome.dll!`anonymous namespace'::generic_cpp_alloc",
   "chrome.dll!malloc",
