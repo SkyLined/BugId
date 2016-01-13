@@ -100,19 +100,27 @@ ddtsDetails_uAddress_sISA = {
             0xF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
             0xF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
             0xFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            # https://hg.mozilla.org/releases/mozilla-beta/rev/8008235a2429
+            0XE4E4E4E4: ("Uninitialized",   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0XE5E5E5E5: ("Free",            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
   },
   "x64": {              # Id                 Description                                           Security impact
     0x0000000000000000: ('NULL',            "a NULL ptr",                                         None),
-    0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-    0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-    0xC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-    0xCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-    0xD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-    0xDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-    0xF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-    0xF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-    0xF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-    0xFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+    # Note that on x64, addresses with the most significant bit set cannot be allocated in user-land. Since BugId is expected to analyze only user-land
+    # applications, accessing such an address is not expected to be an exploitable security issue.
+    0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 None),
+    0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 None),
+    0xC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 None),
+    0xCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 None),
+    0xD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 None),
+    0xDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          None),
+    0xF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          None),
+    0xF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                None),
+    0xF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                None),
+    0xFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          None),
+    # https://hg.mozilla.org/releases/mozilla-beta/rev/8008235a2429
+    0xE4E4E4E4E4E4E4E4: ("Uninitialized",   "a pointer that was not initialized",                 None),
+    0xE5E5E5E5E5E5E5E5: ("Free",            "a pointer read from poisoned freed memory",          None),
   },
 };
 
