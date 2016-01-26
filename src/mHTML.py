@@ -69,9 +69,6 @@ sHTMLDetailsTemplate = ("""
       .StackHash {
         font-weight: bold;
       }
-      .StackHashIgnored {
-        color: silver;
-      }
       .StackNoSymbol {
         font-style: italic;
       }

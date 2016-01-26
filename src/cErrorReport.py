@@ -123,9 +123,12 @@ class cErrorReport(object):
     oTopmostRelevantFunctionFrame = None;  # topmost relevant frame that has a function symbol
     oTopmostRelevantModuleFrame = None;    # topmost relevant frame that has no function symbol but a module
     uFramesHashed = 0;
+    bStackShowsNoSignOfCorruption = True;
     asHTMLStack = [];
     sStackId = "";
     for oStackFrame in oStack.aoFrames:
+      # Once a stack frame is encountered with no id, the stack can no longer be trusted to be correct.
+      bStackShowsNoSignOfCorruption = bStackShowsNoSignOfCorruption and (oStackFrame.sId and True or False);
       if oStackFrame.bIsHidden:
         # This frame is hidden (because it is irrelevant to the crash)
         asHTMLStack.append('<span class="StackIgnored">%s</span><br/>' % fsHTMLEncode(oStackFrame.sAddress));
@@ -136,23 +139,19 @@ class cErrorReport(object):
         if not oStackFrame.oFunction:
           sHTMLAddress = '<span class="StackNoSymbol">%s</span>' % sHTMLAddress;
         # Hash frame address for id and output frame to html
-        if uFramesHashed == oStack.uHashFramesCount:
+        if not bStackShowsNoSignOfCorruption or uFramesHashed == oStack.uHashFramesCount:
           # no more hashing is needed: just output as is:
           asHTMLStack.append('<span class="Stack">%s</span><br/>' % sHTMLAddress);
         else:
-          sStackId += oStackFrame.sId or "__";
-          if oStackFrame.sId:
-            # frame adds useful infoormation to the id: add hash and output bold
-            uFramesHashed += 1;
-            asHTMLStack.append('<span class="StackHash">%s</span> (%s in id)<br/>' % (sHTMLAddress, oStackFrame.sId));
-            # Determine the top frame for the id:
-            if oStackFrame.oFunction:
-              oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
-            elif oStackFrame.oModule:
-              oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
-          else:
-            # This is not part of the id, but between frames that are: add "__" to id and output strike-through
-            asHTMLStack.append('<span class="StackHashIgnored">%s</span><br/>' % sHTMLAddress);
+          sStackId += oStackFrame.sId;
+          # frame adds useful information to the id: add hash and output bold
+          uFramesHashed += 1;
+          asHTMLStack.append('<span class="StackHash">%s</span> (%s in id)<br/>' % (sHTMLAddress, oStackFrame.sId));
+          # Determine the top frame for the id:
+          if oStackFrame.oFunction:
+            oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
+          elif oStackFrame.oModule:
+            oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
     # If there are not enouogh id-able stack frames, there may be many trailing "_"-s; remove these. Also, if there
     # was not id, or nothing is left after removing the "_"-s, use the id "##".
     oErrorReport.sStackId = sStackId.rstrip("_") or "##";
