@@ -127,12 +127,12 @@ class cErrorReport(object):
     asHTMLStack = [];
     sStackId = "";
     for oStackFrame in oStack.aoFrames:
-      # Once a stack frame is encountered with no id, the stack can no longer be trusted to be correct.
-      bStackShowsNoSignOfCorruption = bStackShowsNoSignOfCorruption and (oStackFrame.sId and True or False);
       if oStackFrame.bIsHidden:
         # This frame is hidden (because it is irrelevant to the crash)
         asHTMLStack.append('<span class="StackIgnored">%s</span><br/>' % fsHTMLEncode(oStackFrame.sAddress));
       else:
+        # Once a stack frame is encountered with no id, the stack can no longer be trusted to be correct.
+        bStackShowsNoSignOfCorruption = bStackShowsNoSignOfCorruption and (oStackFrame.sId and True or False);
         oTopmostRelevantFrame = oTopmostRelevantFrame or oStackFrame;
         sHTMLAddress = fsHTMLEncode(oStackFrame.sAddress);
         # Make stack frames without a function symbol italic
