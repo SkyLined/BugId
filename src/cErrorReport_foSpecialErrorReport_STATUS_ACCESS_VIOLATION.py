@@ -2,8 +2,7 @@ import re;
 from dxBugIdConfig import dxBugIdConfig;
 
 # Hide some functions at the top of the stack that are not relevant to the error:
-asHiddenTopFrames = [
-  "0x0", # AVE:NULL
+asHiddenTopFramesForReadAndWriteAVs = [
   "msvcrt.dll!memcpy",
 ];
 # Some access violations may not be an error:
@@ -192,6 +191,13 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
       sViolationTypeDescription = "accessing";
       sViolationTypeNotes = " (the type of accesss cannot be determined)";
   uMaxAddressOffset = dxBugIdConfig["uMaxAddressOffset"];
+  
+  if sViolationTypeId == "E":
+    # Hide the stack frame for the address at which the execute access violation happened: (e.g. 0x0 for a NULL pointer).
+    asHiddenTopFrames = ["0x%X" % uAddress];
+  else:
+    # Hide common 
+    asHiddenTopFrames = asHiddenTopFramesForReadAndWriteAVs;
   
   dtsDetails_uAddress = ddtsDetails_uAddress_sISA[oCdbWrapper.sCurrentISA];
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
