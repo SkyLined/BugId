@@ -7,6 +7,8 @@ def cErrorReport_foTranslateError(oErrorReport, dtxTranslations):
     for asStackTopFrameAddresses in aasStackTopFrameAddresses:
       uFrameIndex = 0;
       for sStackTopFrameAddress in asStackTopFrameAddresses:
+        if uFrameIndex >= len(oErrorReport.oStack.aoFrames):
+          break; # There are not enough stack frames to match this translation
         oTopFrame = oErrorReport.oStack.aoFrames[uFrameIndex];
         uFrameIndex += 1;
         # "*!" means match only the function and not the module.
