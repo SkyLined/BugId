@@ -50,7 +50,7 @@ class cStackFrame(object):
   def fbHide(oStackFrame, asFrameAddresses, bFrameAddressesAreAlreadyLowered = False):
     # Hide the frame if the address or simplified address matches any of the supplied values (ignoring case):
     if not bFrameAddressesAreAlreadyLowered:
-      asFrameAddresses = [lower(s) for s in asFrameAddresses];
+      asFrameAddresses = [s.lower() for s in asFrameAddresses];
     if oStackFrame.sAddress.lower() in asFrameAddresses or oStackFrame.sSimplifiedAddress.lower() in asFrameAddresses:
       oStackFrame.bIsHidden = True; # hide it.
     return oStackFrame.bIsHidden;

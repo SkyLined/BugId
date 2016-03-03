@@ -10,7 +10,7 @@ class cStack(object):
   
   def fHideTopFrames(oStack, asFrameAddresses, bFrameAddressesAreAlreadyLowered = False):
     if not bFrameAddressesAreAlreadyLowered:
-      asFrameAddresses = [lower(s) for s in asFrameAddresses];
+      asFrameAddresses = [s.lower() for s in asFrameAddresses];
     for oStackFrame in oStack.aoFrames: # For each frame
       # if it's not yet hidden, hide it if it needs to be hidden
       if not oStackFrame.bIsHidden and not oStackFrame.fbHide(asFrameAddresses, bFrameAddressesAreAlreadyLowered = True):
