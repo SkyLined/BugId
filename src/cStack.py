@@ -8,11 +8,14 @@ class cStack(object):
     oStack.bPartialStack = False;
     oStack.uHashFramesCount = dxBugIdConfig["uStackHashFramesCount"];
   
-  def fHideTopFrames(oStack, asFrameAddresses):
+  def fHideTopFrames(oStack, asFrameAddresses, bFrameAddressesAreAlreadyLowered = False):
+    if not bFrameAddressesAreAlreadyLowered:
+      asFrameAddresses = [lower(s) for s in asFrameAddresses];
     for oStackFrame in oStack.aoFrames: # For each frame
-      if not oStackFrame.bIsHidden: # if it's not yet hidden,
-        if not oStackFrame.fbHide(asFrameAddresses): # see if it should be hidden and do so
-          break; # or stop looking.
+      # if it's not yet hidden, hide it if it needs to be hidden
+      if not oStackFrame.bIsHidden and not oStackFrame.fbHide(asFrameAddresses, bFrameAddressesAreAlreadyLowered = True):
+        # or stop hiding frames if it should not be hidden.
+        break;
   
   def fCreateAndAddStackFrame(oStack, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset):
     # frames must be created in order:
