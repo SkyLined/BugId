@@ -69,9 +69,9 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
   	_tprintf(_T("         (read 4 bytes past the end of a 0x20 byte heap buffer)\r\n"));
     _tprintf(_T("    -or- BufferOverrun Stack Write 30 1\r\n"));
     _tprintf(_T("         (read 1 byte past the end of a 0x30 byte stack buffer)\r\n"));
-    _tprintf(_T("  StaticStaticBufferOverrun [READ|WRITE] SIZE OVERRUN\r\n"));
-    _tprintf(_T("    e.g. BufferOverrun Heap READ 20 24\r\n"));
-    _tprintf(_T("    -or- BufferOverrun Stack Write 20 21\r\n"));
+    _tprintf(_T("  StaticStaticBufferOverrun10 [READ|WRITE] SIZE OVERRUN\r\n"));
+    _tprintf(_T("    e.g. StaticStaticBufferOverrun10 READ 14\r\n"));
+    _tprintf(_T("    -or- StaticStaticBufferOverrun10 Write 11\r\n"));
     _tprintf(_T("  Breakpoint\r\n"));
     _tprintf(_T("  C++\r\n"));
     _tprintf(_T("  IntegerDivideByZero\r\n"));
