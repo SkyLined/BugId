@@ -83,11 +83,14 @@ sHTMLDetailsTemplate = ("""
     <div class="Block">
       <h1 class="Header">Details</h1>
       <div class="Content">
-        """ + fsHTMLEncode("Id:               ") + """<b>%(sId)s</b><br/>
-        """ + fsHTMLEncode("Description:      ") + """<b>%(sExceptionDescription)s</b><br/>
-        """ + fsHTMLEncode("Process binary:   ") + """%(sProcessBinaryName)s<br/>
-        """ + fsHTMLEncode("Code:             ") + """%(sCodeDescription)s<br/>
-        """ + fsHTMLEncode("Security impact:  ") + """%(sSecurityImpact)s<br/>
+        <table>
+          <tr><td>Id:               </td><td><b>%(sId)s</b></td></tr>
+          <tr><td>Description:      </td><td><b>%(sExceptionDescription)s</b></td></tr>
+          <tr><td>Process binary:   </td><td>%(sProcessBinaryName)s</td></tr>
+          <tr><td>Code:             </td><td>%(sCodeDescription)s</td></tr>
+          <tr><td>Security impact:  </td><td>%(sSecurityImpact)s</td></tr>
+          <tr><td>Errors reported:  </td><td>%(sImportantStdErrLines)s</td></tr>
+        </table>
       </div>
     </div>
     

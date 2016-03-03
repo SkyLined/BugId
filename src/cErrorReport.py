@@ -35,13 +35,14 @@ asHiddenTopFrames = [
   "ntdll.dll!ZwRaiseException",
 ];
 class cErrorReport(object):
-  def __init__(oErrorReport, oCdbWrapper, sErrorTypeId, sErrorDescription, sSecurityImpact, oException, oStack):
+  def __init__(oErrorReport, oCdbWrapper, sErrorTypeId, sErrorDescription, sSecurityImpact, oException, oStack, asImportantStdErrLines):
     oErrorReport.oCdbWrapper = oCdbWrapper;
     oErrorReport.sErrorTypeId = sErrorTypeId;
     oErrorReport.sErrorDescription = sErrorDescription;
     oErrorReport.sSecurityImpact = sSecurityImpact;
     oErrorReport.oException = oException;
     oErrorReport.oStack = oStack;
+    oErrorReport.asImportantStdErrLines = asImportantStdErrLines;
     oErrorReport.sStackId = None;
     oErrorReport.sCodeId = None;
     oErrorReport.sCodeDescription = None;
@@ -81,6 +82,9 @@ class cErrorReport(object):
         "sCodeDescription": fsHTMLEncode(oErrorReport.sCodeDescription),
         "sSecurityImpact": oErrorReport.sSecurityImpact and \
               '<span class="SecurityImpact">%s</span>' % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
+        "sImportantStdErrLines": oErrorReport.asImportantStdErrLines and \
+              '<span class="CDBStdErr">%s</span>' % "<br/>".join([fsHTMLEncode(x) for x in oErrorReport.asImportantStdErrLines]) or "None",
+              
         "sStack": oErrorReport.sHTMLStack,
         "sBinaryInformation": oErrorReport.sHTMLBinaryInformation,
         "sCdbStdIO": sHTMLCdbStdIO,
@@ -186,6 +190,7 @@ class cErrorReport(object):
       sSecurityImpact = oException.sSecurityImpact,
       oException = oException,
       oStack = oStack,
+      asImportantStdErrLines = oCdbWrapper.asImportantStdErrLines,
     );
     # Make exception specific changes to the error report:
     foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);

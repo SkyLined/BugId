@@ -83,6 +83,7 @@ class cCdbWrapper(object):
     oCdbWrapper.uLastProcessId = None; # Set to the id of the last process to be reported as terminated by cdb.
     oCdbWrapper.bCdbRunning = True; # Set to False after cdb terminated, used to terminate the debugger thread.
     oCdbWrapper.bCdbWasTerminatedOnPurpose = False; # Set to True when cdb is terminated on purpose, used to detect unexpected termination.
+    oCdbWrapper.asImportantStdErrLines = []; # Lines from stderr that are marked as potentially important to understanding the bug.
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
