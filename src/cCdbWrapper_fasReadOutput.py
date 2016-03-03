@@ -2,7 +2,7 @@ import re;
 from dxBugIdConfig import dxBugIdConfig;
 from mHTML import fsHTMLEncode;
 
-def cCdbWrapper_fasReadOutput(oCdbWrapper):
+def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True):
   sLine = "";
   asLines = [];
   while 1:
@@ -13,8 +13,9 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper):
       if sChar == "\n" or sLine:
         if dxBugIdConfig["bOutputStdOut"]:
           print "cdb>%s" % repr(sLine)[1:-1];
-        # Add the line to the current block of I/O
-        oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBOutput\">%s</span><br/>" % fsHTMLEncode(sLine)
+        if bIsRelevantIO:
+          # Add the line to the current block of I/O
+          oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBOutput\">%s</span><br/>" % fsHTMLEncode(sLine)
         asLines.append(sLine);
       if sChar == "":
         break;
