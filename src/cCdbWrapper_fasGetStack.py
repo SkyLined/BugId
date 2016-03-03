@@ -4,12 +4,12 @@ from dxBugIdConfig import dxBugIdConfig;
 def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
   if dxBugIdConfig["bEnhancedSymbolLoading"]:
     # Turn noisy symbol loading on
-    oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000");
+    oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000", bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
     # Get the stack, which should make sure all relevant symbols are loaded or at least marked as requiring loading.
     # There will be symbol loading debug messages in between the stack output, so the stack cannot easily be parsed.
     # The output is saved in a local variable in case an assertion is thrown.
-    asSymbolLoadDebugStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
+    asSymbolLoadDebugStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand, bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
     # Try to reload all modules and symbols. The symbol loader will not reload all symbols, but only those symbols that
     # were loaded before or those it attempted to load before, but failed. The symbol loader will output all kinds of
@@ -19,7 +19,7 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
     # fixed, or it has run ten times.
     # This step may also provide some help debugging symbol loading problems that cannot be fixed automatically.
     for x in xrange(10):
-      asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".reload /v");
+      asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".reload /v", bIsRelevantIO = False);
       if not oCdbWrapper.bCdbRunning: return None;
       asCorruptPDBFilePaths = set();
       bErrorsDuringLoading = False;
@@ -43,7 +43,7 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
       if not (bErrorsDuringLoading or bCorruptPDBFilesDeleted):
         break;
     # Turn noisy symbol loading back off
-    asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000");
+    asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000", bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
   # Get the stack for real.
   asStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
