@@ -11,11 +11,10 @@ from cCdbWrapper_fHandleCreateExitProcess import cCdbWrapper_fHandleCreateExitPr
 from cCdbWrapper_fiEvaluateExpression import cCdbWrapper_fiEvaluateExpression;
 from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess;
 from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
+from cCdbWrapper_ftxSplitSymbolOrAddress import cCdbWrapper_ftxSplitSymbolOrAddress;
 from dxBugIdConfig import dxBugIdConfig;
 from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
-
-sMicrosoftSymbolServerURL = "http://msdl.microsoft.com/download/symbols";
 
 class cCdbWrapper(object):
   sCdbISA = sOSISA;
@@ -53,10 +52,12 @@ class cCdbWrapper(object):
     # Get a list of symbol servers to use:
     sSymbolsPath = ";".join(
       ["cache*%s" % x for x in dxBugIdConfig["asSymbolCachePaths"]] +
-      ["srv*%s" % x for x in set(asSymbolServerURLs + [sMicrosoftSymbolServerURL])]
+      ["srv*%s" % x for x in asSymbolServerURLs]
     );
     # Get the command line (without starting/attaching to a process)
-    asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions, "-y", sSymbolsPath];
+    asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
+    if sSymbolsPath:
+      asCommandLine += ["-y", sSymbolsPath];
     oCdbWrapper.auProcessIds = [];
     oCdbWrapper.auProcessIdsPendingAttach = auApplicationProcessIds or [];
     if asApplicationCommandLine is not None:
@@ -135,11 +136,11 @@ class cCdbWrapper(object):
     if oCdbProcess:
       oCdbProcess.wait();
   
-  def fasReadOutput(oCdbWrapper):
-    return cCdbWrapper_fasReadOutput(oCdbWrapper);
+  def fasReadOutput(oCdbWrapper, bIsRelevantIO = True):
+    return cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = bIsRelevantIO);
   
-  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand):
-    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand);
+  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True):
+    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = bIsRelevantIO);
   
   def fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
     return cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId);
@@ -161,3 +162,6 @@ class cCdbWrapper(object):
   
   def fasGetStack(oCdbWrapper, sGetStackCommand):
     return cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand);
+  
+  def ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules_by_sCdbId):
+    return cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules_by_sCdbId);

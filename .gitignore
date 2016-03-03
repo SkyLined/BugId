@@ -1,6 +1,7 @@
-tmp/
 \#*
 *.suo
 *.user
 *.filters
 *.pyc
+Tests/tmp/
+Test reports/

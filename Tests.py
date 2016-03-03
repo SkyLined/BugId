@@ -5,6 +5,7 @@ sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
 from cBugId import cBugId;
 from sOSISA import sOSISA;
 from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from fsCreateFileName import fsCreateFileName;
 
 bDebugStartFinish = False;
 bDebugIO = False;
@@ -15,6 +16,7 @@ if bDebugIO:
   dxBugIdConfig["bOutputStdIO"] = True;
 dxBugIdConfig["bOutputStdErr"] = False;
 dxBugIdConfig["bOutputProcesses"] = False;
+dxBugIdConfig["uReserveRAM"] = 1024; # Simply test if reserving RAM works, not actually reserve any useful amount.
 
 asTestISAs = [sOSISA];
 if sOSISA == "x64":
@@ -52,6 +54,7 @@ class cTest(object):
     try:
       oTest.oBugId = cBugId(
         asApplicationCommandLine = asApplicationCommandLine,
+        asSymbolServerURLs = ["http://msdl.microsoft.com/download/symbols"],
         fFinishedCallback = oTest.fFinishedHandler,
         fInternalExceptionCallback = oTest.fInternalExceptionHandler,
       );
@@ -97,6 +100,26 @@ class cTest(object):
       if bFailed:
         print "    Command line: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
       oOutputLock.release();
+      if dxConfig["bSaveTestReports"]:
+        sFileNameBase = fsCreateFileName("%s = %s" % (oTest, oErrorReport.sId));
+        # File name may be too long, keep trying to save it with a shorter name or output an error if that's not possible.
+        while len(sFileNameBase) > 0:
+          sFilePath = os.path.join(os.path.dirname(__file__), "Test reports", "%s.html" % sFileNameBase);
+          try:
+            oFile = open(sFilePath, "wb");
+          except IOError:
+            sFileNameBase = sFileNameBase[:-1];
+            continue;
+          try:
+            oFile.write(oErrorReport.sHTMLDetails);
+          finally:
+            oFile.close();
+          break;
+        else:
+          oOutputLock.acquire();
+          print "  - Error report cannot be saved";
+          bFailed = True;
+          oOutputLock.release();
     oTest.fFinished();
   
   def fInternalExceptionHandler(oTest, oException):
@@ -110,6 +133,9 @@ class cTest(object):
       raise;
 
 if __name__ == "__main__":
+  if sys.argv[1:2] == ["--save-reports"]:
+    dxConfig["bSaveTestReports"] = True;
+  
   aoTests = [];
   for sISA in asTestISAs:
     sMinusOne = {"x86": "FFFFFFFF", "x64": "FFFFFFFFFFFFFFFF"}[sISA];
@@ -185,9 +211,10 @@ if __name__ == "__main__":
   for oTest in aoTests:
     oTest.fWait();
   
+  oOutputLock.acquire();
   if bFailed:
-      print "* Tests failed."
-      sys.exit(1);
+    print "* Tests failed."
+    sys.exit(1);
   else:
-      print "* All tests passed!"
-      sys.exit(0);
+    print "* All tests passed!"
+    sys.exit(0);

@@ -95,9 +95,87 @@ class cErrorReport(object):
     # Get exception details
     oException = cException.foCreate(oCdbWrapper, oProcess, uExceptionCode, sExceptionDescription);
     if not oCdbWrapper.bCdbRunning: return None;
+    # Get registers. This information is not analyzed, but will end up in cdb output in the report, for potential
+    # use by an analyst.
+    oCdbWrapper.fasSendCommandAndReadOutput("r");
+    if not oCdbWrapper.bCdbRunning: return None;
+    # Similarly, try to get disassembly around code in which exception happened. This may not be possible if rip/eip
+    # points to memeory that cannot be read.
+    asDisassemblyOutput = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip, 1)) { ub; }; .else { .echo Disassembly not possible };");
+    if not oCdbWrapper.bCdbRunning: return None;
+    if asDisassemblyOutput != ["Disassembly not possible"]:
+      # rip/eip must be valid as disassembly before this address was returned: get disassembly after as well:
+      oCdbWrapper.fasSendCommandAndReadOutput("u");
+      if not oCdbWrapper.bCdbRunning: return None;
     # Get the stack
     oStack = oException.foGetStack(oCdbWrapper);
     if not oCdbWrapper.bCdbRunning: return None;
+    # Compare stack with exception information
+    if oException.sAddressSymbol:
+      doModules_by_sCdbId = oCdbWrapper.fdoGetModulesByCdbIdForCurrentProcess();
+      (
+        uAddress,
+        sUnloadedModuleFileName, oModule, uModuleOffset,
+        oFunction, uFunctionOffset
+      ) = oCdbWrapper.ftxSplitSymbolOrAddress(oException.sAddressSymbol, doModules_by_sCdbId);
+      sCdbSource = oException.sAddressSymbol;
+    else:
+      sCdbSource = "%X" % oException.uAddress; # Kinda faking it here :)
+      uAddress = oException.uAddress;
+      sUnloadedModuleFileName, oModule, uModuleOffset = None, None, None;
+      oFunction, uFunctionOffset = None, None;
+    if not oStack.aoFrames:
+      # Failed to get stack, use information from exception.
+      uFrameNumber = 0;
+      oStack.fCreateAndAddStackFrame(oCdbWrapper, uFrameNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset);
+    else:
+      if oException.uCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
+        # A breakpoint happens at an int 3 instruction, and eip/rip may have been updated to the next instruction.
+        # If the first stack frame is not the same as the exception address, fix this off-by-one:
+        oFrame = oStack.aoFrames[0];
+        if (
+          oFrame.uAddress == uAddress
+          and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
+          and oFrame.oModule == oModule
+          and oFrame.uModuleOffset == uModuleOffset
+          and oFrame.oFunction == oFunction
+          and oFrame.uFunctionOffset == uFunctionOffset
+        ):
+          pass;
+        else:
+          if uAddress is not None:
+            uAddress -= 1;
+          elif uModuleOffset is not None:
+            uModuleOffset -= 1;
+          elif uFunctionOffset is not None:
+            oFrame.uFunctionOffset -= 1;
+          else:
+            raise AssertionError("The first stack frame appears to have no address or offet to adjust.");
+          assert (
+            oFrame.uAddress == uAddress
+            and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
+            and oFrame.oModule == oModule
+            and oFrame.uModuleOffset == uModuleOffset
+            and oFrame.oFunction == oFunction
+            and oFrame.uFunctionOffset == uFunctionOffset
+          ), "The first stack frame does not appear to match the exception address";
+      else:
+        # Check that the address where the exception happened is on the stack and hide any frames that appear above it,
+        # as these are not interesting (e.g. ntdll!RaiseException).
+        for oFrame in oStack.aoFrames:
+          if (
+            oFrame.uAddress == uAddress
+            and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
+            and oFrame.oModule == oModule
+            and oFrame.uModuleOffset == uModuleOffset
+            and oFrame.oFunction == oFunction
+            and oFrame.uFunctionOffset == uFunctionOffset
+          ):
+            break;
+          oFrame.bIsHidden = True;
+        else:
+          raise AssertionError("The exception address %s was not found on the stack" % sCdbSource);
+      
     # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
     oStack.fHideTopFrames(asHiddenTopFrames);
     # Create a preliminary error report.

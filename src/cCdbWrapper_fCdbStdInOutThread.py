@@ -22,9 +22,8 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # Turn off prompt information - it's not parsed anyway and clutters output.
   # Not that +dis and +ea are needed in cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION as this causes
   # an exmpty command to output the 
-  oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis +ea -reg -src -sym");
+  oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis +ea -reg -src -sym", bIsRelevantIO = False);
   if not oCdbWrapper.bCdbRunning: return;
-  oCdbWrapper.asHTMLCdbStdIOBlocks.pop(-1); # This command is not relevant, remove it from the log.
   
   # Exception handlers need to be set up.
   oCdbWrapper.bExceptionHandlersHaveBeenSet = False;
@@ -35,7 +34,31 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   bApplicationWasPausedToAnalyzeAnException = False;
   # An error report will be created when needed; it is returned at the end
   oErrorReport = None;
+  # Memory can be allocated to be freed later in case the system has run low on memory when an analysis needs to be
+  # performed. This is done only if dxBugIdConfig["uReserveRAM"] > 0. The memory is allocated at the start of debugging,
+  # freed right before an analysis is performed and reallocated if the exception was not fatal.
+  bReserveRAMAllocated = False;
+  # Keep track of created processes so an x86 create process breakpoint following an x64 create process breakpoint for
+  # the same process can be hidden.
+  uHideX86BreakpointForProcessId = None;
   while asIntialCdbOutput or len(oCdbWrapper.auProcessIdsPendingAttach) + len(oCdbWrapper.auProcessIds) > 0:
+    # If requested, reserve some memory in cdb that can be released if cdb is having problem allocating memory later, 
+    # e.g. because the target crashed with an OOM error. This makes analysis under low memory conditions more likely to
+    # succeed. These commands are not relevant to the bug, so they are hidden in the cdb IO to prevent OOM.
+    if dxBugIdConfig["uReserveRAM"] and not bReserveRAMAllocated:
+      uBitMask = 2 ** 31;
+      while uBitMask >= 1:
+        sBit = dxBugIdConfig["uReserveRAM"] & uBitMask and "A" or "";
+        if bReserveRAMAllocated:
+          oCdbWrapper.fasSendCommandAndReadOutput("aS /c RAM .printf \"${RAM}{$RAM}%s\";" % sBit, bIsRelevantIO = False);
+        elif sBit:
+          oCdbWrapper.fasSendCommandAndReadOutput("aS RAM \"%s\";" % sBit, bIsRelevantIO = False);
+          bReserveRAMAllocated = True;
+        if not oCdbWrapper.bCdbRunning: return;
+        uBitMask /= 2;
+    # Discard any cached information about modules loaded in the current process, as this may be about to change during
+    # execution of the application.
+    oCdbWrapper.doModules_by_sCdbId = None;
     if asIntialCdbOutput:
       # First parse the intial output
       asCdbOutput = asIntialCdbOutput;
@@ -94,7 +117,23 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
       # performance cost, so until proven otherwise, the code is based on this assumption.
       sCreateExitProcess = "Create";
       sCreateExitProcessIdHex = sProcessIdHex;
-    if sCreateExitProcess:
+    if uExceptionCode == STATUS_WX86_BREAKPOINT and uHideX86BreakpointForProcessId == uProcessId:
+      # An x86 breakpoint may follow an x64 breakpoint when a new 32-bit process is created. Ignore it.
+      uHideX86BreakpointForProcessId = None;
+      # This exception and the commands executed to analyze it are not relevant to the analysis of the bug. As mentioned
+      # above, the commands and their output will be removed from the StdIO array to reduce the risk of OOM. 
+      oCdbWrapper.asHTMLCdbStdIOBlocks = (
+        oCdbWrapper.asHTMLCdbStdIOBlocks[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
+        ["<span class=\"CDBIgnoredException\">Create process %d x86 breakpoint.</span>" % uProcessId] + # Replacement for analysis commands
+        oCdbWrapper.asHTMLCdbStdIOBlocks[-1:] # Last block contains prompt and must be conserved.
+      );
+    elif sCreateExitProcess:
+      if sCreateExitProcess == "Create":
+        # An x86 breakpoint may follow an x64 breakpoint when a new 32-bit process is created. The latter should be
+        # recognized and reported as such:
+        uHideX86BreakpointForProcessId = uProcessId;
+      else:
+        uHideX86BreakpointForProcessId = None;
       # Make sure the created/exited process is the current process.
       assert sProcessIdHex == sCreateExitProcessIdHex, "%s vs %s" % (sProcessIdHex, sCreateExitProcessIdHex);
       oCdbWrapper.fHandleCreateExitProcess(sCreateExitProcess, uProcessId);
@@ -110,26 +149,32 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           # end up having only one thread that has a suspend count of 2 and no amount of resuming will cause the process
           # to run. The reason for this is unknown, but if things are done in the correct order, this problem is avoided.
           oCdbWrapper.bExceptionHandlersHaveBeenSet = True;
-          oCdbWrapper.fasSendCommandAndReadOutput(sExceptionHandlingCommands);
+          oCdbWrapper.fasSendCommandAndReadOutput(sExceptionHandlingCommands, bIsRelevantIO = False);
           if not oCdbWrapper.bCdbRunning: return;
         # If the debugger attached to processes, mark that as done and resume threads in all processes.
         if bDebuggerNeedsToResumeAttachedProcesses:
           bDebuggerNeedsToResumeAttachedProcesses = False;
           for uProcessId in oCdbWrapper.auProcessIds:
-            oCdbWrapper.fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId);
+            oCdbWrapper.fasSendCommandAndReadOutput("|~[0n%d]s;~*m" % uProcessId, bIsRelevantIO = False);
             if not oCdbWrapper.bCdbRunning: return;
       # This exception and the commands executed to analyze it are not relevant to the analysis of the bug. As mentioned
       # above, the commands and their output will be removed from the StdIO array to reduce the risk of OOM. 
       oCdbWrapper.asHTMLCdbStdIOBlocks = (
         oCdbWrapper.asHTMLCdbStdIOBlocks[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
-        ["<span class=\"CDBIgnoredException\">%s process %d exception.</span>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
+        ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
         oCdbWrapper.asHTMLCdbStdIOBlocks[-1:] # Last block contains prompt and must be conserved.
       );
     else:
+      uHideX86BreakpointForProcessId = None;
       # Report that the application is paused for analysis...
       oCdbWrapper.fExceptionDetectedCallback and oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
       # And potentially report that the application is resumed later...
       bApplicationWasPausedToAnalyzeAnException = True;
+      # If available, free previously allocated memory to allow analysis in low memory conditions.
+      if bReserveRAMAllocated:
+        # This command is not relevant to the bug, so it is hidden in the cdb IO to prevent OOM.
+        oCdbWrapper.fasSendCommandAndReadOutput("ad RAM;", bIsRelevantIO = False);
+        bReserveRAMAllocated = False;
       # Create an error report, if the exception is fatal.
       oCdbWrapper.oErrorReport = cErrorReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription);
       if not oCdbWrapper.bCdbRunning: return;

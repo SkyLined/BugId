@@ -21,12 +21,14 @@ if __name__ == "__main__":
     print "Options:";
     print "  --bSaveReport=false";
     print "    Do not save a HTML formatted crash report.";
-    print "  --bSaveDump=true";
+    print "  --BugId.bSaveDump=true";
     print "    Save a dump file when a crash is detected.";
-    print "  --bOutputStdIO=true";
+    print "  --BugId.bOutputStdIO=true";
     print "    Show verbose cdb output and input during debugging.";
-    print "  --asSymbolCachePaths=[\"C:\\Symbols\"]";
-    print "    Use C:\\Symbols to cache symbol (.pdb) files.";
+    print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
+    print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
+    print "  --BugId.asSymbolCachePaths=[\"C:\\Symbols\"]";
+    print "    Use C:\\Symbols to cache symbol files.";
     print "  See dxConfig.py and srv\dxBugIdConfig.py for a list of settings that you can";
     print "  change. All values must be valid JSON of the appropriate type. No checks are";
     print "  made to ensure this. Providing illegal values may result in exceptions at any";
@@ -96,7 +98,7 @@ if __name__ == "__main__":
   oBugId = cBugId(
     asApplicationCommandLine = asApplicationCommandLine,
     auApplicationProcessIds = auApplicationProcessIds,
-    asSymbolServerURLs = [],
+    asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,
   );

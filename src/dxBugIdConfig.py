@@ -21,11 +21,13 @@ for (sName, xValue) in {
   "uMaxFunctionOffset": 0xFFF,  # How far from a function symbol can a pointer be offset and still be cosidered to point to it?
   "uMaxStackFramesCount": 100,  # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
-  "asSymbolCachePaths": [],     # Where are symbols cached?
+  "uReserveRAM": 0,             # How many bytes of RAM should be allocate at start of debugging, so they can be
+                                # released later to allow analysis under low memory conditions.
   "bEnhancedSymbolLoading": False, # Enabled additional checks when getting a stack that can detect and fix errors in
                                 # symbol loading caused by corrupted pdb files. This turns on "noisy symbol loading"
                                 # which may provide useful information to fix symbol loading errors. It has a large
                                 # impact on performance, which is why it is disabled by default.
+  "asSymbolCachePaths": [],     # Where should symbols be cached?
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
   "sCdbBinaryPath_x64": dsCdbBinaryPath_sISA.get("x64"),
   "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),

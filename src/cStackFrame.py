@@ -2,8 +2,9 @@ import hashlib;
 from dxBugIdConfig import dxBugIdConfig;
 
 class cStackFrame(object):
-  def __init__(oStackFrame, uNumber, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset):
+  def __init__(oStackFrame, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset):
     oStackFrame.uNumber = uNumber;
+    oStackFrame.sCdbSource = sCdbSource;
     oStackFrame.uAddress = uAddress;
     oStackFrame.sUnloadedModuleFileName = sUnloadedModuleFileName;
     oStackFrame.oModule = oModule;
@@ -13,12 +14,10 @@ class cStackFrame(object):
     oStackFrame.bIsHidden = False; # Set to true if this frame should be hidden because it is not relevant.
     if oFunction:
       oStackFrame.sAddress = oFunction.sName;
-      if uFunctionOffset > 0:
-        oStackFrame.sAddress += " + 0x%X" % uFunctionOffset;
-      elif uFunctionOffset < 0:
-        oStackFrame.sAddress += " - 0x%X" % abs(uFunctionOffset);
+      if uFunctionOffset:
+        oStackFrame.sAddress += " %s 0x%X" % (uFunctionOffset > 0 and "+" or "-", abs(uFunctionOffset));
       oStackFrame.sSimplifiedAddress = oFunction.sSimplifiedName;
-      sIdInput = oFunction.sName;
+      sIdInput = oFunction.sIdInput;
       if uFunctionOffset not in xrange(dxBugIdConfig["uMaxFunctionOffset"]):
         # The offset is negative or very large: this may not be the correct symbol. If it is, the offset is very likely
         # to change between builds. The offset should not be part of the id and a warning about the symbol is added.
@@ -26,7 +25,9 @@ class cStackFrame(object):
     elif oModule:
       oStackFrame.sAddress = "%s + 0x%X" % (oModule.sBinaryName, uModuleOffset);
       oStackFrame.sSimplifiedAddress = "%s+0x%X" % (oModule.sBinaryName, uModuleOffset);
-      sIdInput = oStackFrame.sAddress;
+      # Adding offset makes it more unique and thus allows distinction between two different crashes, but seriously
+      # reduces the chance of getting the same id for the same crash in different builds.
+      sIdInput = "%s+0x%X" % (oModule.sIdInput, uModuleOffset);
     elif sUnloadedModuleFileName:
       if uModuleOffset is not None:
         oStackFrame.sAddress = "%s + 0x%X" % (sUnloadedModuleFileName, uModuleOffset);
@@ -47,6 +48,7 @@ class cStackFrame(object):
       oStackFrame.sId = "%02X" % ord(oHasher.digest()[0]);
 
   def fbHide(oStackFrame, asFrameAddresses):
-    if oStackFrame.sAddress in asFrameAddresses or oStackFrame.sSimplifiedAddress in asFrameAddresses: # and it should be,
+    # Hide the frame if the address or simplified address matches any of the supplied values:
+    if oStackFrame.sAddress in asFrameAddresses or oStackFrame.sSimplifiedAddress in asFrameAddresses:
       oStackFrame.bIsHidden = True; # hide it.
     return oStackFrame.bIsHidden;
