@@ -21,18 +21,18 @@ ddtxErrorTranslations = {
       ],
     ),
   },
-  "AVW:NULL+EVEN": {
-    # Chrome can trigger this exception but appears to handle it as well. It's not considered a bug at this time.
-    None: (
-      None,
-      None,
-      [
-        [
-          "ntdll.dll!RtlpWaitOnCriticalSection",
-        ]
-      ]
-    )
-  },
+#  "AVW:NULL+EVEN": {
+#    # Chrome can trigger this exception but appears to handle it as well. It's not considered a bug at this time.
+#    None: (
+#      None,
+#      None,
+#      [
+#        [
+#          "ntdll.dll!RtlpWaitOnCriticalSection",
+#        ]
+#      ]
+#    )
+#  },
   "AVE:NULL": {
     "OOM": (
       "The process caused an access violation by calling NULL to indicate it was unable to allocate enough memory",
@@ -130,6 +130,24 @@ def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
     or dsFunctionName_sSpecialTypeId.get(oFrame.sSimplifiedAddress)
   );
 
+def fsGetOffsetDescription(iOffset):
+  sSign = iOffset < 0 and "-" or "+";
+  uOffset = abs(iOffset);
+  # One bug may result in different offsets for 32-bit and 64-bit versions of an application, so using the exact
+  # value of the offset may result in different ids on different platforms. This can be disabled by setting a value
+  # for uMaxOffsetMultiplier:
+  if dxBugIdConfig["uMaxOffsetMultiplier"] == 0:
+    return "%s 0x%X" % (sSign, uOffset);
+  # Setting a value of 4 for uMaxOffsetMultiplier should work for data aligned to 32 bits and result in value of
+  # +N, + 2 * N or + 4 * N. You may try a lower number of values appear to differ between platforms, or a higher
+  # number if you know you application aligns data at more than 4 bytes.
+  uMultiplier = 1;
+  while uMultiplier < dxBugIdConfig["uMaxOffsetMultiplier"] and uOffset % (uMultiplier * 2) == 0:
+    uMultiplier *= 2;
+  if uMultiplier == 1:
+    return "%sN" % sSign;
+  return "%s%d*N" % (sSign, uMultiplier);
+
 def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdbWrapper):
   oException = oErrorReport.oException;
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
@@ -190,7 +208,6 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
       sViolationTypeId = "?";
       sViolationTypeDescription = "accessing";
       sViolationTypeNotes = " (the type of accesss cannot be determined)";
-  uMaxAddressOffset = dxBugIdConfig["uMaxAddressOffset"];
   
   if sViolationTypeId == "E":
     # Hide the stack frame for the address at which the execute access violation happened: (e.g. 0x0 for a NULL pointer).
@@ -207,16 +224,13 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
     if iOffset == 0:
       break;
     uOverflow = {"x86": 1 << 32, "x64": 1 << 64}[oCdbWrapper.sCurrentISA];
-    if iOffset > uMaxAddressOffset: # Maybe this is wrapping:
+    if iOffset > dxBugIdConfig["uMaxAddressOffset"]: # Maybe this is wrapping:
       iOffset -= uOverflow;
-    elif iOffset < -uMaxAddressOffset: # Maybe this is wrapping:
+    elif iOffset < -dxBugIdConfig["uMaxAddressOffset"]: # Maybe this is wrapping:
       iOffset += uOverflow;
     uOffset = abs(iOffset);
-    if uOffset <= uMaxAddressOffset:
-      # One bug may result in different offsets for 32-bit and 64-bit versions of an application, so the value of the
-      # offset cannot be used in the id. However, the fact that there is an offset is unique to the bug, so that can
-      # be added:
-      sAddressId += (iOffset < 0 and "-" or "+") + (uAddress & 1 and "ODD" or "EVEN");
+    if uOffset <= dxBugIdConfig["uMaxAddressOffset"]:
+      sAddressId += fsGetOffsetDescription(iOffset);
       break;
   else:
     # This is not a special marker or NULL, so it must be an invalid pointer
@@ -300,21 +314,14 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
         # cannot be used in the id. The same is true for the offset, but the fact that there is an offset is unique to
         # the bug, so that can be added.
         if bAccessIsBeyondBlock:
-          # The access was beyond the end of the block (out-of-bounds, OOB) It can be a simple sequential buffer
-          # overrun, or use of a bad offset/index. If the AV was at an address beyond the start of the guard page,
-          # it cannot be the former, as the previous buffer access would have resulted in an AV as well. In this case
-          # the fact that a bad index/offset was used is unique to the bug and can be added to the id:
-          bAccessIsBeyondStartOfGuardPage = uAddress > uGuardPageAddress;
-          sOffsetOddEven = "+" + (uAddress & 1 and "ODD" or "EVEN");
-          sAddressId = "OOB" + (bAccessIsBeyondStartOfGuardPage and sOffsetOddEven or "");
+          # The access was beyond the end of the block (out-of-bounds, OOB)
           uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
+          sAddressId = "OOB" + fsGetOffsetDescription(uOffsetPastEndOfBlock);
           sOffsetDescription = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
         else:
           # The access was inside the block but apparently the kind of access attempted is not allowed (e.g. write to
-          # read-only memory). The fact that it was at the start of the block or not is unique to the bug and can be
-          # added to the id:
-          sOffsetOddEven = "+" + (uOffsetFromStartOfBlock & 1 and "ODD" or "EVEN");
-          sAddressId = "AccessDenied" + (uOffsetFromStartOfBlock > 0 and sOffsetOddEven or "");
+          # read-only memory).
+          sAddressId = "AccessDenied" + fsGetOffsetDescription(uOffsetFromStartOfBlock);
           sOffsetDescription = "%d/0x%X bytes into" % (uOffsetFromStartOfBlock, uOffsetFromStartOfBlock);
         sErrorDescription = "Access violation while %s memory at 0x%X; " \
             "%s a %d/0x%X byte memory block at 0x%X" % \

@@ -18,6 +18,7 @@ for (sName, xValue) in {
   "bOutputCommandLine": False,  # Is the cbd.exe command line printed before execution?
   "bOutputProcesses": True,     # Output process details whenever one is created/attached to/terminated.
   "uMaxAddressOffset": 0x1000,  # How far from an address can a pointer be offset and still be considered to point to it?
+  "uMaxOffsetMultiplier": 4,    # Show <address + N> - <address + X * N> where X is this number. Use 0 for <address + offset>
   "uMaxFunctionOffset": 0xFFF,  # How far from a function symbol can a pointer be offset and still be cosidered to point to it?
   "uMaxStackFramesCount": 100,  # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
