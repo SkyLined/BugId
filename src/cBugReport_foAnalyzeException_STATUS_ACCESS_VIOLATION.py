@@ -2,7 +2,8 @@ import re;
 from dxBugIdConfig import dxBugIdConfig;
 
 # Hide some functions at the top of the stack that are not relevant to the error:
-asHiddenTopFramesForReadAndWriteAVs = [
+asHiddenTopFramesForReadAndWriteAVs = [ # Note: matches are case insensitive
+  "mshtml.dll!memcpy",
   "msvcrt.dll!memcpy",
 ];
 # Some access violations may not be an error:
