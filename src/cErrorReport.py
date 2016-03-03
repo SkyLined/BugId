@@ -35,14 +35,14 @@ asHiddenTopFrames = [
   "ntdll.dll!ZwRaiseException",
 ];
 class cErrorReport(object):
-  def __init__(oErrorReport, oCdbWrapper, sErrorTypeId, sErrorDescription, sSecurityImpact, oException, oStack, asImportantStdErrLinesHTML):
+  def __init__(oErrorReport, oCdbWrapper, sErrorTypeId, sErrorDescription, sSecurityImpact, oException, oStack, asImportantStdErrLines):
     oErrorReport.oCdbWrapper = oCdbWrapper;
     oErrorReport.sErrorTypeId = sErrorTypeId;
     oErrorReport.sErrorDescription = sErrorDescription;
     oErrorReport.sSecurityImpact = sSecurityImpact;
     oErrorReport.oException = oException;
     oErrorReport.oStack = oStack;
-    oErrorReport.asImportantStdErrLinesHTML = asImportantStdErrLinesHTML;
+    oErrorReport.asImportantStdErrLines = asImportantStdErrLines;
     oErrorReport.sStackId = None;
     oErrorReport.sCodeId = None;
     oErrorReport.sCodeDescription = None;
@@ -82,8 +82,8 @@ class cErrorReport(object):
         "sCodeDescription": fsHTMLEncode(oErrorReport.sCodeDescription),
         "sSecurityImpact": oErrorReport.sSecurityImpact and \
               '<span class="SecurityImpact">%s</span>' % fsHTMLEncode(oErrorReport.sSecurityImpact) or "None",
-        "sImportantStdErrLines": oErrorReport.asImportantStdErrLinesHTML and \
-              "<br/>".join(asImportantStdErrLinesHTML) or "None",
+        "sImportantStdErrLines": oErrorReport.asImportantStdErrLines and \
+              '<span class="CDBStdErr">%s</span>' % "<br/>".join([fsHTMLEncode(x) for x in oErrorReport.asImportantStdErrLines]) or "None",
               
         "sStack": oErrorReport.sHTMLStack,
         "sBinaryInformation": oErrorReport.sHTMLBinaryInformation,
@@ -105,10 +105,12 @@ class cErrorReport(object):
     if not oCdbWrapper.bCdbRunning: return None;
     # Similarly, try to get disassembly around code in which exception happened. This may not be possible if rip/eip
     # points to memeory that cannot be read.
-    oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip - 40, 40)) { u @$scopeip - 40 @$scopeip - 1; }; .else { .echo Prior disassembly not possible };");
+    asDisassemblyOutput = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip, 1)) { ub; }; .else { .echo Disassembly not possible };");
     if not oCdbWrapper.bCdbRunning: return None;
-    oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip, 40)) { u @$scopeip @$scopeip + 39; }; .else { .echo Disassembly not possible };");
-    if not oCdbWrapper.bCdbRunning: return None;
+    if asDisassemblyOutput != ["Disassembly not possible"]:
+      # rip/eip must be valid as disassembly before this address was returned: get disassembly after as well:
+      oCdbWrapper.fasSendCommandAndReadOutput("u");
+      if not oCdbWrapper.bCdbRunning: return None;
     # Get the stack
     oStack = oException.foGetStack(oCdbWrapper);
     if not oCdbWrapper.bCdbRunning: return None;
@@ -188,7 +190,7 @@ class cErrorReport(object):
       sSecurityImpact = oException.sSecurityImpact,
       oException = oException,
       oStack = oStack,
-      asImportantStdErrLinesHTML = oCdbWrapper.asImportantStdErrLinesHTML,
+      asImportantStdErrLines = oCdbWrapper.asImportantStdErrLines,
     );
     # Make exception specific changes to the error report:
     foSpecialErrorReport = dfoSpecialErrorReport_uExceptionCode.get(oException.uCode);

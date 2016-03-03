@@ -47,10 +47,8 @@ class cStackFrame(object):
       oHasher.update(sIdInput);
       oStackFrame.sId = "%02X" % ord(oHasher.digest()[0]);
 
-  def fbHide(oStackFrame, asFrameAddresses, bFrameAddressesAreAlreadyLowered = False):
-    # Hide the frame if the address or simplified address matches any of the supplied values (ignoring case):
-    if not bFrameAddressesAreAlreadyLowered:
-      asFrameAddresses = [lower(s) for s in asFrameAddresses];
-    if oStackFrame.sAddress.lower() in asFrameAddresses or oStackFrame.sSimplifiedAddress.lower() in asFrameAddresses:
+  def fbHide(oStackFrame, asFrameAddresses):
+    # Hide the frame if the address or simplified address matches any of the supplied values:
+    if oStackFrame.sAddress in asFrameAddresses or oStackFrame.sSimplifiedAddress in asFrameAddresses:
       oStackFrame.bIsHidden = True; # hide it.
     return oStackFrame.bIsHidden;
