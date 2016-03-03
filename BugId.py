@@ -111,7 +111,7 @@ if __name__ == "__main__":
     print "  Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
       sFileNameBase = fsCreateFileName(oBugId.oErrorReport.sId);
-      # File name may be too long, keep trying to 
+      # File name may be too long, keep trying to save it with a shorter name or output an error if that's not posible.
       while len(sFileNameBase) > 0:
         sFileName = sFileNameBase + ".html";
         try:
