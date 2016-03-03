@@ -24,7 +24,7 @@ daxExceptionHandling = {
     STATUS_WX86_SINGLE_STEP,
     STATUS_WAKE_SYSTEM_DEBUGGER,
   ],
-  'sxd"': [ # break on second chance exceptions
+  "sxd": [ # break on second chance exceptions
     CPP_EXCEPTION_CODE,
     STATUS_INTEGER_DIVIDE_BY_ZERO,
     STATUS_INTEGER_OVERFLOW, 
