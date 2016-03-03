@@ -18,3 +18,4 @@ class cFunction(object):
         asComponents[-1] += sChar;
     sSimpifiedSymbol = "<".join(asComponents);
     oFunction.sSimplifiedName = "%s!%s" % (oFunction.oModule.sBinaryName, sSimpifiedSymbol);
+    oFunction.sIdInput = "%s!%s" % (oFunction.oModule.sIdInput, sSymbol);
