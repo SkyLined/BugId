@@ -251,7 +251,7 @@ running on the same machine at port 28876:
     * Exception code 0xC0000005 (Access violation) was detected and is being analyzed...
     * A bug was detected in the application.
     
-    Id:               336C AVR:NULL+X iexplore.exe!MSHTML.dll!CTreeNode::GetFancyFormat
+    Id:               336C AVR:NULL+4*N iexplore.exe!MSHTML.dll!CTreeNode::GetFancyFormat
     Description:      Access violation while reading memory at 0x8 using a NULL ptr
     Process binary:   iexplore.exe
     Location:         MSHTML.dll!CTreeNode::GetFancyFormat + 0x8
