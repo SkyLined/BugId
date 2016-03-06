@@ -1,5 +1,5 @@
 from Kill import fKillProcessesUntilTheyAreDead;
-from cCdbTerminatedUnexpectedlyErrorReport import cCdbTerminatedUnexpectedlyErrorReport;
+from cBugReport_CdbTerminatedUnexpectedly import cBugReport_CdbTerminatedUnexpectedly;
 
 def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   # wait for debugger thread to terminate.
@@ -30,7 +30,7 @@ def cCdbWrapper_fCdbCleanupThread(oCdbWrapper):
   if oCdbWrapper.auProcessIds:
     fKillProcessesUntilTheyAreDead(oCdbWrapper.auProcessIds);
   if not bTerminationWasExpected:
-    oCdbWrapper.oErrorReport = cCdbTerminatedUnexpectedlyErrorReport(oCdbWrapper, uExitCode);
-  oCdbWrapper.fFinishedCallback and oCdbWrapper.fFinishedCallback(oCdbWrapper.oErrorReport);
+    oCdbWrapper.oBugReport = cBugReport_CdbTerminatedUnexpectedly(oCdbWrapper, uExitCode);
+  oCdbWrapper.fFinishedCallback and oCdbWrapper.fFinishedCallback(oCdbWrapper.oBugReport);
 
 

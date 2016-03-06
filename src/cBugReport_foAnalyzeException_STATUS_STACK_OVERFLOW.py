@@ -1,11 +1,11 @@
 
-def cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW(oErrorReport, oCdbWrapper):
-  oStack = oErrorReport.oStack;
+def cBugReport_foAnalyzeException_STATUS_STACK_OVERFLOW(oBugReport, oCdbWrapper):
+  oStack = oBugReport.oStack;
   # Stack exhaustion can be caused by recursive function calls, where one or more functions repeatedly call themselves
   # Figure out if this is the case and fide all frames at the top of the stack until the "first" frame in the loop.
-  oErrorReport.sErrorTypeId = "StackExhaustion";
-  oErrorReport.sErrorDescription = "The process exhausted available stack memory";
-  oErrorReport.sSecurityImpact = None;
+  oBugReport.sBugTypeId = "StackExhaustion";
+  oBugReport.sBugDescription = "The process exhausted available stack memory";
+  oBugReport.sSecurityImpact = None;
   bLoopFound = False;
   for uFirstLoopStartIndex in xrange(len(oStack.aoFrames) - 1):
 #    print "*" * 80;
@@ -57,14 +57,14 @@ def cErrorReport_foSpecialErrorReport_STATUS_STACK_OVERFLOW(oErrorReport, oCdbWr
           oHiddenFrame.bIsHidden = True;
         # All frames in the loop are part of the hash:
         oStack.uHashFramesCount = uLoopSize;
-        # The error id and description are adjusted to explain the recursive function call as its cause.
-        oErrorReport.sErrorTypeId = "RecursiveCall";
+        # The bug id and description are adjusted to explain the recursive function call as its cause.
+        oBugReport.sBugTypeId = "RecursiveCall";
         if uLoopSize == 1:
-          oErrorReport.sErrorDescription = "A recursive function call exhausted available stack memory";
+          oBugReport.sBugDescription = "A recursive function call exhausted available stack memory";
         else:
-          oErrorReport.sErrorDescription = "A recursive function call involving %d functions exhausted available stack memory" % uLoopSize;
+          oBugReport.sBugDescription = "A recursive function call involving %d functions exhausted available stack memory" % uLoopSize;
         break;
     if bLoopFound:
       break;
     uFirstLoopStartIndex += 1;
-  return oErrorReport;
+  return oBugReport;

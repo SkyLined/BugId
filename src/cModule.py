@@ -7,7 +7,8 @@ class cModule(object):
     oModule.uStartAddress = uStartAddress;
     oModule.uEndAddress = uEndAddress;
     oModule._doFunction_by_sSymbol = {};
-    oModule.sIdInput = sBinaryName.lower();
+    oModule.sSimplifiedName = sBinaryName.lower();
+    oModule.sUniqueName = sBinaryName.lower();
   
   def foGetOrCreateFunction(oModule, sSymbol):
     if sSymbol not in oModule._doFunction_by_sSymbol:

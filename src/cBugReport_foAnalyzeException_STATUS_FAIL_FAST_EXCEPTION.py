@@ -1,4 +1,4 @@
-# Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
+# Hide some functions at the top of the stack that are merely helper functions and not relevant to the bug:
 asHiddenTopFrames = [
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
   "EDGEHTML.dll!Abandonment::OutOfMemory",
@@ -15,8 +15,8 @@ asHiddenTopFrames = [
   "EDGEHTML.dll!_HeapRealloc<1>",
   "EDGEHTML.dll!Ptls6::TsAllocMemoryCore",
 ];
-# Some fail fast exceptions may indicate an out-of-memory error:
-dtxErrorTranslations = {
+# Some fail fast exceptions may indicate an out-of-memory bug:
+dtxBugTranslations = {
   "OOM": (
     "The process triggered a fail-fast exception to indicate it was unable to allocate enough memory",
     None,
@@ -39,11 +39,11 @@ dtxErrorTranslations = {
   ),
 };
 
-def cErrorReport_foSpecialErrorReport_STATUS_FAIL_FAST_EXCEPTION(oErrorReport, oCdbWrapper):
+def cBugReport_foAnalyzeException_STATUS_FAIL_FAST_EXCEPTION(oBugReport, oCdbWrapper):
   # cdb does not known this exception and reports "Unknown exception (code 0xC0000602)" as the description.
-  oErrorReport.sErrorDescription = "Fail fast exception (code 0x%X)" % oErrorReport.oException.uCode;
-  oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  if oErrorReport:
-    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport;
+  oBugReport.sBugDescription = "Fail fast exception (code 0x%X)" % oBugReport.oException.uCode;
+  oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  if oBugReport:
+    oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oBugReport;
 

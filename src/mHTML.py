@@ -1,7 +1,7 @@
 def fsHTMLEncode(sData):
   return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
 
-sHTMLDetailsTemplate = ("""
+sDetailsHTMLTemplate = ("""
 <!doctype html>
 <html>
   <head>
@@ -13,7 +13,6 @@ sHTMLDetailsTemplate = ("""
         padding: 0;
         color: black;
         background: transparent;
-        font-weight: normal;
         font-size: 10pt;
         font-family: "Courier New", courier, monospace;
       }
@@ -23,6 +22,12 @@ sHTMLDetailsTemplate = ("""
       table {
         cell-padding: 0;
         cell-spacing: 0;
+      }
+      a:link, a:visited {
+        text-decoration: none;
+      }
+      a:hover, a:active {
+        text-decoration: underline;
       }
       .Block {
         margin: 10pt;
@@ -46,15 +51,22 @@ sHTMLDetailsTemplate = ("""
       }
       .SubContent {
       }
-      .SecurityImpact {
-        color: Red;
+      .Important {
+        background-color: rgba(255,255,0,0.3);
       }
-      .CDBStdIn {
+      .SecurityImpact {
+        background-color: rgba(255,0,0,0.2);
+      }
+      .CDBCommand {
         font-weight: bold;
       }
       .CDBStdOut {
+        color: #404040;
       }
-      .CDBStdErr {
+      .CDBOrApplicationStdOut {
+        color: black;
+      }
+      .CDBStdErr, a.CDBStdErr {
         color: maroon;
       }
       .CDBIgnoredException {
@@ -68,11 +80,12 @@ sHTMLDetailsTemplate = ("""
       }
       .StackHash {
         font-weight: bold;
+        background: rgba(255,255,0,0.2);
       }
       .StackNoSymbol {
         font-style: italic;
       }
-      .StdIOSeparator {
+      hr {
         border: dotted black;
         border-width: 0 0 1pt 0;
       }
@@ -84,30 +97,14 @@ sHTMLDetailsTemplate = ("""
       <h1 class="Header">Details</h1>
       <div class="Content">
         <table>
-          <tr><td>Id:               </td><td><b>%(sId)s</b></td></tr>
-          <tr><td>Description:      </td><td><b>%(sExceptionDescription)s</b></td></tr>
-          <tr><td>Process binary:   </td><td>%(sProcessBinaryName)s</td></tr>
-          <tr><td>Code:             </td><td>%(sCodeDescription)s</td></tr>
-          <tr><td>Security impact:  </td><td>%(sSecurityImpact)s</td></tr>
-          <tr><td>Errors reported:  </td><td>%(sImportantStdErrLines)s</td></tr>
+          <tr><td>Id:                     &nbsp;</td><td><span class="Important">%(sId)s</span></td></tr>
+          <tr><td>Description:            &nbsp;</td><td><span class="Important">%(sBugDescription)s</span></td></tr>
+          <tr><td>Location:               &nbsp;</td><td><span class="Important">%(sBugLocation)s</span></td></tr>
+          <tr><td>Security&nbsp;impact:   &nbsp;</td><td>%(sSecurityImpact)s</td></tr>
         </table>
       </div>
     </div>
-    
-    <div class="Block">
-      <h1 class="Header">Stack</h1>
-      <div class="Content">
-        %(sStack)s
-      </div>
-    </div>
-    
-    <div class="Block">
-      <h1 class="Header">Binary information</h1>
-      <div class="Content">
-        %(sBinaryInformation)s
-      </div>
-    </div>
-    
+%(sOptionalBlocks)s
     <div class="Block">
       <h1 class="Header">Debugger IO</h1>
       <div class="Content">
@@ -117,10 +114,12 @@ sHTMLDetailsTemplate = ("""
   </body>
 </html>""").strip();
 
-sHTMLBinaryInformationTemplate = """
-    <h2 class="SubHeader">%(sName)s</h2>
-    <div class="SubContent">
-      %(sInformation)s
+sBlockHTMLTemplate = """
+    <div class="Block">
+      <h1 class="Header">%(sName)s</h1>
+      <div class="Content">
+        %(sContent)s
+      </div>
     </div>
-""".strip();
+""".lstrip();
 

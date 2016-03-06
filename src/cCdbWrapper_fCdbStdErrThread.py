@@ -2,10 +2,6 @@ import re;
 from dxBugIdConfig import dxBugIdConfig;
 from mHTML import fsHTMLEncode;
 
-rImportantLines = re.compile("|".join(["^%s$" % x for x in [
-  r"Assertion failure: .*",
-]]));
-
 def cCdbWrapper_fCdbStdErrThread(oCdbWrapper):
   sLine = "";
   while 1:
@@ -14,11 +10,23 @@ def cCdbWrapper_fCdbStdErrThread(oCdbWrapper):
       pass; # ignored.
     elif sChar in ("\n", ""):
       if sChar == "\n" or sLine:
-        oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBStdErr\">%s</span><br/>" % fsHTMLEncode(sLine);
+        for (srSourceFilePath, sURLTemplate) in oCdbWrapper.dsURLTemplate_by_srSourceFilePath.items():
+          oMatch = re.search(srSourceFilePath, sLine);
+          if oMatch:
+            sBefore = sLine[:oMatch.start()];
+            sPath = oMatch.group(0);
+            sURL = (sURLTemplate % oMatch.groupdict()).replace("\\", "/");
+            sAfter = sLine[oMatch.end():];
+            sLineHTML = "<span class=\"CDBStdErr\">%s<a target=\"_blank\" href=\"%s\">%s</a>%s</span><br/>" % \
+                (fsHTMLEncode(sBefore), sURL, fsHTMLEncode(sPath), fsHTMLEncode(sAfter));
+            break;
+        else:
+          sLineHTML = "<span class=\"CDBStdErr\">%s</span><br/>" % fsHTMLEncode(sLine);
+        oCdbWrapper.asCdbStdIOBlocksHTML[-1] += sLineHTML;
         if dxBugIdConfig["bOutputStdErr"]:
           print "cdb:stderr>%s" % repr(sLine)[1:-1];
-        if rImportantLines.match(sLine):
-          oCdbWrapper.asImportantStdErrLines.append(sLine);
+        if oCdbWrapper.rImportantStdErrLines and oCdbWrapper.rImportantStdErrLines.match(sLine):
+          oCdbWrapper.sImportantOutputHTML += sLineHTML;
       if sChar == "":
         break;
       sLine = "";

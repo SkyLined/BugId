@@ -22,6 +22,7 @@ for (sName, xValue) in {
   "uMaxFunctionOffset": 0xFFF,  # How far from a function symbol can a pointer be offset and still be cosidered to point to it?
   "uMaxStackFramesCount": 100,  # How many stack frames are retreived for analysis?
   "uStackHashFramesCount": 2,   # How many stack frames are hashed for the crash id?
+  "uMaxStackFrameHashChars": 3, # How many characters of hash to use in the id for each stack frame.
   "uReserveRAM": 0,             # How many bytes of RAM should be allocate at start of debugging, so they can be
                                 # released later to allow analysis under low memory conditions.
   "bEnhancedSymbolLoading": False, # Enabled additional checks when getting a stack that can detect and fix errors in
@@ -33,6 +34,7 @@ for (sName, xValue) in {
   "sCdbBinaryPath_x64": dsCdbBinaryPath_sISA.get("x64"),
   "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
   "sKillBinaryPath_x64": dsKillBinaryPath_sISA.get("x64"),
+  "dsURLTemplate_by_srSourceFilePath": {}, # Used to translate source file paths in stderr to links to online code repository.
 }.items():
   if sName not in dxBugIdConfig:
     dxBugIdConfig[sName] = xValue;

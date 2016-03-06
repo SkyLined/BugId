@@ -22,11 +22,17 @@ class cCdbWrapper(object):
     asApplicationCommandLine = None,
     auApplicationProcessIds = None,
     asSymbolServerURLs = [],
+    dsURLTemplate_by_srSourceFilePath = {},
+    rImportantStdOutLines = None,
+    rImportantStdErrLines = None,
     fApplicationRunningCallback = None,
     fExceptionDetectedCallback = None,
     fFinishedCallback = None,
     fInternalExceptionCallback = None,
   ):
+    oCdbWrapper.dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath;
+    oCdbWrapper.rImportantStdOutLines = rImportantStdOutLines;
+    oCdbWrapper.rImportantStdErrLines = rImportantStdErrLines;
     oCdbWrapper.fApplicationRunningCallback = fApplicationRunningCallback;
     oCdbWrapper.fExceptionDetectedCallback = fExceptionDetectedCallback;
     oCdbWrapper.fFinishedCallback = fFinishedCallback;
@@ -78,12 +84,12 @@ class cCdbWrapper(object):
       print "* Starting %s" % " ".join(asCommandLine);
     # Initialize some variables
     oCdbWrapper.sCurrentISA = None; # During exception handling, this is set to the ISA for the code that caused it.
-    oCdbWrapper.asHTMLCdbStdIOBlocks = [""]; # Logs stdin/stdout/stderr for the cdb process, grouped by executed command.
-    oCdbWrapper.oErrorReport = None; # Set to an error report if a bug was detected in the application
+    oCdbWrapper.asCdbStdIOBlocksHTML = [""]; # Logs stdin/stdout/stderr for the cdb process, grouped by executed command.
+    oCdbWrapper.oBugReport = None; # Set to a bug report if a bug was detected in the application
     oCdbWrapper.uLastProcessId = None; # Set to the id of the last process to be reported as terminated by cdb.
     oCdbWrapper.bCdbRunning = True; # Set to False after cdb terminated, used to terminate the debugger thread.
     oCdbWrapper.bCdbWasTerminatedOnPurpose = False; # Set to True when cdb is terminated on purpose, used to detect unexpected termination.
-    oCdbWrapper.asImportantStdErrLines = []; # Lines from stderr that are marked as potentially important to understanding the bug.
+    oCdbWrapper.sImportantOutputHTML = ""; # Lines from stdout/stderr that are marked as potentially important to understanding the bug.
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
@@ -137,11 +143,11 @@ class cCdbWrapper(object):
     if oCdbProcess:
       oCdbProcess.wait();
   
-  def fasReadOutput(oCdbWrapper, bIsRelevantIO = True):
-    return cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = bIsRelevantIO);
+  def fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False):
+    return cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput);
   
-  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True):
-    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = bIsRelevantIO);
+  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False):
+    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput);
   
   def fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
     return cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId);

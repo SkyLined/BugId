@@ -2,7 +2,7 @@ import re;
 from dxBugIdConfig import dxBugIdConfig;
 from mHTML import fsHTMLEncode;
 
-def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True):
+def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False):
   if dxBugIdConfig["bOutputStdIn"]:
     print "cdb<%s" % repr(sCommand)[1:-1];
   try:
@@ -12,13 +12,13 @@ def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO
     return None;
   if bIsRelevantIO:
     # Add the command to the current output block; this block should contain only one line that has the cdb prompt.
-    oCdbWrapper.asHTMLCdbStdIOBlocks[-1] += "<span class=\"CDBCommand\">%s</span><br/>" % fsHTMLEncode(sCommand);
+    oCdbWrapper.asCdbStdIOBlocksHTML[-1] += "<span class=\"CDBCommand\">%s</span><br/>" % fsHTMLEncode(sCommand);
   else:
     # Remove the second to last output block: it contains the cdb prompt that is linked to this command and thus it
     # has become irrelevant.
-    oCdbWrapper.asHTMLCdbStdIOBlocks.pop(-1);
+    oCdbWrapper.asCdbStdIOBlocksHTML.pop(-1);
   # The following command will always add a new output block with the new cdb prompt, regardless of bDoNotSaveIO.
-  asOutput = oCdbWrapper.fasReadOutput(bIsRelevantIO = bIsRelevantIO);
+  asOutput = oCdbWrapper.fasReadOutput(bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput);
   # Detect obvious errors executing the command. (this will not catch everything, but does help development)
   assert asOutput is None or len(asOutput) != 1 or not re.match(r"^(\s*\^ .*|Couldn't resolve error at .+)$", asOutput[0]), \
       "There was a problem executing the command %s:\r\n%s" % \

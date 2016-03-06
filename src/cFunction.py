@@ -17,5 +17,5 @@ class cFunction(object):
       else:
         asComponents[-1] += sChar;
     sSimpifiedSymbol = "<".join(asComponents);
-    oFunction.sSimplifiedName = "%s!%s" % (oFunction.oModule.sBinaryName, sSimpifiedSymbol);
-    oFunction.sIdInput = "%s!%s" % (oFunction.oModule.sIdInput, sSymbol);
+    oFunction.sSimplifiedName = "%s!%s" % (oFunction.oModule.sSimplifiedName, sSimpifiedSymbol);
+    oFunction.sUniqueName = sSymbol;

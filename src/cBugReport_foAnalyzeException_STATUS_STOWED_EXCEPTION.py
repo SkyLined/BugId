@@ -1,8 +1,8 @@
 import re;
 from cStowedException import cStowedException;
 
-def cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION(oErrorReport, oCdbWrapper):
-  oException = oErrorReport.oException;
+def cBugReport_foAnalyzeException_STATUS_STOWED_EXCEPTION(oBugReport, oCdbWrapper):
+  oException = oBugReport.oException;
   # Parameter[0] = paStowedExceptionInformationArray;
   # Parameter[1] = uStowedExceptionInformationArrayLength;
   assert len(oException.auParameters) == 2, \
@@ -12,5 +12,5 @@ def cErrorReport_foSpecialErrorReport_STATUS_STOWED_EXCEPTION(oErrorReport, oCdb
   assert uStowedExceptionsCount < 1, \
       "Unexpected number of WinRT language exception stowed exceptions (%d vs 1)" % uStowedExceptionsCount;
   # The stowed exception replaces this exception:
-  oErrorReport.oException = cStowedException.foCreate(oCdbWrapper, oException.oProcess, pStowedExceptionsAddresses);
-  return oErrorReport;
+  oBugReport.oException = cStowedException.foCreate(oCdbWrapper, oException.oProcess, pStowedExceptionsAddresses);
+  return oBugReport;

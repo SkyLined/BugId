@@ -1,5 +1,5 @@
-# Some invalid handles happen quite often and don't appear to be error at all:
-dtxErrorTranslations = {
+# Some invalid handles happen quite often and don't appear to be a bug at all:
+dtxBugTranslations = {
   None: (
     None,
     None,
@@ -21,14 +21,14 @@ dtxErrorTranslations = {
   ),
 };
 
-# Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
+# Hide some functions at the top of the stack that are merely helper functions and not relevant to the bug:
 asHiddenTopFrames = [
   "KERNELBASE.dll!RaiseException",
 ];
-def cErrorReport_foSpecialErrorReport_STATUS_INVALID_HANDLE(oErrorReport, oCdbWrapper):
-  oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  if oErrorReport:
-    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport;
+def cBugReport_foAnalyzeException_STATUS_INVALID_HANDLE(oBugReport, oCdbWrapper):
+  oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  if oBugReport:
+    oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oBugReport;
 
 

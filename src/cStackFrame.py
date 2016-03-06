@@ -1,4 +1,4 @@
-import hashlib;
+import hashlib, math;
 from dxBugIdConfig import dxBugIdConfig;
 
 class cStackFrame(object):
@@ -16,41 +16,39 @@ class cStackFrame(object):
       oStackFrame.sAddress = oFunction.sName;
       if uFunctionOffset:
         oStackFrame.sAddress += " %s 0x%X" % (uFunctionOffset > 0 and "+" or "-", abs(uFunctionOffset));
+        if uFunctionOffset not in xrange(dxBugIdConfig["uMaxFunctionOffset"]):
+          # The offset is negative or very large: this may not be the correct symbol. If it is, the offset is very likely
+          # to change between builds. The offset should not be part of the id and a warning about the symbol is added.
+          oStackFrame.sAddress += " (this may not be correct)";
       oStackFrame.sSimplifiedAddress = oFunction.sSimplifiedName;
-      sIdInput = oFunction.sIdInput;
-      if uFunctionOffset not in xrange(dxBugIdConfig["uMaxFunctionOffset"]):
-        # The offset is negative or very large: this may not be the correct symbol. If it is, the offset is very likely
-        # to change between builds. The offset should not be part of the id and a warning about the symbol is added.
-        oStackFrame.sAddress += " (this may not be correct)";
+      oStackFrame.sUniqueAddress = oFunction.sUniqueName;
     elif oModule:
       oStackFrame.sAddress = "%s + 0x%X" % (oModule.sBinaryName, uModuleOffset);
-      oStackFrame.sSimplifiedAddress = "%s+0x%X" % (oModule.sBinaryName, uModuleOffset);
+      oStackFrame.sSimplifiedAddress = "%s+0x%X" % (oModule.sSimplifiedName, uModuleOffset);
       # Adding offset makes it more unique and thus allows distinction between two different crashes, but seriously
       # reduces the chance of getting the same id for the same crash in different builds.
-      sIdInput = "%s+0x%X" % (oModule.sIdInput, uModuleOffset);
+      oStackFrame.sUniqueAddress = "%s+0x%X" % (oModule.sUniqueName, uModuleOffset);
     elif sUnloadedModuleFileName:
       if uModuleOffset is not None:
         oStackFrame.sAddress = "%s + 0x%X" % (sUnloadedModuleFileName, uModuleOffset);
         oStackFrame.sSimplifiedAddress = "%s+0x%X" % (sUnloadedModuleFileName, uModuleOffset);
       else:
         oStackFrame.sAddress = "%s + ??" % sUnloadedModuleFileName;
-        oStackFrame.sSimplifiedAddress = "sUnloadedModuleFileName+??";
-      sIdInput = None;
+        oStackFrame.sSimplifiedAddress = sUnloadedModuleFileName;
+      oStackFrame.sUniqueAddress = None;
     else:
       oStackFrame.sAddress = "0x%X" % uAddress;
       oStackFrame.sSimplifiedAddress = "(unknown)";
-      sIdInput = None;
-    if sIdInput is None:
+      oStackFrame.sUniqueAddress = None;
+    if oStackFrame.sUniqueAddress is None:
       oStackFrame.sId = None;
     else:
       oHasher = hashlib.md5();
-      oHasher.update(sIdInput);
-      oStackFrame.sId = "%02X" % ord(oHasher.digest()[0]);
+      oHasher.update(oStackFrame.sUniqueAddress);
+      oStackFrame.sId = oHasher.hexdigest()[:dxBugIdConfig["uMaxStackFrameHashChars"]];
 
-  def fbHide(oStackFrame, asFrameAddresses, bFrameAddressesAreAlreadyLowered = False):
-    # Hide the frame if the address or simplified address matches any of the supplied values (ignoring case):
-    if not bFrameAddressesAreAlreadyLowered:
-      asFrameAddresses = [s.lower() for s in asFrameAddresses];
-    if oStackFrame.sAddress.lower() in asFrameAddresses or oStackFrame.sSimplifiedAddress.lower() in asFrameAddresses:
+  def fbHide(oStackFrame, asFrameAddresses):
+    # Hide the frame if the address, simplified address or id address matches any of the supplied values:
+    if oStackFrame.sAddress in asFrameAddresses or oStackFrame.sSimplifiedAddress in asFrameAddresses or oStackFrame.sUniqueAddress in asFrameAddresses:
       oStackFrame.bIsHidden = True; # hide it.
     return oStackFrame.bIsHidden;

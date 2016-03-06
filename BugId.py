@@ -103,16 +103,15 @@ if __name__ == "__main__":
     fExceptionDetectedCallback = fExceptionDetectedHandler,
   );
   oBugId.fWait();
-  if oBugId.oErrorReport:
+  if oBugId.oBugReport:
     print "* A bug was detected in the application.";
     print;
-    print "  Id:               %s" % oBugId.oErrorReport.sId;
-    print "  Description:      %s" % oBugId.oErrorReport.sErrorDescription;
-    print "  Process binary:   %s" % oBugId.oErrorReport.sProcessBinaryName;
-    print "  Code:             %s" % oBugId.oErrorReport.sCodeDescription;
-    print "  Security impact:  %s" % oBugId.oErrorReport.sSecurityImpact;
+    print "  Id:               %s" % oBugId.oBugReport.sId;
+    print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
+    print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
+    print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
-      sFileNameBase = fsCreateFileName(oBugId.oErrorReport.sId);
+      sFileNameBase = fsCreateFileName("%s %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation));
       # File name may be too long, keep trying to save it with a shorter name or output an error if that's not posible.
       while len(sFileNameBase) > 0:
         sFileName = sFileNameBase + ".html";
@@ -121,13 +120,14 @@ if __name__ == "__main__":
         except IOError:
           sFileNameBase = sFileNameBase[:-1];
           continue;
+        sDetailsHTML = oBugId.oBugReport.sDetailsHTML;
         try:
-          oFile.write(oBugId.oErrorReport.sHTMLDetails);
+          oFile.write(sDetailsHTML);
         finally:
           oFile.close();
-        print "  Error report:     %s (%d bytes)" % (sFileName, len(oBugId.oErrorReport.sHTMLDetails));
+        print "  Bug report:       %s (%d bytes)" % (sFileName, len(sDetailsHTML));
         break;
       else:
-        print "  Error report:     cannot be saved";
+        print "  Bug report:       Cannot be saved";
   else:
     print "* The application has terminated without crashing.";

@@ -1,13 +1,14 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
+from mHTML import fsHTMLEncode;
 
-# Hide some functions at the top of the stack that are not relevant to the error:
+# Hide some functions at the top of the stack that are not relevant to the bug:
 asHiddenTopFramesForReadAndWriteAVs = [ # Note: matches are case insensitive
   "mshtml.dll!memcpy",
   "msvcrt.dll!memcpy",
 ];
-# Some access violations may not be an error:
-ddtxErrorTranslations = {
+# Some access violations may not be a bug:
+ddtxBugTranslations = {
   "AVE:Arbitrary": {
     # corpol.dll can test if DEP is enabled by storing a RET instruction in RW memory and calling it. This causes an
     # access violation if DEP is enabled, which is caught and handled. Therefore this exception should be ignored:
@@ -149,8 +150,8 @@ def fsGetOffsetDescription(iOffset):
     return "%sN" % sSign;
   return "%s%d*N" % (sSign, uMultiplier);
 
-def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdbWrapper):
-  oException = oErrorReport.oException;
+def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrapper):
+  oException = oBugReport.oException;
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
   # Parameter[1] = address
   assert len(oException.auParameters) == 2, \
@@ -165,9 +166,13 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
   else:
     # In x64 mode, cdb reports incorrect information in the exception parameters if the address is larger than
     # 0x7FFFFFFFFFFF. A work-around is to get the address from the last instruction output, which can be retreived by
-    # setting the current thread, because in cCdbWrapper_fCdbStdInOutThread ".prompt_allow" was used to make sure the
-    # instruction and its address is shown:
+    # asking cdb to output disassembly and address after each command:
+    oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis +ea;", bIsRelevantIO = False);
+    if not oCdbWrapper.bCdbRunning: return None;
     asLastInstructionAndAddress = oCdbWrapper.fasSendCommandAndReadOutput("~s");
+    if not oCdbWrapper.bCdbRunning: return None;
+    # Revert to not showing disassembly and address:
+    oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow -dis -ea;", bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
     # Sample output:
     # |00007ffd`420b213e 488b14c2        mov     rdx,qword ptr [rdx+rax*8] ds:00007df5`ffb60000=????????????????
@@ -219,7 +224,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
   
   dtsDetails_uAddress = ddtsDetails_uAddress_sISA[oCdbWrapper.sCurrentISA];
   for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
-    sErrorDescription = "Access violation while %s memory at 0x%X using %s" % \
+    sBugDescription = "Access violation while %s memory at 0x%X using %s" % \
         (sViolationTypeDescription, uAddress, sAddressDescription);
     iOffset = uAddress - uBaseAddress;
     if iOffset == 0:
@@ -302,7 +307,7 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
         # Page heap says the memory was freed:
         sAddressId = "Free";
         sAddressDescription = "freed memory";
-        sErrorDescription = "Access violation while %s %s at 0x%X" % \
+        sBugDescription = "Access violation while %s %s at 0x%X" % \
             (sViolationTypeDescription, sAddressDescription, uAddress);
       elif sBlockType == "busy":
         # Page heap says the region is allocated,  only logical explanation known is that the read was beyond the
@@ -324,23 +329,27 @@ def cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION(oErrorReport, oCdb
           # read-only memory).
           sAddressId = "AccessDenied" + fsGetOffsetDescription(uOffsetFromStartOfBlock);
           sOffsetDescription = "%d/0x%X bytes into" % (uOffsetFromStartOfBlock, uOffsetFromStartOfBlock);
-        sErrorDescription = "Access violation while %s memory at 0x%X; " \
+        sBugDescription = "Access violation while %s memory at 0x%X; " \
             "%s a %d/0x%X byte memory block at 0x%X" % \
             (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
       else:
         raise NotImplemented("NOT REACHED");
-      oErrorReport.atsAdditionalInformation.append(("Page heap report for address 0x%X:" % uAddress, asPageHeapReport));
+      oBugReport.sMemoryHTML += (
+        (oBugReport.sMemoryHTML and "<hr/>" or "") +
+        "<span class=\"important\">Page heap report for address 0x%X:</span><br/>" % uAddress +
+        "<br/>".join([fsHTMLEncode(s) for s in asPageHeapReport])
+      );
     else:
       sAddressId = "Arbitrary";
-      sErrorDescription = "Access violation while %s memory at 0x%X" % (sViolationTypeDescription, uAddress);
+      sBugDescription = "Access violation while %s memory at 0x%X" % (sViolationTypeDescription, uAddress);
     # No matter what, this is potentially exploitable.
     sSecurityImpact = "Potentially exploitable security issue";
-  oErrorReport.sErrorTypeId = "%s%s:%s" % (oErrorReport.sErrorTypeId, sViolationTypeId, sAddressId);
-  oErrorReport.sErrorDescription = sErrorDescription + sViolationTypeNotes;
-  oErrorReport.sSecurityImpact = sSecurityImpact;
-  dtxErrorTranslations = ddtxErrorTranslations.get(oErrorReport.sErrorTypeId, None);
-  if dtxErrorTranslations:
-    oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  if oErrorReport:
-    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport;
+  oBugReport.sBugTypeId = "%s%s:%s" % (oBugReport.sBugTypeId, sViolationTypeId, sAddressId);
+  oBugReport.sBugDescription = sBugDescription + sViolationTypeNotes;
+  oBugReport.sSecurityImpact = sSecurityImpact;
+  dtxBugTranslations = ddtxBugTranslations.get(oBugReport.sBugTypeId, None);
+  if dtxBugTranslations:
+    oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  if oBugReport:
+    oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oBugReport;

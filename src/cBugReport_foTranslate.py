@@ -1,15 +1,15 @@
-def cErrorReport_foTranslateError(oErrorReport, dtxTranslations):
-  if len(oErrorReport.oStack.aoFrames) == 0:
-    return oErrorReport;
-  for (sErrorTypeId, txTranslation) in dtxTranslations.items():
-    (sErrorDescription, sSecurityImpact, aasStackTopFrameAddresses) = txTranslation;
+def cBugReport_foTranslate(oBugReport, dtxTranslations):
+  if len(oBugReport.oStack.aoFrames) == 0:
+    return oBugReport;
+  for (sBugTypeId, txTranslation) in dtxTranslations.items():
+    (sBugDescription, sSecurityImpact, aasStackTopFrameAddresses) = txTranslation;
     # See if we have a matching stack top:
     for asStackTopFrameAddresses in aasStackTopFrameAddresses:
       uFrameIndex = 0;
       for sStackTopFrameAddress in asStackTopFrameAddresses:
-        if uFrameIndex >= len(oErrorReport.oStack.aoFrames):
+        if uFrameIndex >= len(oBugReport.oStack.aoFrames):
           break; # There are not enough stack frames to match this translation
-        oTopFrame = oErrorReport.oStack.aoFrames[uFrameIndex];
+        oTopFrame = oBugReport.oStack.aoFrames[uFrameIndex];
         uFrameIndex += 1;
         # "*!" means match only the function and not the module.
         if sStackTopFrameAddress[:2] == "*!":
@@ -22,16 +22,16 @@ def cErrorReport_foTranslateError(oErrorReport, dtxTranslations):
           # These frames don't match: stop checking frames
           break;
       else:
-        # All frames matched: translate error:
-        if sErrorTypeId is None:
-          # This is not an error and should be ignored; the application can continue to run:
+        # All frames matched: translate bug:
+        if sBugTypeId is None:
+          # This is not a bug and should be ignored; the application can continue to run:
           return None;
         else:
-          oErrorReport.sErrorTypeId = sErrorTypeId;
-          oErrorReport.sErrorDescription = sErrorDescription;
-          oErrorReport.sSecurityImpact = sSecurityImpact;
+          oBugReport.sBugTypeId = sBugTypeId;
+          oBugReport.sBugDescription = sBugDescription;
+          oBugReport.sSecurityImpact = sSecurityImpact;
           # And hide all the matched frames as they are irrelevant
-          for oFrame in oErrorReport.oStack.aoFrames[:uFrameIndex]:
+          for oFrame in oBugReport.oStack.aoFrames[:uFrameIndex]:
             oFrame.bIsHidden = True;
-          return oErrorReport;
-  return oErrorReport;
+          return oBugReport;
+  return oBugReport;

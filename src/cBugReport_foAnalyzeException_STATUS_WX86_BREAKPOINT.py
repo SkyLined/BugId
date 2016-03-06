@@ -1,5 +1,5 @@
-from cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT import cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT;
+from cBugReport_foAnalyzeException_STATUS_BREAKPOINT import cBugReport_foAnalyzeException_STATUS_BREAKPOINT;
 
-def cErrorReport_foSpecialErrorReport_STATUS_WX86_BREAKPOINT(oErrorReport, oCdbWrapper):
-  return cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT(oErrorReport, oCdbWrapper);
+def cBugReport_foAnalyzeException_STATUS_WX86_BREAKPOINT(oBugReport, oCdbWrapper):
+  return cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper);
 

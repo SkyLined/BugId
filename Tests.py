@@ -4,7 +4,7 @@ sBaseFolderPath = os.path.dirname(__file__);
 sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
 from cBugId import cBugId;
 from sOSISA import sOSISA;
-from cErrorReport_foSpecialErrorReport_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 from fsCreateFileName import fsCreateFileName;
 
 bDebugStartFinish = False;
@@ -12,9 +12,9 @@ bDebugIO = False;
 uSequentialTests = 32; # >32 will probably not work.
 
 dxBugIdConfig = dxConfig["BugId"];
-if bDebugIO:
-  dxBugIdConfig["bOutputStdIO"] = True;
-dxBugIdConfig["bOutputStdErr"] = False;
+dxBugIdConfig["bOutputStdIn"] = \
+    dxBugIdConfig["bOutputStdOut"] = \
+    dxBugIdConfig["bOutputStdErr"] = bDebugIO;
 dxBugIdConfig["bOutputProcesses"] = False;
 dxBugIdConfig["uReserveRAM"] = 1024; # Simply test if reserving RAM works, not actually reserve any useful amount.
 
@@ -33,14 +33,15 @@ oOutputLock = threading.Lock();
 # If you see weird exceptions, try lowering the number of parallel tests:
 oConcurrentTestsSemaphore = threading.Semaphore(uSequentialTests);
 class cTest(object):
-  def __init__(oTest, sISA, asCommandLineArguments, srBugId):
+  def __init__(oTest, sISA, asCommandLineArguments, sExpectedBugTypeId):
     oTest.sISA = sISA;
     oTest.asCommandLineArguments = asCommandLineArguments;
-    oTest.srBugId = srBugId;
+    oTest.sExpectedBugTypeId = sExpectedBugTypeId;
     oTest.bInternalException = False;
+    oTest.bHasOutputLock = False;
   
   def __str__(oTest):
-    return "%s =%s=> %s" % (" ".join(oTest.asCommandLineArguments), oTest.sISA, oTest.srBugId);
+    return "%s =%s=> %s" % (" ".join(oTest.asCommandLineArguments), oTest.sISA, oTest.sExpectedBugTypeId);
   
   def fRun(oTest):
     global bFailed, oOutputLock;
@@ -48,9 +49,11 @@ class cTest(object):
     sBinary = dsBinaries_by_sISA[oTest.sISA];
     asApplicationCommandLine = [sBinary] + oTest.asCommandLineArguments;
     if bDebugStartFinish:
-      oOutputLock.acquire();
+      oOutputLock and oOutputLock.acquire();
+      oTest.bHasOutputLock = True;
       print "@ Started %s" % oTest;
-      oOutputLock.release();
+      oOutputLock and oOutputLock.release();
+      oTest.bHasOutputLock = False;
     try:
       oTest.oBugId = cBugId(
         asApplicationCommandLine = asApplicationCommandLine,
@@ -61,48 +64,54 @@ class cTest(object):
     except Exception, oException:
       if not bFailed:
         bFailed = True;
-        oOutputLock.acquire();
+        oOutputLock and oOutputLock.acquire();
+        oTest.bHasOutputLock = True;
         print "- %s" % oTest;
         print "    => Exception: %s" % oException;
-        oOutputLock.release();
+        oOutputLock and oOutputLock.release();
+        oTest.bHasOutputLock = False;
   
   def fWait(oTest):
     hasattr(oTest, "oBugId") and oTest.oBugId.fWait();
   
   def fFinished(oTest):
     if bDebugStartFinish:
-      oOutputLock.acquire();
+      oOutputLock and oOutputLock.acquire();
+      oTest.bHasOutputLock = True;
       print "@ Finished %s" % oTest;
-      oOutputLock.release();
+      oOutputLock and oOutputLock.release();
+      oTest.bHasOutputLock = False;
     oConcurrentTestsSemaphore.release();
   
-  def fFinishedHandler(oTest, oErrorReport):
+  def fFinishedHandler(oTest, oBugReport):
     global bFailed, oOutputLock;
     bThisTestFailed = False;
     if not bFailed:
-      oOutputLock.acquire();
-      if oTest.srBugId:
-        if not oErrorReport:
+      oOutputLock and oOutputLock.acquire();
+      oTest.bHasOutputLock = True;
+      if oTest.sExpectedBugTypeId:
+        if not oBugReport:
           print "- %s" % oTest;
-          print "    => got no error";
+          print "    => got no bug report";
           bThisTestFailed = bFailed = True;
-        elif not re.match("^([0-9A-F_#]{2})+ (%s) .+\.exe!.*$" % re.escape(oTest.srBugId), oErrorReport.sId):
+        elif not oTest.sExpectedBugTypeId == oBugReport.sBugTypeId:
           print "- %s" % oTest;
-          print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
+          print "    => %s (%s)" % (oBugReport.sId, oBugReport.sBugDescription);
           bThisTestFailed = bFailed = True;
         else:
           print "+ %s" % oTest;
-      elif oErrorReport:
+      elif oBugReport:
         print "- %s" % oTest;
-        print "    => %s (%s)" % (oErrorReport.sId, oErrorReport.sErrorDescription);
+        print "    => %s (%s)" % (oBugReport.sId, oBugReport.sBugDescription);
         bThisTestFailed = bFailed = True;
       else:
         print "+ %s" % oTest;
       if bThisTestFailed:
         print "    Command line: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
-      oOutputLock.release();
+      oOutputLock and oOutputLock.release();
+      oTest.bHasOutputLock = False;
       if dxConfig["bSaveTestReports"]:
-        sFileNameBase = fsCreateFileName("%s = %s" % (oTest, oErrorReport.sId));
+        sFileNameBase = fsCreateFileName("%s = %s" % (oTest, oBugReport.sId));
         # File name may be too long, keep trying to save it with a shorter name or output an error if that's not possible.
         while len(sFileNameBase) > 0:
           sFilePath = os.path.join(os.path.dirname(__file__), "Test reports", "%s.html" % sFileNameBase);
@@ -112,25 +121,32 @@ class cTest(object):
             sFileNameBase = sFileNameBase[:-1];
             continue;
           try:
-            oFile.write(oErrorReport.sHTMLDetails);
+            oFile.write(oBugReport.sDetailsHTML);
           finally:
             oFile.close();
           break;
         else:
-          oOutputLock.acquire();
-          print "  - Error report cannot be saved";
+          oOutputLock and oOutputLock.acquire();
+          oTest.bHasOutputLock = True;
+          print "  - Bug report cannot be saved";
           bFailed = True;
-          oOutputLock.release();
+          oOutputLock and oOutputLock.release();
+          oTest.bHasOutputLock = False;
     oTest.fFinished();
+    oTest.bHandlingResult = False;
   
   def fInternalExceptionHandler(oTest, oException):
     global bFailed;
     oTest.fFinished();
     if not bFailed:
-      oOutputLock.acquire();
+      # Exception in fFinishedHandler can cause this function to be executed with lock still in place.
+      if not oTest.bHasOutputLock:
+        oOutputLock and oOutputLock.acquire();
+        oTest.bHasOutputLock = True;
       bFailed = True;
       print "@ Exception in %s: %s" % (oTest, oException);
-      oOutputLock.release();
+      oOutputLock and oOutputLock.release();
+      oTest.bHasOutputLock = False;
       raise;
 
 if __name__ == "__main__":

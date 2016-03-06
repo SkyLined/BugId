@@ -1,4 +1,4 @@
-# Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
+# Hide some functions at the top of the stack that are merely helper functions and not relevant to the bug:
 asHiddenTopFrames = [
   "ntdll.dll!KiUserExceptionDispatcher",
   "ntdll.dll!LdrpValidateUserCallTarget",
@@ -40,8 +40,8 @@ dsFastFailErrorCodes = {
   25: ("DLoadProt",     "FAST_FAIL_DLOAD_PROTECTION_FAILURE",                         "Potentially exploitable security issue"),
   26: ("ExtCall",       "FAST_FAIL_UNSAFE_EXTENSION_CALL",                            "Potentially exploitable security issue"),
 };
-# Some fast fail exceptions may indicate other errors:
-ddtxErrorTranslations_by_sFastFailCodeId = {
+# Some fast fail exceptions may indicate other bugs:
+ddtxBugTranslations_by_sFastFailCodeId = {
   "AppExit": {
     "PureCall": (
       "Pure virtual function call (R6025)",
@@ -61,7 +61,7 @@ ddtxErrorTranslations_by_sFastFailCodeId = {
       None,
       None,
       [
-        [ # Edge - error which appears every now and then, that I think can be ignored.
+        [ # Edge - these appear every now and then, I think they can safely be ignored.
           "EMODEL.dll!wil::details::ReportFailure",
           "EMODEL.dll!wil::details::ReportFailure_Hr",
           "EMODEL.dll!wil::details::in1diag3::FailFast_Hr",
@@ -73,26 +73,26 @@ ddtxErrorTranslations_by_sFastFailCodeId = {
 };
 
 
-def cErrorReport_foSpecialErrorReport_STATUS_STACK_BUFFER_OVERRUN(oErrorReport, oCdbWrapper):
-  oException = oErrorReport.oException;
+def cBugReport_foAnalyzeException_STATUS_STACK_BUFFER_OVERRUN(oBugReport, oCdbWrapper):
+  oException = oBugReport.oException;
   # Parameter[0] = fail fast code
   assert len(oException.auParameters) == 1, \
       "Unexpected number of fail fast exception parameters (%d vs 1)" % len(oException.auParameters);
   uFastFailCode = oException.auParameters[0];
   sFastFailCodeId, sFastFailCodeDescription, sSecurityImpact = dsFastFailErrorCodes.get( \
       uFastFailCode, ("Unknown", "unknown code", "May be a security issue"));
-  sOriginalErrorTypeId = oErrorReport.sErrorTypeId;
-  dtxErrorTranslations = ddtxErrorTranslations_by_sFastFailCodeId.get(sFastFailCodeId);
-  if dtxErrorTranslations:
-    oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  # If the error was not translated, continue to treat it as a fast fail call:
-  if oErrorReport and oErrorReport.sErrorTypeId == sOriginalErrorTypeId:
-    oErrorReport.sErrorTypeId += ":%s" % sFastFailCodeId;
+  sOriginalBugTypeId = oBugReport.sBugTypeId;
+  dtxBugTranslations = ddtxBugTranslations_by_sFastFailCodeId.get(sFastFailCodeId);
+  if dtxBugTranslations:
+    oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  # If the bug was not translated, continue to treat it as a fast fail call:
+  if oBugReport and oBugReport.sBugTypeId == sOriginalBugTypeId:
+    oBugReport.sBugTypeId += ":%s" % sFastFailCodeId;
     if sFastFailCodeDescription.startswith("FAST_FAIL_"):
-      oErrorReport.sErrorDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
+      oBugReport.sBugDescription = "A critical issue was detected (code %X, fail fast code %d: %s)" % \
           (oException.uCode, uFastFailCode, sFastFailCodeDescription);
     else:
-      oErrorReport.sErrorDescription = sFastFailCodeDescription;
-    oErrorReport.sSecurityImpact = sSecurityImpact;
-    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport;
+      oBugReport.sBugDescription = sFastFailCodeDescription;
+    oBugReport.sSecurityImpact = sSecurityImpact;
+    oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oBugReport;

@@ -1,5 +1,5 @@
-# Some breakpoints may indicate an out-of-memory error, heap corruption, or no error at all:
-dtxErrorTranslations = {
+# Some breakpoints may indicate an out-of-memory bug, heap corruption, or no bug at all:
+dtxBugTranslations = {
   "OOM": (
     "A breakpoint was triggered because the program was unable to allocate enough memory",
     None,
@@ -95,7 +95,7 @@ dtxErrorTranslations = {
   ),
 };
 
-# Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
+# Hide some functions at the top of the stack that are merely helper functions and not relevant to the bug:
 asHiddenTopFrames = [
   # Functions that are used to trigger a breakpoint:
   "kernel32.dll!DebugBreak",
@@ -252,8 +252,8 @@ asHiddenTopFrames = [
   "xul.dll!std::vector<...>::_Reallocate",
   "xul.dll!std::vector<...>::_Reserve",
 ];
-def cErrorReport_foSpecialErrorReport_STATUS_BREAKPOINT(oErrorReport, oCdbWrapper):
-  oErrorReport = oErrorReport.foTranslateError(dtxErrorTranslations);
-  if oErrorReport:
-    oErrorReport.oStack.fHideTopFrames(asHiddenTopFrames);
-  return oErrorReport;
+def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper):
+  oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  if oBugReport:
+    oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  return oBugReport;
