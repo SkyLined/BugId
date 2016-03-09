@@ -15,7 +15,8 @@ class cStack(object):
         # or stop hiding frames if it should not be hidden.
         break;
   
-  def fCreateAndAddStackFrame(oStack, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset):
+  def fCreateAndAddStackFrame(oStack, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+      oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber):
     # frames must be created in order:
     assert uNumber == len(oStack.aoFrames), \
         "Unexpected frame number %d vs %d" % (uNumber, len(oStack.aoFrames));
@@ -25,7 +26,9 @@ class cStack(object):
     if uNumber == uMaxStackFramesCount - 1:
       oStack.bPartialStack = True; # We leave the last one out so we can truely say there are more.
     else:
-      oStack.aoFrames.append(cStackFrame(uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset));
+      oStackFrame = cStackFrame(uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+          oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber)
+      oStack.aoFrames.append(oStackFrame);
     
   @classmethod
   def foCreateFromAddress(cStack, oCdbWrapper, pAddress, uSize):
@@ -48,7 +51,8 @@ class cStack(object):
           r"\(Inline(?: Function)?\)" r"\s+"    #   "(Inline" [" Function"] ")" whitespace
           r"\-{8}(?:`\-{8})?" r"\s+"            #   "--------" [`--------] whitespace
         r")"                                    # }
-        "(.+)"                                  # Symbol or address
+        r"(.+?)"                                # Symbol or address
+        r"(?: \[(.+) @ (\d+)\])?"               # [ "[" source_file_path " @ " line_number "]" ]
       ), sLine, re.I);
       assert oMatch, "Unknown stack output: %s" % sLine;
       sSymbolOrAddress = oMatch.group(1);
@@ -57,7 +61,9 @@ class cStack(object):
         sUnloadedModuleFileName, oModule, uModuleOffset,
         oFunction, uFunctionOffset
       ) = oCdbWrapper.ftxSplitSymbolOrAddress(sSymbolOrAddress, doModules_by_sCdbId);
-      oStack.fCreateAndAddStackFrame(uFrameNumber, sSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset);
+      uSourceFileLineNumber = sSourceFileLineNumber and long(sSourceFileLineNumber);
+      oStack.fCreateAndAddStackFrame(uFrameNumber, sSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, \
+          uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber);
       if not oCdbWrapper.bCdbRunning: return None;
       uFrameNumber += 1;
     return oStack;
@@ -104,17 +110,20 @@ class cStack(object):
             r"\(Inline(?: Function)?\)" r"\s+"  #   "(Inline" [" Function"] ")" whitespace
             r"\-{8}(?:`\-{8})?" r"\s+"          #   "--------" [`--------] whitespace
           r")"                                  # }
-          r"(.+)"                               # Symbol or address
+          r"(.+?)"                              # Symbol or address
+        r"(?: \[(.+) @ (\d+)\])?"               # [ "[" source_file_path " @ " line_number "]" ]
         ), sLine, re.I);
         assert oMatch, "Unknown stack output: %s\r\n%s" % (repr(sLine), "\r\n".join(asStack));
-        (sFrameNumber, sSymbolOrAddress) = oMatch.groups();
+        (sFrameNumber, sSymbolOrAddress, sSourceFilePath, sSourceFileLineNumber) = oMatch.groups();
         assert uFrameNumber == int(sFrameNumber, 16), "Unexpected frame number: %s vs %d" % (sFrameNumber, uFrameNumber);
         (
           uAddress,
           sUnloadedModuleFileName, oModule, uModuleOffset,
           oFunction, uFunctionOffset
         ) = oCdbWrapper.ftxSplitSymbolOrAddress(sSymbolOrAddress, doModules_by_sCdbId);
-        oStack.fCreateAndAddStackFrame(uFrameNumber, sSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset);
+        uSourceFileLineNumber = sSourceFileLineNumber and long(sSourceFileLineNumber);
+        oStack.fCreateAndAddStackFrame(uFrameNumber, sSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, \
+            uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber);
         if not oCdbWrapper.bCdbRunning: return None;
         uFrameNumber += 1;
     return oStack;

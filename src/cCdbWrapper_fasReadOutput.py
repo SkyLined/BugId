@@ -1,6 +1,5 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
-from mHTML import fsHTMLEncode;
 
 def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False):
   sLine = "";
@@ -20,20 +19,9 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
           # chance exceptions.
           pass; 
         else:
-          if bIsRelevantIO:
+          if oCdbWrapper.bGetDetailsHTML and bIsRelevantIO:
             sClass = bMayContainApplicationOutput and "CDBOrApplicationStdOut" or "CDBStdOut";
-            for (srSourceFilePath, sURLTemplate) in oCdbWrapper.dsURLTemplate_by_srSourceFilePath.items():
-              oMatch = re.search(srSourceFilePath, sLine);
-              if oMatch:
-                sBefore = sLine[:oMatch.start()];
-                sPath = oMatch.group(0);
-                sURL = (sURLTemplate % oMatch.groupdict()).replace("\\", "/");
-                sAfter = sLine[oMatch.end():];
-                sLineHTML = "<span class=\"%s\">%s<a target=\"_blank\" href=\"%s\">%s</a>%s</span><br/>" % \
-                    (sClass, fsHTMLEncode(sBefore), sURL, fsHTMLEncode(sPath), fsHTMLEncode(sAfter));
-                break;
-            else:
-              sLineHTML = "<span class=\"%s\">%s</span><br/>" % (sClass, fsHTMLEncode(sLine));
+            sLineHTML = "<span class=\"%s\">%s</span><br/>" % (sClass, oCdbWrapper.fsHTMLEncode(sLine));
             # Add the line to the current block of I/O
             oCdbWrapper.asCdbStdIOBlocksHTML[-1] += sLineHTML;
             # Optionally add the line to the important output
@@ -51,8 +39,9 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
         oCdbWrapper.sCurrentISA = oPromptMatch.group(1) and "x86" or oCdbWrapper.sCdbISA;
         if dxBugIdConfig["bOutputStdOut"]:
           print "cdb>%s" % repr(sLine)[1:-1];
-        # The prompt is stored in a new block of I/O
-        oCdbWrapper.asCdbStdIOBlocksHTML.append("<span class=\"CDBPrompt\">%s</span>" % fsHTMLEncode(sLine));
+        if oCdbWrapper.bGetDetailsHTML:
+          # The prompt is stored in a new block of I/O
+          oCdbWrapper.asCdbStdIOBlocksHTML.append("<span class=\"CDBPrompt\">%s</span>" % oCdbWrapper.fsHTMLEncode(sLine));
         return asLines;
   oCdbWrapper.bCdbRunning = False;
   return None;

@@ -2,7 +2,8 @@ import hashlib, math;
 from dxBugIdConfig import dxBugIdConfig;
 
 class cStackFrame(object):
-  def __init__(oStackFrame, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset):
+  def __init__(oStackFrame, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+      oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber):
     oStackFrame.uNumber = uNumber;
     oStackFrame.sCdbSource = sCdbSource;
     oStackFrame.uAddress = uAddress;
@@ -11,6 +12,8 @@ class cStackFrame(object):
     oStackFrame.uModuleOffset = uModuleOffset;
     oStackFrame.oFunction = oFunction;
     oStackFrame.uFunctionOffset = uFunctionOffset;
+    oStackFrame.sSourceFilePath = sSourceFilePath;
+    oStackFrame.uSourceFileLineNumber = uSourceFileLineNumber;
     oStackFrame.bIsHidden = False; # Set to true if this frame should be hidden because it is not relevant.
     if oFunction:
       oStackFrame.sAddress = oFunction.sName;

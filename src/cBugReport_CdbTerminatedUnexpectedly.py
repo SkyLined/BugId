@@ -1,4 +1,4 @@
-from mHTML import sDetailsHTMLTemplate, fsHTMLEncode;
+from sDetailsHTMLTemplate import sDetailsHTMLTemplate;
 
 class cBugReport_CdbTerminatedUnexpectedly(object):
   def __init__(oBugReport, oCdbWrapper, uExitCode):
@@ -22,11 +22,11 @@ class cBugReport_CdbTerminatedUnexpectedly(object):
     del oCdbWrapper.asHTMLCdbStdIOBlocks;
     # Create HTML details
     oBugReport.sHTMLDetails = sDetailsHTMLTemplate % {
-      "sId": fsHTMLEncode(oBugReport.sId),
-      "sBugDescription": fsHTMLEncode(oBugReport.sBugDescription),
-      "sBugLocation": fsHTMLEncode(oBugReport.sBugLocation or "Unknown"),
+      "sId": oCdbWrapper.fsHTMLEncode(oBugReport.sId),
+      "sBugDescription": oCdbWrapper.fsHTMLEncode(oBugReport.sBugDescription),
+      "sBugLocation": oCdbWrapper.fsHTMLEncode(oBugReport.sBugLocation or "Unknown"),
       "sSecurityImpact": oBugReport.sSecurityImpact and \
-            '<span class="SecurityImpact">%s</span>' % fsHTMLEncode(oBugReport.sSecurityImpact) or "None",
+            '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "None",
       "sOptionalBlocks": "",
       "sCdbStdIO": sCdbStdIOHTML,
     };

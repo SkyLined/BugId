@@ -12,6 +12,7 @@ from cCdbWrapper_fiEvaluateExpression import cCdbWrapper_fiEvaluateExpression;
 from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess;
 from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
 from cCdbWrapper_ftxSplitSymbolOrAddress import cCdbWrapper_ftxSplitSymbolOrAddress;
+from cCdbWrapper_fsHTMLEncode import cCdbWrapper_fsHTMLEncode;
 from dxBugIdConfig import dxBugIdConfig;
 from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
@@ -25,6 +26,9 @@ class cCdbWrapper(object):
     dsURLTemplate_by_srSourceFilePath = {},
     rImportantStdOutLines = None,
     rImportantStdErrLines = None,
+    bIgnoreFirstChanceBreakpoints = False,
+    bEnableSourceCodeSupport = True,
+    bGetDetailsHTML = False,
     fApplicationRunningCallback = None,
     fExceptionDetectedCallback = None,
     fFinishedCallback = None,
@@ -33,6 +37,8 @@ class cCdbWrapper(object):
     oCdbWrapper.dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath;
     oCdbWrapper.rImportantStdOutLines = rImportantStdOutLines;
     oCdbWrapper.rImportantStdErrLines = rImportantStdErrLines;
+    oCdbWrapper.bIgnoreFirstChanceBreakpoints = bIgnoreFirstChanceBreakpoints;
+    oCdbWrapper.bGetDetailsHTML = bGetDetailsHTML;
     oCdbWrapper.fApplicationRunningCallback = fApplicationRunningCallback;
     oCdbWrapper.fExceptionDetectedCallback = fExceptionDetectedCallback;
     oCdbWrapper.fFinishedCallback = fFinishedCallback;
@@ -62,6 +68,8 @@ class cCdbWrapper(object):
     );
     # Get the command line (without starting/attaching to a process)
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
+    if bEnableSourceCodeSupport:
+      asCommandLine += ["-lines"];
     if sSymbolsPath:
       asCommandLine += ["-y", sSymbolsPath];
     oCdbWrapper.auProcessIds = [];
@@ -84,12 +92,14 @@ class cCdbWrapper(object):
       print "* Starting %s" % " ".join(asCommandLine);
     # Initialize some variables
     oCdbWrapper.sCurrentISA = None; # During exception handling, this is set to the ISA for the code that caused it.
-    oCdbWrapper.asCdbStdIOBlocksHTML = [""]; # Logs stdin/stdout/stderr for the cdb process, grouped by executed command.
+    if bGetDetailsHTML:
+      oCdbWrapper.asCdbStdIOBlocksHTML = [""]; # Logs stdin/stdout/stderr for the cdb process, grouped by executed command.
     oCdbWrapper.oBugReport = None; # Set to a bug report if a bug was detected in the application
     oCdbWrapper.uLastProcessId = None; # Set to the id of the last process to be reported as terminated by cdb.
     oCdbWrapper.bCdbRunning = True; # Set to False after cdb terminated, used to terminate the debugger thread.
     oCdbWrapper.bCdbWasTerminatedOnPurpose = False; # Set to True when cdb is terminated on purpose, used to detect unexpected termination.
-    oCdbWrapper.sImportantOutputHTML = ""; # Lines from stdout/stderr that are marked as potentially important to understanding the bug.
+    if bGetDetailsHTML:
+      oCdbWrapper.sImportantOutputHTML = ""; # Lines from stdout/stderr that are marked as potentially important to understanding the bug.
     oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
         stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
     # Create a thread that interacts with the debugger to debug the application
@@ -172,3 +182,6 @@ class cCdbWrapper(object):
   
   def ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules_by_sCdbId):
     return cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules_by_sCdbId);
+  
+  def fsHTMLEncode(oCdbWrapper, sLine):
+    return cCdbWrapper_fsHTMLEncode(oCdbWrapper, sLine);

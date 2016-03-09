@@ -1,11 +1,15 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
-from mHTML import fsHTMLEncode;
+from sBlockHTMLTemplate import sBlockHTMLTemplate;
 
 # Hide some functions at the top of the stack that are not relevant to the bug:
 asHiddenTopFramesForReadAndWriteAVs = [ # Note: matches are case insensitive
+  # A bad pointer can cause an exception in a memcpy. The real problem is not in that function.
   "mshtml.dll!memcpy",
   "msvcrt.dll!memcpy",
+  # A bad function pointer can cause an exception in CFG code that checks it. The real problem is not in that function.
+  "ntdll.dll!LdrpValidateUserCallTarget",
+  "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
 ];
 # Some access violations may not be a bug:
 ddtxBugTranslations = {
@@ -334,11 +338,14 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
             (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
       else:
         raise NotImplemented("NOT REACHED");
-      oBugReport.sMemoryHTML += (
-        (oBugReport.sMemoryHTML and "<hr/>" or "") +
-        "<span class=\"important\">Page heap report for address 0x%X:</span><br/>" % uAddress +
-        "<br/>".join([fsHTMLEncode(s) for s in asPageHeapReport])
-      );
+      sBLockHTML = sBlockHTMLTemplate % {
+        "sName": "Page heap",
+        "sContent": (
+          "<h2 class=\"SubHeader\">Page heap report for address 0x%X:</h2>" % uAddress +
+          "<br/>".join([oCdbWrapper.fsHTMLEncode(s) for s in asPageHeapReport])
+        )
+      };
+      oBugReport.asExceptionSpecificBlocksHTML.append(sBLockHTML);
     else:
       sAddressId = "Arbitrary";
       sBugDescription = "Access violation while %s memory at 0x%X" % (sViolationTypeDescription, uAddress);

@@ -8,6 +8,47 @@ from dxConfig import dxConfig;
 from cBugId import cBugId;
 from fsCreateFileName import fsCreateFileName;
 
+# Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
+# be used if the keyword is provided as the command line by the user:
+sURL = "http://%s:28876/" % os.getenv("COMPUTERNAME");
+sProgramFilesPath = os.getenv("ProgramFiles");
+sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
+sProgramFilesPath_x64 = os.getenv("ProgramW6432");
+gasApplicationCommandLine_by_sKnownApplicationKeyword = {
+  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, sURL, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), sURL, "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
+  "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, sURL],
+  "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64, sURL],
+  "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, sURL],
+};
+# Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
+# links to an online source repository:
+dxMozillaCentralSourceURLMappings = {
+    # absolute file path                                                  # relative file path    # separator        # line number
+  r"c:[\\/]builds[\\/]moz2_slave[\\/][^\\/]+[\\/]build[\\/](?:src[\\/])?" r"(?P<path>[^:]+\.\w+)" r"(:| @ |, line )" r"(?P<lineno>\d+)":
+      "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s",
+}
+gdsURLTemplate_by_srSourceFilePath_by_sKnownApplicationKeyword = {
+  "firefox": dxMozillaCentralSourceURLMappings,
+  "nightly": dxMozillaCentralSourceURLMappings,
+};
+# Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
+# HTML for any detected bug.
+grImportantStdOutLines_by_sKnownApplicationKeyword = {};
+grImportantStdErrLines_by_sKnownApplicationKeyword = {
+  "nightly": re.compile("^((\?h)+: C)*(%s)$" % "|".join([
+    r"Assertion failure: .*",
+    r"Hit MOZ_CRASH: .*",
+    r"\[Child \w+\] ###!!!ABORT: .*",
+  ])),
+};
+# Some applications throw breakpoint exceptions when assertions fail. These can be ignored in order to detect more serious issues.
+gbIgnoreFirstChanceBreakpoints_by_sKnownApplicationKeyword = {
+  "nightly": False, # Oddly enough, an assert will trigger a breakpoint and then try everything it possibly can to kill the process.
+                    # This effectively prevents us from continuing through the assert. I've asked for this to be changed.
+};
+
 if __name__ == "__main__":
   asArguments = sys.argv[1:];
   if len(asArguments) == 0:
@@ -61,18 +102,22 @@ if __name__ == "__main__":
         dxConfigGroup[sSettingName] = xValue;
     asArguments.pop(0);
   asApplicationCommandLine = len(asArguments) and asArguments or None;
-  if asApplicationCommandLine and len(asApplicationCommandLine) == 1:
-    sURL = "http://%s:28876/" % os.getenv("COMPUTERNAME");
-    sProgramFilesPath = os.getenv("ProgramFiles");
-    sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
-    sProgramFilesPath_x64 = os.getenv("ProgramW6432");
-    asApplicationCommandLine = {
-      "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-      "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, sURL, "--no-remote"],
-      "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, sURL],
-      "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64, sURL],
-      "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, sURL],
-    }.get(asApplicationCommandLine[0].lower(), asApplicationCommandLine)
+  # Rather than a command line, a known application keyword can be provided:
+  sKnownApplicationKeyword = asApplicationCommandLine and len(asApplicationCommandLine) == 1 and asApplicationCommandLine[0].lower() or None; 
+  if sKnownApplicationKeyword in gasApplicationCommandLine_by_sKnownApplicationKeyword:
+    # Translate known application keyword to its command line:
+    asApplicationCommandLine = gasApplicationCommandLine_by_sKnownApplicationKeyword[sKnownApplicationKeyword];
+    # Get source file path to URL translation rules for known application:
+    dsURLTemplate_by_srSourceFilePath = gdsURLTemplate_by_srSourceFilePath_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword, {});
+    # Get important stdout/stderr lines rules for known application:
+    rImportantStdOutLines = grImportantStdOutLines_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword);
+    rImportantStdErrLines = grImportantStdErrLines_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword);
+    bIgnoreFirstChanceBreakpoints = gbIgnoreFirstChanceBreakpoints_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword, False);
+  else:
+    dsURLTemplate_by_srSourceFilePath = {};
+    rImportantStdOutLines = None;
+    rImportantStdErrLines = None;
+    bIgnoreFirstChanceBreakpoints = False;
   
   oFinishedEvent = threading.Event();
   
@@ -99,6 +144,11 @@ if __name__ == "__main__":
     asApplicationCommandLine = asApplicationCommandLine,
     auApplicationProcessIds = auApplicationProcessIds,
     asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
+    dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
+    rImportantStdOutLines = rImportantStdOutLines,
+    rImportantStdErrLines = rImportantStdErrLines,
+    bIgnoreFirstChanceBreakpoints = bIgnoreFirstChanceBreakpoints,
+    bGetDetailsHTML = dxConfig["bSaveReport"],
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,
   );
@@ -109,6 +159,8 @@ if __name__ == "__main__":
     print "  Id:               %s" % oBugId.oBugReport.sId;
     print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
     print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
+    if oBugId.oBugReport.sBugSourceLocation:
+      print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
       sFileNameBase = fsCreateFileName("%s %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation));

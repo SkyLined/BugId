@@ -1,9 +1,7 @@
-from mHTML import fsHTMLEncode;
-
-def cBugReport_fbGetBinaryInformationHTML(oBugReport, oCdbWrapper):
+def cBugReport_fsGetBinaryInformationHTML(oBugReport, oCdbWrapper):
   # Get the binary's cdb name for retreiving version information:
   asBinaryCdbNames = oCdbWrapper.fasGetCdbIdsForModuleFileNameInCurrentProcess(oBugReport.sProcessBinaryName);
-  if not oCdbWrapper.bCdbRunning: return False;
+  if not oCdbWrapper.bCdbRunning: return None;
   assert len(asBinaryCdbNames) > 0, "Cannot find binary %s module" % oBugReport.sProcessBinaryName;
   # If the binary is loaded as a module multiple times in the process, the first should be the binary that was
   # executed.
@@ -13,10 +11,10 @@ def cBugReport_fbGetBinaryInformationHTML(oBugReport, oCdbWrapper):
   # Get the id frame's module cdb name for retreiving version information:
   if oBugReport.oTopmostRelevantCodeFrame and oBugReport.oTopmostRelevantCodeFrame.oModule:
     dsGetVersionCdbId_by_sBinaryName[oBugReport.oTopmostRelevantCodeFrame.oModule.sBinaryName] = oBugReport.oTopmostRelevantCodeFrame.oModule.sCdbId;
-  asBinaryInformationHTML = [];
+  sBinaryInformationHTML = "";
   for sBinaryName, sCdbId in dsGetVersionCdbId_by_sBinaryName.items():
     asModuleInformationOutput = oCdbWrapper.fasSendCommandAndReadOutput("lmv m *%s" % sCdbId);
-    if not oCdbWrapper.bCdbRunning: return False;
+    if not oCdbWrapper.bCdbRunning: return None;
     # Sample output:
     # |0:004> lmv M firefox.exe
     # |start             end                 module name
@@ -44,9 +42,11 @@ def cBugReport_fbGetBinaryInformationHTML(oBugReport, oCdbWrapper):
     # |    LegalTrademarks:  Firefox is a Trademark of The Mozilla Foundation.
     # |    Comments:         Firefox is a Trademark of The Mozilla Foundation.
     # The first two lines can be skipped.
-    sBinaryInformationHTML = (
-      "<h2 class=\"SubHeader\">%s</h2>" % fsHTMLEncode(sBinaryName) +
-      "<br/>".join([fsHTMLEncode(s) for s in asModuleInformationOutput[2:]]) # First two lines contain no useful information.
+    sBinaryInformationHTML += (
+      (sBinaryInformationHTML and "<br/><br/>" or "") +
+      (
+        "<h2 class=\"SubHeader\">%s</h2>" % oCdbWrapper.fsHTMLEncode(sBinaryName) +
+        "<br/>".join([oCdbWrapper.fsHTMLEncode(s) for s in asModuleInformationOutput[2:]]) # First two lines contain no useful information.
+      )
     );
-    oBugReport.sBinaryInformationHTML = oBugReport.sBinaryInformationHTML + (oBugReport.sBinaryInformationHTML and "<hr/>" or "") + sBinaryInformationHTML;
-  return True;
+  return sBinaryInformationHTML;

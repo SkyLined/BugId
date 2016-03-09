@@ -1,6 +1,3 @@
-def fsHTMLEncode(sData):
-  return sData.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
-
 sDetailsHTMLTemplate = ("""
 <!doctype html>
 <html>
@@ -23,11 +20,25 @@ sDetailsHTMLTemplate = ("""
         cell-padding: 0;
         cell-spacing: 0;
       }
-      a:link, a:visited {
-        text-decoration: none;
+      ul {
+        padding-left: 2em;
       }
-      a:hover, a:active {
-        text-decoration: underline;
+      a {
+        color: inherit;
+        text-decoration: none;
+        margin-bottom: -1px;
+      }
+      :link {
+        border-bottom: 1px dotted rgba(0,0, 238, 0.25);
+      }
+      :link:hover, :link:active {
+        border-bottom: 1px solid rgba(0,0, 238, 1);
+      }
+      :visited {
+        border-bottom: 1px dotted rgba(85, 26, 139, 0.25);
+      }
+      :visited:hover, :visited:active {
+        border-bottom: 1px solid rgba(85, 26, 139, 1);
       }
       .Block {
         margin: 10pt;
@@ -61,19 +72,18 @@ sDetailsHTMLTemplate = ("""
         font-weight: bold;
       }
       .CDBStdOut {
-        color: #404040;
+        color: grey;
       }
       .CDBOrApplicationStdOut {
         color: black;
       }
-      .CDBStdErr, a.CDBStdErr {
+      .CDBStdErr {
         color: maroon;
       }
       .CDBIgnoredException {
         color: grey;
       }
       .Stack {
-        color: grey;
       }
       .StackIgnored {
         color: silver;
@@ -84,6 +94,15 @@ sDetailsHTMLTemplate = ("""
       }
       .StackNoSymbol {
         font-style: italic;
+      }
+      .StackSource {
+        color: grey;
+      }
+      .DisassemblyAddress {
+        color: grey;
+      }
+      .DisassemblyOpcode {
+        color: grey;
       }
       hr {
         border: dotted black;
@@ -112,14 +131,5 @@ sDetailsHTMLTemplate = ("""
       </div>
     </div>
   </body>
-</html>""").strip();
-
-sBlockHTMLTemplate = """
-    <div class="Block">
-      <h1 class="Header">%(sName)s</h1>
-      <div class="Content">
-        %(sContent)s
-      </div>
-    </div>
-""".lstrip();
-
+</html>
+""").strip("\r\n");
