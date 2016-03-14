@@ -168,8 +168,6 @@ if __name__ == "__main__":
     aoTests.append(cTest(sISA, ["C++"], "C++:cException"));
     aoTests.append(cTest(sISA, ["IntegerDivideByZero"], "IntegerDivideByZero"));
     aoTests.append(cTest(sISA, ["Numbered", "41414141", "42424242"], "0x41414141"));
-    # Specific test to check for ntdll!RaiseException exception address being off-by-one from the stack address:
-    aoTests.append(cTest(sISA, ["Numbered", "80000003", "1"], "Breakpoint"));
     aoTests.append(cTest(sISA, ["IllegalInstruction"], "IllegalInstruction"));
     aoTests.append(cTest(sISA, ["PrivilegedInstruction"], "PrivilegedInstruction"));
     aoTests.append(cTest(sISA, ["StackExhaustion"], "StackExhaustion"));

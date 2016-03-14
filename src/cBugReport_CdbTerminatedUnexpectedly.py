@@ -9,26 +9,24 @@ class cBugReport_CdbTerminatedUnexpectedly(object):
     oBugReport.oException = None;
     oBugReport.oStack = None;
     
-    if oCdbWrapper.bGetDetailsHTML:
-      oBugReport.sImportantOutputHTML = oCdbWrapper.sImportantOutputHTML;
+    oBugReport.sImportantOutputHTML = oCdbWrapper.sImportantOutputHTML;
     oBugReport.sProcessBinaryName = "cdb.exe";
     
     oBugReport.sId = oBugReport.sBugTypeId;
     oBugReport.sStackId = None;
     oBugReport.sBugLocation = None;
     
-    if oCdbWrapper.bGetDetailsHTML:
-      # Turn cdb output into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
-      # command executed.
-      sCdbStdIOHTML = '<hr/>'.join(oCdbWrapper.asCdbStdIOBlocksHTML);
-      del oCdbWrapper.asHTMLCdbStdIOBlocks;
-      # Create HTML details
-      oBugReport.sHTMLDetails = sDetailsHTMLTemplate % {
-        "sId": oCdbWrapper.fsHTMLEncode(oBugReport.sId),
-        "sBugDescription": oCdbWrapper.fsHTMLEncode(oBugReport.sBugDescription),
-        "sBugLocation": oCdbWrapper.fsHTMLEncode(oBugReport.sBugLocation or "Unknown"),
-        "sSecurityImpact": oBugReport.sSecurityImpact and \
-              '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "None",
-        "sOptionalBlocks": "",
-        "sCdbStdIO": sCdbStdIOHTML,
-      };
+    # Turn cdb output into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
+    # command executed.
+    sCdbStdIOHTML = '<hr/>'.join(oCdbWrapper.asCdbStdIOBlocksHTML);
+    del oCdbWrapper.asHTMLCdbStdIOBlocks;
+    # Create HTML details
+    oBugReport.sHTMLDetails = sDetailsHTMLTemplate % {
+      "sId": oCdbWrapper.fsHTMLEncode(oBugReport.sId),
+      "sBugDescription": oCdbWrapper.fsHTMLEncode(oBugReport.sBugDescription),
+      "sBugLocation": oCdbWrapper.fsHTMLEncode(oBugReport.sBugLocation or "Unknown"),
+      "sSecurityImpact": oBugReport.sSecurityImpact and \
+            '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "None",
+      "sOptionalBlocks": "",
+      "sCdbStdIO": sCdbStdIOHTML,
+    };
