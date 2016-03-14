@@ -102,8 +102,6 @@ class cBugReport(object):
         # Do not try to find this address on the stack.
         pass;
       elif oException.uCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
-        # A breakpoint happens at an int 3 instruction, and eip/rip may have been updated to the next instruction.
-        # If the first stack frame is not the same as the exception address, fix this off-by-one:
         oFrame = oStack.aoFrames[0];
         if (
           oFrame.uAddress == uAddress
@@ -115,12 +113,15 @@ class cBugReport(object):
         ):
           pass;
         else:
+          # A breakpoint normally happens at an int 3 instruction, and eip/rip will be updated to the next instruction.
+          # If the same exception code (0x80000003) is raised using ntdll!RaiseException, the address will be
+          # off-by-one, see if this can be fixed:
           if uAddress is not None:
             uAddress -= 1;
           elif uModuleOffset is not None:
             uModuleOffset -= 1;
           elif uFunctionOffset is not None:
-            oFrame.uFunctionOffset -= 1;
+            uFunctionOffset -= 1;
           else:
             raise AssertionError("The first stack frame appears to have no address or offet to adjust.");
           assert (
