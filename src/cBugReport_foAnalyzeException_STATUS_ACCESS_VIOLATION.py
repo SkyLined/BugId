@@ -7,6 +7,7 @@ asHiddenTopFramesForReadAndWriteAVs = [ # Note: matches are case insensitive
   # A bad pointer can cause an exception in a memcpy. The real problem is not in that function.
   "mshtml.dll!memcpy",
   "msvcrt.dll!memcpy",
+  "msvcrt.dll!memcpy_s",
   # A bad function pointer can cause an exception in CFG code that checks it. The real problem is not in that function.
   "ntdll.dll!LdrpValidateUserCallTarget",
   "ntdll.dll!LdrpValidateUserCallTargetBitMapCheck",
