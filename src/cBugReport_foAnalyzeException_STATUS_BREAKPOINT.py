@@ -100,6 +100,7 @@ asHiddenTopFrames = [
   # Functions that are used to trigger a breakpoint:
   "kernel32.dll!DebugBreak",
   "KERNELBASE.dll!DebugBreak",
+  "KERNELBASE.dll!RaiseException",
   "ntdll.dll!DbgBreakPoint",
   "EDGEHTML.dll!Abandonment::AssertionFailed",
   "EDGEHTML.dll!Abandonment::Fail",
