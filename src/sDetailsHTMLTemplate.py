@@ -10,15 +10,19 @@ sDetailsHTMLTemplate = ("""
         padding: 0;
         color: black;
         background: transparent;
-        font-size: 10pt;
+        font-size: 12pt;
         font-family: "Courier New", courier, monospace;
       }
       html {
-        background: silver;
+        background: #F0F0F0;
+      }
+      body {
+        margin: auto;
+        max-width: 80em;
       }
       table {
-        cell-padding: 0;
-        cell-spacing: 0;
+        border-spacing: 0;
+        border-collapse: collapse;
       }
       ul {
         padding-left: 2em;
@@ -41,11 +45,11 @@ sDetailsHTMLTemplate = ("""
         border-bottom: 1px solid rgba(85, 26, 139, 1);
       }
       .Block {
-        margin: 10pt;
-        border-radius: 0 0 30pt 5pt;
-        border: 1pt solid black;
-        background: white;
-        box-shadow: 5pt 5pt 5pt grey;
+        margin: 1em;
+        border: 1px solid rgba(0,0,0, 0.2);
+        border-radius: 0.5em;
+        background-color: white;
+        box-shadow: 1em 1em 1em rgba(0,0,0, 0.05);
       }
       .Header {
         padding: 5pt 10pt 5pt 10pt;
