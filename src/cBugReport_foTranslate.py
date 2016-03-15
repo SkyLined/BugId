@@ -15,10 +15,10 @@ def cBugReport_foTranslate(oBugReport, dtxTranslations):
         if sStackTopFrameAddress[:2] == "*!":
           tsSimplifiedAddress = oTopFrame.sSimplifiedAddress.split("!", 1);
           # Compare the function names:
-          if len(tsSimplifiedAddress) != 2 or tsSimplifiedAddress[1] != sStackTopFrameAddress[2:]:
+          if len(tsSimplifiedAddress) != 2 or tsSimplifiedAddress[1].lower() != sStackTopFrameAddress[2:].lower():
             # These frames don't match: stop checking frames
             break;
-        elif oTopFrame.sSimplifiedAddress != sStackTopFrameAddress:
+        elif oTopFrame.sSimplifiedAddress.lower() != sStackTopFrameAddress.lower():
           # These frames don't match: stop checking frames
           break;
       else:
