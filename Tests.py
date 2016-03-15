@@ -58,6 +58,7 @@ class cTest(object):
       oTest.oBugId = cBugId(
         asApplicationCommandLine = asApplicationCommandLine,
         asSymbolServerURLs = ["http://msdl.microsoft.com/download/symbols"],
+        bGetDetailsHTML = dxConfig["bSaveTestReports"],
         fFinishedCallback = oTest.fFinishedHandler,
         fInternalExceptionCallback = oTest.fInternalExceptionHandler,
       );
