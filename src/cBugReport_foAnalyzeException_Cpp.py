@@ -58,13 +58,13 @@ def cBugReport_foAnalyzeException_Cpp(oBugReport, oCdbWrapper):
       # No symbol information available, just an address
       dtxBugTranslations = ddtxBugTranslations_by_uExceptionCode.get(oException.uCode);
       if dtxBugTranslations:
-        oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+        oBugReport = oBugReport.foTranslate(dtxBugTranslations);
       break;
     sModuleCdbId, sExceptionClassName = sExceptionObjectSymbol.split("!", 1);
     oBugReport.sBugTypeId += ":%s" % sExceptionClassName;
     dtxBugTranslations = ddtxBugTranslations_by_sExceptionCallName.get(sExceptionClassName);
     if dtxBugTranslations:
-      oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+      oBugReport = oBugReport.foTranslate(dtxBugTranslations);
     break;
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);

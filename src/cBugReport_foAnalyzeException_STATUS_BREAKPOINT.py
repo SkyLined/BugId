@@ -253,7 +253,7 @@ asHiddenTopFrames = [
   "xul.dll!std::vector<...>::_Reserve",
 ];
 def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper):
-  oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oBugReport;

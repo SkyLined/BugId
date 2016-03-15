@@ -42,7 +42,7 @@ dtxBugTranslations = {
 def cBugReport_foAnalyzeException_STATUS_FAIL_FAST_EXCEPTION(oBugReport, oCdbWrapper):
   # cdb does not known this exception and reports "Unknown exception (code 0xC0000602)" as the description.
   oBugReport.sBugDescription = "Fail fast exception (code 0x%X)" % oBugReport.oException.uCode;
-  oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+  oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oBugReport;

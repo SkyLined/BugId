@@ -357,7 +357,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
   oBugReport.sSecurityImpact = sSecurityImpact;
   dtxBugTranslations = ddtxBugTranslations.get(oBugReport.sBugTypeId, None);
   if dtxBugTranslations:
-    oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+    oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
   return oBugReport;

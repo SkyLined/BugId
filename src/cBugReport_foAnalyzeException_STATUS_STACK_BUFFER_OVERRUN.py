@@ -84,7 +84,7 @@ def cBugReport_foAnalyzeException_STATUS_STACK_BUFFER_OVERRUN(oBugReport, oCdbWr
   sOriginalBugTypeId = oBugReport.sBugTypeId;
   dtxBugTranslations = ddtxBugTranslations_by_sFastFailCodeId.get(sFastFailCodeId);
   if dtxBugTranslations:
-    oBugReport = oBugReport.foTranslateBug(dtxBugTranslations);
+    oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   # If the bug was not translated, continue to treat it as a fast fail call:
   if oBugReport and oBugReport.sBugTypeId == sOriginalBugTypeId:
     oBugReport.sBugTypeId += ":%s" % sFastFailCodeId;

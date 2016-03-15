@@ -59,7 +59,7 @@ class cBugReport(object):
     oBugReport.sBugLocation = None;
     oBugReport.sBugSourceLocation = None;
   
-  def foTranslateBug(oBugReport, dtxTranslations):
+  def foTranslate(oBugReport, dtxTranslations):
     return cBugReport_foTranslate(oBugReport, dtxTranslations);
   
   def fHideTopStackFrames(oBugReport, dasHiddenFrames_by_sBugTypeIdRegExp):
