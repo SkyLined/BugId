@@ -26,7 +26,7 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
             oCdbWrapper.asCdbStdIOBlocksHTML[-1] += sLineHTML;
             # Optionally add the line to the important output
             if bMayContainApplicationOutput and oCdbWrapper.rImportantStdOutLines and oCdbWrapper.rImportantStdOutLines.match(sLine):
-              oCdbWrapper.asImportantOutputHTML.append(sLineHTML);
+              oCdbWrapper.sImportantOutputHTML += sLineHTML;
           asLines.append(sLine);
       if sChar == "":
         break;
