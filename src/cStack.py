@@ -97,10 +97,12 @@ class cStack(object):
     uFrameNumber = 0;
     for sLine in asStack:
       if not re.match(r"^(?:%s)$" % "|".join([
+        # These warnings and errors are ignored:
         r"WARNING: Frame IP not in any known module\. Following frames may be wrong\.",
         r"WARNING: Stack unwind information not available\. Following frames may be wrong\.",
         r"\*\*\* ERROR: Module load completed but symbols could not be loaded for .*",
         r"\*\*\* WARNING: Unable to verify checksum for .*",
+        r"Unable to read dynamic function table list head",
       ]), sLine):
         oMatch = re.match(r"^\s*%s\s*$" % (
           r"([0-9A-F]+)" r"\s+"                 # (frame_number) whitespace
