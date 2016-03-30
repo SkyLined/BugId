@@ -70,6 +70,10 @@ dtxBugTranslations = {
       ], [
         "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
+      ], [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
       ],
     ],
