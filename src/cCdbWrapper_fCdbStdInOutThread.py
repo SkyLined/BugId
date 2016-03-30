@@ -20,7 +20,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   asIntialCdbOutput = oCdbWrapper.fasReadOutput();
   if not oCdbWrapper.bCdbRunning: return;
   # Turn off prompt information as it is not useful most of the time, but can clutter output.
-  oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow -dis -ea -reg -src -sym", bIsRelevantIO = False);
+  oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis -ea -reg -src -sym", bIsRelevantIO = False);
   if not oCdbWrapper.bCdbRunning: return;
   
   # Exception handlers need to be set up.
