@@ -95,7 +95,7 @@ class cBugReport(object):
     if not oStack.aoFrames:
       # Failed to get stack, use information from exception.
       uFrameNumber = 0;
-      oStack.fCreateAndAddStackFrame(oCdbWrapper, uFrameNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset);
+      oStack.fCreateAndAddStackFrame(uFrameNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset, None, None);
     else:
       if oException.uCode == STATUS_WAKE_SYSTEM_DEBUGGER:
         # This exception does not happen in a particular part of the code, and the exception address is therefore 0.
