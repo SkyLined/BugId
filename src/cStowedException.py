@@ -18,7 +18,7 @@ class cStowedException(object):
   @classmethod
   def foCreate(cSelf, oCdbWrapper, oProcess, pAddresses):
     pFirstAddress = oCdbWrapper.fuEvaluateExpression("poi(0x%X)" % pAddresses);
-    asData = oCdbWrapper.fasSendCommandAndReadOutput("dd /c0xA @@masm(poi(0x%X)) L0xA" % pFirstAddress);
+    asData = oCdbWrapper.fasSendCommandAndReadOutput("dd /c0xA 0x%X L0xA" % pFirstAddress);
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600343%28v=vs.85%29.aspx
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600342%28v=vs.85%29.aspx
     #StowedExceptionInformation = {
