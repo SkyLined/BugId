@@ -9,7 +9,7 @@ def cBugReport_foAnalyzeException_STATUS_STOWED_EXCEPTION(oBugReport, oCdbWrappe
       "Unexpected number of WinRT language exception parameters (%d vs 2)" % len(oException.auParameters);
   pStowedExceptionsAddresses = oException.auParameters[0];
   uStowedExceptionsCount = oException.auParameters[1];
-  assert uStowedExceptionsCount < 1, \
+  assert uStowedExceptionsCount <= 1, \
       "Unexpected number of WinRT language exception stowed exceptions (%d vs 1)" % uStowedExceptionsCount;
   # The stowed exception replaces this exception:
   oBugReport.oException = cStowedException.foCreate(oCdbWrapper, oException.oProcess, pStowedExceptionsAddresses);
