@@ -25,13 +25,15 @@ dtxBugTranslations = {
         "chrome_child.dll!v8::Utils::ApiCheck",
         "chrome_child.dll!v8::internal::V8::FatalProcessOutOfMemory",
       ], [  # Edge
-        "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::OutOfMemory",
+      ], [
+        "chakra.dll!ReportFatalException",
+        "chakra.dll!MarkStack_OOM_fatal_error",
       ], [  # Firefox
         "mozglue.dll!mozalloc_abort",
         "mozglue.dll!mozalloc_handle_oom",
-      ], [  # Firefox
+      ], [
         "mozglue.dll!moz_abort",
         "mozglue.dll!pages_commit",
       ], [
@@ -71,6 +73,10 @@ dtxBugTranslations = {
         "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
+      ], [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::Fail",
       ], [
         "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
