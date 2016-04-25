@@ -22,7 +22,7 @@ dtxBugTranslations = {
     None,
     [
       [ # Edge
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+#        "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::OutOfMemory",
       ],
     ],
@@ -32,8 +32,16 @@ dtxBugTranslations = {
     None,
     [
       [ # Edge
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+#        "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::CheckHRESULT",
+      ],
+      [
+#        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
+      ],
+      [
+#        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::InvalidArguments",
       ],
     ],
   ),
