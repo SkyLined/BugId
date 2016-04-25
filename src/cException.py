@@ -13,7 +13,7 @@ class cException(object):
     oException.sCodeDescription = sCodeDescription;
     oException.asExceptionRecord = asExceptionRecord; # This is here merely to be able to debug issues - it is not used.
     oException.uAddress = None;
-    oException.sAddressSymbol = None;
+    oException.sAddressSymbol = None; # See below
     oException.uFlags = None;
     oException.auParameters = None;
     oException.sDetails = None;
@@ -24,22 +24,96 @@ class cException(object):
   def foGetStack(oException, oCdbWrapper):
     # This is not going to chance, so we can cache it:
     if not hasattr(oException, "oStack"):
-      oException.oStack = cStack.foCreate(oCdbWrapper);
+      oStack = oException.oStack = cStack.foCreate(oCdbWrapper);
+      # Getting the stack loads all symbols, so the "ExceptionAddress" symbol should now be reliable.
+      asExceptionRecord = oCdbWrapper.fasSendCommandAndReadOutput(".exr -1");
+      if not oCdbWrapper.bCdbRunning: return None;
+      for sLine in asExceptionRecord:
+        # "ExceptionAddress:" whitespace address whitespace "(" (symbol) ")" }
+        oExceptionAddressSymbolMatch = re.match(r"ExceptionAddress\:\s+[0-9A-F`]+\s+\((.+)\)", sLine, re.I);
+        if oExceptionAddressSymbolMatch:
+          oException.sAddressSymbol = oExceptionAddressSymbolMatch.group(1);
+          break;
+      # Compare stack with exception information
+      if oException.sAddressSymbol:
+        doModules_by_sCdbId = oCdbWrapper.fdoGetModulesByCdbIdForCurrentProcess();
+        (
+          uAddress,
+          sUnloadedModuleFileName, oModule, uModuleOffset,
+          oFunction, uFunctionOffset
+        ) = oCdbWrapper.ftxSplitSymbolOrAddress(oException.sAddressSymbol, doModules_by_sCdbId);
+        sCdbSource = oException.sAddressSymbol;
+      else:
+        sCdbSource = "%X" % oException.uAddress; # Kinda faking it here :)
+        uAddress = oException.uAddress;
+        sUnloadedModuleFileName, oModule, uModuleOffset = None, None, None;
+        oFunction, uFunctionOffset = None, None;
+      if not oStack.aoFrames:
+        # Failed to get stack, use information from exception.
+        uFrameNumber = 0;
+        oStack.fCreateAndAddStackFrame(uFrameNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset, None, None);
+      else:
+        if oException.uCode == STATUS_WAKE_SYSTEM_DEBUGGER:
+          # This exception does not happen in a particular part of the code, and the exception address is therefore 0.
+          # Do not try to find this address on the stack.
+          pass;
+        elif oException.uCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
+          oFrame = oStack.aoFrames[0];
+          if (
+            oFrame.uAddress == uAddress
+            and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
+            and oFrame.oModule == oModule
+            and oFrame.uModuleOffset == uModuleOffset
+            and oFrame.oFunction == oFunction
+            and oFrame.uFunctionOffset == uFunctionOffset
+          ):
+            pass;
+          else:
+            # A breakpoint normally happens at an int 3 instruction, and eip/rip will be updated to the next instruction.
+            # If the same exception code (0x80000003) is raised using ntdll!RaiseException, the address will be
+            # off-by-one, see if this can be fixed:
+            if uAddress is not None:
+              uAddress -= 1;
+            elif uModuleOffset is not None:
+              uModuleOffset -= 1;
+            elif uFunctionOffset is not None:
+              uFunctionOffset -= 1;
+            else:
+              raise AssertionError("The first stack frame appears to have no address or offet to adjust.");
+            assert (
+              oFrame.uAddress == uAddress
+              and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
+              and oFrame.oModule == oModule
+              and oFrame.uModuleOffset == uModuleOffset
+              and oFrame.oFunction == oFunction
+              and oFrame.uFunctionOffset == uFunctionOffset
+            ), "The first stack frame does not appear to match the exception address: %s vs %s" % (
+              repr((oFrame.uAddress, oFrame.sUnloadedModuleFileName, oFrame.oModule, oFrame.uModuleOffset, oFrame.oFunction, oFrame.uFunctionOffset)),
+              repr((uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset)),
+             );
+        else:
+          # Check that the address where the exception happened is on the stack and hide any frames that appear above it,
+          # as these are not interesting (e.g. ntdll!RaiseException).
+          for oFrame in oStack.aoFrames:
+            if (
+              oFrame.uAddress == uAddress
+              and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
+              and oFrame.oModule == oModule
+              and oFrame.uModuleOffset == uModuleOffset
+              and oFrame.oFunction == oFunction
+              and oFrame.uFunctionOffset == uFunctionOffset
+            ):
+              break;
+            oFrame.bIsHidden = True;
+          else:
+            raise AssertionError("The exception address %s was not found on the stack" % sCdbSource);
     return oException.oStack;
   
   @classmethod
   def foCreate(cException, oCdbWrapper, oProcess, uCode, sCodeDescription):
-    if dxBugIdConfig["bEnhancedSymbolLoading"]:
-      # Turn noisy symbol loading off as it mixes with the stack output and makes it unparsable
-      asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000");
-      if not oCdbWrapper.bCdbRunning: return None;
     asExceptionRecord = oCdbWrapper.fasSendCommandAndReadOutput(".exr -1");
-    oException = cException(oProcess, uCode, sCodeDescription, asExceptionRecord);
     if not oCdbWrapper.bCdbRunning: return None;
-    if dxBugIdConfig["bEnhancedSymbolLoading"]:
-      # Turn noisy symbol loading back on
-      oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000");
-      if not oCdbWrapper.bCdbRunning: return None;
+    oException = cException(oProcess, uCode, sCodeDescription, asExceptionRecord);
     # Sample output:
     # |ExceptionAddress: 00007ff6b0f81204 (Tests_x64!fJMP+0x0000000000000004)
     # |   ExceptionCode: c0000005 (Access violation)
@@ -61,7 +135,8 @@ class cException(object):
         uValue = long(sValue.replace("`", ""), 16);
         if sName == "ExceptionAddress":
           oException.uAddress = uValue;
-          oException.sAddressSymbol = sDetails;
+          # Unfortnately, symbols may not have been loaded, so the exception address symbols is unreliable.
+          # oException.sAddressSymbol = sDetails;
         elif sName == "ExceptionCode":
           assert uValue == uCode, \
               "Exception record has an unexpected ExceptionCode value (0x%08X vs 0x%08X)\r\n%s" % \
