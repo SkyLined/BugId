@@ -173,6 +173,9 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
     # 0x7FFFFFFFFFFF. A work-around is to get the address from the last instruction output, which can be retreived by
     # asking cdb to output disassembly and address after each command:
     oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis +ea;", bIsRelevantIO = False);
+    # Do this twice in case the first time requires loading symbols, which can output junk that makes parsing ouput difficult.
+    if not oCdbWrapper.bCdbRunning: return None;
+    oCdbWrapper.fasSendCommandAndReadOutput("~s");
     if not oCdbWrapper.bCdbRunning: return None;
     asLastInstructionAndAddress = oCdbWrapper.fasSendCommandAndReadOutput("~s");
     if not oCdbWrapper.bCdbRunning: return None;
