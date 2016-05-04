@@ -156,6 +156,7 @@ if __name__ == "__main__":
   
   aoTests = [];
   for sISA in asTestISAs:
+    aoTests.append(cTest(sISA, [], None)); # No exceptions, just a clean program exit.
     sMinusOne = {"x86": "FFFFFFFF", "x64": "FFFFFFFFFFFFFFFF"}[sISA];
     sMinusTwo = {"x86": "FFFFFFFE", "x64": "FFFFFFFFFFFFFFFE"}[sISA];
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+N"));

@@ -18,6 +18,9 @@ class cBugId(object):
   def fWait(oBugId):
     oBugId.__oFinishedEvent.wait();
   
+  def fbFinished(oBugId):
+    oBugId.__oFinishedEvent.isSet();
+  
   def __fInternalFinishedHandler(oBugId, oBugReport):
     oBugId.oBugReport = oBugReport;
     oBugId.__oFinishedEvent.set();

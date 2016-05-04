@@ -25,6 +25,7 @@ dtxBugTranslations = {
         "chrome_child.dll!v8::Utils::ApiCheck",
         "chrome_child.dll!v8::internal::V8::FatalProcessOutOfMemory",
       ], [  # Edge
+        "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::OutOfMemory",
       ], [
@@ -75,12 +76,25 @@ dtxBugTranslations = {
         "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
       ], [
         "KERNELBASE.dll!RaiseException",
+        "edgehtml.dll!Abandonment::InduceAbandonment",
+        "edgehtml.dll!Abandonment::InduceHRESULTAbandonment",
+        "edgehtml.dll!Abandonment::CheckHRESULTStrict",
+      ], [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::DeprecatedAPI",
+      ], [
+        "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::Fail",
       ], [
         "KERNELBASE.dll!RaiseException",
         "EDGEHTML.dll!Abandonment::InduceAbandonment",
         "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
+      ], [
+        "KERNELBASE.dll!RaiseException",
+        "EDGEHTML.dll!Abandonment::InduceAbandonment",
+        "EDGEHTML.dll!Abandonment::InvalidArguments",
       ],
     ],
   ),
@@ -113,15 +127,16 @@ asHiddenTopFrames = [
   "KERNELBASE.dll!RaiseException",
   "ntdll.dll!DbgBreakPoint",
   "EDGEHTML.dll!Abandonment::AssertionFailed",
+  "EDGEHTML.dll!Abandonment::CheckHRESULT",
+  "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
   "EDGEHTML.dll!Abandonment::Fail",
+  "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
   "EDGEHTML.dll!Abandonment::InduceAbandonment",
+  "EDGEHTML.dll!Abandonment::InvalidArguments",
   "chrome.dll!base::debug::BreakDebugger",
   "chrome_child.dll!base::debug::BreakDebugger",
   # Heap allocation and checking functions for "HeapCorrupt" cases:
-  "chrome_child.dll!_aligned_free",
-  "chrome_child.dll!`anonymous namespace'::win_heap_free",
   "kernel32.dll!HeapFree",
-  "MSHTML.dll!MemoryProtection::HeapFree",
   "msvcrt.dll!free",
   "ntdll.dll!RtlDebugFreeHeap",
   "ntdll.dll!RtlFreeHeap",
@@ -135,7 +150,7 @@ asHiddenTopFrames = [
   "verifier.dll!AVrfpDphNormalHeapFree",
   "verifier.dll!AVrfpDphPlaceOnDelayFree",
   "verifier.dll!AVrfpDphRemoveFromDelayFree",
-  # Heap allocation functions for "OOM" cases:
+  # Chrome allocations functions that are irrelevant in OOM cases.
   "chrome.dll!`anonymous namespace'::call_new_handler",
   "chrome.dll!`anonymous namespace'::generic_cpp_alloc",
   "chrome.dll!malloc",
@@ -167,6 +182,8 @@ asHiddenTopFrames = [
   "chrome.dll!std::vector<...>::_Insert_n",
   "chrome.dll!std::vector<...>::_Reallocate",
   "chrome.dll!std::_Wrap_alloc<...>::allocate",
+  "chrome_child.dll!_aligned_free",
+  "chrome_child.dll!`anonymous namespace'::win_heap_free",
   "chrome_child.dll!blink::DOMArrayBuffer::create",
   "chrome_child.dll!blink::DOMTypedArray<...>::create",
   "chrome_child.dll!blink::PurgeableVector::append",
@@ -232,8 +249,11 @@ asHiddenTopFrames = [
   "chrome_child.dll!WTF::VectorBuffer<...>::allocateExpandedBuffer",
   "chrome_child.dll!WTF::VectorBufferBase<...>::allocateBuffer",
   "chrome_child.dll!WTF::VectorBufferBase<...>::allocateExpandedBuffer",
+  # MSIE allocations functions that are irrelevant in OOM cases.
+  "MSHTML.dll!MemoryProtection::HeapFree",
   "jscript9.dll!JavascriptDispatch_OOM_fatal_error",
   "jscript9.dll!Js::Exception::RaiseIfScriptActive",
+  # Firefox allocations functions that are irrelevant in OOM cases.
   "mozglue.dll!arena_malloc_large",
   "mozglue.dll!arena_run_split",
   "mozglue.dll!je_malloc",
@@ -262,6 +282,8 @@ asHiddenTopFrames = [
   "xul.dll!std::basic_string<...>::assign",
   "xul.dll!std::vector<...>::_Reallocate",
   "xul.dll!std::vector<...>::_Reserve",
+  # Edge allocations functions that are irrelevant in OOM cases.
+  "EDGEHTML.dll!ProcessHeapAlloc<0>",
 ];
 def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper):
   oBugReport = oBugReport.foTranslate(dtxBugTranslations);

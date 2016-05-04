@@ -24,14 +24,15 @@ gasApplicationCommandLine_by_sKnownApplicationKeyword = {
 };
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
 # links to an online source repository:
-dxMozillaCentralSourceURLMappings = {
-    # absolute file path                                                  # relative file path    # separator        # line number
-  r"c:[\\/]builds[\\/]moz2_slave[\\/][^\\/]+[\\/]build[\\/](?:src[\\/])?" r"(?P<path>[^:]+\.\w+)" r"(:| @ |, line )" r"(?P<lineno>\d+)":
-      "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s",
-}
+srMozillaCentralSourceURLMappings = "".join([
+  r"c:[\\/]builds[\\/]moz2_slave[\\/][^\\/]+[\\/]build[\\/](?:src[\\/])?", # absolute file path
+  r"(?P<path>[^:]+\.\w+)", # relative file path
+  r"(:| @ |, line )", # separator
+  r"(?P<lineno>\d+)",  # line number
+]);
 gdsURLTemplate_by_srSourceFilePath_by_sKnownApplicationKeyword = {
-  "firefox": dxMozillaCentralSourceURLMappings,
-  "nightly": dxMozillaCentralSourceURLMappings,
+  "firefox": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
+  "nightly": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
 };
 # Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
 # HTML for any detected bug.
@@ -120,6 +121,7 @@ if __name__ == "__main__":
     bIgnoreFirstChanceBreakpoints = False;
   
   oFinishedEvent = threading.Event();
+  oBugId = None;
   
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
   def fApplicationRunningHandler():
@@ -134,6 +136,10 @@ if __name__ == "__main__":
   
   def fExceptionDetectedHandler(uCode, sDescription):
     print "* Exception code 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
+  
+  def fApplicationExitHandler():
+    print "* The application has exited...";
+    oBugId.fStop();
   
   if asApplicationCommandLine:
     print "* The debugger is starting the application...";
@@ -151,6 +157,7 @@ if __name__ == "__main__":
     bGetDetailsHTML = dxConfig["bSaveReport"],
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,
+    fApplicationExitCallback = fApplicationExitHandler,
   );
   oBugId.fWait();
   if oBugId.oBugReport:

@@ -31,6 +31,7 @@ class cCdbWrapper(object):
     bGetDetailsHTML = False,
     fApplicationRunningCallback = None,
     fExceptionDetectedCallback = None,
+    fApplicationExitCallback = None,
     fFinishedCallback = None,
     fInternalExceptionCallback = None,
   ):
@@ -41,6 +42,7 @@ class cCdbWrapper(object):
     oCdbWrapper.bGetDetailsHTML = bGetDetailsHTML;
     oCdbWrapper.fApplicationRunningCallback = fApplicationRunningCallback;
     oCdbWrapper.fExceptionDetectedCallback = fExceptionDetectedCallback;
+    oCdbWrapper.fApplicationExitCallback = fApplicationExitCallback;
     oCdbWrapper.fFinishedCallback = fFinishedCallback;
     oCdbWrapper.fInternalExceptionCallback = fInternalExceptionCallback;
     uSymbolOptions = sum([
@@ -74,6 +76,12 @@ class cCdbWrapper(object):
       asCommandLine += ["-y", sSymbolsPath];
     oCdbWrapper.auProcessIds = [];
     oCdbWrapper.auProcessIdsPendingAttach = auApplicationProcessIds or [];
+    # When provided, fApplicationExitCallback is called when any of the applications "main" processes exits.
+    # If cdb is told to create a process, this first process is the main process. If cdb is attaching o processes, all
+    # processes it is attaching to are the main processes. auMainProcessIds keeps track of their ids, so BugId can
+    # detect when one of these exits.
+    if fApplicationExitCallback:
+      oCdbWrapper.auMainProcessIds = oCdbWrapper.auProcessIdsPendingAttach[:];
     if asApplicationCommandLine is not None:
       # If a process must be started, add it to the command line.
       assert not auApplicationProcessIds, "Cannot start a process and attach to processes at the same time";
@@ -129,11 +137,42 @@ class cCdbWrapper(object):
   def _fThreadExceptionHandler(oCdbWrapper, oException, oExceptionThread):
     # Wait for the exception thread to terminate and then clean up.
     oExceptionThread.join();
-    if oCdbWrapper.bCdbRunning:
-      oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
-      oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
-      if oCdbProcess:
-        fKillProcessesUntilTheyAreDead([oCdbProcess.pid]);
+    oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
+    if not oCdbProcess:
+      oCdbWrapper.bCdbRunning = False;
+      return;
+    if oCdbProcess.poll() is not None:
+      oCdbWrapper.bCdbRunning = False;
+      return;
+    oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
+    # cdb is still running: try to terminate cdb the normal way.
+    try:
+      oCdbProcess.terminate();
+    except:
+      pass;
+    else:
+      oCdbWrapper.bCdbRunning = False;
+      return;
+    if oCdbProcess.poll() is not None:
+      oCdbWrapper.bCdbRunning = False;
+      return;
+    # cdb is still running: try to terminate cdb the hard way.
+    oKillException = None;
+    try:
+      fKillProcessesUntilTheyAreDead([oCdbProcess.pid]);
+    except Exception, oException:
+      oKillException = oException;
+    else:
+      oCdbWrapper.bCdbRunning = False;
+    # if cdb is *still* running, report and raise an internal exception.
+    if oCdbProcess.poll() is None:
+      oKillException = oKillException or AssertionError("cdb did not die after killing it repeatedly")
+      if oCdbWrapper.fInternalExceptionCallback:
+        oCdbWrapper.fInternalExceptionCallback(oKillException);
+      raise oKillException;
+    # cdb finally died.
+    oCdbWrapper.bCdbRunning = False;
+    return;
   
   def __del__(oCdbWrapper):
     # Check to make sure the debugger process is not running
@@ -147,9 +186,17 @@ class cCdbWrapper(object):
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
     if oCdbProcess:
       oCdbProcess.terminate();
-    oCdbWrapper.oCdbStdInOutThread.join();
-    oCdbWrapper.oCdbStdErrThread.join();
-    oCdbWrapper.oCdbCleanupThread.join();
+    # The below three threads may have called an event callback, which issued this fStop call. Therefore, we cannot
+    # wait for them to terminate, as this could mean "waiting until we stop waiting", which takes forever. Since Python
+    # won't allow you to wait for yourself, this could thow a RuntimeError exception: "cannot join current thread".
+    # oCdbWrapper.oCdbStdInOutThread.join();
+    # oCdbWrapper.oCdbStdErrThread.join();
+    # oCdbWrapper.oCdbCleanupThread.join();
+    # However, this should not be a problem. The first two thread stop running as soon as they notice cdb has
+    # terminated. This functions waits for that as well, so the threads should stop at the same time or soon after this
+    # function returns. This is assuming they have not called a callback that does not return: that is a bug, but not
+    # in BugIg, but in that callback function. The third thread waits for the first two, does some cleanup and then
+    # stops running as well. In other words, termination is guaranteed assuming any active callbacks do not block.
     if oCdbProcess:
       oCdbProcess.wait();
   

@@ -25,7 +25,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   
   # Exception handlers need to be set up.
   oCdbWrapper.bExceptionHandlersHaveBeenSet = False;
-  # Only fire _fApplicationRunningCallback if the application was started for the first time or resumed after it was
+  # Only fire fApplicationRunningCallback if the application was started for the first time or resumed after it was
   # paused to analyze an exception. 
   bInitialApplicationRunningCallbackFired = False;
   bDebuggerNeedsToResumeAttachedProcesses = len(oCdbWrapper.auProcessIdsPendingAttach) > 0;
