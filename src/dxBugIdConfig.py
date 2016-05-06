@@ -15,10 +15,11 @@ for (sName, xValue) in {
   "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
   "sKillBinaryPath_x64": dsKillBinaryPath_sISA.get("x64"),
   ### Exception control
-  "bIgnoreFirstChanceBreakpoints": True, # When enabled, first chance debugger breakpoints are ignored and only second
-                                # chance debugger breakpoints are analyzed. This speeds up debugging considerably. A
-                                # debugger breakpoint that is handled by the application is most often not a bug, so
-                                # enabling this should not normally reduce BugIds ability to detect bugs.
+  "bIgnoreFirstChanceBreakpoints": False, # When enabled, first chance debugger breakpoints are ignored and only second
+                                # chance debugger breakpoints are analyzed. This speeds up debugging considerably, but
+                                # you risk not detecting some bugs. For instance, application verifier signals that it
+                                # has detected memory corruption with a first chance debugger breakpoint, but this
+                                # exception is handled and the application terminated.
   ### Console output
   "bOutputStdIn": False,        # Output cdb input (commands) send to cdb while debugging application
   "bOutputStdOut": False,       # Output cdb output while debugging application
