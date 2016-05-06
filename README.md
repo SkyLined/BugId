@@ -3,6 +3,18 @@ BugId
 
 Python module to detect, analyze and id application bugs
 
+TL;DR
+-----
+Do you...
+* want to automatically debug an application to detect bugs?
+* want to be able to detect duplicates among your bugs?
+* want bugs automatically analyzed to see if they might be security vulnerabilities?
+* want a nice HTML report of the bugs you found?
+* want a full debugger dump when a bug is triggered for manual analyses?
+* have no problem integrating a tool written in Python into your framework?
+
+...then BugId may be for you!
+
 Description
 -----------
 BugId is a python script that runs an application in cdb.exe, a command-line
