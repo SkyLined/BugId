@@ -1,4 +1,6 @@
 import re;
+from dxBugIdConfig import dxBugIdConfig;
+
 def fsHTMLEncodeAndColor(oCdbWrapper, sLine):
   # If this line starts with an address and opcode, make those semi-transparent.
   oMatch = re.match(r"^([0-9a-fA-F`]+\s+)([0-9a-fA-F]+\s+)(.+)$", sLine);
@@ -8,11 +10,21 @@ def fsHTMLEncodeAndColor(oCdbWrapper, sLine):
   return oCdbWrapper.fsHTMLEncode(sLine);
   
 def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper):
+  # See dxBugIdConfig for a description of these "magic" values.
+  uDisassemblyBytesBefore = dxBugIdConfig.get("uDisassemblyInstructionsBefore") * dxBugIdConfig.get("uDisassemblyAverageInstructionSize") + \
+      dxBugIdConfig.get("uDisassemblyAlignmentBytes");
+  uDisassemblyBytesAfter = dxBugIdConfig.get("uDisassemblyInstructionsAfter") * dxBugIdConfig.get("uDisassemblyAverageInstructionSize");
   # Get disassembly around code in which exception happened. This may not be possible if the instruction pointer points to unmapped memory.
-  asBeforeDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip - 40, 40)) { u @$scopeip - 40 @$scopeip - 1; };");
-  if not oCdbWrapper.bCdbRunning: return None;
-  asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip, 40)) { u @$scopeip @$scopeip + 39; };");
-  if not oCdbWrapper.bCdbRunning: return None;
+  asBeforeDisassembly = None;
+  if uDisassemblyBytesBefore > 0:
+    asBeforeDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip - %d, %d)) { u @$scopeip - %d @$scopeip - 1; };" % \
+        (uDisassemblyBytesBefore, uDisassemblyBytesBefore, uDisassemblyBytesBefore));
+    if not oCdbWrapper.bCdbRunning: return None;
+  asAtAndAfterDisassembly = None;
+  if uDisassemblyBytesBefore > 0:
+    asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip, %d)) { u @$scopeip @$scopeip + %d; };" % \
+        (uDisassemblyBytesBefore, uDisassemblyBytesBefore - 1));
+    if not oCdbWrapper.bCdbRunning: return None;
   if asBeforeDisassembly or asAtAndAfterDisassembly:
     if asAtAndAfterDisassembly:
       asBeforeDisassembly.append(asAtAndAfterDisassembly.pop(0)); # Move symbol from second chunk to chunk before instruction pointer.
@@ -29,9 +41,11 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper):
   else:
     # Getting disassembly around instruction pointer failed: get disassembly around current return address.
     # This may also not be possible if the stack is corrupt.
-    asBeforeAndAtCallDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$ra - 40, 40)) { u @$ra - 40 @$ra - 1; };");
+    asBeforeAndAtCallDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$ra - %d, %d)) { u @$ra - %d @$ra - 1; };" % \
+        (uDisassemblyBytesBefore, uDisassemblyBytesBefore, uDisassemblyBytesBefore));
     if not oCdbWrapper.bCdbRunning: return None;
-    asNextAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$ra, 40)) { u @$ra @$ra + 39; };");
+    asNextAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$ra, %d)) { u @$ra @$ra + %d; };" % \
+        (uDisassemblyBytesBefore, uDisassemblyBytesBefore - 1));
     if not oCdbWrapper.bCdbRunning: return None;
     if asBeforeAndAtCallDisassembly:
       sAtDisassembly = asBeforeAndAtCallDisassembly.pop(); # remove call instruction
