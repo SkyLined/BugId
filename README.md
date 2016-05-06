@@ -156,20 +156,39 @@ cBugId takes the following optional named arguments:
     asSymbolServerURLs
       list of symbol server urls.
     fApplicationRunningCallback()
-      function that gets called when the application is started or resumed
-      by the debugger. 
+      fApplicationRunningCallback is called when the application starts and
+      after exception analysis is finished for continuable exceptions that are
+      not considered a bug. In the later case, fExceptionDetectedCallback is
+      called when the application is paused to do the analysis. It indicates
+      the application has started or been resumed. If you want to add some
+      timeout to your testing, the timeout should probably start/resume when
+      this callback gets called.
     fExceptionDetectedCallback()
-      function that gets called when an exception was detected in the
-      application and is being analyzed to determine if it is a bug or not.
+      fExceptionDetectedCallback is called when an exception that requires some
+      analysis is detected in the application. If you added some timeout to
+      your testing, you may want to pause it when this callback is called and
+      resume it when fApplicationRunningCallback is called after the analysis
+      is finished.
+    fApplicationExitCallback(),
+      Called when (any of) the application's "main" process(es) terminates.
+      When you start an application using BugId, the "main" process is the
+      first process created. When you are attaching to processes, these are the
+      "main" processes. Note that this callback is not called when any other
+      process (spawned by these "main" processes, or one of their children) is
+      terminated. If you want to detect application termination, you may want
+      to use this callback to do so. For instance, some of Microsoft Edge's
+      processes have a tendency to terminate for no apparent reason, breaking
+      whatever you were doing.
     fFinishedCallback(oErrorReport)
-      function that gets called when the application terminated cleanly (in
-      which case oErrorReport is None) or when it has been terminated after a
-      bug was detected (in which case oErrorReport contains information about
-      the bug).
+      fFinishedCallback gets called when all processes for the application have
+      terminated cleanly (in which case oErrorReport is None) or when a bug is
+      detected (in which case oErrorReport contains information about the bug).
     fInternalExceptionCallback(oException)
-      function that gets called when an internal error happens in BugId code.
-      This can be used to save an error report in case BugId is running
-      unattended.
+      fInternalExceptionCallback is called when there is a bug in BugId itself.
+      If you want to make sure BugId is working as expected, you may want to
+      use this callback. If it gets called, you can file a bug at
+      (here)[https://github.com/SkyLined/BugId/issues]. Please add as many
+      details from the exception object passed in the argument as you can.
 
 Please note that either `asApplicationCommandLine` or `auApplicationProcessIds`
 must be provided and that they are mutually exclusive. Also note that the
