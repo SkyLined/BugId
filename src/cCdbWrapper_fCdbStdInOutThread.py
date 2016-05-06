@@ -164,7 +164,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
           oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
         );
-    elif sChance == "first" and oCdbWrapper.bIgnoreFirstChanceBreakpoints and uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
+    elif sChance == "first" and dxBugIdConfig.get("bIgnoreFirstChanceBreakpoints", False) and uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
       pass;
     else:
       uHideX86BreakpointForProcessId = None;

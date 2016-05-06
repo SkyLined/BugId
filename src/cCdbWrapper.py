@@ -26,19 +26,35 @@ class cCdbWrapper(object):
     dsURLTemplate_by_srSourceFilePath = {},
     rImportantStdOutLines = None,
     rImportantStdErrLines = None,
-    bIgnoreFirstChanceBreakpoints = False,
-    bEnableSourceCodeSupport = True,
+    # bIgnoreFirstChanceBreakpoints = False, ### This setting has been moved to dxBugIdConfig.py
+    # bEnableSourceCodeSupport = True, ### This setting has been moved to dxBugIdConfig.py
     bGetDetailsHTML = False,
     fApplicationRunningCallback = None,
+    # fApplicationRunningCallback is called when the application starts and after exception analysis is finished for
+    # continuable exceptions that are not considered a bug. In the later case, fExceptionDetectedCallback is called
+    # when the application is paused to do the analysis and fApplicationRunningCallback is called when the analysis
+    # is finished and the exception was not considered a bug to indicate the application has been resumed.
     fExceptionDetectedCallback = None,
+    # fExceptionDetectedCallback is called when an exception is detected in the application that requires analysis.
+    # This callback can be used to pause any timeouts you may have set for the application, as the application is
+    # paused during analysis. You can resume these timeouts when fApplicationRunningCallback is called when the
+    # analysis is finished.
     fApplicationExitCallback = None,
+    # Called when (any of) the application's "main" process(es) terminates. This is the first process created when you
+    # start an application using BugId, or any of the processes you asked BugId to attach to. This callback is not
+    # called when any process spawned by these "main" processes during debugging is terminated. This callback can be
+    # used to detect application termination, especially if you are debugging application that consist of multiple
+    # processes, such as Microsoft Edge.
     fFinishedCallback = None,
+    # Called when BugId has finished debugging the application and either detected a bug or all the application's
+    # processes have terminated.
     fInternalExceptionCallback = None,
+    # Called when there is a bug in BugId itself. Can be used to make sure BugId is working as expected. If you run
+    # into a sitaution where this callback gets called, you can file a bug at https://github.com/SkyLined/BugId/issues
   ):
     oCdbWrapper.dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath;
     oCdbWrapper.rImportantStdOutLines = rImportantStdOutLines;
     oCdbWrapper.rImportantStdErrLines = rImportantStdErrLines;
-    oCdbWrapper.bIgnoreFirstChanceBreakpoints = bIgnoreFirstChanceBreakpoints;
     oCdbWrapper.bGetDetailsHTML = bGetDetailsHTML;
     oCdbWrapper.fApplicationRunningCallback = fApplicationRunningCallback;
     oCdbWrapper.fExceptionDetectedCallback = fExceptionDetectedCallback;
@@ -70,7 +86,7 @@ class cCdbWrapper(object):
     );
     # Get the command line (without starting/attaching to a process)
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
-    if bEnableSourceCodeSupport:
+    if dxBugIdConfig.get("bEnableSourceCodeSupport"):
       asCommandLine += ["-lines"];
     if sSymbolsPath:
       asCommandLine += ["-y", sSymbolsPath];

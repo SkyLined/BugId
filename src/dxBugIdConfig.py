@@ -14,9 +14,10 @@ for (sName, xValue) in {
   "sCdbBinaryPath_x64": dsCdbBinaryPath_sISA.get("x64"),
   "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
   "sKillBinaryPath_x64": dsKillBinaryPath_sISA.get("x64"),
-  ### Dump file settings
-  "bSaveDump": False,           # Save a dump file.
-  "bOverwriteDump": False,      # Overwrite any existing dump file.
+  ### Exception control
+  "bIgnoreFirstChanceBreakpoints": False, # Can be used to ignore first chance debugger breakpoints. This may be useful
+                                # if the application has these for debugging purposes, but they are not used to report
+                                # fatal bugs. When enabled, only second chance debugger breakpoints are analyzed.
   ### Console output
   "bOutputStdIn": False,        # Output cdb input (commands) send to cdb while debugging application
   "bOutputStdOut": False,       # Output cdb output while debugging application
@@ -53,8 +54,12 @@ for (sName, xValue) in {
                                 # which may provide useful information to fix symbol loading errors. It has a large
                                 # impact on performance, which is why it is disabled by default.
   "asSymbolCachePaths": [],     # Where should symbols be cached?
-  ### Source mapping settings
-  "dsURLTemplate_by_srSourceFilePath": {}, # Used to translate source file paths in stderr to links to online code repository.
+  ### Source code settings
+  "bEnableSourceCodeSupport": True, # Tell cdb to load source line symbols or not.
+  "dsURLTemplate_by_srSourceFilePath": {}, # Used to translate source file paths to links to online code repository.
+  ### Dump file settings
+  "bSaveDump": False,           # Save a dump file.
+  "bOverwriteDump": False,      # Overwrite any existing dump file.
   ### OOM mitigations
   "uReserveRAM": 0,             # How many bytes of RAM should be allocate at start of debugging, so they can be
                                 # released later to allow analysis under low memory conditions.

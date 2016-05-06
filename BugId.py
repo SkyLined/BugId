@@ -44,11 +44,6 @@ grImportantStdErrLines_by_sKnownApplicationKeyword = {
     r"\[Child \w+\] ###!!!ABORT: .*",
   ])),
 };
-# Some applications throw breakpoint exceptions when assertions fail. These can be ignored in order to detect more serious issues.
-gbIgnoreFirstChanceBreakpoints_by_sKnownApplicationKeyword = {
-  "nightly": False, # Oddly enough, an assert will trigger a breakpoint and then try everything it possibly can to kill the process.
-                    # This effectively prevents us from continuing through the assert. I've asked for this to be changed.
-};
 
 if __name__ == "__main__":
   asArguments = sys.argv[1:];
@@ -113,12 +108,10 @@ if __name__ == "__main__":
     # Get important stdout/stderr lines rules for known application:
     rImportantStdOutLines = grImportantStdOutLines_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword);
     rImportantStdErrLines = grImportantStdErrLines_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword);
-    bIgnoreFirstChanceBreakpoints = gbIgnoreFirstChanceBreakpoints_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword, False);
   else:
     dsURLTemplate_by_srSourceFilePath = {};
     rImportantStdOutLines = None;
     rImportantStdErrLines = None;
-    bIgnoreFirstChanceBreakpoints = False;
   
   oFinishedEvent = threading.Event();
   oBugId = None;
