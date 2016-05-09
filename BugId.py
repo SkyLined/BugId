@@ -146,7 +146,6 @@ if __name__ == "__main__":
     dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
     rImportantStdOutLines = rImportantStdOutLines,
     rImportantStdErrLines = rImportantStdErrLines,
-    bIgnoreFirstChanceBreakpoints = bIgnoreFirstChanceBreakpoints,
     bGetDetailsHTML = dxConfig["bSaveReport"],
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,
