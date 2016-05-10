@@ -111,7 +111,7 @@ class cTest(object):
         print "    Command line: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
       oOutputLock and oOutputLock.release();
       oTest.bHasOutputLock = False;
-      if dxConfig["bSaveTestReports"]:
+      if dxConfig["bSaveTestReports"] and oBugReport:
         sFileNameBase = fsCreateFileName("%s = %s" % (oTest, oBugReport.sId));
         # File name may be too long, keep trying to save it with a shorter name or output an error if that's not possible.
         while len(sFileNameBase) > 0:
@@ -156,7 +156,7 @@ if __name__ == "__main__":
   
   aoTests = [];
   for sISA in asTestISAs:
-    aoTests.append(cTest(sISA, [], None)); # No exceptions, just a clean program exit.
+    aoTests.append(cTest(sISA, ["Nop"], None)); # No exceptions, just a clean program exit.
     sMinusOne = {"x86": "FFFFFFFF", "x64": "FFFFFFFFFFFFFFFF"}[sISA];
     sMinusTwo = {"x86": "FFFFFFFE", "x64": "FFFFFFFFFFFFFFFE"}[sISA];
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+N"));
