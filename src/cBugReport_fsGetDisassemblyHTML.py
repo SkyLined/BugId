@@ -5,9 +5,9 @@ def fsHTMLEncodeAndColor(oCdbWrapper, sLine):
   # If this line starts with an address and opcode, make those semi-transparent.
   oMatch = re.match(r"^([0-9a-fA-F`]+\s+)([0-9a-fA-F]+\s+)(.+)$", sLine);
   if oMatch:
-    return '<span class=\"DisassemblyAddress\">%s</span><span class=\"DisassemblyOpcode\">%s</span>%s' % \
+    return '<span class="DisassemblyAddress">%s</span><span class="DisassemblyOpcode">%s</span><span class="DisassemblyInstruction">%s</span>' % \
         tuple([oCdbWrapper.fsHTMLEncode(s) for s in oMatch.groups()]);
-  return oCdbWrapper.fsHTMLEncode(sLine);
+  return '<span class="DisassemblyInformation">%s</span>' % oCdbWrapper.fsHTMLEncode(sLine);
   
 def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper):
   # See dxBugIdConfig for a description of these "magic" values.

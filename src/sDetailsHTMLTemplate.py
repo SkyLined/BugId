@@ -72,41 +72,71 @@ sDetailsHTMLTemplate = ("""
       .SecurityImpact {
         background-color: rgba(255,0,0,0.2);
       }
+      .CDBPrompt {
+        white-space: pre;
+      }
       .CDBCommand {
         font-weight: bold;
+        white-space: pre;
       }
       .CDBStdOut {
         color: grey;
+        white-space: pre;
       }
       .CDBOrApplicationStdOut {
         color: black;
+        white-space: pre;
       }
       .CDBStdErr {
         color: maroon;
+        white-space: pre;
       }
       .CDBIgnoredException {
         color: grey;
+        white-space: pre;
       }
       .Stack {
+        white-space: pre;
       }
       .StackIgnored {
         color: silver;
+        white-space: pre;
       }
       .StackHash {
         font-weight: bold;
         background: rgba(255,255,0,0.2);
+        white-space: pre;
       }
       .StackNoSymbol {
         font-style: italic;
+        white-space: pre;
       }
       .StackSource {
         color: grey;
+        white-space: pre;
+      }
+      .Registers {
+        white-space: pre;
+      }
+      .Memory {
+        white-space: pre;
+      }
+      .BinaryInformation {
+        white-space: pre;
+      }
+      .DisassemblyInformation {
+        white-space: pre;
       }
       .DisassemblyAddress {
         color: grey;
+        white-space: pre;
       }
       .DisassemblyOpcode {
         color: grey;
+        white-space: pre;
+      }
+      .DisassemblyInstruction {
+        white-space: pre;
       }
       hr {
         border: dotted black;

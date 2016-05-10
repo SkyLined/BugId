@@ -13,9 +13,9 @@ def cBugReport_fsGetReferencedMemoryHTML(oBugReport, oCdbWrapper):
   sReferencedMemoryHTML = (
     "<h2 class=\"SubHeader\">Memory around address 0x%X:</h2>" % uReferencedAddress +
     "<br/>".join(
-      [oCdbWrapper.fsHTMLEncode(s) for s in asBeforeReferencedMemory] +
-      ["<span class=\"Important\">%s</span>" % oCdbWrapper.fsHTMLEncode(sAtReferencedMemory)] +
-      [oCdbWrapper.fsHTMLEncode(s) for s in asAfterReferencedMemory]
+      ['<span class="Memory">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asBeforeReferencedMemory] +
+      ['<span class="Memory Important">%s &#8656; referenced</span>' % oCdbWrapper.fsHTMLEncode(sAtReferencedMemory).ljust(80)] +
+      ['<span class="Memory">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asAfterReferencedMemory]
     )
   );
   # It may have referenced more than one location:
@@ -31,9 +31,9 @@ def cBugReport_fsGetReferencedMemoryHTML(oBugReport, oCdbWrapper):
       "<br/><br/>" + 
       "<h2 class=\"SubHeader\">Memory around address 0x%X:</h2>" % uReferencedAddress +
       "<br/>".join(
-        [oCdbWrapper.fsHTMLEncode(s) for s in asBeforeReferencedMemory] +
-        ["<span class=\"Important\">%s</span>" % oCdbWrapper.fsHTMLEncode(sAtReferencedMemory)] +
-        [oCdbWrapper.fsHTMLEncode(s) for s in asAfterReferencedMemory]
+        ['<span class="Memory">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asBeforeReferencedMemory] +
+        ['<span class="Memory Important">%s &#8656; referenced</span>' % oCdbWrapper.fsHTMLEncode(sAtReferencedMemory).ljust(80)] +
+        ['<span class="Memory">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asAfterReferencedMemory]
       )
     );
   return sReferencedMemoryHTML;

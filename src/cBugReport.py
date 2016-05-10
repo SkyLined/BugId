@@ -121,7 +121,6 @@ class cBugReport(object):
       # Create and add registers block
       asRegisters = oCdbWrapper.fasSendCommandAndReadOutput("rM 0x%X" % (0x1 + 0x4 + 0x8 + 0x10 + 0x20 + 0x40));
       if not oCdbWrapper.bCdbRunning: return None;
-      sRegistersHTML = "<br/>".join([oCdbWrapper.fsHTMLEncode(s) for s in asRegisters]);
       asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Registers", "sContent": sRegistersHTML});
       # Add referenced memory to memory block and add memory block if needed
       sReferencedMemoryHTML = cBugReport_fsGetReferencedMemoryHTML(oBugReport, oCdbWrapper)

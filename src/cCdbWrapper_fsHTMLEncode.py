@@ -1,7 +1,7 @@
 import re;
 
 def fsHTMLEncode(sLine):
-  return sLine.replace('&', '&amp;').replace(" ", "&nbsp;").replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
+  return sLine.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
 
 def cCdbWrapper_fsHTMLEncode(oCdbWrapper, sLine):
   # This will only apply a link to the first match, but improving it would be rather complex. Since I've not encountered

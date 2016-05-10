@@ -46,7 +46,7 @@ def cBugReport_fsGetBinaryInformationHTML(oBugReport, oCdbWrapper):
       (sBinaryInformationHTML and "<br/><br/>" or "") +
       (
         "<h2 class=\"SubHeader\">%s</h2>" % oCdbWrapper.fsHTMLEncode(sBinaryName) +
-        "<br/>".join([oCdbWrapper.fsHTMLEncode(s) for s in asModuleInformationOutput[2:]]) # First two lines contain no useful information.
+        "<br/>".join(['<span class="BinaryInformation">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asModuleInformationOutput[2:]]) # First two lines contain no useful information.
       )
     );
   return sBinaryInformationHTML;
