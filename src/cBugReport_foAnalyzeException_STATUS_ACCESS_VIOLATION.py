@@ -94,7 +94,7 @@ ddtxBugTranslations = {
 ddtsDetails_uAddress_sISA = {
   "x86": {              # Id                 Description                                           Security impact
             0x00000000: ('NULL',            "a NULL ptr",                                         None),
-            0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  "Probably not a security issue"),
+            0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  None),
             0xBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
             0xCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
             0xC0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
