@@ -36,9 +36,6 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # performed. This is done only if dxBugIdConfig["uReserveRAM"] > 0. The memory is allocated at the start of debugging,
   # freed right before an analysis is performed and reallocated if the exception was not fatal.
   bReserveRAMAllocated = False;
-  # Keep track of created processes so an x86 create process breakpoint following an x64 create process breakpoint for
-  # the same process can be hidden.
-  uHideX86BreakpointForProcessId = None;
   while asIntialCdbOutput or len(oCdbWrapper.auProcessIdsPendingAttach) + len(oCdbWrapper.auProcessIds) > 0:
     # If requested, reserve some memory in cdb that can be released later to make analysis under low memory conditions
     # more likely to succeed.
@@ -107,7 +104,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         sExceptionDescription, sExceptionCode, sChance
     ) = oEventMatch.groups();
     uProcessId = long(sProcessIdHex, 16);
-    uExceptionCode = sExceptionCode and int(sExceptionCode, 16);
+    uExceptionCode = sExceptionCode and long(sExceptionCode, 16);
     if uExceptionCode in (STATUS_BREAKPOINT, STATUS_WAKE_SYSTEM_DEBUGGER) and uProcessId not in oCdbWrapper.auProcessIds:
       # This is assumed to be the initial breakpoint after starting/attaching to the first process or after a new
       # process was created by the application. This assumption may not be correct, in which case the code needs to
@@ -115,24 +112,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
       # performance cost, so until proven otherwise, the code is based on this assumption.
       sCreateExitProcess = "Create";
       sCreateExitProcessIdHex = sProcessIdHex;
-    if uExceptionCode == STATUS_WX86_BREAKPOINT and uHideX86BreakpointForProcessId == uProcessId:
-      # An x86 breakpoint may follow an x64 breakpoint when a new 32-bit process is created. Ignore it.
-      uHideX86BreakpointForProcessId = None;
-      if oCdbWrapper.bGetDetailsHTML:
-        # This exception and the commands executed to analyze it are not relevant to the analysis of the bug. As mentioned
-        # above, the commands and their output will be removed from the StdIO array to reduce the risk of OOM. 
-        oCdbWrapper.asCdbStdIOBlocksHTML = (
-          oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
-          ["<span class=\"CDBIgnoredException\">Create process %d x86 breakpoint.</span>" % uProcessId] + # Replacement for analysis commands
-          oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
-        );
-    elif sCreateExitProcess:
-      if sCreateExitProcess == "Create":
-        # An x86 breakpoint may follow an x64 breakpoint when a new 32-bit process is created. The latter should be
-        # recognized and reported as such:
-        uHideX86BreakpointForProcessId = uProcessId;
-      else:
-        uHideX86BreakpointForProcessId = None;
+    if sCreateExitProcess:
       # Make sure the created/exited process is the current process.
       assert sProcessIdHex == sCreateExitProcessIdHex, "%s vs %s" % (sProcessIdHex, sCreateExitProcessIdHex);
       oCdbWrapper.fHandleCreateExitProcess(sCreateExitProcess, uProcessId);
@@ -164,10 +144,13 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
           oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
         );
-    elif sChance == "first" and dxBugIdConfig.get("bIgnoreFirstChanceBreakpoints", False) and uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
+    elif (
+      uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]
+      and dxBugIdConfig["bIgnoreFirstChanceBreakpoints"]
+      and sChance == "first"
+    ):
       pass;
     else:
-      uHideX86BreakpointForProcessId = None;
       # Report that the application is paused for analysis...
       oCdbWrapper.fExceptionDetectedCallback and oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
       # And potentially report that the application is resumed later...
