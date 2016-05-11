@@ -13,7 +13,7 @@ class cBugId(object):
     oBugId.__oCdbWrapper = cCdbWrapper(**dxArguments);
   
   def fStop(oBugId):
-    oBugId.__oCdbWrapper and oBugId.__oCdbWrapper.fStop();
+    oBugId.__oCdbWrapper.fStop();
   
   def fWait(oBugId):
     oBugId.__oFinishedEvent.wait();
