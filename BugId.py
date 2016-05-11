@@ -60,8 +60,8 @@ if __name__ == "__main__":
     print "    Do not save a HTML formatted crash report.";
     print "  --BugId.bSaveDump=true";
     print "    Save a dump file when a crash is detected.";
-    print "  --BugId.bOutputStdIO=true";
-    print "    Show verbose cdb output and input during debugging.";
+    print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true, --BugId.bOutputStdErr=true";
+    print "    Show verbose cdb input / output during debugging.";
     print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
     print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
     print "  --BugId.asSymbolCachePaths=[\"C:\\Symbols\"]";
