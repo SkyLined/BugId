@@ -1,9 +1,10 @@
-import subprocess, threading;
+import subprocess, threading, time;
 from cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess import cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess;
 from cCdbWrapper_fasGetStack import cCdbWrapper_fasGetStack;
 from cCdbWrapper_fasReadOutput import cCdbWrapper_fasReadOutput;
 from cCdbWrapper_fasSendCommandAndReadOutput import cCdbWrapper_fasSendCommandAndReadOutput;
 from cCdbWrapper_fCdbCleanupThread import cCdbWrapper_fCdbCleanupThread;
+from cCdbWrapper_fCdbInterruptOnTimeoutThread import cCdbWrapper_fCdbInterruptOnTimeoutThread;
 from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
 from cCdbWrapper_fCdbStdInOutThread import cCdbWrapper_fCdbStdInOutThread;
 from cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess import cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess;
@@ -13,6 +14,7 @@ from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrappe
 from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
 from cCdbWrapper_ftxSplitSymbolOrAddress import cCdbWrapper_ftxSplitSymbolOrAddress;
 from cCdbWrapper_fsHTMLEncode import cCdbWrapper_fsHTMLEncode;
+from cHighCPUUsageTracker import cHighCPUUsageTracker;
 from dxBugIdConfig import dxBugIdConfig;
 from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
@@ -86,7 +88,7 @@ class cCdbWrapper(object):
     );
     # Get the command line (without starting/attaching to a process)
     asCommandLine = [sCdbBinaryPath, "-o", "-sflags", "0x%08X" % uSymbolOptions];
-    if dxBugIdConfig.get("bEnableSourceCodeSupport"):
+    if dxBugIdConfig["bEnableSourceCodeSupport"]:
       asCommandLine += ["-lines"];
     if sSymbolsPath:
       asCommandLine += ["-y", sSymbolsPath];
@@ -124,12 +126,47 @@ class cCdbWrapper(object):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = False; # Set to True when cdb is terminated on purpose, used to detect unexpected termination.
     if bGetDetailsHTML:
       oCdbWrapper.sImportantOutputHTML = ""; # Lines from stdout/stderr that are marked as potentially important to understanding the bug.
-    oCdbWrapper.oCdbProcess = subprocess.Popen(args = " ".join(asCommandLine),
-        stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE);
+    # cdb variables are in short supply, so a mechanism must be used to allocate and release them.
+    # See fuGetVariableId and fReleaseVariableId for implementation details.
+    oCdbWrapper.uAvailableVariableIds = list(xrange(20)); # $t0-$t19. 
+    # To make it easier to refer to cdb breakpoints by id, a mechanism must be used to allocate and release them
+    # See fuGetBreakpointId and fReleaseBreakpointId for implementation details.
+    oCdbWrapper.uLastUsedBreakpointId = -1; # None have been used so far.
+    # You can set a breakpoint that results in a bug being reported when it is hit.
+    # See fuAddBugBreakpoint and fReleaseBreakpointId for implementation details.
+    oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId = {}; # Breakpoints that signal a bug.
+    # You can tell BugId to check for high CPU usage among all the threads running in the application.
+    # See fSetCheckForHighCPUUsageTimeout and cHighCPUUsageTracker.py for more information
+    oCdbWrapper.oHighCPUUsageTracker = cHighCPUUsageTracker(oCdbWrapper);
+    # Keep track of future timeouts and their callbacks
+    oCdbWrapper.axTimeouts = [];
+    # List of callbacks for the current timeout
+    oCdbWrapper.afActivatedTimeoutCallbacks = [];
+    # Set to true if cdb has been interrupted by the timeout thread but the stdio thread has not yet handled this. Used
+    # to prevent the timeout thread from interrupting it multiple times if the stdio thread is slow.
+    oCdbWrapper.bInterruptPending = False;
+    # oCdbLock is used by oCdbStdInOutThread and oCdbInterruptOnTimeoutThread to allow the former to execute commands
+    # (other than "g") without the later attempting to get cdb to suspend the application with a breakpoint, and vice
+    # versa.
+    oCdbWrapper.oCdbLock = threading.Lock();
+    # Keep track of how long the application has been running, used for timeouts (see fxSetTimeout, fCdbStdInOutThread
+    # and fCdbInterruptOnTimeoutThread for details.
+    oCdbWrapper.nApplicationRunTime = 0; # Total time spent running before last interruption
+    oCdbWrapper.nApplicationResumeTime = None; # time.clock() value at the moment the application was last resumed
+    oCdbWrapper.oCdbProcess = subprocess.Popen(
+      args = " ".join(asCommandLine),
+      stdin = subprocess.PIPE,
+      stdout = subprocess.PIPE,
+      stderr = subprocess.PIPE,
+      creationflags = subprocess.CREATE_NEW_PROCESS_GROUP,
+    );
+    
     # Create a thread that interacts with the debugger to debug the application
     oCdbWrapper.oCdbStdInOutThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdInOutThread);
     # Create a thread that reads stderr output and shows it in the console
     oCdbWrapper.oCdbStdErrThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbStdErrThread);
+    # Create a thread that checks for a timeout to interrupt cdb when needed.
+    oCdbWrapper.oCdbInterruptOnTimeoutThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbInterruptOnTimeoutThread);
     # Create a thread that waits for the debugger to terminate and cleans up after it.
     oCdbWrapper.oCdbCleanupThread = oCdbWrapper._fStartThread(cCdbWrapper_fCdbCleanupThread);
   
@@ -196,6 +233,64 @@ class cCdbWrapper(object):
     if oCdbProcess and oCdbProcess.poll() is None:
       print "*** INTERNAL ERROR: cCdbWrapper did not terminate, the cdb process is still running.";
       oCdbProcess.terminate();
+  
+  def fuGetVariableId(oCdbWrapper):
+    return oCdbWrapper.uAvailableVariableIds.pop();
+  def fReleaseVariableId(oCdbWrapper, uVariableId):
+    oCdbWrapper.uAvailableVariableIds.append(uVariableId);
+  def fuGetBreakpointId(oCdbWrapper):
+    # TODO: Potential race condition must be dealt with.
+    oCdbWrapper.uLastUsedBreakpointId += 1;
+    return oCdbWrapper.uLastUsedBreakpointId;
+  def fReleaseBreakpointId(oCdbWrapper, uBreakpointId):
+    # There can be any number of breakpoints according to the docs, so no need to reuse them.
+    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput("bc%d" % uBreakpointId);
+    if uBreakpointId in oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId:
+      del oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId];
+  
+  def fSelectProcessAndThread(oCdbWrapper, uProcessId = None, uThreadId = None):
+    # Both arguments are optional
+    if uProcessId is not None:
+      asSelectProcessOutput = oCdbWrapper.fasSendCommandAndReadOutput("|~[0x%X]s" % uProcessId, bIsRelevantIO = False);
+      if not oCdbWrapper.bCdbRunning: return;
+      assert len(asSelectProcessOutput) == 0, \
+          "Unexpected select process output:\r\n%s" % "\r\n".join(asSelectProcessOutput);
+    if uThreadId is not None:
+      asSelectThreadOutput = oCdbWrapper.fasSendCommandAndReadOutput("~~[0x%X]s" % uThreadId, bIsRelevantIO = False);
+      if not oCdbWrapper.bCdbRunning: return;
+      assert len([s for s in asSelectThreadOutput if not s.startswith("*** WARNING: Unable to verify checksum for")]) == 0, \
+          "Unexpected select process output:\r\n%s" % "\r\n".join(asSelectThreadOutput);
+  
+  def fuAddBugBreakpoint(oCdbWrapper, sAddress, sBugTypeId, sBugDescription, sSecurityImpact, uProcessId = None, uThreadId = None):
+    oCdbWrapper.fSelectProcessAndThread(uProcessId, uThreadId);
+    if not oCdbWrapper.bCdbRunning: return;
+    uBreakpointId = oCdbWrapper.fuGetBreakpointId();
+    # Put breakpoint only on relevant thread if provided.
+    sBreakpointCommand = "%sbp%d %s" % (uThreadId is not None and "~. " or "", uBreakpointId, sAddress);
+    asSetBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand);
+    if not oCdbWrapper.bCdbRunning: return;
+    oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId] = (sBugTypeId, sBugDescription, sSecurityImpact);
+    return uBreakpointId;
+  
+  def fSetCheckForHighCPUUsageTimeout(oCdbWrapper, nTimeout):
+    oCdbWrapper.oHighCPUUsageTracker.fStartTimeout(nTimeout);
+  
+  def fxSetTimeout(oCdbWrapper, nTimeout, fCallback):
+    assert nTimeout >= 0, "Negative timeout does not make sense";
+    nTime = oCdbWrapper.nApplicationRunTime + nTimeout;
+    # If the application is currently running, nApplicationResumeTime is not None:
+    nApplicationResumeTime = oCdbWrapper.nApplicationResumeTime;
+    if nApplicationResumeTime:
+      nTime += time.clock() - nApplicationResumeTime;
+    xTimeout = (nTime, fCallback);
+    oCdbWrapper.axTimeouts.append(xTimeout);
+    return xTimeout;
+
+  def fClearTimeout(oCdbWrapper, xTimeout):
+    try:
+      oCdbWrapper.axTimeouts.remove(xTimeout);
+    except ValueError:
+      pass; # Timeout has already fired ans been removed: ignore this exception.
   
   def fStop(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;

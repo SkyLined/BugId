@@ -11,9 +11,9 @@ def fsHTMLEncodeAndColor(oCdbWrapper, sLine):
   
 def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper):
   # See dxBugIdConfig for a description of these "magic" values.
-  uDisassemblyBytesBefore = dxBugIdConfig.get("uDisassemblyInstructionsBefore") * dxBugIdConfig.get("uDisassemblyAverageInstructionSize") + \
-      dxBugIdConfig.get("uDisassemblyAlignmentBytes");
-  uDisassemblyBytesAfter = dxBugIdConfig.get("uDisassemblyInstructionsAfter") * dxBugIdConfig.get("uDisassemblyAverageInstructionSize");
+  uDisassemblyBytesBefore = dxBugIdConfig["uDisassemblyInstructionsBefore"] * dxBugIdConfig["uDisassemblyAverageInstructionSize"] + \
+      dxBugIdConfig["uDisassemblyAlignmentBytes"];
+  uDisassemblyBytesAfter = dxBugIdConfig["uDisassemblyInstructionsAfter"] * dxBugIdConfig["uDisassemblyAverageInstructionSize"];
   # Get disassembly around code in which exception happened. This may not be possible if the instruction pointer points to unmapped memory.
   asBeforeDisassembly = None;
   if uDisassemblyBytesBefore > 0:

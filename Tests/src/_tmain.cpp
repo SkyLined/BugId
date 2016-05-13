@@ -199,6 +199,9 @@ UINT _tmain(UINT uArgumentsCount, _TCHAR* asArguments[]) {
       _ftprintf(stderr, _T("Please use Read or Write, not %s\r\n"), asArguments[2]);
       return 1;
     }
+  } else if (_tcsicmp(asArguments[1], _T("Nop")) == 0) {
+  } else if (_tcsicmp(asArguments[1], _T("CPUUsage")) == 0) {
+    while(1){};
   } else {
     _ftprintf(stderr, _T("Invalid test type %s\r\n"), asArguments[1]);
     return 1;

@@ -19,7 +19,8 @@ for (sName, xValue) in {
                                 # chance debugger breakpoints are analyzed. This speeds up debugging considerably, but
                                 # you risk not detecting some bugs. For instance, application verifier signals that it
                                 # has detected memory corruption with a first chance debugger breakpoint, but this
-                                # exception is handled and the application terminated.
+                                # exception is handled by verfier and the application terminated if this setting is
+                                # enabled.
   ### Console output
   "bOutputStdIn": False,        # Output cdb input (commands) send to cdb while debugging application
   "bOutputStdOut": False,       # Output cdb output while debugging application
@@ -65,6 +66,14 @@ for (sName, xValue) in {
   ### OOM mitigations
   "uReserveRAM": 0,             # How many bytes of RAM should be allocate at start of debugging, so they can be
                                 # released later to allow analysis under low memory conditions.
+  ### High CPU usage detection
+  "nHighCPUsuageCheckInterval": 5.0, # How many seconds to gather thread CPU usage data.
+  "nHighCPUsuagePercent": 90,   # How much time of nMeasurementInterval does a *single* thread need to consume to
+                                # trigger a high CPU usage bug report.
+  ### Timeouts
+  "nTimeoutGranularity": 1.0,   # How often to check for timeouts, in seconds. Making this value smaller causes the
+                                # timeouts to fire closer to the intended time, but slows down debugging. Making the
+                                # value larger can cause timeouts to fire a lot later than requested.
 }.items():
   if sName not in dxBugIdConfig:
     dxBugIdConfig[sName] = xValue;

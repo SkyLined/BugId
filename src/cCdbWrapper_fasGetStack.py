@@ -48,6 +48,9 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
   # Get the stack for real.
   asStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
   if not oCdbWrapper.bCdbRunning: return None;
+  # Remove checksum warning, if any.
+  if re.match(r"^\*\*\* WARNING: Unable to verify checksum for .*$", asStack[0]):
+    asStack.pop(0);
   assert asStack, "CDB did not return any stack information for command %s" % repr(sGetStackCommand);
   # Getting the stack twice does not always work: for unknown reasons the second time the stack may be truncated or
   # incorrect. So, if an error in symbol loading is detected while getting the stack, there is no reliable way to try

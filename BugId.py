@@ -151,6 +151,7 @@ if __name__ == "__main__":
     fExceptionDetectedCallback = fExceptionDetectedHandler,
     fApplicationExitCallback = fApplicationExitHandler,
   );
+  oBugId.fSetCheckForHighCPUUsageTimeout(dxConfig["nHighCPUUsageCheckInitialTimeout"]);
   oBugId.fWait();
   if oBugId.oBugReport:
     print "* A bug was detected in the application.";

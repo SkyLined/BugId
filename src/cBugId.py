@@ -18,6 +18,9 @@ class cBugId(object):
   def fWait(oBugId):
     oBugId.__oFinishedEvent.wait();
   
+  def fSetCheckForHighCPUUsageTimeout(oBugId, nTimeout):
+    oBugId.__oCdbWrapper.fSetCheckForHighCPUUsageTimeout(nTimeout);
+  
   def fbFinished(oBugId):
     oBugId.__oFinishedEvent.isSet();
   

@@ -1,22 +1,23 @@
 import os, re, sys, threading;
+
+bDebugStartFinish = False;  # Show some output when a test starts and finishes.
+bDebugIO = False;           # Show cdb I/O during tests (you'll want to run only 1 test at a time for this).
+uSequentialTests = 32;       # Run multiple tests simultaniously, values >32 will probably not work.
+
 from dxConfig import dxConfig;
-sBaseFolderPath = os.path.dirname(__file__);
-sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
-from cBugId import cBugId;
-from sOSISA import sOSISA;
-from cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
-from fsCreateFileName import fsCreateFileName;
-
-bDebugStartFinish = False;
-bDebugIO = False;
-uSequentialTests = 32; # >32 will probably not work.
-
 dxBugIdConfig = dxConfig["BugId"];
 dxBugIdConfig["bOutputStdIn"] = \
     dxBugIdConfig["bOutputStdOut"] = \
     dxBugIdConfig["bOutputStdErr"] = bDebugIO;
 dxBugIdConfig["bOutputProcesses"] = False;
 dxBugIdConfig["uReserveRAM"] = 1024; # Simply test if reserving RAM works, not actually reserve any useful amount.
+
+sBaseFolderPath = os.path.dirname(__file__);
+sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
+from cBugId import cBugId;
+from sOSISA import sOSISA;
+from cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from fsCreateFileName import fsCreateFileName;
 
 asTestISAs = [sOSISA];
 if sOSISA == "x64":
@@ -62,6 +63,7 @@ class cTest(object):
         fFinishedCallback = oTest.fFinishedHandler,
         fInternalExceptionCallback = oTest.fInternalExceptionHandler,
       );
+      oTest.oBugId.fSetCheckForHighCPUUsageTimeout(1);
     except Exception, oException:
       if not bFailed:
         bFailed = True;
@@ -157,6 +159,7 @@ if __name__ == "__main__":
   aoTests = [];
   for sISA in asTestISAs:
     aoTests.append(cTest(sISA, ["Nop"], None)); # No exceptions, just a clean program exit.
+    aoTests.append(cTest(sISA, ["CPUUsage"], "CPUUsage"));
     sMinusOne = {"x86": "FFFFFFFF", "x64": "FFFFFFFFFFFFFFFF"}[sISA];
     sMinusTwo = {"x86": "FFFFFFFE", "x64": "FFFFFFFFFFFFFFFE"}[sISA];
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+N"));
@@ -164,7 +167,8 @@ if __name__ == "__main__":
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "3"], "AVR:NULL+N"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "4"], "AVR:NULL+4*N"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "5"], "AVR:NULL+N"));
-    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusOne], "AVR:NULL-N"));
+    if sISA != "x64": # Does not work on x64 dues to limitations of exception handling (See foAnalyzeException_STATUS_ACCESS_VIOLATION for details).
+      aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusOne], "AVR:NULL-N"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusTwo], "AVR:NULL-2*N"));
     aoTests.append(cTest(sISA, ["Breakpoint"], "Breakpoint"));
     aoTests.append(cTest(sISA, ["C++"], "C++:cException"));
@@ -199,22 +203,34 @@ if __name__ == "__main__":
       # This does not appear to work at all. TODO: fix this.
       aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "AVW:OOB"));
     
-    for uBaseAddress in [(1 << 31) - 1, (1 << 31), (1 << 32), (1 << 47) - 1, (1 << 47), (1 << 63) - 1, (1 << 63)]:
-      if uBaseAddress < (1 << 32) or (sISA == "x64" and uBaseAddress < (1 << 47)):
-        aoTests.extend([
-          cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AVR:Arbitrary"),
-          cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AVW:Arbitrary"),
-          cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AVE:Arbitrary"),
-          cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AVE:Arbitrary"),
-        ]);
-      elif sISA == "x64":
-        # Above 0x7FFFFFFFFFFF the exception record no longer contains the correct address.
-        aoTests.extend([
-          cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AV?:Arbitrary"),
-          cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AV?:Arbitrary"),
-          cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AV?:Arbitrary"),
-          cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AV?:Arbitrary"),
-        ]);
+    for (uBaseAddress, sDescription) in [
+      # 0123456789ABCDEF
+             (0x80000000, "Unallocated"),
+            (0x100000000, "Unallocated"),
+         (0x7ffffffd0000, "Unallocated"),
+         (0x7ffffffdffff, "Unallocated"),
+         (0x7ffffffe0000, "Reserved"),
+         (0x7ffffffeffff, "Reserved"),
+         (0x7fffffff0000, "Unknown"),
+         (0x7fffffffffff, "Unknown"),
+         (0x800000000000, "Invalid"),
+     (0x8000000000000000, "Invalid"),
+    ]:
+      if uBaseAddress < (1 << 32) or sISA == "x64":
+        # On x64, there are some limitations to exceptions occoring at addresses between the userland and kernelland
+        # memory address ranges.
+        if uBaseAddress >= 0x800000000000 and uBaseAddress < 0xffff800000000000:
+          aoTests.extend([
+            cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AV?:%s" % sDescription),
+            cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AV?:%s" % sDescription),
+          ]);
+        else:
+          aoTests.extend([
+            cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AVR:%s" % sDescription),
+            cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AVW:%s" % sDescription),
+          ]);
+        cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AVE:%s" % sDescription),
+        cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AVE:%s" % sDescription),
   
   for (sISA, dtsDetails_uAddress) in ddtsDetails_uAddress_sISA.items():
     for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
@@ -226,8 +242,8 @@ if __name__ == "__main__":
       elif sISA == "x64":
         aoTests.append(cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AV?:%s" % sAddressId));
         aoTests.append(cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AV?:%s" % sAddressId));
-        aoTests.append(cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AV?:%s" % sAddressId));
-        aoTests.append(cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AV?:%s" % sAddressId));
+        aoTests.append(cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AVE:%s" % sAddressId));
+        aoTests.append(cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AVE:%s" % sAddressId));
   
   print "* Starting tests...";
   for oTest in aoTests:

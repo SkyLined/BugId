@@ -68,13 +68,22 @@ class cBugReport(object):
         oBugReport.oStack.fHideTopFrames(asHiddenFrames);
   
   @classmethod
-  def foCreate(cSelf, oCdbWrapper, uExceptionCode, sExceptionDescription):
+  def foCreate(cSelf, oCdbWrapper, uExceptionCode, sExceptionDescription, uBreakpointId):
     # Get current process details
     oProcess = cProcess.foCreate(oCdbWrapper);
     if not oCdbWrapper.bCdbRunning: return None;
-    # Get exception details
-    oException = cException.foCreate(oCdbWrapper, oProcess, uExceptionCode, sExceptionDescription);
-    if not oCdbWrapper.bCdbRunning: return None;
+    if uBreakpointId is not None:
+      # Create exception details for a breakpoint:
+      oException = cException(oProcess, STATUS_BREAKPOINT, "A BugId breakpoint");
+      (sBugTypeId, sBugDescription, sSecurityImpact) = oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId];
+    else:
+      # Get exception details from cdb.
+      oException = cException.foCreate(oCdbWrapper, oProcess, uExceptionCode, sExceptionDescription);
+      if not oCdbWrapper.bCdbRunning: return None;
+      sBugTypeId = oException.sTypeId;
+      sBugDescription = oException.sDescription;
+      sSecurityImpact = oException.sSecurityImpact;
+    
     # Get the stack based on the exception info and load symbols for all modules containing functions on the stack.
     oStack = oException.foGetStack(oCdbWrapper);
     if not oCdbWrapper.bCdbRunning: return None;
@@ -84,21 +93,22 @@ class cBugReport(object):
     # Create a preliminary error report.
     oBugReport = cSelf(
       oCdbWrapper = oCdbWrapper,
-      sBugTypeId = oException.sTypeId,
-      sBugDescription = oException.sDescription,
-      sSecurityImpact = oException.sSecurityImpact,
+      sBugTypeId = sBugTypeId,
+      sBugDescription = sBugDescription,
+      sSecurityImpact = sSecurityImpact,
       oException = oException,
       oStack = oStack,
     );
     
-    # Perform exception specific analysis:
-    foAnalyzeException = dfoAnalyzeException_by_uExceptionCode.get(oException.uCode);
-    if foAnalyzeException:
-      oBugReport = foAnalyzeException(oBugReport, oCdbWrapper);
-      if not oCdbWrapper.bCdbRunning: return None;
-      if not oBugReport:
-        # This exception is not a bug, continue the application.
-        return None;
+    if uBreakpointId is None:
+      # Perform exception specific analysis:
+      foAnalyzeException = dfoAnalyzeException_by_uExceptionCode.get(oException.uCode);
+      if foAnalyzeException:
+        oBugReport = foAnalyzeException(oBugReport, oCdbWrapper);
+        if not oCdbWrapper.bCdbRunning: return None;
+        if not oBugReport:
+          # This exception is not a bug, continue the application.
+          return None;
     
     # Calculate sStackId, determine sBugLocation and optionally create and return sStackHTML.
     sStackHTML = cBugReport_fsProcessStack(oBugReport, oCdbWrapper);
@@ -141,7 +151,7 @@ class cBugReport(object):
         "sBugDescription": oCdbWrapper.fsHTMLEncode(oBugReport.sBugDescription),
         "sBugLocation": oCdbWrapper.fsHTMLEncode(oBugReport.sBugLocation),
         "sSecurityImpact": oBugReport.sSecurityImpact and \
-              '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "None",
+              '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "Denial of Service",
         "sOptionalBlocks": "".join(asBlocksHTML),
         "sCdbStdIO": sCdbStdIOHTML,
       };
