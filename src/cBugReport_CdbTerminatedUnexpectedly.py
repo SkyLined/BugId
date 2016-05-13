@@ -16,6 +16,7 @@ class cBugReport_CdbTerminatedUnexpectedly(object):
     oBugReport.sId = oBugReport.sBugTypeId;
     oBugReport.sStackId = None;
     oBugReport.sBugLocation = None;
+    oBugReport.sBugSourceLocation = None;
     
     if oCdbWrapper.bGetDetailsHTML:
       # Turn cdb output into formatted HTML. It is separated into blocks, one for the initial cdb output and one for each
