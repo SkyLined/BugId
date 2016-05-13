@@ -211,8 +211,8 @@ if __name__ == "__main__":
          (0x7ffffffdffff, "Unallocated"),
          (0x7ffffffe0000, "Reserved"),
          (0x7ffffffeffff, "Reserved"),
-         (0x7fffffff0000, "Unknown"),
-         (0x7fffffffffff, "Unknown"),
+         (0x7fffffff0000, "Unallocated"),
+         (0x7fffffffffff, "Unallocated"),
          (0x800000000000, "Invalid"),
      (0x8000000000000000, "Invalid"),
     ]:
