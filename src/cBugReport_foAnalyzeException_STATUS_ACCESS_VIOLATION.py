@@ -387,67 +387,67 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
         
         # !vprot: extension exception 0x80004002
         #     "QueryVirtual failed"
-        if len(asMemoryProtectionInformation) > 0 and not re.match(r"^ERROR: !vprot: extension exception 0x\w{8}\.$", asMemoryProtectionInformation[0]):
-          if asMemoryProtectionInformation == ["!vprot: No containing memory region found"]:
+        assert len(asMemoryProtectionInformation) > 0, \
+            "!vprot did not return any results.";
+        if re.match(r"^(%s)$" % "|".join([
+          "ERROR: !vprot: extension exception 0x80004002\.",
+          "!vprot: No containing memory region found",
+        ]), asMemoryProtectionInformation[0]):
+          sAddressId = "Unallocated";
+          sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
+          sSecurityImpact = "Potentially exploitable security issue";
+        else:
+          uAllocationStartAddress = None;
+          uAllocationProtectionFlags = None;
+          uAllocationSize = None;
+          uStateFlags = None;
+          uProtectionFlags = None;
+          uTypeFlags = None;
+          for sLine in asMemoryProtectionInformation:
+            oLineMatch = re.match(r"^(\w+):\s+([0-9a-f]+)(?:\s+\w+)?$", sLine);
+            assert oLineMatch, \
+                "Unrecognized memory protection information line: %s\r\n%s" % (sLine, "\r\n".join(asMemoryProtectionInformation));
+            sInfoType, sValue = oLineMatch.groups();
+            uValue = long(sValue, 16);
+            if sInfoType == "BaseAddress":
+              pass; # Appear to be the address rounded down to the nearest start of a page, i.e. not useful information.
+            elif sInfoType == "AllocationBase":
+              uAllocationStartAddress = uValue;
+            elif sInfoType == "AllocationProtect":
+              uAllocationProtectionFlags = uValue;
+            elif sInfoType == "RegionSize":
+              uAllocationStartAddress = uValue;
+            elif sInfoType == "State":
+              uStateFlags = uValue;
+            elif sInfoType == "Protect":
+              uProtectionFlags = uValue;
+            elif sInfoType == "Type":
+              uTypeFlags = uValue;
+          if uStateFlags == 0x10000:
             sAddressId = "Unallocated";
             sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
             sSecurityImpact = "Potentially exploitable security issue";
+          elif uStateFlags == 0x2000: # MEM_RESERVE
+            assert uTypeFlags in [0x20000, 0x40000], \
+                "Expected MEM_RESERVE memory to have type MEM_PRIVATE or MEM_MAPPED\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
+            assert uProtectionFlags == 0x1, \
+                "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
+            sAddressId = "Reserved";
+            sBugDescription = "Access violation while %s reversed but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
+            sSecurityImpact = None;
+          elif uStateFlags == 0x1000: # MEM_COMMIT
+            dsMemoryProtectionsDescription_by_uFlags = {
+              0x01: "inaccessible",  0x02: "read-only",  0x04: "read- and writable",  0x08: "read- and writable",
+              0x10: "executable", 0x20: "read- and executable", 0x40: "full-access", 0x80: "full-access"
+            };
+            sMemoryProtectionsDescription = dsMemoryProtectionsDescription_by_uFlags.get(uAllocationProtectionFlags);
+            assert sMemoryProtectionsDescription, \
+                "Unexpected MEM_COMMIT memory to have protection value 0x%X\r\n%s" % (uAllocationProtectionFlags, "\r\n".join(asMemoryProtectionInformation));
+            sAddressId = "Arbitrary";
+            sBugDescription = "Access violation while %s %s memory at 0x%X" % (sViolationTypeDescription, sMemoryProtectionsDescription, uAddress);
+            sSecurityImpact = "Potentially exploitable security issue";
           else:
-            uAllocationStartAddress = None;
-            uAllocationProtectionFlags = None;
-            uAllocationSize = None;
-            uStateFlags = None;
-            uProtectionFlags = None;
-            uTypeFlags = None;
-            for sLine in asMemoryProtectionInformation:
-              oLineMatch = re.match(r"^(\w+):\s+([0-9a-f]+)(?:\s+\w+)?$", sLine);
-              assert oLineMatch, \
-                  "Unrecognized memory protection information line: %s\r\n%s" % (sLine, "\r\n".join(asMemoryProtectionInformation));
-              sInfoType, sValue = oLineMatch.groups();
-              uValue = long(sValue, 16);
-              if sInfoType == "BaseAddress":
-                pass; # Appear to be the address rounded down to the nearest start of a page, i.e. not useful information.
-              elif sInfoType == "AllocationBase":
-                uAllocationStartAddress = uValue;
-              elif sInfoType == "AllocationProtect":
-                uAllocationProtectionFlags = uValue;
-              elif sInfoType == "RegionSize":
-                uAllocationStartAddress = uValue;
-              elif sInfoType == "State":
-                uStateFlags = uValue;
-              elif sInfoType == "Protect":
-                uProtectionFlags = uValue;
-              elif sInfoType == "Type":
-                uTypeFlags = uValue;
-            if uStateFlags == 0x10000:
-              sAddressId = "Unallocated";
-              sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-              sSecurityImpact = "Potentially exploitable security issue";
-            elif uStateFlags == 0x2000: # MEM_RESERVE
-              assert uTypeFlags in [0x20000, 0x40000], \
-                  "Expected MEM_RESERVE memory to have type MEM_PRIVATE or MEM_MAPPED\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
-              assert uProtectionFlags == 0x1, \
-                  "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
-              sAddressId = "Reserved";
-              sBugDescription = "Access violation while %s reversed but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-              sSecurityImpact = None;
-            elif uStateFlags == 0x1000: # MEM_COMMIT
-              dsMemoryProtectionsDescription_by_uFlags = {
-                0x01: "inaccessible",  0x02: "read-only",  0x04: "read- and writable",  0x08: "read- and writable",
-                0x10: "executable", 0x20: "read- and executable", 0x40: "full-access", 0x80: "full-access"
-              };
-              sMemoryProtectionsDescription = dsMemoryProtectionsDescription_by_uFlags.get(uAllocationProtectionFlags);
-              assert sMemoryProtectionsDescription, \
-                  "Unexpected MEM_COMMIT memory to have protection value 0x%X\r\n%s" % (uAllocationProtectionFlags, "\r\n".join(asMemoryProtectionInformation));
-              sAddressId = "Arbitrary";
-              sBugDescription = "Access violation while %s %s memory at 0x%X" % (sViolationTypeDescription, sMemoryProtectionsDescription, uAddress);
-              sSecurityImpact = "Potentially exploitable security issue";
-            else:
-              raise AssertionError("Unexpected memory state 0x%X\r\n%s" % (uStateFlags, "\r\n".join(asMemoryProtectionInformation)));
-        else:
-          sAddressId = "Unknown";
-          sBugDescription = "Access violation while %s memory at 0x%X (the type of memory cannot be determined)" % (sViolationTypeDescription, uAddress);
-          sSecurityImpact = "Potentially exploitable security issue";
+            raise AssertionError("Unexpected memory state 0x%X\r\n%s" % (uStateFlags, "\r\n".join(asMemoryProtectionInformation)));
   oBugReport.sBugTypeId = "%s%s:%s" % (oBugReport.sBugTypeId, sViolationTypeId, sAddressId);
   oBugReport.sBugDescription = sBugDescription + sViolationTypeNotes;
   oBugReport.sSecurityImpact = sSecurityImpact;
