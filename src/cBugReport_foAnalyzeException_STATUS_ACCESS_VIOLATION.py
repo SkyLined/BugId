@@ -430,7 +430,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           elif uStateFlags == 0x2000: # MEM_RESERVE
             assert uTypeFlags in [0x20000, 0x40000], \
                 "Expected MEM_RESERVE memory to have type MEM_PRIVATE or MEM_MAPPED\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
-            assert uProtectionFlags == 0x1, \
+            assert uProtectionFlags == 0x1 or uAllocationProtectionFlags == 0x1, \
                 "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
             sAddressId = "Reserved";
             sBugDescription = "Access violation while %s reversed but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
