@@ -1,4 +1,5 @@
 from NTSTATUS import *;
+from dxBugIdConfig import dxBugIdConfig;
 
 daxExceptionHandling = {
   "sxe": [ # break on first chance exceptions
@@ -25,7 +26,6 @@ daxExceptionHandling = {
     STATUS_WAKE_SYSTEM_DEBUGGER,
   ],
   "sxd": [ # break on second chance exceptions
-    CPP_EXCEPTION_CODE,
     STATUS_INTEGER_DIVIDE_BY_ZERO,
     STATUS_INTEGER_OVERFLOW, 
     STATUS_INVALID_HANDLE, 
@@ -34,3 +34,6 @@ daxExceptionHandling = {
     "ld", "ud", # Load/unload module
   ],
 };
+
+# C++ Exceptions are either handled as second chance exceptions, or ignored completely.
+daxExceptionHandling[dxBugIdConfig["bIgnoreCPPExceptions"] and "sxi" or "sxd"].append(CPP_EXCEPTION_CODE);
