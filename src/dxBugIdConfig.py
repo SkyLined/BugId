@@ -66,10 +66,10 @@ for (sName, xValue) in {
   ### OOM mitigations
   "uReserveRAM": 0,             # How many bytes of RAM should be allocate at start of debugging, so they can be
                                 # released later to allow analysis under low memory conditions.
-  ### High CPU usage detection
-  "nHighCPUsuageCheckInterval": 5.0, # How many seconds to gather thread CPU usage data.
-  "nHighCPUsuagePercent": 90,   # How much time of nMeasurementInterval does a *single* thread need to consume to
-                                # trigger a high CPU usage bug report.
+  ### Excessive CPU usage detection
+  "nExcessiveCPUUsageCheckInterval": 5.0, # How many seconds to gather thread CPU usage data.
+  "nExcessiveCPUUsagePercent": 90, # How much of nMeasurementInterval does a *single* thread need to consume to
+                                # trigger an excessive CPU usage bug report.
   ### Timeouts
   "nTimeoutGranularity": 1.0,   # How often to check for timeouts, in seconds. Making this value smaller causes the
                                 # timeouts to fire closer to the intended time, but slows down debugging. Making the

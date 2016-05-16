@@ -14,7 +14,7 @@ from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrappe
 from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
 from cCdbWrapper_ftxSplitSymbolOrAddress import cCdbWrapper_ftxSplitSymbolOrAddress;
 from cCdbWrapper_fsHTMLEncode import cCdbWrapper_fsHTMLEncode;
-from cHighCPUUsageTracker import cHighCPUUsageTracker;
+from cExcessiveCPUUsageDetector import cExcessiveCPUUsageDetector;
 from dxBugIdConfig import dxBugIdConfig;
 from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
@@ -135,9 +135,9 @@ class cCdbWrapper(object):
     # You can set a breakpoint that results in a bug being reported when it is hit.
     # See fuAddBugBreakpoint and fReleaseBreakpointId for implementation details.
     oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId = {}; # Breakpoints that signal a bug.
-    # You can tell BugId to check for high CPU usage among all the threads running in the application.
-    # See fSetCheckForHighCPUUsageTimeout and cHighCPUUsageTracker.py for more information
-    oCdbWrapper.oHighCPUUsageTracker = cHighCPUUsageTracker(oCdbWrapper);
+    # You can tell BugId to check for excessive CPU usage among all the threads running in the application.
+    # See fSetCheckForExcessiveCPUUsageTimeout and cExcessiveCPUUsageDetector.py for more information
+    oCdbWrapper.oExcessiveCPUUsageDetector = cExcessiveCPUUsageDetector(oCdbWrapper);
     # Keep track of future timeouts and their callbacks
     oCdbWrapper.axTimeouts = [];
     # List of callbacks for the current timeout
@@ -272,8 +272,8 @@ class cCdbWrapper(object):
     oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId] = (sBugTypeId, sBugDescription, sSecurityImpact);
     return uBreakpointId;
   
-  def fSetCheckForHighCPUUsageTimeout(oCdbWrapper, nTimeout):
-    oCdbWrapper.oHighCPUUsageTracker.fStartTimeout(nTimeout);
+  def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
+    oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
   
   def fxSetTimeout(oCdbWrapper, nTimeout, fCallback):
     assert nTimeout >= 0, "Negative timeout does not make sense";
