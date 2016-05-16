@@ -40,6 +40,10 @@ class cStackFrame(object):
         oStackFrame.sSimplifiedAddress = sUnloadedModuleFileName;
       oStackFrame.sUniqueAddress = None;
     else:
+      # It may be useful to check if the address is in executable memory (using !vprot). If it is not, the return
+      # address is most likely incorrect and the validity of the entire stack is doubtful. This could have been caused
+      # by stack corruption in the application or cdb failing to unwind the stack correctly. Both are interesting to
+      # report. When I ever run into an example of this, I will implement it.
       oStackFrame.sAddress = "0x%X" % uAddress;
       oStackFrame.sSimplifiedAddress = "(unknown)";
       oStackFrame.sUniqueAddress = None;

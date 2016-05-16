@@ -4,7 +4,6 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
   oTopmostRelevantFunctionFrame = None;  # topmost relevant frame that has a function symbol
   oTopmostRelevantModuleFrame = None;    # topmost relevant frame that has no function symbol but a module
   uFramesHashed = 0;
-  bStackShowsNoSignOfCorruption = True;
   if oCdbWrapper.bGetDetailsHTML:
     asStackHTML = [];
   asStackFrameIds = [];
@@ -20,19 +19,17 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
       if oCdbWrapper.bGetDetailsHTML:
         asStackHTML.append('<span class="StackIgnored">%s</span><span class="StackSource">%s</span>' % (sAddressHTML, sSourceHTML));
     else:
-      # Once a stack frame is encountered with no id, (i.e. no module or function) the stack can no longer be trusted to be correct.
-      bStackShowsNoSignOfCorruption = bStackShowsNoSignOfCorruption and (oStackFrame.sId and True or False);
       oTopmostRelevantFrame = oTopmostRelevantFrame or oStackFrame;
       # Make stack frames without a function symbol italic
       if oCdbWrapper.bGetDetailsHTML and not oStackFrame.oFunction:
         sAddressHTML = '<span class="StackNoSymbol">%s</span>' % sAddressHTML;
       # Hash frame address for id and output frame to html
-      if not bStackShowsNoSignOfCorruption or uFramesHashed == oBugReport.oStack.uHashFramesCount:
+      if uFramesHashed == oBugReport.oStack.uHashFramesCount:
         # no more hashing is needed: just output as is:
         if oCdbWrapper.bGetDetailsHTML:
           asStackHTML.append('<span class="Stack">%s</span><span class="StackSource">%s</span>' % (sAddressHTML, sSourceHTML));
       else:
-        asStackFrameIds.append(oStackFrame.sId);
+        asStackFrameIds.append(oStackFrame.sId or "?");
         # frame adds useful information to the id: add hash and output bold
         uFramesHashed += 1;
         if oCdbWrapper.bGetDetailsHTML:
@@ -42,7 +39,7 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
           oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
         elif oStackFrame.oModule:
           oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
-  oBugReport.sStackId = ".".join([s for s in asStackFrameIds if s]) or "?";
+  oBugReport.sStackId = ".".join([s for s in asStackFrameIds]);
   if oCdbWrapper.bGetDetailsHTML and oBugReport.oStack.bPartialStack:
     asStackHTML.append("... (the remainder of the stack was ignored)");
   # Get the topmost relevant code frame; prefer one with a function symbol, otherwise one with a module or just the first non-hidden.
