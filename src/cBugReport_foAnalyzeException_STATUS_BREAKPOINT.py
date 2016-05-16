@@ -69,37 +69,7 @@ dtxBugTranslations = {
     [
       [ # Edge
         "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::AssertionFailed",
-      ], [
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::CheckHRESULT",
-      ], [
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
-      ], [
-        "KERNELBASE.dll!RaiseException",
         "edgehtml.dll!Abandonment::InduceAbandonment",
-        "edgehtml.dll!Abandonment::InduceHRESULTAbandonment",
-        "edgehtml.dll!Abandonment::CheckHRESULTStrict",
-      ], [
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::DeprecatedAPI",
-      ], [
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::Fail",
-      ], [
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
-      ], [
-        "KERNELBASE.dll!RaiseException",
-        "EDGEHTML.dll!Abandonment::InduceAbandonment",
-        "EDGEHTML.dll!Abandonment::InvalidArguments",
       ],
     ],
   ),
@@ -138,13 +108,6 @@ asHiddenTopFrames = [
   "KERNELBASE.dll!DebugBreak",
   "KERNELBASE.dll!RaiseException",
   "ntdll.dll!DbgBreakPoint",
-  "EDGEHTML.dll!Abandonment::AssertionFailed",
-  "EDGEHTML.dll!Abandonment::CheckHRESULT",
-  "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
-  "EDGEHTML.dll!Abandonment::Fail",
-  "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
-  "EDGEHTML.dll!Abandonment::InduceAbandonment",
-  "EDGEHTML.dll!Abandonment::InvalidArguments",
   "chrome.dll!base::debug::BreakDebugger",
   "chrome_child.dll!base::debug::BreakDebugger",
   # Heap allocation and checking functions for "HeapCorrupt" cases:
@@ -296,6 +259,15 @@ asHiddenTopFrames = [
   "xul.dll!std::vector<...>::_Reserve",
   # Edge allocations functions that are irrelevant in OOM cases.
   "EDGEHTML.dll!ProcessHeapAlloc<0>",
+  # Edge functions that are irrelevant to assertions.
+  "EDGEHTML.dll!Abandonment::AssertionFailed",
+  "EDGEHTML.dll!Abandonment::CheckHRESULT",
+  "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
+  "EDGEHTML.dll!Abandonment::DeprecatedAPI",
+  "EDGEHTML.dll!Abandonment::Fail",
+  "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
+  "EDGEHTML.dll!Abandonment::InduceHRESULTAbandonment",
+  "EDGEHTML.dll!Abandonment::InvalidArguments",
 ];
 def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper):
   oBugReport = oBugReport.foTranslate(dtxBugTranslations);
