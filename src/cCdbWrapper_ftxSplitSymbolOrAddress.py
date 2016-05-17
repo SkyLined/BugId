@@ -25,29 +25,31 @@ def cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules
       sModuleOffset,
       sSymbol, sSymbolOffset
   ) = oMatch.groups();
-  uModuleOffset = (
-    sUnloadedModuleOffset and long(sUnloadedModuleOffset.replace("`", ""), 16) or
-    sModuleOffset and long(sModuleOffset.replace("`", ""), 16)
-  );
-  uSymbolOffset = sSymbolOffset and long(sSymbolOffset.replace("`", ""), 16);
-  if sModuleCdbId == "SharedUserData":
+  uAddress = None;
+  oModule = None;
+  uModuleOffset = None;
+  oFunction = None;
+  uFunctionOffset = None;
+  if sAddress:
+    uAddress = long(sAddress.replace("`", ""), 16);
+  elif sUnloadedModuleFileName:
+    # sUnloadedModuleFileName is returned without modification
+    uModuleOffset = sUnloadedModuleOffset and long(sUnloadedModuleOffset.replace("`", ""), 16) or 0;
+  elif sModuleCdbId == "SharedUserData":
     # "ShareUserData" is a symbol outside of any module that gets used as a module name in cdb.
-    # Any value referencing it must be converted to an address:
-    sBaseSymbol = "SharedUserData";
-    if sSymbol: sBaseSymbol += "!%s" % sSymbol;
-    uAddress = oCdbWrapper.fuEvaluateExpression(sBaseSymbol);
+    # Any value referencing it will be converted to an address:
+    sAddress = "SharedUserData";
+    if sSymbol: sAddress += "!%s" % sSymbol;
+    uAddress = oCdbWrapper.fuEvaluateExpression(sAddress);
     if uModuleOffset: uAddress += uModuleOffset;
     if uSymbolOffset: uAddress += uSymbolOffset;
-    # Clean up:
-    oModule = None;
-    uModuleOffset = None;
-    oFunction = None;
-    uFunctionOffset = None;
   else:
-    uAddress = sAddress and long(sAddress.replace("`", ""), 16);
-    oModule = sModuleCdbId and doModules_by_sCdbId[sModuleCdbId];
-    oFunction = oModule and sSymbol and oModule.foGetOrCreateFunction(sSymbol);
-    uFunctionOffset = uSymbolOffset;
+    oModule = doModules_by_sCdbId[sModuleCdbId];
+    if sModuleOffset:
+      uModuleOffset = long(sModuleOffset.replace("`", ""), 16);
+    else:
+      oFunction = oModule.foGetOrCreateFunction(sSymbol);
+      uFunctionOffset = sSymbolOffset and long(sSymbolOffset.replace("`", ""), 16) or 0;
   return (
     uAddress,
     sUnloadedModuleFileName, oModule, uModuleOffset,
