@@ -12,8 +12,15 @@ class cException(object):
     oException.uCode = uCode;
     oException.sCodeDescription = sCodeDescription;
     oException.asExceptionRecord = asExceptionRecord; # This is here merely to be able to debug issues - it is not used.
+    
     oException.uAddress = None;
     oException.sAddressSymbol = None; # See below
+    oException.sUnloadedModuleFileName = None;
+    oException.oModule = None;
+    oException.uModuleOffset = None;
+    oException.oFunction = None;
+    oException.uFunctionOffset = None;
+    
     oException.uFlags = None;
     oException.auParameters = None;
     oException.sDetails = None;
@@ -36,29 +43,36 @@ class cException(object):
           if oExceptionAddressSymbolMatch:
             oException.sAddressSymbol = oExceptionAddressSymbolMatch.group(1);
             break;
-        # verify the exception and the stack have the same information were applicable.
-        oException.fCheckWithStack(oCdbWrapper);
+        # verify the exception and the first stack frame have the same information where applicable.
+        oException.fCheckWithFirstStackFrame(oCdbWrapper);
     return oException.oStack;
 
-  def fCheckWithStack(oException, oCdbWrapper):
+  def fCheckWithFirstStackFrame(oException, oCdbWrapper):
     # Compare stack with exception information
     if oException.sAddressSymbol:
       doModules_by_sCdbId = oCdbWrapper.fdoGetModulesByCdbIdForCurrentProcess();
       (
-        uAddress,
-        sUnloadedModuleFileName, oModule, uModuleOffset,
-        oFunction, uFunctionOffset
+        oException.uAddress,
+        oException.sUnloadedModuleFileName, oException.oModule, oException.uModuleOffset,
+        oException.oFunction, oException.uFunctionOffset
       ) = oCdbWrapper.ftxSplitSymbolOrAddress(oException.sAddressSymbol, doModules_by_sCdbId);
-      sCdbSource = oException.sAddressSymbol;
+      sCdbLine = oException.sAddressSymbol;
+      if oException.uCode == STATUS_BREAKPOINT and oException.oFunction and oException.oFunction.sName == "ntdll.dll!DbgBreakPoint":
+        # This breakpoint most likely got inserted into the process by cdb. There will be no trace of it in the stack,
+        # so do not try to check that exception information matches the first stack frame.
+        return;
     else:
-      sCdbSource = "%X" % oException.uAddress; # Kinda faking it here :)
-      uAddress = oException.uAddress;
-      sUnloadedModuleFileName, oModule, uModuleOffset = None, None, None;
-      oFunction, uFunctionOffset = None, None;
+      sCdbLine = "0x%x" % oException.uAddress; # Kinda faking it here :)
     if not oException.oStack.aoFrames:
       # Failed to get stack, use information from exception.
       uFrameNumber = 0;
-      oException.oStack.fCreateAndAddStackFrame(uFrameNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset, None, None);
+      oException.oStack.fCreateAndAddStackFrame(
+        uFrameNumber, sCdbLine,
+        oException.uAddress,
+        oException.sUnloadedModuleFileName, oException.oModule, oException.uModuleOffset,
+        oException.oFunction, oException.uFunctionOffset,
+        None, None
+      );
     else:
       if oException.uCode == STATUS_WAKE_SYSTEM_DEBUGGER:
         # This exception does not happen in a particular part of the code, and the exception address is therefore 0.
@@ -67,53 +81,54 @@ class cException(object):
       elif oException.uCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]:
         oFrame = oException.oStack.aoFrames[0];
         if (
-          oFrame.uAddress == uAddress
-          and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
-          and oFrame.oModule == oModule
-          and oFrame.uModuleOffset == uModuleOffset
-          and oFrame.oFunction == oFunction
-          and oFrame.uFunctionOffset == uFunctionOffset
+          oFrame.uAddress == oException.uAddress
+          and oFrame.sUnloadedModuleFileName == oException.sUnloadedModuleFileName
+          and oFrame.oModule == oException.oModule
+          and oFrame.uModuleOffset == oException.uModuleOffset
+          and oFrame.oFunction == oException.oFunction
+          and oFrame.uFunctionOffset == oException.uFunctionOffset
         ):
           pass;
         else:
           # A breakpoint normally happens at an int 3 instruction, and eip/rip will be updated to the next instruction.
           # If the same exception code (0x80000003) is raised using ntdll!RaiseException, the address will be
           # off-by-one, see if this can be fixed:
-          if uAddress is not None:
-            uAddress -= 1;
-          elif uModuleOffset is not None:
-            uModuleOffset -= 1;
-          elif uFunctionOffset is not None:
-            uFunctionOffset -= 1;
+          if oException.uAddress is not None:
+            oException.uAddress -= 1;
+          elif oException.uModuleOffset is not None:
+            oException.uModuleOffset -= 1;
+          elif oException.uFunctionOffset is not None:
+            oException.uFunctionOffset -= 1;
           else:
-            raise AssertionError("The first stack frame appears to have no address or offet to adjust.");
+            raise AssertionError("The exception record appears to have no address or offet to adjust.\r\n%s" % oException.asExceptionRecord);
           assert (
-            oFrame.uAddress == uAddress
-            and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
-            and oFrame.oModule == oModule
-            and oFrame.uModuleOffset == uModuleOffset
-            and oFrame.oFunction == oFunction
-            and oFrame.uFunctionOffset == uFunctionOffset
-          ), "The first stack frame does not appear to match the exception address: %s vs %s" % (
+            oFrame.uAddress == oException.uAddress
+            and oFrame.sUnloadedModuleFileName == oException.sUnloadedModuleFileName
+            and oFrame.oModule == oException.oModule
+            and oFrame.uModuleOffset == oException.uModuleOffset
+            and oFrame.oFunction == oException.oFunction
+            and oFrame.uFunctionOffset == oException.uFunctionOffset
+          ), "The first stack frame does not appear to match the exception address:\r\n%s\r\n%s" % (
             repr((oFrame.uAddress, oFrame.sUnloadedModuleFileName, oFrame.oModule, oFrame.uModuleOffset, oFrame.oFunction, oFrame.uFunctionOffset)),
-            repr((uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, oFunction, uFunctionOffset)),
-           );
+            repr((oException.uAddress, oException.sUnloadedModuleFileName, oException.oModule, oException.uModuleOffset, oException.oFunction, oException.uFunctionOffset)),
+          );
       else:
         # Check that the address where the exception happened is on the stack and hide any frames that appear above it,
         # as these are not interesting (e.g. ntdll!RaiseException).
         for oFrame in oException.oStack.aoFrames:
           if (
-            oFrame.uAddress == uAddress
-            and oFrame.sUnloadedModuleFileName == sUnloadedModuleFileName
-            and oFrame.oModule == oModule
-            and oFrame.uModuleOffset == uModuleOffset
-            and oFrame.oFunction == oFunction
-            and oFrame.uFunctionOffset == uFunctionOffset
+            oFrame.uAddress == oException.uAddress
+            and oFrame.sUnloadedModuleFileName == oException.sUnloadedModuleFileName
+            and oFrame.oModule == oException.oModule
+            and oFrame.uModuleOffset == oException.uModuleOffset
+            and oFrame.oFunction == oException.oFunction
+            and oFrame.uFunctionOffset == oException.uFunctionOffset
           ):
             break;
           oFrame.bIsHidden = True;
         else:
-          raise AssertionError("The exception address %s was not found on the stack" % sCdbSource);
+          raise AssertionError("The exception address %s was not found on the stack\r\n%s" % \
+              (sCdbLine, "\r\n".join(oException.oStack.asCdbLines)));
   
   @classmethod
   def foCreate(cException, oCdbWrapper, oProcess, uCode, sCodeDescription):

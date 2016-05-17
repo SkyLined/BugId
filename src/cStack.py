@@ -3,7 +3,8 @@ from cStackFrame import cStackFrame;
 from dxBugIdConfig import dxBugIdConfig;
 
 class cStack(object):
-  def __init__(oStack):
+  def __init__(oStack, asCdbLines):
+    oStack.asCdbLines = asCdbLines;
     oStack.aoFrames = [];
     oStack.bPartialStack = False;
     oStack.uHashFramesCount = dxBugIdConfig["uStackHashFramesCount"];
@@ -16,7 +17,7 @@ class cStack(object):
         # or stop hiding frames if it should not be hidden.
         break;
   
-  def fCreateAndAddStackFrame(oStack, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+  def fCreateAndAddStackFrame(oStack, uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
       oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber):
     # frames must be created in order:
     assert uNumber == len(oStack.aoFrames), \
@@ -27,17 +28,17 @@ class cStack(object):
     if uNumber == uMaxStackFramesCount - 1:
       oStack.bPartialStack = True; # We leave the last one out so we can truely say there are more.
     else:
-      oStackFrame = cStackFrame(uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+      oStackFrame = cStackFrame(uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
           oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber)
       oStack.aoFrames.append(oStackFrame);
     
   @classmethod
   def foCreateFromAddress(cStack, oCdbWrapper, pAddress, uSize):
     # Create the stack object
-    oStack = cStack();
     uStackFramesCount = min(dxBugIdConfig["uMaxStackFramesCount"], uSize);
     asStack = oCdbWrapper.fasGetStack("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
     if not asStack: return None;
+    oStack = cStack(asStack);
     # Here are some lines you might expect to parse:
     # |TODO put something here...
     uFrameNumber = 0;
@@ -75,10 +76,10 @@ class cStack(object):
     doModules_by_sCdbId = oCdbWrapper.fdoGetModulesByCdbIdForCurrentProcess();
     if not oCdbWrapper.bCdbRunning: return None;
     # Create the stack object
-    oStack = cStack();
     uStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
     asStack = oCdbWrapper.fasGetStack("kn 0x%X" % uStackFramesCount);
     if not asStack: return None;
+    oStack = cStack(asStack);
     sHeader = asStack.pop(0);
     assert re.sub(r"\s+", " ", sHeader.strip()) in ["# ChildEBP RetAddr", "# Child-SP RetAddr Call Site", "Could not allocate memory for stack trace"], \
         "Unknown stack header: %s" % repr(sHeader);

@@ -2,10 +2,10 @@ import hashlib, math;
 from dxBugIdConfig import dxBugIdConfig;
 
 class cStackFrame(object):
-  def __init__(oStackFrame, uNumber, sCdbSource, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+  def __init__(oStackFrame, uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
       oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber):
     oStackFrame.uNumber = uNumber;
-    oStackFrame.sCdbSource = sCdbSource;
+    oStackFrame.sCdbLine = sCdbLine;
     oStackFrame.uAddress = uAddress;
     oStackFrame.sUnloadedModuleFileName = sUnloadedModuleFileName;
     oStackFrame.oModule = oModule;
@@ -32,12 +32,8 @@ class cStackFrame(object):
       # reduces the chance of getting the same id for the same crash in different builds.
       oStackFrame.sUniqueAddress = "%s+0x%X" % (oModule.sUniqueName, uModuleOffset);
     elif sUnloadedModuleFileName:
-      if uModuleOffset is not None:
-        oStackFrame.sAddress = "%s + 0x%X" % (sUnloadedModuleFileName, uModuleOffset);
-        oStackFrame.sSimplifiedAddress = "%s+0x%X" % (sUnloadedModuleFileName, uModuleOffset);
-      else:
-        oStackFrame.sAddress = "%s + ??" % sUnloadedModuleFileName;
-        oStackFrame.sSimplifiedAddress = sUnloadedModuleFileName;
+      oStackFrame.sAddress = "%s + 0x%X" % (sUnloadedModuleFileName, uModuleOffset);
+      oStackFrame.sSimplifiedAddress = "%s+0x%X" % (sUnloadedModuleFileName, uModuleOffset);
       oStackFrame.sUniqueAddress = None;
     else:
       # It may be useful to check if the address is in executable memory (using !vprot). If it is not, the return
