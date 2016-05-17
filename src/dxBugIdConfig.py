@@ -68,7 +68,7 @@ for (sName, xValue) in {
                                 # released later to allow analysis under low memory conditions.
   ### Excessive CPU usage detection
   "nExcessiveCPUUsageCheckInterval": 5.0, # How many seconds to gather thread CPU usage data.
-  "nExcessiveCPUUsagePercent": 90, # How much of nMeasurementInterval does a *single* thread need to consume to
+  "nExcessiveCPUUsagePercent": 25, # How much of nMeasurementInterval does a *single* thread need to consume to
                                 # trigger an excessive CPU usage bug report.
   ### Timeouts
   "nTimeoutGranularity": 1.0,   # How often to check for timeouts, in seconds. Making this value smaller causes the

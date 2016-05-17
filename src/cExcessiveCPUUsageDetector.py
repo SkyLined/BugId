@@ -11,6 +11,7 @@ class cExcessiveCPUUsageDetector(object):
     oExcessiveCPUUsageDetector.uBugBreakpointId = None;
   
   def fStartTimeout(oExcessiveCPUUsageDetector, nTimeout):
+#    print "@@@ Starting excessive CPU usage checks in %d seconds..." % nTimeout;
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
@@ -61,6 +62,7 @@ class cExcessiveCPUUsageDetector(object):
       # Find out which thread in which process used the most CPU time by comparing previous CPU usage and
       # run time values to current values for all threads in all processes that exist in both data sets.
       nMaxCPUPercent = -1;
+      nTotalCPUPercent = 0;
       for (uProcessId, dtCurrent_nCPUTime_and_nRunTime_by_uThreadId) in ddtCurrent_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId.items():
         if uProcessId in ddtPrevious_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId:
           dtPrevious_nCPUTime_and_nRunTime_by_uThreadId = ddtPrevious_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId[uProcessId];
@@ -72,6 +74,7 @@ class cExcessiveCPUUsageDetector(object):
                 nCPUTime = tCurrent_nCPUTime_and_nRunTime[0] - tPrevious_nCPUTime_and_nRunTime[0];
                 nRunTime = tCurrent_nCPUTime_and_nRunTime[1] - tPrevious_nCPUTime_and_nRunTime[1];
                 nCPUPercent = nRunTime > 0 and (100.0 * nCPUTime / nRunTime) or 0;
+                nTotalCPUPercent += nCPUPercent;
                 if nCPUPercent > nMaxCPUPercent:
                   nMaxCPUPercent = nCPUPercent;
                   uMaxCPUProcessId = uProcessId;
@@ -83,13 +86,12 @@ class cExcessiveCPUUsageDetector(object):
 #                  tPrevious_nCPUTime_and_nRunTime[1], tCurrent_nCPUTime_and_nRunTime[1], nRunTime,
 #                  nCPUPercent
 #                );
-#      print "@@@ Max CPU usage is %d%% by process %d/0x%X, thread %d/0x%X..." % \
-#          (nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUProcessId, uMaxCPUThreadId, uMaxCPUThreadId);
-      # If any thread has excessive CPU usage
-      if nMaxCPUPercent > dxBugIdConfig["nExcessiveCPUUsagePercent"]:
-        # Find out which function is using excessive CPU time.
 # Use for debugging
-#        print "*** Max CPU: %d%% for pid %d, tid %d" % (nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
+#      print "*** Total CPU usage: %d%%, max: %d%% for pid %d, tid %d" % \
+#          (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
+      # If all threads in all processes combined have excessive CPU usage
+      if nTotalCPUPercent > dxBugIdConfig["nExcessiveCPUUsagePercent"]:
+        # Find out which function is using excessive CPU time in the most active thread.
         oExcessiveCPUUsageDetector.fInstallWorm(uMaxCPUProcessId, uMaxCPUThreadId);
       else:
         # No thread suspected of excessive CPU usage: measure CPU usage over another interval.
@@ -120,18 +122,36 @@ class cExcessiveCPUUsageDetector(object):
     oExcessiveCPUUsageDetector.uWormThreadId = uThreadId;
     oExcessiveCPUUsageDetector.uWormBreakpointId = oCdbWrapper.fuGetBreakpointId();
     oExcessiveCPUUsageDetector.uWormVariableId = oCdbWrapper.fuGetVariableId();
-    sSetBreakpointCommand = r'r $t%d=@$ip;~. bp%d @$ra "ExcessiveCPUUsageWorm;g;";.printf "Excessive CPU usage worm at %%p, next breakpoint at %%p.\r\n", @$ip, @$ra;' % \
-        (oExcessiveCPUUsageDetector.uWormVariableId, oExcessiveCPUUsageDetector.uWormBreakpointId);
-    # Create the worm and start it.
+    sSetBreakpointCommand = "".join([
+      # Save the current IP: it is the highest point on the stack reached so far.
+      "r $t%d=@$ip;" % oExcessiveCPUUsageDetector.uWormVariableId,
+      '.printf "Excessive CPU usage worm at %p, next breakpoint at %p.\\r\\n", @$ip, @$ra;',
+# useful for debugging
+#      "k 3;",
+      # Set a new one-time breakpoint for the next address on the stack and the current thread. cdb may fail to get the
+      # right return address, so make sure the address is valid.
+      ".if ($vvalid(@$ra,1)) {",
+        '~. bp%d @$ra "${/n:ExcessiveCPUUsageWorm};g;";' % oExcessiveCPUUsageDetector.uWormBreakpointId,
+      "};",
+    ]);
+    # Create the worm code
     sSetAliasCommand = 'aS ExcessiveCPUUsageWorm "%s";' % sSetBreakpointCommand.replace("\\", "\\\\").replace('"', '\\"');
     asNothing = oCdbWrapper.fasSendCommandAndReadOutput(sSetAliasCommand, bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return;
     assert len(asNothing) == 0, \
         "Unexpected set ExcessiveCPUUsageWorm alias output:\r\n%s" % "\r\n".join(asNothing);
-    asNothing = oCdbWrapper.fasSendCommandAndReadOutput("ExcessiveCPUUsageWorm", bIsRelevantIO = False);
+    # Start the worm 
+    asNothing = oCdbWrapper.fasSendCommandAndReadOutput("".join([
+      # Save the current IP: it is the highest point on the stack reached so far.
+      "r $t%d=@$ip;" % oExcessiveCPUUsageDetector.uWormVariableId,
+      # Ideally, we'd run the worm code immediately, but that is not possible because cdb does not give the correct
+      # return address in @$ra at this point. The reason is unknown, but if we set a breakpoint for this same location
+      # the @$ra variable will be set correctly when we hit it, and the worm can start climbing up the stack.
+      '~. bp%d @$ip "${/n:ExcessiveCPUUsageWorm};g;";' % oExcessiveCPUUsageDetector.uWormBreakpointId,
+    ]), bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return;
-    assert len(asNothing) == 1, \
-        "Unexpected run ExcessiveCPUUsageWorm alias output:\r\n%s" % "\r\n".join(asNothing);
+    assert len(asNothing) == 0, \
+        "Unexpected set ExcessiveCPUUsageWorm breakpoint output:\r\n%s" % "\r\n".join(asNothing);
     # Set a timeout after which we check what the worm found.
     nTimeout = dxBugIdConfig["nExcessiveCPUUsageCheckInterval"];
     oExcessiveCPUUsageDetector.xCheckWormResultTimeout = oCdbWrapper.fxSetTimeout(nTimeout, oExcessiveCPUUsageDetector.fCheckWormResult);
