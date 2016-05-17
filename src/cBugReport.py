@@ -90,6 +90,10 @@ class cBugReport(object):
     
     # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
     oStack.fHideTopFrames(asHiddenTopFrames);
+    if oException.uCode == STATUS_BREAKPOINT and oException.oFunction and oException.oFunction.sName == "ntdll.dll!DbgBreakPoint":
+      # This breakpoint most likely got inserted into the process by cdb. There will be no trace of it in the stack,
+      # so do not try to check that exception information matches the first stack frame.
+      return None;
     # Create a preliminary error report.
     oBugReport = cSelf(
       oCdbWrapper = oCdbWrapper,
