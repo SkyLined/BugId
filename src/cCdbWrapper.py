@@ -140,8 +140,6 @@ class cCdbWrapper(object):
     oCdbWrapper.oExcessiveCPUUsageDetector = cExcessiveCPUUsageDetector(oCdbWrapper);
     # Keep track of future timeouts and their callbacks
     oCdbWrapper.axTimeouts = [];
-    # List of callbacks for the current timeout
-    oCdbWrapper.afActivatedTimeoutCallbacks = [];
     # Set to true if cdb has been interrupted by the timeout thread but the stdio thread has not yet handled this. Used
     # to prevent the timeout thread from interrupting it multiple times if the stdio thread is slow.
     oCdbWrapper.bInterruptPending = False;

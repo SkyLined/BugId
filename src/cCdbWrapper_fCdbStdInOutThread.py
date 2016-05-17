@@ -63,27 +63,42 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         asIntialCdbOutput = None;
       else:
         # Then attach to a process, or start or resume the application
-        if not bInitialApplicationRunningCallbackFired or bApplicationWasPausedToAnalyzeAnException:
-          # Application was started or resumed after an exception
+        if ( # If we've just started the application or we've attached to all processes and are about to resume them...
+          not bInitialApplicationRunningCallbackFired and len(oCdbWrapper.auProcessIdsPendingAttach) == 0
+        ) or ( # ... or if we've paused the application and are about to resume it ...
+          bApplicationWasPausedToAnalyzeAnException
+        ):
+          # ...report that the application is about to start running.
           oCdbWrapper.fApplicationRunningCallback and oCdbWrapper.fApplicationRunningCallback();
           bInitialApplicationRunningCallbackFired = True;
         # Mark the time when the application was resumed.
         oCdbWrapper.nApplicationResumeTime = time.clock();
         # Release the lock on cdb so the "interrupt on timeout" thread can attempt to interrupt cdb while the
         # application is running.
-        oCdbWrapper.oCdbLock.release();
+        if len(oCdbWrapper.auProcessIdsPendingAttach) == 0:
+          oCdbWrapper.oCdbLock.release();
         try:
           asCdbOutput = oCdbWrapper.fasSendCommandAndReadOutput("g", bMayContainApplicationOutput = True);
           if not oCdbWrapper.bCdbRunning: return;
         finally:
           # Get a lock on cdb so the "interrupt on timeout" thread does not attempt to interrupt cdb while we execute
           # commands.
-          oCdbWrapper.oCdbLock.acquire();
+          if len(oCdbWrapper.auProcessIdsPendingAttach) == 0:
+            oCdbWrapper.oCdbLock.acquire();
+          # Let the interrupt-on-timeout thread know that the application has been interrupted, so that when it detects
+          # another timeout should be fired, it will try to interrupt the application again.
+          oCdbWrapper.bInterruptPending = False;
         # Add the time since the application was resumed to the total application run time, and mark the application as
         # suspended by setting nApplicationResumeTime to None. TODO there is a race condition between here and in
         # oCdbWrapper.fxSetTimeout that must be addressed.
         oCdbWrapper.nApplicationRunTime += time.clock() - oCdbWrapper.nApplicationResumeTime;
         oCdbWrapper.nApplicationResumeTime = None;
+        # Execute any pending timeout callbacks
+        for xTimeout in oCdbWrapper.axTimeouts:
+          (nTimeoutTime, fTimeoutCallback) = xTimeout;
+          if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
+            oCdbWrapper.axTimeouts.remove(xTimeout);
+            fTimeoutCallback();
       if oCdbWrapper.bGetDetailsHTML:
         # Save the current number of blocks of StdIO; if this exception is not relevant it can be used to remove all
         # blocks added while analyzing it. These blocks are not considered to contain useful information and removing
@@ -174,13 +189,9 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
             oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
           );
       elif uExceptionCode == DBG_CONTROL_BREAK:
-        # Debugging the application was interrupted, and the application suspended to fire some timeouts:
-        assert oCdbWrapper.bInterruptPending, "Got an unexpected DBG_CONTROL_BREAK exceptions";
-        oCdbWrapper.bInterruptPending = False;
-        assert len(oCdbWrapper.afActivatedTimeoutCallbacks) > 0, "Got a DBG_CONTROL_BREAK exception without any callbacks";
-        while oCdbWrapper.afActivatedTimeoutCallbacks:
-          fTimeoutCallback = oCdbWrapper.afActivatedTimeoutCallbacks.pop();
-          fTimeoutCallback();
+        # Debugging the application was interrupted and the application suspended to fire some timeouts. This exception
+        # is not a bug and should be ignored.
+        pass;
       elif (
         uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]
         and dxBugIdConfig["bIgnoreFirstChanceBreakpoints"]
