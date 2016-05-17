@@ -16,7 +16,12 @@ class cBugId(object):
     oBugId.__oCdbWrapper.fStop();
   
   def fWait(oBugId):
-    oBugId.__oFinishedEvent.wait();
+    while 1:
+      try:
+        oBugId.__oFinishedEvent.wait();
+      except KeyboardInterrupt:
+        continue;
+      break;
   
   def fSetCheckForExcessiveCPUUsageTimeout(oBugId, nTimeout):
     oBugId.__oCdbWrapper.fSetCheckForExcessiveCPUUsageTimeout(nTimeout);
