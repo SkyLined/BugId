@@ -1,4 +1,4 @@
-import subprocess, threading, time;
+import itertools, re, subprocess, threading, time;
 from cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess import cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess;
 from cCdbWrapper_fasGetStack import cCdbWrapper_fasGetStack;
 from cCdbWrapper_fasReadOutput import cCdbWrapper_fasReadOutput;
@@ -131,10 +131,10 @@ class cCdbWrapper(object):
     oCdbWrapper.uAvailableVariableIds = list(xrange(20)); # $t0-$t19. 
     # To make it easier to refer to cdb breakpoints by id, a mechanism must be used to allocate and release them
     # See fuGetBreakpointId and fReleaseBreakpointId for implementation details.
-    oCdbWrapper.uLastUsedBreakpointId = -1; # None have been used so far.
+    oCdbWrapper.oBreakpointCounter = itertools.count(); # None have been used so far, so start at 0.
     # You can set a breakpoint that results in a bug being reported when it is hit.
     # See fuAddBugBreakpoint and fReleaseBreakpointId for implementation details.
-    oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId = {}; # Breakpoints that signal a bug.
+    oCdbWrapper.dfCallback_by_uBreakpointId = {};
     # You can tell BugId to check for excessive CPU usage among all the threads running in the application.
     # See fSetCheckForExcessiveCPUUsageTimeout and cExcessiveCPUUsageDetector.py for more information
     oCdbWrapper.oExcessiveCPUUsageDetector = cExcessiveCPUUsageDetector(oCdbWrapper);
@@ -236,39 +236,60 @@ class cCdbWrapper(object):
     return oCdbWrapper.uAvailableVariableIds.pop();
   def fReleaseVariableId(oCdbWrapper, uVariableId):
     oCdbWrapper.uAvailableVariableIds.append(uVariableId);
+  
   def fuGetBreakpointId(oCdbWrapper):
     # TODO: Potential race condition must be dealt with.
-    oCdbWrapper.uLastUsedBreakpointId += 1;
-    return oCdbWrapper.uLastUsedBreakpointId;
+    return oCdbWrapper.oBreakpointCounter.next();
+  def fSetBreakpoint(oCdbWrapper, uBreakpointId, sAddress, fCallback, uProcessId = None, uThreadId = None, sCommand = None):
+    # Select the right process/thread if requested.
+    oCdbWrapper.fSelectProcessAndThread(uProcessId, uThreadId);
+    if not oCdbWrapper.bCdbRunning: return;
+    # Put breakpoint only on relevant thread if provided.
+    if uThreadId is not None:
+      sCommand = ".if (@$tid != 0x%X) {g;}%s;" % (uThreadId, sCommand is not None and " .else {%s}" % sCommand or "");
+    sBreakpointCommand = "bp%d %s%s;bl" % (
+      uBreakpointId,
+      sAddress, 
+      sCommand and (' "%s"' % sCommand.replace("\\", "\\\\").replace('"', '\\"')) or ""
+    );
+    asBreakpointResult = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand, bIsRelevantIO = False);
+#    assert (
+#      len(asBreakpointResult) == 0
+#      or (
+#        len(asBreakpointResult) == 1
+#        and re.match(r"breakpoint %d exists, redefining" % uBreakpointId, asBreakpointResult[0])
+#      )
+#    ), "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
+    if not oCdbWrapper.bCdbRunning: return;
+    oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId] = fCallback;
   def fReleaseBreakpointId(oCdbWrapper, uBreakpointId):
     # There can be any number of breakpoints according to the docs, so no need to reuse them.
-    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput("bc%d" % uBreakpointId);
-    if uBreakpointId in oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId:
-      del oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId];
+    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput("bc%d" % uBreakpointId, bIsRelevantIO = False);
+    if uBreakpointId in oCdbWrapper.dfCallback_by_uBreakpointId:
+      del oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId];
   
+  def fSelectProcess(oCdbWrapper, uProcessId):
+    return oCdbWrapper.fSelectProcessAndThread(uProcessId = uProcessId);
+  def fSelectThread(oCdbWrapper, uThreadId):
+    return oCdbWrapper.fSelectProcessAndThread(uThreadId = uThreadId);
   def fSelectProcessAndThread(oCdbWrapper, uProcessId = None, uThreadId = None):
     # Both arguments are optional
     if uProcessId is not None:
       asSelectProcessOutput = oCdbWrapper.fasSendCommandAndReadOutput("|~[0x%X]s" % uProcessId, bIsRelevantIO = False);
       if not oCdbWrapper.bCdbRunning: return;
-      assert len(asSelectProcessOutput) == 0, \
+      asSelectProcessUnknownOutput = [
+        s for s in asSelectProcessOutput
+        if not re.match("^%s$" % "|".join([
+          "\*\*\* ERROR: Module load completed but symbols could not be loaded for .*",
+        ]), s)
+      ];
+      assert len(asSelectProcessUnknownOutput) == 0, \
           "Unexpected select process output:\r\n%s" % "\r\n".join(asSelectProcessOutput);
     if uThreadId is not None:
       asSelectThreadOutput = oCdbWrapper.fasSendCommandAndReadOutput("~~[0x%X]s" % uThreadId, bIsRelevantIO = False);
       if not oCdbWrapper.bCdbRunning: return;
       assert len([s for s in asSelectThreadOutput if not s.startswith("*** WARNING: Unable to verify checksum for")]) == 0, \
           "Unexpected select process output:\r\n%s" % "\r\n".join(asSelectThreadOutput);
-  
-  def fuAddBugBreakpoint(oCdbWrapper, sAddress, sBugTypeId, sBugDescription, sSecurityImpact, uProcessId = None, uThreadId = None):
-    oCdbWrapper.fSelectProcessAndThread(uProcessId, uThreadId);
-    if not oCdbWrapper.bCdbRunning: return;
-    uBreakpointId = oCdbWrapper.fuGetBreakpointId();
-    # Put breakpoint only on relevant thread if provided.
-    sBreakpointCommand = "%sbp%d %s" % (uThreadId is not None and "~. " or "", uBreakpointId, sAddress);
-    asSetBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand);
-    if not oCdbWrapper.bCdbRunning: return;
-    oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId] = (sBugTypeId, sBugDescription, sSecurityImpact);
-    return uBreakpointId;
   
   def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
     oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
@@ -310,10 +331,17 @@ class cCdbWrapper(object):
       oCdbProcess.wait();
   
   def fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False):
-    return cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput);
+    return cCdbWrapper_fasReadOutput(oCdbWrapper,
+      bIsRelevantIO = bIsRelevantIO,
+      bMayContainApplicationOutput = bMayContainApplicationOutput
+    );
   
-  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False):
-    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput);
+  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHideCommand = False):
+    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand,
+      bIsRelevantIO = bIsRelevantIO,
+      bMayContainApplicationOutput = bMayContainApplicationOutput,
+      bHideCommand = bHideCommand
+    );
   
   def fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
     return cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId);

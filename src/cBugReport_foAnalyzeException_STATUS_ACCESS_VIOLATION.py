@@ -155,8 +155,7 @@ def fsGetOffsetDescription(iOffset):
     return "%sN" % sSign;
   return "%s%d*N" % (sSign, uMultiplier);
 
-def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrapper):
-  oException = oBugReport.oException;
+def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrapper, oException):
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
   # Parameter[1] = address
   assert len(oException.auParameters) == 2, \

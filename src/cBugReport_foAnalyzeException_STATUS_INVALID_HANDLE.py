@@ -25,7 +25,7 @@ dtxBugTranslations = {
 asHiddenTopFrames = [
   "KERNELBASE.dll!RaiseException",
 ];
-def cBugReport_foAnalyzeException_STATUS_INVALID_HANDLE(oBugReport, oCdbWrapper):
+def cBugReport_foAnalyzeException_STATUS_INVALID_HANDLE(oBugReport, oCdbWrapper, oException):
   oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);

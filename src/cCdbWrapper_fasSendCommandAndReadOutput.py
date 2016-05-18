@@ -1,7 +1,7 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
 
-def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False):
+def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHideCommand = False):
   if dxBugIdConfig["bOutputStdIn"]:
     print "cdb<%s" % repr(sCommand)[1:-1];
   try:
@@ -10,7 +10,7 @@ def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO
     oCdbWrapper.bCdbRunning = False;
     return None;
   if oCdbWrapper.bGetDetailsHTML:
-    if bIsRelevantIO:
+    if bIsRelevantIO and not bHideCommand:
       # Add the command to the current output block; this block should contain only one line that has the cdb prompt.
       oCdbWrapper.asCdbStdIOBlocksHTML[-1] += "<span class=\"CDBCommand\">%s</span><br/>" % oCdbWrapper.fsHTMLEncode(sCommand);
     else:

@@ -1,9 +1,9 @@
 import re, time;
 from cBugReport import cBugReport;
+from daxExceptionHandling import daxExceptionHandling;
 from dxBugIdConfig import dxBugIdConfig;
 from fsCreateFileName import fsCreateFileName;
 from NTSTATUS import *;
-from daxExceptionHandling import daxExceptionHandling;
 
 def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # Get a lock on cdb so the "interrupt on timeout" thread does not attempt to interrupt cdb while we execute commands.
@@ -93,12 +93,6 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # oCdbWrapper.fxSetTimeout that must be addressed.
         oCdbWrapper.nApplicationRunTime += time.clock() - oCdbWrapper.nApplicationResumeTime;
         oCdbWrapper.nApplicationResumeTime = None;
-        # Execute any pending timeout callbacks
-        for xTimeout in oCdbWrapper.axTimeouts:
-          (nTimeoutTime, fTimeoutCallback) = xTimeout;
-          if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
-            oCdbWrapper.axTimeouts.remove(xTimeout);
-            fTimeoutCallback();
       if oCdbWrapper.bGetDetailsHTML:
         # Save the current number of blocks of StdIO; if this exception is not relevant it can be used to remove all
         # blocks added while analyzing it. These blocks are not considered to contain useful information and removing
@@ -109,6 +103,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
       for sLine in asCdbOutput:
         oFailedAttachMatch = re.match(r"^Cannot debug pid \d+, Win32 error 0n\d+\s*$", sLine);
         assert not oFailedAttachMatch, "Failed to attach to process!\r\n%s" % "\r\n".join(asCdbOutput);
+      if not oCdbWrapper.bCdbRunning: return;
       # Find out what event caused the debugger break
       asLastEventOutput = oCdbWrapper.fasSendCommandAndReadOutput(".lastevent");
       if not oCdbWrapper.bCdbRunning: return;
@@ -176,7 +171,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           if bDebuggerNeedsToResumeAttachedProcesses:
             bDebuggerNeedsToResumeAttachedProcesses = False;
             for uProcessId in oCdbWrapper.auProcessIds:
-              oCdbWrapper.fSelectProcessAndThread(uProcessId = uProcessId);
+              oCdbWrapper.fSelectProcess(uProcessId);
               if not oCdbWrapper.bCdbRunning: return;
               oCdbWrapper.fasSendCommandAndReadOutput("~*m", bIsRelevantIO = False);
               if not oCdbWrapper.bCdbRunning: return;
@@ -212,24 +207,43 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           # This command is not relevant to the bug, so it is hidden in the cdb IO to prevent OOM.
           oCdbWrapper.fasSendCommandAndReadOutput("ad RAM;", bIsRelevantIO = False);
           bReserveRAMAllocated = False;
-        # Create a bug report, if the exception is fatal.
-        oCdbWrapper.oBugReport = cBugReport.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription, uBreakpointId);
-        if not oCdbWrapper.bCdbRunning: return;
+        if uBreakpointId is not None:
+          if oCdbWrapper.bGetDetailsHTML:
+            # Remove the breakpoint event from the cdb IO to remove clutter and reduce memory usage.
+            oCdbWrapper.asCdbStdIOBlocksHTML = (
+              oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
+              oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
+            );
+          fBreakpointCallback = oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId];
+          fBreakpointCallback();
+        else:
+          # Create a bug report, if the exception is fatal.
+          oCdbWrapper.oBugReport = cBugReport.foCreateForException(oCdbWrapper, uExceptionCode, sExceptionDescription);
+          if not oCdbWrapper.bCdbRunning: return;
+          if oCdbWrapper.oBugReport is None and oCdbWrapper.bGetDetailsHTML:
+            # Otherwise remove the analysis commands from the cdb IO and replace with a description of the exception to
+            # remove clutter and reduce memory usage.
+            oCdbWrapper.asCdbStdIOBlocksHTML = (
+              oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
+              ["<span class=\"CDBIgnoredException\">Exception 0x%08X in process %d ignored.</span>" % (uExceptionCode, uProcessId)] +
+              oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
+            );
+        # See if a bug needs to be reported
         if oCdbWrapper.oBugReport is not None:
+          # See if a dump should be saved
           if dxBugIdConfig["bSaveDump"]:
             sDumpFileName = fsCreateFileName(oCdbWrapper.oBugReport.sId);
             sOverwrite = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
             oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s.dmp\"" % (sOverwrite, sDumpFileName));
             if not oCdbWrapper.bCdbRunning: return;
+          # Stop to report the bug.
           break;
-        if oCdbWrapper.bGetDetailsHTML:
-          # Otherwise remove the analysis commands from the cdb IO and replace with a description of the exception to
-          # remove clutter and reduce memory usage.
-          oCdbWrapper.asCdbStdIOBlocksHTML = (
-            oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
-            ["<span class=\"CDBIgnoredException\">Exception 0x%08X in process %d.</span>" % (uExceptionCode, uProcessId)] +
-            oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
-          );
+      # Execute any pending timeout callbacks
+      for xTimeout in oCdbWrapper.axTimeouts:
+        (nTimeoutTime, fTimeoutCallback) = xTimeout;
+        if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
+          oCdbWrapper.axTimeouts.remove(xTimeout);
+          fTimeoutCallback();
     # Terminate cdb.
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbWrapper.fasSendCommandAndReadOutput("q");

@@ -45,6 +45,8 @@ dtxBugTranslations = {
       ], [
         "xul.dll!js::CrashAtUnhandlableOOM",
       ], [
+        "xul.dll!js::AutoEnterOOMUnsafeRegion::crash",
+      ], [
         "xul.dll!NS_ABORT_OOM",
       ], [  # MSIE
         "KERNELBASE.dll!DebugBreak",
@@ -269,7 +271,7 @@ asHiddenTopFrames = [
   "EDGEHTML.dll!Abandonment::InduceHRESULTAbandonment",
   "EDGEHTML.dll!Abandonment::InvalidArguments",
 ];
-def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper):
+def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper, oException):
   oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);

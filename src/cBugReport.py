@@ -14,6 +14,7 @@ from cBugReport_fsGetReferencedMemoryHTML import cBugReport_fsGetReferencedMemor
 from cBugReport_fsGetBinaryInformationHTML import cBugReport_fsGetBinaryInformationHTML;
 from cBugReport_fsProcessStack import cBugReport_fsProcessStack;
 from cException import cException;
+from cStack import cStack;
 from cProcess import cProcess;
 from NTSTATUS import *;
 from sBlockHTMLTemplate import sBlockHTMLTemplate;
@@ -40,17 +41,17 @@ asHiddenTopFrames = [
   "ntdll.dll!ZwRaiseException",
 ];
 class cBugReport(object):
-  def __init__(oBugReport, oCdbWrapper, sBugTypeId, sBugDescription, sSecurityImpact, oException, oStack):
+  def __init__(oBugReport, oCdbWrapper, sBugTypeId, sBugDescription, sSecurityImpact, oStack):
     oBugReport.oCdbWrapper = oCdbWrapper;
     oBugReport.sBugTypeId = sBugTypeId;
     oBugReport.sBugDescription = sBugDescription;
     oBugReport.sSecurityImpact = sSecurityImpact;
-    oBugReport.oException = oException;
+    oBugReport.oProcess = cProcess.foCreate(oCdbWrapper);
     oBugReport.oStack = oStack;
     
     if oCdbWrapper.bGetDetailsHTML:
       oBugReport.sImportantOutputHTML = oCdbWrapper.sImportantOutputHTML;
-    oBugReport.sProcessBinaryName = oException.oProcess and oException.oProcess.sBinaryName;
+    oBugReport.sProcessBinaryName = oBugReport.oProcess.sBinaryName;
     oBugReport.asExceptionSpecificBlocksHTML = [];
     # This information is gathered later, when it turns out this bug needs to be reported:
     oBugReport.sStackId = None;
@@ -68,52 +69,53 @@ class cBugReport(object):
         oBugReport.oStack.fHideTopFrames(asHiddenFrames);
   
   @classmethod
-  def foCreate(cSelf, oCdbWrapper, uExceptionCode, sExceptionDescription, uBreakpointId):
-    # Get current process details
-    oProcess = cProcess.foCreate(oCdbWrapper);
+  def foCreateForException(cBugReport, oCdbWrapper, uExceptionCode, sExceptionDescription):
+    oStack = cStack.foCreate(oCdbWrapper);
     if not oCdbWrapper.bCdbRunning: return None;
-    if uBreakpointId is not None:
-      # Create exception details for a breakpoint:
-      oException = cException(oProcess, STATUS_BREAKPOINT, "A BugId breakpoint");
-      (sBugTypeId, sBugDescription, sSecurityImpact) = oCdbWrapper.xBugBreakpointInformation_by_uBreakpointId[uBreakpointId];
-    else:
-      # Get exception details from cdb.
-      oException = cException.foCreate(oCdbWrapper, oProcess, uExceptionCode, sExceptionDescription);
-      if not oCdbWrapper.bCdbRunning: return None;
-      sBugTypeId = oException.sTypeId;
-      sBugDescription = oException.sDescription;
-      sSecurityImpact = oException.sSecurityImpact;
-    
-    # Get the stack based on the exception info and load symbols for all modules containing functions on the stack.
-    oStack = oException.foGetStack(oCdbWrapper);
+    oException = cException.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription, oStack);
     if not oCdbWrapper.bCdbRunning: return None;
-    
+    # If this exception was not caused by the application, but by cdb itself, None is return. This is not a bug.
+    if oException is None: return None;
     # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
     oStack.fHideTopFrames(asHiddenTopFrames);
-    if oException.uCode == STATUS_BREAKPOINT and oException.oFunction and oException.oFunction.sName == "ntdll.dll!DbgBreakPoint":
-      # This breakpoint most likely got inserted into the process by cdb. There will be no trace of it in the stack,
-      # so do not try to check that exception information matches the first stack frame.
-      return None;
     # Create a preliminary error report.
-    oBugReport = cSelf(
+    oBugReport = cBugReport(
+      oCdbWrapper = oCdbWrapper,
+      sBugTypeId = oException.sTypeId,
+      sBugDescription = oException.sDescription,
+      sSecurityImpact = oException.sSecurityImpact,
+      oStack = oStack,
+    );
+    
+    # Perform exception specific analysis:
+    foAnalyzeException = dfoAnalyzeException_by_uExceptionCode.get(oException.uCode);
+    if foAnalyzeException:
+      oBugReport = foAnalyzeException(oBugReport, oCdbWrapper, oException);
+      if not oCdbWrapper.bCdbRunning: return None;
+      if not oBugReport:
+        # This exception is not a bug, continue the application.
+        return None;
+    
+    return oBugReport.foPostProcess(oCdbWrapper);
+
+  @classmethod
+  def foCreate(cBugReport, oCdbWrapper, sBugTypeId, sBugDescription, sSecurityImpact):
+    # Get the stack based on the exception info and load symbols for all modules containing functions on the stack.
+    oStack = cStack.foCreate(oCdbWrapper);
+    if not oCdbWrapper.bCdbRunning: return None;
+    # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
+    oStack.fHideTopFrames(asHiddenTopFrames);
+    # Create a preliminary error report.
+    oBugReport = cBugReport(
       oCdbWrapper = oCdbWrapper,
       sBugTypeId = sBugTypeId,
       sBugDescription = sBugDescription,
       sSecurityImpact = sSecurityImpact,
-      oException = oException,
       oStack = oStack,
     );
-    
-    if uBreakpointId is None:
-      # Perform exception specific analysis:
-      foAnalyzeException = dfoAnalyzeException_by_uExceptionCode.get(oException.uCode);
-      if foAnalyzeException:
-        oBugReport = foAnalyzeException(oBugReport, oCdbWrapper);
-        if not oCdbWrapper.bCdbRunning: return None;
-        if not oBugReport:
-          # This exception is not a bug, continue the application.
-          return None;
-    
+    return oBugReport.foPostProcess(oCdbWrapper);
+  
+  def foPostProcess(oBugReport, oCdbWrapper):
     # Calculate sStackId, determine sBugLocation and optionally create and return sStackHTML.
     sStackHTML = cBugReport_fsProcessStack(oBugReport, oCdbWrapper);
     oBugReport.sId = "%s %s" % (oBugReport.sBugTypeId, oBugReport.sStackId);

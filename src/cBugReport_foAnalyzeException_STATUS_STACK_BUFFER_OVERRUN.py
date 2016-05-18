@@ -73,8 +73,7 @@ ddtxBugTranslations_by_sFastFailCodeId = {
 };
 
 
-def cBugReport_foAnalyzeException_STATUS_STACK_BUFFER_OVERRUN(oBugReport, oCdbWrapper):
-  oException = oBugReport.oException;
+def cBugReport_foAnalyzeException_STATUS_STACK_BUFFER_OVERRUN(oBugReport, oCdbWrapper, oException):
   # Parameter[0] = fail fast code
   assert len(oException.auParameters) == 1, \
       "Unexpected number of fail fast exception parameters (%d vs 1)" % len(oException.auParameters);

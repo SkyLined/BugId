@@ -39,9 +39,8 @@ ddtxBugTranslations_by_sExceptionCallName = {
   },
 };
 
-def cBugReport_foAnalyzeException_Cpp(oBugReport, oCdbWrapper):
+def cBugReport_foAnalyzeException_Cpp(oBugReport, oCdbWrapper, oException):
   # Attempt to get the symbol of the virtual function table of the object that was thrown and add that the the type id:
-  oException = oBugReport.oException;
   assert len(oException.auParameters) >= 3, \
       "Expected a C++ Exception to have at least 3 parameters, got %d" % len(oException.auParameters);
   poException = oException.auParameters[1];

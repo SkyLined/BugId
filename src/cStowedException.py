@@ -4,8 +4,7 @@ from cException_fSetTypeId import cException_fSetTypeId;
 from cException_fSetSecurityImpact import cException_fSetSecurityImpact;
 
 class cStowedException(object):
-  def __init__(oStowedException, oProcess, uCode, uAddress = None, pStackTrace = None, uStackTraceSize = 0, sErrorText = None):
-    oStowedException.oProcess = oProcess;
+  def __init__(oStowedException, uCode, uAddress = None, pStackTrace = None, uStackTraceSize = 0, sErrorText = None):
     oStowedException.uCode = uCode;
     oStowedException.uAddress = uAddress;
     oStowedException.pStackTrace = pStackTrace; # dpS {pStackTrace} L{uStackTraceSize}
@@ -16,7 +15,7 @@ class cStowedException(object):
     oStowedException.sSecurityImpact = None;
   
   @classmethod
-  def foCreate(cSelf, oCdbWrapper, oProcess, pAddresses):
+  def foCreate(cSelf, oCdbWrapper, pAddresses):
     pFirstAddress = oCdbWrapper.fuEvaluateExpression("poi(0x%X)" % pAddresses);
     asData = oCdbWrapper.fasSendCommandAndReadOutput("dd /c0xA 0x%X L0xA" % pFirstAddress);
     # https://msdn.microsoft.com/en-us/library/windows/desktop/dn600343%28v=vs.85%29.aspx
@@ -50,9 +49,9 @@ class cStowedException(object):
     uExceptionForm = adwData[3] & 3;
     assert uExceptionForm in [1, 2], "Unexpected exception form %d" % uExceptionForm;
     if uExceptionForm == 1:
-      oStowedException = cSelf(oProcess, uCode, uAddress = adwData[4], pStackTrace = adwData[7], uStackTraceSize = adwData[6]);
+      oStowedException = cSelf(uCode, uAddress = adwData[4], pStackTrace = adwData[7], uStackTraceSize = adwData[6]);
     else:
-      oStowedException = cSelf(oProcess, uCode, sErrorText = adwData[4]);
+      oStowedException = cSelf(uCode, sErrorText = adwData[4]);
     uNestedExceptionType = adwData[8];
     assert dwSignature == 0x53453031 or uNestedExceptionType == 0, "Unexpected nested exception type 0x%X" % adwData[8];
     
@@ -61,12 +60,4 @@ class cStowedException(object):
     oStowedException.sTypeId += "(Stowed)";
     oStowedException.sDescription = "Stowed exception code 0x%08X" % oStowedException.uCode;
     cException_fSetSecurityImpact(oStowedException);
-    
     return oStowedException;
-  
-  def foGetStack(oStowedException, oCdbWrapper):
-    # This is not going to chance, so we can cache it:
-    if not hasattr(oStowedException, "oStack"):
-      # We may need to change the current process to oStowedException.oProcess, but I'm not sure.
-      oStowedException.oStack = cStack.foCreateFromAddress(oCdbWrapper, oStowedException.pStackTrace, oStowedException.uStackTraceSize);
-    return oStowedException.oStack;
