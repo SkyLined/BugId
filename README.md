@@ -6,7 +6,7 @@ Python module to detect, analyze and id application bugs
 TL;DR
 -----
 Do you...
-* want to automatically debug an application to detect bugs?
+* want to automatically debug an application to detect bugs that cause crashes and excessive CPU usage?
 * want to be able to detect duplicates among your bugs?
 * want bugs automatically analyzed to see if they might be security vulnerabilities?
 * want a nice HTML report of the bugs you found?
@@ -35,6 +35,9 @@ available in HTML format, for use when manually analyzing bugs. The code
 attempts to determine the security risk of the bug it detected, so even novice
 users may be able to determine whether or not a particular bug is likely to be
 a security vulnerability.
+
+You can tell BugId to save a debugger dump file when it detects a crash, for
+later off-line analysis by a developer.
 
 BugId can be used as a command-line utility through BugId.py and integrated into
 your own Python project using cBugId.py.
