@@ -316,3 +316,8 @@ to make sure these changes did not break BugId in some way. The executables
 and their source are found in the `Tests\` folder. The python script `Tests.py`
 runs a large number of tests and returns an error code of zero if all succeeded
 and a non-zero error code if any failed.
+
+License
+-------
+This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 International License](http://creativecommons.org/licenses/by-nc/4.0/).
+![Creative Commons License](https://i.creativecommons.org/l/by-nc/4.0/88x31.png "Creative Commons License")
