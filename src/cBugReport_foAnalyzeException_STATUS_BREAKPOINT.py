@@ -97,6 +97,9 @@ dtxBugTranslations = {
         "chrome.dll!__sanitizer_cov",
       ],
       [
+        "chrome_elf.dll!__sanitizer_cov",
+      ],
+      [
         "chrome_child.dll!__sanitizer_cov",
       ],
     ],
