@@ -394,7 +394,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
         ]), asMemoryProtectionInformation[0]):
           sAddressId = "Unallocated";
           sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-          sSecurityImpact = "Potentially exploitable security issue";
+          sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address";
         else:
           uAllocationStartAddress = None;
           uAllocationProtectionFlags = None;
@@ -425,7 +425,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           if uStateFlags == 0x10000:
             sAddressId = "Unallocated";
             sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-            sSecurityImpact = "Potentially exploitable security issue";
+            sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address";
           elif uStateFlags == 0x2000: # MEM_RESERVE
             assert uTypeFlags in [0x20000, 0x40000], \
                 "Expected MEM_RESERVE memory to have type MEM_PRIVATE or MEM_MAPPED\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
@@ -433,7 +433,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
                 "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
             sAddressId = "Reserved";
             sBugDescription = "Access violation while %s reversed but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-            sSecurityImpact = None;
+            sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled";
           elif uStateFlags == 0x1000: # MEM_COMMIT
             dsMemoryProtectionsDescription_by_uFlags = {
               0x01: "inaccessible",  0x02: "read-only",  0x04: "read- and writable",  0x08: "read- and writable",
@@ -444,7 +444,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
                 "Unexpected MEM_COMMIT memory to have protection value 0x%X\r\n%s" % (uAllocationProtectionFlags, "\r\n".join(asMemoryProtectionInformation));
             sAddressId = "Arbitrary";
             sBugDescription = "Access violation while %s %s memory at 0x%X" % (sViolationTypeDescription, sMemoryProtectionsDescription, uAddress);
-            sSecurityImpact = "Potentially exploitable security issue";
+            sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled";
           else:
             raise AssertionError("Unexpected memory state 0x%X\r\n%s" % (uStateFlags, "\r\n".join(asMemoryProtectionInformation)));
   oBugReport.sBugTypeId = "%s%s:%s" % (oBugReport.sBugTypeId, sViolationTypeId, sAddressId);
