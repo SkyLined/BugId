@@ -145,8 +145,10 @@ class cCdbWrapper(object):
     oCdbWrapper.bInterruptPending = False;
     # oCdbLock is used by oCdbStdInOutThread and oCdbInterruptOnTimeoutThread to allow the former to execute commands
     # (other than "g") without the later attempting to get cdb to suspend the application with a breakpoint, and vice
-    # versa.
+    # versa. It's acquired on behalf of the former, to prevent the later from interrupting before the application has
+    # even started.
     oCdbWrapper.oCdbLock = threading.Lock();
+    oCdbWrapper.oCdbLock.acquire();
     # Keep track of how long the application has been running, used for timeouts (see fxSetTimeout, fCdbStdInOutThread
     # and fCdbInterruptOnTimeoutThread for details.
     oCdbWrapper.nApplicationRunTime = 0; # Total time spent running before last interruption
@@ -237,36 +239,49 @@ class cCdbWrapper(object):
   def fReleaseVariableId(oCdbWrapper, uVariableId):
     oCdbWrapper.uAvailableVariableIds.append(uVariableId);
   
-  def fuGetBreakpointId(oCdbWrapper):
-    # TODO: Potential race condition must be dealt with.
-    return oCdbWrapper.oBreakpointCounter.next();
-  def fSetBreakpoint(oCdbWrapper, uBreakpointId, sAddress, fCallback, uProcessId = None, uThreadId = None, sCommand = None):
+  def fuAddBreakpoint(oCdbWrapper, sAddress, fCallback, uProcessId = None, uThreadId = None, sCommand = None):
     # Select the right process/thread if requested.
     oCdbWrapper.fSelectProcessAndThread(uProcessId, uThreadId);
     if not oCdbWrapper.bCdbRunning: return;
     # Put breakpoint only on relevant thread if provided.
     if uThreadId is not None:
-      sCommand = ".if (@$tid != 0x%X) {g;}%s;" % (uThreadId, sCommand is not None and " .else {%s}" % sCommand or "");
-    sBreakpointCommand = "bp%d %s%s;bl" % (
+      sCommand = ".if (@$tid != 0x%X) {gh;}%s;" % (uThreadId, sCommand is not None and " .else {%s}" % sCommand or "");
+    uBreakpointId = oCdbWrapper.oBreakpointCounter.next();
+    sBreakpointCommand = "bp%d %s%s;" % (
       uBreakpointId,
       sAddress, 
       sCommand and (' "%s"' % sCommand.replace("\\", "\\\\").replace('"', '\\"')) or ""
     );
     asBreakpointResult = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand, bIsRelevantIO = False);
-#    assert (
-#      len(asBreakpointResult) == 0
-#      or (
-#        len(asBreakpointResult) == 1
-#        and re.match(r"breakpoint %d exists, redefining" % uBreakpointId, asBreakpointResult[0])
-#      )
-#    ), "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
+    # It could be that a previous breakpoint existed at the given location, in which case that breakpoint id is used
+    # by cdb instead. This must be detected so we can return the correct breakpoint id to the caller and match the
+    # callback to the right breakpoint as well.
+    if len(asBreakpointResult) == 1:
+      oActualBreakpointIdMatch = re.match(r"breakpoint (\d) (?:exists, redefining|redefined)", asBreakpointResult[0])
+      assert oActualBreakpointIdMatch, \
+          "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
+      uBreakpointId = long(oActualBreakpointIdMatch.group(1));
+      # This breakpoint must have been "removed" with fRemoveBreakpoint before a new breakpoint can be set at this
+      # location. If it was not, throw an exception.
+      assert uBreakpointId not in oCdbWrapper.dfCallback_by_uBreakpointId, \
+          "Two active breakpoints at the same location is not supported";
+    else:
+      assert len(asBreakpointResult) == 0, \
+          "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
     if not oCdbWrapper.bCdbRunning: return;
+    oCdbWrapper.fasSendCommandAndReadOutput("bl;", bIsRelevantIO = False);
     oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId] = fCallback;
-  def fReleaseBreakpointId(oCdbWrapper, uBreakpointId):
-    # There can be any number of breakpoints according to the docs, so no need to reuse them.
-    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput("bc%d" % uBreakpointId, bIsRelevantIO = False);
-    if uBreakpointId in oCdbWrapper.dfCallback_by_uBreakpointId:
-      del oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId];
+    return uBreakpointId;
+  
+  def fRemoveBreakpoint(oCdbWrapper, uBreakpointId):
+    # There can be any number of breakpoints according to the docs, so no need to reuse them. There is a bug in cdb:
+    # using "bc" to clear a breakpoint can still lead to a STATUS_BREAKPOINT exception at the original address later.
+    # There is nothing to detect this exception was caused by this bug, and filtering these exceptions is therefore
+    # hard to do correctly. An easier way to address this issue is to not "clear" the breakpoint, but replace the
+    # command executed when the breakpoint is hit with "gh" (go with exception handled).
+    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput('bp%d "gh";' % uBreakpointId, bIsRelevantIO = False);
+    oCdbWrapper.fasSendCommandAndReadOutput("bl;", bIsRelevantIO = False);
+    del oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId];
   
   def fSelectProcess(oCdbWrapper, uProcessId):
     return oCdbWrapper.fSelectProcessAndThread(uProcessId = uProcessId);

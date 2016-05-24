@@ -6,8 +6,8 @@ from fsCreateFileName import fsCreateFileName;
 from NTSTATUS import *;
 
 def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
-  # Get a lock on cdb so the "interrupt on timeout" thread does not attempt to interrupt cdb while we execute commands.
-  oCdbWrapper.oCdbLock.acquire();
+  # cCdbWrapper initialization code already acquire a lock on cdb on behalf of this thread, so the "interrupt on
+  # timeout" thread does not attempt to interrupt cdb while this thread is getting started.
   try:
     # Create a list of commands to set up event handling. The default for any exception not explicitly mentioned is to
     # be handled as a second chance exception.
@@ -180,7 +180,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           # description of the exception to remove clutter and reduce memory usage. 
           oCdbWrapper.asCdbStdIOBlocksHTML = (
             oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
-            ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
+            ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span><br/>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
             oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
           );
       elif uExceptionCode == DBG_CONTROL_BREAK:
