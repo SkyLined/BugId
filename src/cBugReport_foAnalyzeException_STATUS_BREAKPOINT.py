@@ -263,16 +263,17 @@ asHiddenTopFrames = [
   "xul.dll!std::vector<...>::_Reallocate",
   "xul.dll!std::vector<...>::_Reserve",
   # Edge allocations functions that are irrelevant in OOM cases.
-  "EDGEHTML.dll!ProcessHeapAlloc<0>",
+  "edgehtml.dll!ProcessHeapAlloc<0>",
+  "edgehtml.dll!CStyleAttrArray::SetLineColumn", # This symbol is obviously incorrect, it will probably disappear from the stack with the next build.
   # Edge functions that are irrelevant to assertions.
-  "EDGEHTML.dll!Abandonment::AssertionFailed",
-  "EDGEHTML.dll!Abandonment::CheckHRESULT",
-  "EDGEHTML.dll!Abandonment::CheckHRESULTStrict",
-  "EDGEHTML.dll!Abandonment::DeprecatedAPI",
-  "EDGEHTML.dll!Abandonment::Fail",
-  "EDGEHTML.dll!Abandonment::FastDOMInvariantViolation",
-  "EDGEHTML.dll!Abandonment::InduceHRESULTAbandonment",
-  "EDGEHTML.dll!Abandonment::InvalidArguments",
+  "edgehtml.dll!Abandonment::AssertionFailed",
+  "edgehtml.dll!Abandonment::CheckHRESULT",
+  "edgehtml.dll!Abandonment::CheckHRESULTStrict",
+  "edgehtml.dll!Abandonment::DeprecatedAPI",
+  "edgehtml.dll!Abandonment::Fail",
+  "edgehtml.dll!Abandonment::FastDOMInvariantViolation",
+  "edgehtml.dll!Abandonment::InduceHRESULTAbandonment",
+  "edgehtml.dll!Abandonment::InvalidArguments",
 ];
 def cBugReport_foAnalyzeException_STATUS_BREAKPOINT(oBugReport, oCdbWrapper, oException):
   oBugReport = oBugReport.foTranslate(dtxBugTranslations);
