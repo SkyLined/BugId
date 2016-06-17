@@ -1,4 +1,4 @@
-import hashlib, re;
+import re;
 from cBugReport_foAnalyzeException_Cpp import cBugReport_foAnalyzeException_Cpp;
 from cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION;
 from cBugReport_foAnalyzeException_STATUS_BREAKPOINT import cBugReport_foAnalyzeException_STATUS_BREAKPOINT;
@@ -16,6 +16,7 @@ from cBugReport_fsProcessStack import cBugReport_fsProcessStack;
 from cException import cException;
 from cStack import cStack;
 from cProcess import cProcess;
+from dxBugIdConfig import dxBugIdConfig;
 from NTSTATUS import *;
 from sBlockHTMLTemplate import sBlockHTMLTemplate;
 from sDetailsHTMLTemplate import sDetailsHTMLTemplate;
@@ -70,7 +71,11 @@ class cBugReport(object):
   
   @classmethod
   def foCreateForException(cBugReport, oCdbWrapper, uExceptionCode, sExceptionDescription):
-    oStack = cStack.foCreate(oCdbWrapper);
+    uStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
+    if uExceptionCode == STATUS_STACK_OVERFLOW:
+      # In order to detect a recursion loop, we need more stack frames:
+      uStackFramesCount += dxBugIdConfig["uMinStackRecursionLoops"] * dxBugIdConfig["uMaxStackRecursionLoopSize"]
+    oStack = cStack.foCreate(oCdbWrapper, uStackFramesCount);
     if not oCdbWrapper.bCdbRunning: return None;
     oException = cException.foCreate(oCdbWrapper, uExceptionCode, sExceptionDescription, oStack);
     if not oCdbWrapper.bCdbRunning: return None;
@@ -100,8 +105,8 @@ class cBugReport(object):
 
   @classmethod
   def foCreate(cBugReport, oCdbWrapper, sBugTypeId, sBugDescription, sSecurityImpact):
-    # Get the stack based on the exception info and load symbols for all modules containing functions on the stack.
-    oStack = cStack.foCreate(oCdbWrapper);
+    uStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
+    oStack = cStack.foCreate(oCdbWrapper, uStackFramesCount);
     if not oCdbWrapper.bCdbRunning: return None;
     # Hide some functions at the top of the stack that are merely helper functions and not relevant to the error:
     oStack.fHideTopFrames(asHiddenTopFrames);

@@ -59,14 +59,21 @@ for (sName, xValue) in {
                                         # total number of bytes disassembled is too large, you may get no disassembly
                                         # at all when part of the memory it attempts to disassemble is not readable.
   ### Stack settings
-  "uMaxStackFramesCount": 100,          # How many stack frames are retreived for analysis?
+  "uMaxStackFramesCount": 20,           # How many stack frames are retreived for analysis?
+  "uMinStackRecursionLoops": 5,         # How many recursive functions call loops are needed to assume a stack overflow
+                                        # is caused by such a loop?
+  "uMaxStackRecursionLoopSize": 25,     # The maximum number of functions expected to be in a loop (less increases
+                                        # analysis speed, but might miss-analyze a recursion loop involving many
+                                        # functions as a simple stack exhaustion).
   "uStackHashFramesCount": 2,           # How many stack frames are hashed for the crash id?
   "uMaxStackFrameHashChars": 3,         # How many characters of hash to use in the id for each stack frame.
   ### Symbol loading settings
-  "bEnhancedSymbolLoading": False,      # Enable additional checks when getting a stack that can detect and fix errors
+  "bEnhancedSymbolLoading": True,       # Enable additional checks when getting a stack that can detect and fix errors
                                         # in symbol loading caused by corrupted pdb files. This turns on "noisy symbol
                                         # loading" which may provide useful information to fix symbol loading errors.
-                                        # It has a large impact on performance, which is why it is disabled by default.
+                                        # It has a large impact on performance, so you may want to disable it if you
+                                        # can guarantee correct symbol files are available and do not need to be
+                                        # downloaded (which I think is what sometimes causes this corruption).
   "asSymbolCachePaths": [],             # Where should symbols be cached?
   ### Source code settings
   "bEnableSourceCodeSupport": True,     # Tell cdb to load source line symbols or not.

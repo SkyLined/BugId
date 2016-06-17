@@ -1,3 +1,4 @@
+from dxBugIdConfig import dxBugIdConfig;
 
 def cBugReport_foAnalyzeException_STATUS_STACK_OVERFLOW(oBugReport, oCdbWrapper, oException):
   oStack = oBugReport.oStack;
@@ -10,11 +11,12 @@ def cBugReport_foAnalyzeException_STATUS_STACK_OVERFLOW(oBugReport, oCdbWrapper,
   for uFirstLoopStartIndex in xrange(len(oStack.aoFrames) - 1):
 #    print "*" * 80;
 #    print "Start index: %d" % uFirstLoopStartIndex;
+    # Find out how large at most a loop can be and still be repeated often enough for detection in the remaining stack:
     uRemainingStackSize = len(oStack.aoFrames) - uFirstLoopStartIndex;
-    for uLoopSize in xrange(1, int(uRemainingStackSize / 2)):
+    uMaxLoopSize = long(uRemainingStackSize / dxBugIdConfig["uMinStackRecursionLoops"]);
+    for uLoopSize in xrange(1, min(uMaxLoopSize, dxBugIdConfig["uMaxStackRecursionLoopSize"])):
 #      print "  Loop size: %d" % uLoopSize;
-      # Ten loops suffice in case the number of frames is really large
-      for uLoopNumber in xrange(1, min(10, int(uRemainingStackSize / uLoopSize))):
+      for uLoopNumber in xrange(1, dxBugIdConfig["uMinStackRecursionLoops"]):
 #        print "    Loop number: %d" % uLoopNumber;
         uLoopStartIndex = uFirstLoopStartIndex + uLoopNumber * uLoopSize;
 #        print "    Loop start index: %d" % uLoopStartIndex;

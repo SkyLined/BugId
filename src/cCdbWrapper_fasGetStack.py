@@ -45,7 +45,7 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
     # Turn noisy symbol loading back off
     asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000", bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
-  # Get the stack for real.
+  # Get the stack for real. At this point, no output from symbol loader is expected or handled.
   asStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
   if not oCdbWrapper.bCdbRunning: return None;
   # Remove checksum warning, if any.

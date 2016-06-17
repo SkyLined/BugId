@@ -6,7 +6,7 @@ class cStack(object):
   def __init__(oStack, asCdbLines):
     oStack.asCdbLines = asCdbLines;
     oStack.aoFrames = [];
-    oStack.bPartialStack = False;
+    oStack.bPartialStack = True;
     oStack.uHashFramesCount = dxBugIdConfig["uStackHashFramesCount"];
   
   def fHideTopFrames(oStack, asFrameAddresses, bLowered = False):
@@ -23,14 +23,9 @@ class cStack(object):
     assert uNumber == len(oStack.aoFrames), \
         "Unexpected frame number %d vs %d" % (uNumber, len(oStack.aoFrames));
     uMaxStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
-    assert uNumber < uMaxStackFramesCount, \
-        "Unexpected frame number %d (max %d)" % (uNumber, uMaxStackFramesCount);
-    if uNumber == uMaxStackFramesCount - 1:
-      oStack.bPartialStack = True; # We leave the last one out so we can truely say there are more.
-    else:
-      oStackFrame = cStackFrame(uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
-          oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber)
-      oStack.aoFrames.append(oStackFrame);
+    oStackFrame = cStackFrame(uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
+        oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber)
+    oStack.aoFrames.append(oStackFrame);
     
   @classmethod
   def foCreateFromAddress(cStack, oCdbWrapper, pAddress, uSize):
@@ -68,15 +63,15 @@ class cStack(object):
           uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber);
       if not oCdbWrapper.bCdbRunning: return None;
       uFrameNumber += 1;
+    oStack.bPartialStack = uStackFramesCount != uFrameNumber;
     return oStack;
   
   @classmethod
-  def foCreate(cStack, oCdbWrapper):
+  def foCreate(cStack, oCdbWrapper, uStackFramesCount):
     # Get information on all modules in the current process
     doModules_by_sCdbId = oCdbWrapper.fdoGetModulesByCdbIdForCurrentProcess();
     if not oCdbWrapper.bCdbRunning: return None;
     # Create the stack object
-    uStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
     asStack = oCdbWrapper.fasGetStack("kn 0x%X" % uStackFramesCount);
     if not asStack: return None;
     oStack = cStack(asStack);
@@ -130,4 +125,5 @@ class cStack(object):
             uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber);
         if not oCdbWrapper.bCdbRunning: return None;
         uFrameNumber += 1;
+    oStack.bPartialStack = uStackFramesCount != uFrameNumber;
     return oStack;
