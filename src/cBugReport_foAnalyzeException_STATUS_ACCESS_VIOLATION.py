@@ -93,40 +93,40 @@ ddtxBugTranslations = {
 };
 ddtsDetails_uAddress_sISA = {
   "x86": {              # Id                 Description                                           Security impact
-            0x00000000: ('NULL',            "a NULL ptr",                                         None),
-            0xBBADBEEF: ('Assertion',       "an address that indicates an assertion has failed",  None),
-            0xBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-            0xCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-            0xC0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-            0xCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-            0xD0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-            0xDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-            0xF0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
-            0xFDFDFDFD: ('Canary',          "a pointer read from an out-of-bounds memory canary", "Potentially exploitable security issue"),
-            0xF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-            0xF0090100: ('Poison',          "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
-            0xFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            0x00000000: ('NULL',                  "a NULL ptr",                                         None),
+            0xBBADBEEF: ('Assertion',             "an address that indicates an assertion has failed",  None),
+            0xBAADF00D: ('PoisonUninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xCCCCCCCC: ('PoisonUninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xC0C0C0C0: ('PoisonUninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xCDCDCDCD: ('PoisonUninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xD0D0D0D0: ('PoisonUninitialized',   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0xDDDDDDDD: ('PoisonFree',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            0xF0F0F0F0: ('PoisonFree',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            0xFDFDFDFD: ('PoisonOOB',             "a pointer read from an out-of-bounds memory canary", "Potentially exploitable security issue"),
+            0xF0DE7FFF: ('Poison',                "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+            0xF0090100: ('Poison',                "a pointer read from poisoned memory",                "Potentially exploitable security issue"),
+            0xFEEEFEEE: ('PoisonFree',            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
             # https://hg.mozilla.org/releases/mozilla-beta/rev/8008235a2429
-            0XE4E4E4E4: ("Uninitialized",   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
-            0XE5E5E5E5: ("Free",            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
+            0XE4E4E4E4: ("PoisonUninitialized",   "a pointer that was not initialized",                 "Potentially exploitable security issue"),
+            0XE5E5E5E5: ("PoisonFree",            "a pointer read from poisoned freed memory",          "Potentially exploitable security issue"),
   },
   "x64": {              # Id                 Description                                           Security impact
-    0x0000000000000000: ('NULL',            "a NULL ptr",                                         None),
+    0x0000000000000000: ('NULL',                  "a NULL ptr",                                         None),
     # Note that on x64, addresses with the most significant bit set cannot be allocated in user-land. Since BugId is expected to analyze only user-land
     # applications, accessing such an address is not expected to be an exploitable security issue.
-    0xBAADF00DBAADF00D: ('Uninitialized',   "a pointer that was not initialized",                 None),
-    0xCCCCCCCCCCCCCCCC: ('Uninitialized',   "a pointer that was not initialized",                 None),
-    0xC0C0C0C0C0C0C0C0: ('Uninitialized',   "a pointer that was not initialized",                 None),
-    0xCDCDCDCDCDCDCDCD: ('Uninitialized',   "a pointer that was not initialized",                 None),
-    0xD0D0D0D0D0D0D0D0: ('Uninitialized',   "a pointer that was not initialized",                 None),
-    0xDDDDDDDDDDDDDDDD: ('Free',            "a pointer read from poisoned freed memory",          None),
-    0xF0F0F0F0F0F0F0F0: ('Free',            "a pointer read from poisoned freed memory",          None),
-    0xF0DE7FFFF0DE7FFF: ('Poison',          "a pointer read from poisoned memory",                None),
-    0xF0090100F0090100: ('Poison',          "a pointer read from poisoned memory",                None),
-    0xFEEEFEEEFEEEFEEE: ('Free',            "a pointer read from poisoned freed memory",          None),
+    0xBAADF00DBAADF00D: ('PoisonUninitialized',   "a pointer that was not initialized",                 None),
+    0xCCCCCCCCCCCCCCCC: ('PoisonUninitialized',   "a pointer that was not initialized",                 None),
+    0xC0C0C0C0C0C0C0C0: ('PoisonUninitialized',   "a pointer that was not initialized",                 None),
+    0xCDCDCDCDCDCDCDCD: ('PoisonUninitialized',   "a pointer that was not initialized",                 None),
+    0xD0D0D0D0D0D0D0D0: ('PoisonUninitialized',   "a pointer that was not initialized",                 None),
+    0xDDDDDDDDDDDDDDDD: ('PoisonFree',            "a pointer read from poisoned freed memory",          None),
+    0xF0F0F0F0F0F0F0F0: ('PoisonFree',            "a pointer read from poisoned freed memory",          None),
+    0xF0DE7FFFF0DE7FFF: ('Poison',                "a pointer read from poisoned memory",                None),
+    0xF0090100F0090100: ('Poison',                "a pointer read from poisoned memory",                None),
+    0xFEEEFEEEFEEEFEEE: ('PoisonFree',            "a pointer read from poisoned freed memory",          None),
     # https://hg.mozilla.org/releases/mozilla-beta/rev/8008235a2429
-    0xE4E4E4E4E4E4E4E4: ("Uninitialized",   "a pointer that was not initialized",                 None),
-    0xE5E5E5E5E5E5E5E5: ("Free",            "a pointer read from poisoned freed memory",          None),
+    0xE4E4E4E4E4E4E4E4: ("PoisonUninitialized",   "a pointer that was not initialized",                 None),
+    0xE5E5E5E5E5E5E5E5: ("PoisonFree",            "a pointer read from poisoned freed memory",          None),
   },
 };
 
@@ -325,7 +325,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           sAddressDescription = "freed memory";
           sBugDescription = "Access violation while %s %s at 0x%X" % \
               (sViolationTypeDescription, sAddressDescription, uAddress);
-          sSecurityImpact = "Potentially exploitable security issue";
+          sSecurityImpact =,  "Potentially exploitable security issue";
         elif sBlockType == "busy":
           # Page heap says the region is allocated,  only logical explanation known is that the read was beyond the
           # end of the heap block, inside a guard page:
@@ -404,7 +404,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           uProtectionFlags = None;
           uTypeFlags = None;
           for sLine in asMemoryProtectionInformation:
-            oLineMatch = re.match(r"^(\w+):\s+([0-9a-f]+)(?:\s+\w+)?$", sLine);
+            oLineMatch = re.match(r"^(\w+):\s+([0-9a-f]+)(?:\s+\w+)?$`", sLine);
             assert oLineMatch, \
                 "Unrecognized memory protection information line: %s\r\n%s" % (sLine, "\r\n".join(asMemoryProtectionInformation));
             sInfoType, sValue = oLineMatch.groups();
