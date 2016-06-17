@@ -2,7 +2,8 @@ import os, re, sys, threading;
 
 bDebugStartFinish = False;  # Show some output when a test starts and finishes.
 bDebugIO = False;           # Show cdb I/O during tests (you'll want to run only 1 test at a time for this).
-uSequentialTests = 32;       # Run multiple tests simultaniously, values >32 will probably not work.
+uSequentialTests = 32;      # Run multiple tests simultaniously, values >32 will probably not work.
+if bDebugIO: uSequentialTests = 1; # prevent UI mess
 
 from dxConfig import dxConfig;
 dxBugIdConfig = dxConfig["BugId"];
@@ -69,8 +70,9 @@ class cTest(object):
         bFailed = True;
         oOutputLock and oOutputLock.acquire();
         oTest.bHasOutputLock = True;
-        print "- %s" % oTest;
-        print "    => Exception: %s" % oException;
+        print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+        print "  Expected:    %s" % oTest.sExpectedBugTypeId;
+        print "  Exception:   %s" % oException;
         oOutputLock and oOutputLock.release();
         oTest.bHasOutputLock = False;
   
@@ -88,29 +90,31 @@ class cTest(object):
   
   def fFinishedHandler(oTest, oBugReport):
     global bFailed, oOutputLock;
-    bThisTestFailed = False;
     if not bFailed:
       oOutputLock and oOutputLock.acquire();
       oTest.bHasOutputLock = True;
       if oTest.sExpectedBugTypeId:
         if not oBugReport:
-          print "- %s" % oTest;
-          print "    => got no bug report";
-          bThisTestFailed = bFailed = True;
+          print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+          print "  Expected:    %s" % oTest.sExpectedBugTypeId;
+          print "  Got nothing";
+          bFailed = True;
         elif not oTest.sExpectedBugTypeId == oBugReport.sBugTypeId:
-          print "- %s" % oTest;
-          print "    => %s (%s)" % (oBugReport.sId, oBugReport.sBugDescription);
-          bThisTestFailed = bFailed = True;
+          print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+          print "  Expected:    %s" % oTest.sExpectedBugTypeId;
+          print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
+          print "               %s" % (oBugReport.sBugDescription);
+          bFailed = True;
         else:
           print "+ %s" % oTest;
       elif oBugReport:
-        print "- %s" % oTest;
-        print "    => %s (%s)" % (oBugReport.sId, oBugReport.sBugDescription);
-        bThisTestFailed = bFailed = True;
+        print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+        print "  Expected no report";
+        print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
+        print "               %s" % (oBugReport.sBugDescription);
+        bFailed = True;
       else:
         print "+ %s" % oTest;
-      if bThisTestFailed:
-        print "    Command line: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
       oOutputLock and oOutputLock.release();
       oTest.bHasOutputLock = False;
       if dxConfig["bSaveTestReports"] and oBugReport:
@@ -205,8 +209,8 @@ if __name__ == "__main__":
     
     for (uBaseAddress, sDescription) in [
       # 0123456789ABCDEF
-             (0x80000000, "Unallocated"),
-            (0x100000000, "Unallocated"),
+             (0x60000000, "Unallocated"), # This is not guaranteed; this test may fail by chance
+            (0x100000000, "Unallocated"), # This is not guaranteed; this test may fail by chance
          (0x7ffffffd0000, "Unallocated"),
          (0x7ffffffdffff, "Unallocated"),
          (0x7ffffffe0000, "Reserved"),
