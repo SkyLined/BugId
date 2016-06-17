@@ -123,6 +123,8 @@ if __name__ == "__main__":
       # Running for the first time after being started.
       print "* The application was started successfully and is running...";
       bApplicationIsStarted = True;
+      # Start checking for excessive CPU usage
+      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
     else:
       # Running after being resumed.
       print "* The application was resumed successfully and is running...";
@@ -151,7 +153,6 @@ if __name__ == "__main__":
     fExceptionDetectedCallback = fExceptionDetectedHandler,
     fApplicationExitCallback = fApplicationExitHandler,
   );
-  oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
   oBugId.fWait();
   if oBugId.oBugReport:
     print "* A bug was detected in the application.";
