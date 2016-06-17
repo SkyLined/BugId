@@ -44,15 +44,16 @@ your own Python project using cBugId.py.
 
 The bug id format
 -----------------
-The bug id follows the format `XX BugType Binary.exe![Module.dll!]FunctionName`,
+The bug id follows the format `BugType xxx.xxx Binary.exe![Module.dll!]FunctionName`,
 where:
-* `XX` is a stack hash; a number of hexadecimal digits that represent hash(es)
+* `BugType` is a keyword that identifies the type of bug that was detected.
+  A list of keywords and their meaning is provided below.
+* `xxx.xxx` is a stack hash; a number of hexadecimal digits that represent hash(es)
   of the name(s) of the function(s) on the call stack that are considered to be
   uniquely relevant to the bug. In most cases (and with default settings) this
   includes the function in which the bug is considered to be located and its
   caller. For recursive function calls, this includes all functions involved in
   the call loop, which may be any number of functions.
-* `BugType` is a keyword that identifies the type of bug that was detected.
 * `Binary.exe` is the process' main binary
 * `Module.dll` is the module that contains the function in which the bug is
   considered to be located, if it was not found in the process' main binary.
@@ -65,8 +66,44 @@ instance, if a function `A` calls `KERNELBASE.dll!RaiseException` to raise an
 exception, `KERNELBASE.dll!RaiseException` is not considered relevant to the
 bug, but the caller, `A`, is considered to be the function in which the bug is
 located. For some OOM bugs, a large number of function calls from the top of the
-stack may be considered irrelevant because they are part of the OOM handling or
-memory allocation code and not specific to that bug.
+stack may be considered irrelevant because they are part of the memory allocation
+code or OOM handling and not specific to that bug.
+
+`BugType` can have many values, including:
+* `AV?@{memory/address type}` - An access violation was detect while attempting
+  to read (AVR), write (AVW) or execute (AVE) the specified type of memory or
+  address, `{address/memory type}` types include:
+  * `NULL` - a NULL pointer was used to address the memory,
+  * `Assertion` - this address is used to indicate an assertion has failed.
+  * `PoisonUninitialized` - the pointer used was read from uninitialized memory.
+  * `Free` - the memory at this address has recently been freed,
+  * `PoisonFree` - the pointer used was read from freed memory.
+  * `OOB` - the address is out-of-bounds of allocated memory,
+  * `PoisonOOB` - the pointer used was read memory that is out-of-bounds.
+  * `Invalid` - the memory at this address is not accessible from userland.
+  * `Unallocated` - no memory is allocated at the address,
+  * `Reserved` - memory has been reserved but not committed at this address,
+  * `Arbitrary` - memory is allocated at this address, but not accessible,
+* `StackExhaustion` - A function has attempted to allocate too much stack memory.
+* `RecursiveCall` - A recursive function call loop has used too much stack memory.
+* `C++` - An unhandeled C++ exception 
+* `OOM` - Out Of Memory: the application attempted to allocate too much memory.
+* `Assert` - An assertion has failed.
+* `HeapCorrupt` - Application verifier has detected heap corruption.
+* `LegacyGS`, `StackCookie` - /GS detected that a stack cookie was modified.
+* `VTGuard` - VTGuard detected that a virtual function table cookie was modified.
+* `CorruptList` - Safe unlinking detect a corrupted LIST_ENTRY
+* `GuardICall` - Control Flow Guard (CFG) detect a call to an invalid address.
+* `RefCount` - A reference counter was incremented beyond its maximum value.
+* `PureCall` - A pure virtual function was called.
+* `InvalidHandle` - An operation was performed on an invalid handle.
+* `Breakpoint` - A debugger breakpoint was triggered.
+* `IllegalInstruction` - An illegal instruction was executed.
+* `FloatDivideByZero` and `IntegerDivideByZero` - A division by zero occured.
+* `CPUUsage` - Excessive CPU usage was detected.
+These are the values you are likely to see. For a full list, please refer to the
+source code. Every bug report includes a description of the bug, which explains
+the type of issue in more detail.
 
 PageHeap.cmd
 ------------
