@@ -134,6 +134,8 @@ class cCdbWrapper(object):
     oCdbWrapper.oBreakpointCounter = itertools.count(); # None have been used so far, so start at 0.
     # You can set a breakpoint that results in a bug being reported when it is hit.
     # See fuAddBugBreakpoint and fReleaseBreakpointId for implementation details.
+    oCdbWrapper.duAddress_by_uBreakpointId = {};
+    oCdbWrapper.duProcessId_by_uBreakpointId = {};
     oCdbWrapper.dfCallback_by_uBreakpointId = {};
     # You can tell BugId to check for excessive CPU usage among all the threads running in the application.
     # See fSetCheckForExcessiveCPUUsageTimeout and cExcessiveCPUUsageDetector.py for more information
@@ -149,6 +151,7 @@ class cCdbWrapper(object):
     # even started.
     oCdbWrapper.oCdbLock = threading.Lock();
     oCdbWrapper.oCdbLock.acquire();
+    oCdbWrapper.bCdbStdInOutThreadRunning = True; # Will be set to false if the thread terminates for any reason.
     # Keep track of how long the application has been running, used for timeouts (see fxSetTimeout, fCdbStdInOutThread
     # and fCdbInterruptOnTimeoutThread for details.
     oCdbWrapper.nApplicationRunTime = 0; # Total time spent running before last interruption
@@ -239,25 +242,31 @@ class cCdbWrapper(object):
   def fReleaseVariableId(oCdbWrapper, uVariableId):
     oCdbWrapper.uAvailableVariableIds.append(uVariableId);
   
-  def fuAddBreakpoint(oCdbWrapper, sAddress, fCallback, uProcessId = None, uThreadId = None, sCommand = None):
-    # Select the right process/thread if requested.
-    oCdbWrapper.fSelectProcessAndThread(uProcessId, uThreadId);
+  def fuAddBreakpoint(oCdbWrapper, uAddress, fCallback, uProcessId, uThreadId = None, sCommand = None):
+    # Select the right process.
+    oCdbWrapper.fSelectProcess(uProcessId);
     if not oCdbWrapper.bCdbRunning: return;
     # Put breakpoint only on relevant thread if provided.
     if uThreadId is not None:
-      sCommand = ".if (@$tid != 0x%X) {gh;}%s;" % (uThreadId, sCommand is not None and " .else {%s}" % sCommand or "");
+      sCommand = ".if (@$tid != 0x%X) {gh;}%s;" % (uThreadId, sCommand is not None and " .else {%s};" % sCommand or "");
     uBreakpointId = oCdbWrapper.oBreakpointCounter.next();
-    sBreakpointCommand = "bp%d %s%s;" % (
+    sBreakpointCommand = ".if ($vvalid(0x%X,1)) {bp%d 0x%X%s;}; .else {.echo Invalid address;};" % (
+      uAddress, 
       uBreakpointId,
-      sAddress, 
+      uAddress, 
       sCommand and (' "%s"' % sCommand.replace("\\", "\\\\").replace('"', '\\"')) or ""
     );
-    asBreakpointResult = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand, bIsRelevantIO = False);
+    asBreakpointResult = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand); #, bIsRelevantIO = False);
+    if not oCdbWrapper.bCdbRunning: return;
+    oCdbWrapper.fasSendCommandAndReadOutput("bl;"); # debugging
+    if not oCdbWrapper.bCdbRunning: return;
     # It could be that a previous breakpoint existed at the given location, in which case that breakpoint id is used
     # by cdb instead. This must be detected so we can return the correct breakpoint id to the caller and match the
     # callback to the right breakpoint as well.
     if len(asBreakpointResult) == 1:
-      oActualBreakpointIdMatch = re.match(r"breakpoint (\d) (?:exists, redefining|redefined)", asBreakpointResult[0])
+      if asBreakpointResult[0] == "Invalid address":
+        return None;
+      oActualBreakpointIdMatch = re.match(r"^breakpoint (\d+) (?:exists, redefining|redefined)$", asBreakpointResult[0]);
       assert oActualBreakpointIdMatch, \
           "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
       uBreakpointId = long(oActualBreakpointIdMatch.group(1));
@@ -270,16 +279,22 @@ class cCdbWrapper(object):
           "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
     if not oCdbWrapper.bCdbRunning: return;
     oCdbWrapper.fasSendCommandAndReadOutput("bl;", bIsRelevantIO = False);
+    oCdbWrapper.duAddress_by_uBreakpointId[uBreakpointId] = uAddress;
+    oCdbWrapper.duProcessId_by_uBreakpointId[uBreakpointId] = uProcessId;
     oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId] = fCallback;
     return uBreakpointId;
   
   def fRemoveBreakpoint(oCdbWrapper, uBreakpointId):
+    uProcessId = oCdbWrapper.duProcessId_by_uBreakpointId[uBreakpointId];
+    oCdbWrapper.fSelectProcess(uProcessId);
     # There can be any number of breakpoints according to the docs, so no need to reuse them. There is a bug in cdb:
     # using "bc" to clear a breakpoint can still lead to a STATUS_BREAKPOINT exception at the original address later.
     # There is nothing to detect this exception was caused by this bug, and filtering these exceptions is therefore
     # hard to do correctly. An easier way to address this issue is to not "clear" the breakpoint, but replace the
     # command executed when the breakpoint is hit with "gh" (go with exception handled).
-    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput('bp%d "gh";' % uBreakpointId, bIsRelevantIO = False);
+    oCdbWrapper.fasSendCommandAndReadOutput("bl;"); # debugging
+    if not oCdbWrapper.bCdbRunning: return;
+    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput('bp%d "gh";' % uBreakpointId); #, bIsRelevantIO = False);
     oCdbWrapper.fasSendCommandAndReadOutput("bl;", bIsRelevantIO = False);
     del oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId];
   
@@ -289,28 +304,24 @@ class cCdbWrapper(object):
     return oCdbWrapper.fSelectProcessAndThread(uThreadId = uThreadId);
   def fSelectProcessAndThread(oCdbWrapper, uProcessId = None, uThreadId = None):
     # Both arguments are optional
+    sSelectCommand = "";
     if uProcessId is not None:
-      asSelectProcessOutput = oCdbWrapper.fasSendCommandAndReadOutput("|~[0x%X]s" % uProcessId, bIsRelevantIO = False);
-      if not oCdbWrapper.bCdbRunning: return;
-      asSelectProcessUnknownOutput = [
-        s for s in asSelectProcessOutput
-        if not re.match("^%s$" % "|".join([
-          "\*\*\* ERROR: Module load completed but symbols could not be loaded for .*",
-        ]), s)
-      ];
-      assert len(asSelectProcessUnknownOutput) == 0, \
-          "Unexpected select process output:\r\n%s" % "\r\n".join(asSelectProcessOutput);
+      sSelectCommand += "|~[0x%X]s;" % uProcessId;
     if uThreadId is not None:
-      asSelectThreadOutput = oCdbWrapper.fasSendCommandAndReadOutput("~~[0x%X]s" % uThreadId, bIsRelevantIO = False);
+      sSelectCommand += "~~[0x%X]s;" % uThreadId;
+    if sSelectCommand:
+      asSelectOutput = oCdbWrapper.fasSendCommandAndReadOutput(sSelectCommand, bIsRelevantIO = False);
       if not oCdbWrapper.bCdbRunning: return;
-      assert len([s for s in asSelectThreadOutput if not s.startswith("*** WARNING: Unable to verify checksum for")]) == 0, \
-          "Unexpected select process output:\r\n%s" % "\r\n".join(asSelectThreadOutput);
+      srIgnoredErrors = r"^\*\*\* (WARNING: Unable to verify checksum for|ERROR: Module load completed but symbols could not be loaded for) .*$";
+      for sLine in asSelectOutput:
+        assert re.match(srIgnoredErrors, sLine), \
+            "Unexpected select process/thread output:\r\n%s" % "\r\n".join(asSelectOutput);
   
   def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
     oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
   
   def fxSetTimeout(oCdbWrapper, nTimeout, fCallback):
-    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fCallback));
+#    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fCallback));
     assert nTimeout >= 0, "Negative timeout does not make sense";
     nTime = oCdbWrapper.nApplicationRunTime + nTimeout;
     # If the application is currently running, nApplicationResumeTime is not None:
@@ -323,7 +334,7 @@ class cCdbWrapper(object):
 
   def fClearTimeout(oCdbWrapper, xTimeout):
     (nTime, fCallback) = xTimeout;
-    print "@@@ clear timeout in %.1f seconds: %s" % (nTime - time.clock(), repr(fCallback));
+#    print "@@@ clear timeout in %.1f seconds: %s" % (nTime - time.clock(), repr(fCallback));
     try:
       oCdbWrapper.axTimeouts.remove(xTimeout);
     except ValueError:

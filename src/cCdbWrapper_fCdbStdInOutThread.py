@@ -187,6 +187,11 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # Debugging the application was interrupted and the application suspended to fire some timeouts. This exception
         # is not a bug and should be ignored.
         pass;
+      elif uExceptionCode == STATUS_SINGLE_STEP:
+        # A bug in cdb causes single step exceptions at locations where a breakpoint is set. Since I have never seen a
+        # single step exception caused by a bug in an application, I am assuming these are all caused by this bug and
+        # ignore them:
+        pass;
       elif (
         uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]
         and dxBugIdConfig["bIgnoreFirstChanceBreakpoints"]
@@ -248,6 +253,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbWrapper.fasSendCommandAndReadOutput("q");
   finally:
+    oCdbWrapper.bCdbStdInOutThreadRunning = False;
     # Release the lock on cdb so the "interrupt on timeout" thread can notice cdb has terminated
     oCdbWrapper.oCdbLock.release();
   assert not oCdbWrapper.bCdbRunning, "Debugger did not terminate when requested";

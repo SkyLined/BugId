@@ -13,7 +13,7 @@ class cExcessiveCPUUsageDetector(object):
     oExcessiveCPUUsageDetector.uBugBreakpointId = None;
   
   def fStartTimeout(oExcessiveCPUUsageDetector, nTimeout):
-    print "@@@ Starting excessive CPU usage checks in %d seconds..." % nTimeout;
+#    print "@@@ Starting excessive CPU usage checks in %d seconds..." % nTimeout;
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
@@ -39,7 +39,7 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
   
   def fStart(oExcessiveCPUUsageDetector):
-    print "@@@ Start excessive CPU usage checks...";
+#    print "@@@ Start excessive CPU usage checks...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.fGetUsageData();
     oExcessiveCPUUsageDetector.oLock.acquire();
@@ -50,7 +50,7 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
   
   def fCheckUsage(oExcessiveCPUUsageDetector):
-    print "@@@ Checking for excessive CPU usage...";
+#    print "@@@ Checking for excessive CPU usage...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
@@ -102,8 +102,10 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
     
   def fInstallWorm(oExcessiveCPUUsageDetector, uProcessId, uThreadId, nTotalCPUPercent):
-    print "@@@ Installing excessive CPU usage worm...";
+#    print "@@@ Installing excessive CPU usage worm...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
+    # NO LOCK! Called from method that already locked it.
+    
     # Excessive CPU usage is assumed to be caused by code running in a loop for too long, causing the function that
     # contains the code to never return to its caller. The way a useful BugId is determined, is by finding an address
     # inside the looping code in this function, set a breakpoint there and report a bug when it is hit. The exact
@@ -133,40 +135,60 @@ class cExcessiveCPUUsageDetector(object):
     if not oCdbWrapper.bCdbRunning: return;
     oCdbWrapper.fasSendCommandAndReadOutput('.printf "Starting excessive CPU usage worm at %%ly...\\r\\n", 0x%X;' % \
         oExcessiveCPUUsageDetector.uNextBreakpointAddress, bHideCommand = True);
-    print "@@@ Excessive CPU usage worm at address 0x%X..." % oExcessiveCPUUsageDetector.uLastInstructionPointer;
+#    print "@@@ Excessive CPU usage worm at address 0x%X..." % oExcessiveCPUUsageDetector.uLastInstructionPointer;
     oExcessiveCPUUsageDetector.uWormBreakpointId = oCdbWrapper.fuAddBreakpoint(
-      sAddress = "0x%X" % oExcessiveCPUUsageDetector.uLastInstructionPointer,
+      uAddress = oExcessiveCPUUsageDetector.uLastInstructionPointer,
       fCallback = oExcessiveCPUUsageDetector.fMoveWormBreakpointUpTheStack,
       uProcessId = oExcessiveCPUUsageDetector.uProcessId,
       uThreadId = oExcessiveCPUUsageDetector.uThreadId,
     );
+    assert oExcessiveCPUUsageDetector.uWormBreakpointId is not None, \
+        "Could not set breakpoint at 0x%X" % oExcessiveCPUUsageDetector.uLastInstructionPointer;
     if not oCdbWrapper.bCdbRunning: return;
     nTimeout = dxBugIdConfig["nExcessiveCPUUsageWormRunTime"];
     oExcessiveCPUUsageDetector.xWormRunTimeout = oCdbWrapper.fxSetTimeout(nTimeout, oExcessiveCPUUsageDetector.fSetBugBreakpointAfterTimeout);
   
   def fMoveWormBreakpointUpTheStack(oExcessiveCPUUsageDetector):
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
-    oCdbWrapper.fasSendCommandAndReadOutput('.printf "Excessive CPU usage worm has hit %%ly after %.2f seconds...\\r\\n", 0x%X;' % \
-        (time.clock() - oExcessiveCPUUsageDetector.uLastHitTime, oExcessiveCPUUsageDetector.uNextBreakpointAddress), bHideCommand = True);
-    oExcessiveCPUUsageDetector.uLastHitTime = time.clock();
-    oExcessiveCPUUsageDetector.uLastInstructionPointer = oExcessiveCPUUsageDetector.uNextBreakpointAddress;
-    if not oCdbWrapper.bCdbRunning: return;
-    oExcessiveCPUUsageDetector.uNextBreakpointAddress = oExcessiveCPUUsageDetector.fuGetValue("@$ra");
-    if not oCdbWrapper.bCdbRunning: return;
-    oCdbWrapper.fasSendCommandAndReadOutput('.printf "Moving excessive CPU usage worm to %%ly...\\r\\n", 0x%X;' % \
-        oExcessiveCPUUsageDetector.uNextBreakpointAddress, bHideCommand = True);
-    oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
-    oExcessiveCPUUsageDetector.uWormBreakpointId = oCdbWrapper.fuAddBreakpoint(
-      sAddress = "0x%X" % oExcessiveCPUUsageDetector.uNextBreakpointAddress,
-      fCallback = oExcessiveCPUUsageDetector.fMoveWormBreakpointUpTheStack,
-      uProcessId = oExcessiveCPUUsageDetector.uProcessId,
-      uThreadId = oExcessiveCPUUsageDetector.uThreadId,
-    );
-    # Clear the current timeout and start a new one.
-    oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xWormRunTimeout);
-    nTimeout = dxBugIdConfig["nExcessiveCPUUsageWormRunTime"];
-    oExcessiveCPUUsageDetector.xWormRunTimeout = oCdbWrapper.fxSetTimeout(nTimeout, oExcessiveCPUUsageDetector.fSetBugBreakpointAfterTimeout);
-    return True;
+    oExcessiveCPUUsageDetector.oLock.acquire();
+    try:
+      oCdbWrapper.fasSendCommandAndReadOutput('.printf "Excessive CPU usage worm has hit %%ly after %.2f seconds...\\r\\n", 0x%X;' % \
+          (time.clock() - oExcessiveCPUUsageDetector.uLastHitTime, oExcessiveCPUUsageDetector.uNextBreakpointAddress), bHideCommand = True);
+      if not oCdbWrapper.bCdbRunning: return;
+      oExcessiveCPUUsageDetector.uLastHitTime = time.clock();
+      uCurrentInstructionPointer = oExcessiveCPUUsageDetector.uNextBreakpointAddress;
+      uCurrentReturnAddress = oExcessiveCPUUsageDetector.fuGetValue("@$ra");
+      if not oCdbWrapper.bCdbRunning: return;
+      oCdbWrapper.fasSendCommandAndReadOutput('.printf "Moving excessive CPU usage worm to %%ly...\\r\\n", 0x%X;' % \
+          uCurrentReturnAddress, bHideCommand = True);
+      # Try to move the breakpoint to the return addess:
+      uNewWormBreakpointId = oCdbWrapper.fuAddBreakpoint(
+        uAddress = uCurrentReturnAddress,
+        fCallback = oExcessiveCPUUsageDetector.fMoveWormBreakpointUpTheStack,
+        uProcessId = oExcessiveCPUUsageDetector.uProcessId,
+        uThreadId = oExcessiveCPUUsageDetector.uThreadId,
+      );
+      if not oCdbWrapper.bCdbRunning: return;
+      if uNewWormBreakpointId is None:
+        # Could not move breakpoint: the return address may be invalid.
+        # Ignore this and continue to run; the unchanged breakpoint may get hit again and we get another try, or
+        # the timeout fires and we get a stack.
+        oCdbWrapper.fasSendCommandAndReadOutput('.printf "Unable to move breakpointto %%ly: still at %%ly...\\r\\n", 0x%X, 0x%X;' % \
+            (uCurrentReturnAddress, uCurrentInstructionPointer), bHideCommand = True);
+        if not oCdbWrapper.bCdbRunning: return;
+      else:
+        # Remove the old breakpoint.
+        oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
+        if not oCdbWrapper.bCdbRunning: return;
+        oExcessiveCPUUsageDetector.uWormBreakpointId = uNewWormBreakpointId;
+        oExcessiveCPUUsageDetector.uLastInstructionPointer = uCurrentInstructionPointer;
+        oExcessiveCPUUsageDetector.uNextBreakpointAddress = uCurrentReturnAddress;
+        # Clear the current timeout and start a new one.
+        oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xWormRunTimeout);
+        nTimeout = dxBugIdConfig["nExcessiveCPUUsageWormRunTime"];
+        oExcessiveCPUUsageDetector.xWormRunTimeout = oCdbWrapper.fxSetTimeout(nTimeout, oExcessiveCPUUsageDetector.fSetBugBreakpointAfterTimeout);
+    finally:
+      oExcessiveCPUUsageDetector.oLock.release();
 
   def fuGetValue(oExcessiveCPUUsageDetector, sAddress):
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
@@ -187,22 +209,24 @@ class cExcessiveCPUUsageDetector(object):
           (time.clock() - oExcessiveCPUUsageDetector.uLastHitTime, oExcessiveCPUUsageDetector.uNextBreakpointAddress), bHideCommand = True);
       oCdbWrapper.fasSendCommandAndReadOutput('.printf "Putting excessive CPU usage bug breakpoint at %%ly...\\r\\n", 0x%X;' % \
           oExcessiveCPUUsageDetector.uLastInstructionPointer, bHideCommand = True);
-      print "@@@ Setting excessive CPU usage bug breeakpoint...";
+#      print "@@@ Setting excessive CPU usage bug breeakpoint...";
       oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
       oExcessiveCPUUsageDetector.uWormBreakpointId = None;
       if not oCdbWrapper.bCdbRunning: return;
       oExcessiveCPUUsageDetector.uBugBreakpointId = oCdbWrapper.fuAddBreakpoint(
-        sAddress = "0x%X" % oExcessiveCPUUsageDetector.uLastInstructionPointer,
+        uAddress = oExcessiveCPUUsageDetector.uLastInstructionPointer,
         fCallback = oExcessiveCPUUsageDetector.fReportCPUUsageBug,
         uProcessId = oExcessiveCPUUsageDetector.uProcessId,
         uThreadId = oExcessiveCPUUsageDetector.uThreadId,
       );
       if not oCdbWrapper.bCdbRunning: return;
+      assert oExcessiveCPUUsageDetector.uBugBreakpointId is not None, \
+         "Could not set breakpoint at 0x%X" % oExcessiveCPUUsageDetector.uLastInstructionPointer;
     finally:
       oExcessiveCPUUsageDetector.oLock.release();
   
   def fReportCPUUsageBug(oExcessiveCPUUsageDetector):
-    print "@@@ Reporting excessive CPU usage bug...";
+#    print "@@@ Reporting excessive CPU usage bug...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     sBugTypeId = "CPUUsage";
     sBugDescription = "The application was using %d%% CPU for %d seconds, which is considered excessive." % \
