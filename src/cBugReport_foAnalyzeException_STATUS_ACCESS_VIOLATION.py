@@ -391,6 +391,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
         if re.match(r"^(%s)$" % "|".join([
           "ERROR: !vprot: extension exception 0x80004002\.",
           "!vprot: No containing memory region found",
+          "No export vprot found",
         ]), asMemoryProtectionInformation[0]):
           sAddressId = "Unallocated";
           sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
@@ -427,12 +428,16 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
             sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
             sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address";
           elif uStateFlags == 0x2000: # MEM_RESERVE
-            assert uTypeFlags in [0x20000, 0x40000], \
-                "Expected MEM_RESERVE memory to have type MEM_PRIVATE or MEM_MAPPED\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
-            assert uProtectionFlags == 0x1 or uAllocationProtectionFlags == 0x1, \
-                "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
+# These checks were added to make sure I understood exactly what was going on. However, it turns out that I don't
+# because these checks fail without me being able to understand why. So, I've decided to disable them and see what
+# happens. If you have more information that can help me make sense of this and improve it, let me know!
+#            assert uTypeFlags in [0x20000, 0x40000], \
+#                "Expected MEM_RESERVE memory to have type MEM_PRIVATE or MEM_MAPPED\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
+#            # PAGE_READONLY !? Apparently...
+#            assert uProtectionFlags == 0x1 or uAllocationProtectionFlags in [0x1, 02], \
+#                "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS or PAGE_READONLY\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
             sAddressId = "Reserved";
-            sBugDescription = "Access violation while %s reversed but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
+            sBugDescription = "Access violation while %s reserved but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
             sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled";
           elif uStateFlags == 0x1000: # MEM_COMMIT
             dsMemoryProtectionsDescription_by_uFlags = {
