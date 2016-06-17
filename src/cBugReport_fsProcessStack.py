@@ -1,3 +1,6 @@
+from dxBugIdConfig import dxBugIdConfig;
+import hashlib;
+
 def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
   # Find out which frame should be the "main" frame and get stack id.
   oTopmostRelevantFrame = None;          # topmost relevant frame
@@ -39,6 +42,13 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
           oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
         elif oStackFrame.oModule:
           oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
+  if len(asStackFrameIds) > dxBugIdConfig["uStackHashFramesCount"]:
+    # For certain bugs, such as recursive function calls, ids may have been generated for more functions than the value
+    # in uStackHashFramesCount. In this case, the last ids are hashes into one id to reduce the number of hashes:
+    oHasher = hashlib.md5();
+    while len(asStackFrameIds) >= dxBugIdConfig["uStackHashFramesCount"]:
+      oHasher.update(asStackFrameIds.pop());
+    asStackFrameIds.append(oHasher.hexdigest()[:dxBugIdConfig["uMaxStackFrameHashChars"]]);
   oBugReport.sStackId = ".".join([s for s in asStackFrameIds]);
   if oCdbWrapper.bGetDetailsHTML and oBugReport.oStack.bPartialStack:
     asStackHTML.append("... (the remainder of the stack was ignored)");
