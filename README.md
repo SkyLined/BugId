@@ -354,6 +354,17 @@ and their source are found in the `Tests\` folder. The python script `Tests.py`
 runs a large number of tests and returns an error code of zero if all succeeded
 and a non-zero error code if any failed.
 
+Donations
+---------
+This work is provided free of charge for non-commercial use. If you find it
+useful and would like to make a donation, you can send bitcoin to 
+[183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]. If you would like to use it commercially,
+please contact the author at [berendjanwever@gmail.com][] to discuss licensing
+options.
+[183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]:bitcoin:183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX
+[berendjanwever@gmail.com]:mailto:berendjanwever@gmail.com
+
+
 License
 -------
 This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0
