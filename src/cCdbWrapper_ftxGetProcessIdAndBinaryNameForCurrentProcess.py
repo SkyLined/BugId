@@ -19,5 +19,9 @@ def cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper):
   assert oMatch, "Unexpected current process output:\r\n%s" % "\r\n".join(asProcessesOutput);
   sProcessId, sBinaryNameOrPath = oMatch.groups();
   uProcessId = int(sProcessId, 16);
-  sBinaryName = os.path.basename(sBinaryNameOrPath);
+  if sBinaryNameOrPath == "?NoImage?":
+    # No idea why this happens, but apparently it does...
+    sBinaryName = None;
+  else:
+    sBinaryName = os.path.basename(sBinaryNameOrPath);
   return (uProcessId, sBinaryName);
