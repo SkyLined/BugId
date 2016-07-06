@@ -1,3 +1,6 @@
 [submodule "modules/Kill"]
 	path = modules/Kill
 	url = https://github.com/SkyLined/Kill
+[submodule "modules/FileSystem"]
+	path = modules/FileSystem
+	url = https://github.com/SkyLined/FileSystem
