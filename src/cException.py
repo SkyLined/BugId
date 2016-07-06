@@ -1,6 +1,5 @@
 import re;
-from cException_fSetSecurityImpact import cException_fSetSecurityImpact;
-from cException_fSetTypeId import cException_fSetTypeId;
+from dtsTypeId_and_sSecurityImpact_by_uExceptionCode import dtsTypeId_and_sSecurityImpact_by_uExceptionCode;
 from cStowedException import cStowedException;
 from dxBugIdConfig import dxBugIdConfig;
 from NTSTATUS import *;
@@ -85,11 +84,15 @@ class cException(object):
         "Exception record is missing an NumberParameters value\r\n%s" % "\r\n".join(asExceptionRecord);
     assert uParameterCount == len(oException.auParameters), \
         "Unexpected number of parameters (%d vs %d)" % (len(oException.auParameters), uParameterCount);
-    # Now handle the information in the exception record to create an exception id that uniquely identifies the
-    # type of exception and a description of the exception.
-    cException_fSetTypeId(oException);
+    # Now get a preliminary exception id that identifies the type of exception based on the exception code, as well as
+    # preliminary security impact.
+    if oException.uCode in dtsTypeId_and_sSecurityImpact_by_uExceptionCode:
+      oException.sTypeId, oException.sSecurityImpact = dtsTypeId_and_sSecurityImpact_by_uExceptionCode[oException.uCode];
+    else:
+      oException.sTypeId = "0x%08X" % oException.uCode;
+      oException.sSecurityImpact = "Unknown";
+    # Save the description of the issue
     oException.sDescription = "%s (code 0x%08X)" % (sCodeDescription, uCode);
-    cException_fSetSecurityImpact(oException);
 
     # Compare stack with exception information
     if oException.sAddressSymbol:
