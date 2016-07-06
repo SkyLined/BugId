@@ -6,7 +6,13 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["sr
 
 from dxConfig import dxConfig;
 from cBugId import cBugId;
-import FileSystem;
+try:
+  import FileSystem;
+except:
+  print "*" * 80;
+  print "BugId.py depends on FileSystem, which you can download at https://github.com/SkyLined/FileSystem/";
+  print "*" * 80;
+  raise;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:

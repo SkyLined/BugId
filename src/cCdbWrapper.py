@@ -16,8 +16,14 @@ from cCdbWrapper_ftxSplitSymbolOrAddress import cCdbWrapper_ftxSplitSymbolOrAddr
 from cCdbWrapper_fsHTMLEncode import cCdbWrapper_fsHTMLEncode;
 from cExcessiveCPUUsageDetector import cExcessiveCPUUsageDetector;
 from dxBugIdConfig import dxBugIdConfig;
-from Kill import fKillProcessesUntilTheyAreDead;
 from sOSISA import sOSISA;
+try:
+  from Kill import fKillProcessesUntilTheyAreDead;
+except:
+  print "*" * 80;
+  print "BugId depends on Kill, which you can download at https://github.com/SkyLined/Kill/";
+  print "*" * 80;
+  raise;
 
 class cCdbWrapper(object):
   sCdbISA = sOSISA;
