@@ -13,7 +13,7 @@ def cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules
         r"(\+0x[0-9A-F]+)"                #     ("+0x" offset_in_module)
       r"|"                                #   } or {
         r"!(.+?)([\+\-]0x[0-9A-F]+)?"     #     "!" (function_name) optional{ (["+" || "-"] "0x" offset) }
-      r")"                                #   }
+      r")?"                                #  } or { nothing }
     r")"                                  # }
   ), sSymbolOrAddress, re.I);
   assert oMatch, "Unknown symbol or address format: %s" % repr(sSymbolOrAddress);
@@ -45,11 +45,13 @@ def cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules
     if uSymbolOffset: uAddress += uSymbolOffset;
   else:
     oModule = doModules_by_sCdbId[sModuleCdbId];
-    if sModuleOffset:
-      uModuleOffset = long(sModuleOffset.replace("`", ""), 16);
-    else:
+    if sSymbol:
       oFunction = oModule.foGetOrCreateFunction(sSymbol);
       uFunctionOffset = sSymbolOffset and long(sSymbolOffset.replace("`", ""), 16) or 0;
+    elif sModuleOffset:
+      uModuleOffset = long(sModuleOffset.replace("`", ""), 16);
+    else:
+      uModuleOffset = 0;
   return (
     uAddress,
     sUnloadedModuleFileName, oModule, uModuleOffset,
