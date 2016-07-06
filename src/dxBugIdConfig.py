@@ -1,5 +1,4 @@
 from dsCdbBinaryPath_sISA import dsCdbBinaryPath_sISA;
-from dsKillBinaryPath_sISA import dsKillBinaryPath_sISA;
 # Load base config file
 try:
   from dxConfig import dxConfig;
@@ -12,8 +11,6 @@ for (sName, xValue) in {
   ### cdb/kill binary settings
   "sCdbBinaryPath_x86": dsCdbBinaryPath_sISA.get("x86"),
   "sCdbBinaryPath_x64": dsCdbBinaryPath_sISA.get("x64"),
-  "sKillBinaryPath_x86": dsKillBinaryPath_sISA.get("x86"),
-  "sKillBinaryPath_x64": dsKillBinaryPath_sISA.get("x64"),
   ### Exception control
   "bIgnoreFirstChanceBreakpoints": False, # When enabled, first chance debugger breakpoints are ignored and only second
                                         # chance debugger breakpoints are analyzed. This speeds up debugging
