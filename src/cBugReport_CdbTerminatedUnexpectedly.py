@@ -2,7 +2,9 @@ from sDetailsHTMLTemplate import sDetailsHTMLTemplate;
 
 class cBugReport_CdbTerminatedUnexpectedly(object):
   def __init__(oBugReport, oCdbWrapper, uExitCode):
-    oBugReport.sBugTypeId = "CdbTerminated:%d" % uExitCode;
+    if uExitCode < 0:
+      uExitCode += 1 << 32;
+    oBugReport.sBugTypeId = "CdbTerminated:0x%X" % uExitCode;
     oBugReport.sBugDescription = "Cdb terminated unexpectedly";
     oBugReport.sBugLocation = None;
     oBugReport.sSecurityImpact = None;
