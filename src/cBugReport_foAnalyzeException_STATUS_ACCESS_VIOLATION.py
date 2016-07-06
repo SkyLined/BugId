@@ -295,7 +295,8 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           "\*\*\*.*\*\*\*",
         ]), x)
       ];
-      if len(asPageHeapReport) >= 4:
+      # TODO: error resolving symbol should be handled by attempting to reload them, similar to cCdbWrapper_fasGetStack
+      if len(asPageHeapReport) >= 4 and not asPageHeapReport[0].startswith("unable to resolve ntdll!"):
         assert re.match(r"^\s+address [0-9`a-f]+ found in\s*$", asPageHeapReport[0]), \
             "Unrecognized page heap report first line:\r\n%s" % "\r\n".join(asPageHeapReport);
         assert re.match(r"^\s+\w+ @ [0-9`a-f]+\s*$", asPageHeapReport[1]), \
@@ -325,7 +326,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           sAddressDescription = "freed memory";
           sBugDescription = "Access violation while %s %s at 0x%X" % \
               (sViolationTypeDescription, sAddressDescription, uAddress);
-          sSecurityImpact =,  "Potentially exploitable security issue";
+          sSecurityImpact = "Potentially exploitable security issue";
         elif sBlockType == "busy":
           # Page heap says the region is allocated,  only logical explanation known is that the read was beyond the
           # end of the heap block, inside a guard page:
@@ -404,7 +405,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           uProtectionFlags = None;
           uTypeFlags = None;
           for sLine in asMemoryProtectionInformation:
-            oLineMatch = re.match(r"^(\w+):\s+([0-9a-f]+)(?:\s+\w+)?$`", sLine);
+            oLineMatch = re.match(r"^(\w+):\s+([0-9a-f]+)(?:\s+\w+)?$", sLine);
             assert oLineMatch, \
                 "Unrecognized memory protection information line: %s\r\n%s" % (sLine, "\r\n".join(asMemoryProtectionInformation));
             sInfoType, sValue = oLineMatch.groups();
