@@ -263,8 +263,8 @@ asHiddenTopFrames = [
   "xul.dll!std::vector<...>::_Reallocate",
   "xul.dll!std::vector<...>::_Reserve",
   # Edge allocations functions that are irrelevant in OOM cases.
+  "edgehtml.dll!_HeapAlloc<0>",
   "edgehtml.dll!ProcessHeapAlloc<0>",
-  "edgehtml.dll!CStyleAttrArray::SetLineColumn", # This symbol is obviously incorrect, it will probably disappear from the stack with the next build.
   # Edge functions that are irrelevant to assertions.
   "edgehtml.dll!Abandonment::AssertionFailed",
   "edgehtml.dll!Abandonment::CheckHRESULT",
