@@ -6,7 +6,7 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["sr
 
 from dxConfig import dxConfig;
 from cBugId import cBugId;
-from fsCreateFileName import fsCreateFileName;
+import FileSystem;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -164,22 +164,13 @@ if __name__ == "__main__":
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
-      sFileNameBase = fsCreateFileName("%s %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation));
-      # File name may be too long, keep trying to save it with a shorter name or output an error if that's not posible.
-      while len(sFileNameBase) > 0:
-        sFileName = sFileNameBase + ".html";
-        try:
-          oFile = open(sFileName, "wb");
-        except IOError:
-          sFileNameBase = sFileNameBase[:-1];
-          continue;
-        sDetailsHTML = oBugId.oBugReport.sDetailsHTML;
-        try:
-          oFile.write(sDetailsHTML);
-        finally:
-          oFile.close();
-        print "  Bug report:       %s (%d bytes)" % (sFileName, len(sDetailsHTML));
-        break;
+      sReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+      if FileSystem.fbWriteDataToFile(
+        oBugId.oBugReport.sDetailsHTML,
+        FileSystem.fsLocalPath(FileSystem.fsTranslateToValidName(sReportFileName)),
+        fbRetryOnFailure = lambda: False,
+      ):
+        print "  Bug report:       %s (%d bytes)" % (sReportFileName, len(oBugId.oBugReport.sDetailsHTML));
       else:
         print "  Bug report:       Cannot be saved";
   else:
