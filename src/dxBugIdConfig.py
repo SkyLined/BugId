@@ -57,11 +57,11 @@ for (sName, xValue) in {
                                         # at all when part of the memory it attempts to disassemble is not readable.
   ### Stack settings
   "uMaxStackFramesCount": 20,           # How many stack frames are retreived for analysis?
-  "uMinStackRecursionLoops": 5,         # How many recursive functions call loops are needed to assume a stack overflow
+  "uMinStackRecursionLoops": 3,         # How many recursive functions call loops are needed to assume a stack overflow
                                         # is caused by such a loop?
-  "uMaxStackRecursionLoopSize": 25,     # The maximum number of functions expected to be in a loop (less increases
+  "uMaxStackRecursionLoopSize": 50,     # The maximum number of functions expected to be in a loop (less increases
                                         # analysis speed, but might miss-analyze a recursion loop involving many
-                                        # functions as a simple stack exhaustion).
+                                        # functions as a simple stack exhaustion). I've seen 43 functions in one loop.
   "uStackHashFramesCount": 2,           # How many stack frames are hashed for the crash id?
   "uMaxStackFrameHashChars": 3,         # How many characters of hash to use in the id for each stack frame.
   ### Symbol loading settings
