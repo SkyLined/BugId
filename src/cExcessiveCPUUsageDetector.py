@@ -2,6 +2,8 @@ import re, threading, time;
 from cBugReport import cBugReport;
 from dxBugIdConfig import dxBugIdConfig;
 
+bDebugOutput = False;
+
 class cExcessiveCPUUsageDetector(object):
   def __init__(oExcessiveCPUUsageDetector, oCdbWrapper):
     oExcessiveCPUUsageDetector.oCdbWrapper = oCdbWrapper;
@@ -13,7 +15,7 @@ class cExcessiveCPUUsageDetector(object):
     oExcessiveCPUUsageDetector.uBugBreakpointId = None;
   
   def fStartTimeout(oExcessiveCPUUsageDetector, nTimeout):
-#    print "@@@ Starting excessive CPU usage checks in %d seconds..." % nTimeout;
+    if bDebugOutput: print "@@@ Starting excessive CPU usage checks in %d seconds..." % nTimeout;
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
@@ -39,7 +41,7 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
   
   def fStart(oExcessiveCPUUsageDetector):
-#    print "@@@ Start excessive CPU usage checks...";
+    if bDebugOutput: print "@@@ Start excessive CPU usage checks...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.fGetUsageData();
     oExcessiveCPUUsageDetector.oLock.acquire();
@@ -50,7 +52,7 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
   
   def fCheckUsage(oExcessiveCPUUsageDetector):
-#    print "@@@ Checking for excessive CPU usage...";
+    if bDebugOutput: print "@@@ Checking for excessive CPU usage...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
@@ -88,8 +90,8 @@ class cExcessiveCPUUsageDetector(object):
 #                  nCPUPercent
 #                );
 # Use for debugging
-#      print "*** Total CPU usage: %d%%, max: %d%% for pid %d, tid %d" % \
-#          (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
+      if bDebugOutput: print "*** Total CPU usage: %d%%, max: %d%% for pid %d, tid %d" % \
+          (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
       # If all threads in all processes combined have excessive CPU usage
       if nTotalCPUPercent > dxBugIdConfig["nExcessiveCPUUsagePercent"]:
         # Find out which function is using excessive CPU time in the most active thread.
@@ -102,7 +104,7 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
     
   def fInstallWorm(oExcessiveCPUUsageDetector, uProcessId, uThreadId, nTotalCPUPercent):
-#    print "@@@ Installing excessive CPU usage worm...";
+    if bDebugOutput: print "@@@ Installing excessive CPU usage worm...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     # NO LOCK! Called from method that already locked it.
     
@@ -135,7 +137,7 @@ class cExcessiveCPUUsageDetector(object):
     if not oCdbWrapper.bCdbRunning: return;
     oCdbWrapper.fasSendCommandAndReadOutput('.printf "Starting excessive CPU usage worm at %%ly...\\r\\n", 0x%X;' % \
         oExcessiveCPUUsageDetector.uNextBreakpointAddress, bHideCommand = True);
-#    print "@@@ Excessive CPU usage worm at address 0x%X..." % oExcessiveCPUUsageDetector.uLastInstructionPointer;
+    if bDebugOutput: print "@@@ Excessive CPU usage worm at address 0x%X..." % oExcessiveCPUUsageDetector.uLastInstructionPointer;
     oExcessiveCPUUsageDetector.uWormBreakpointId = oCdbWrapper.fuAddBreakpoint(
       uAddress = oExcessiveCPUUsageDetector.uLastInstructionPointer,
       fCallback = oExcessiveCPUUsageDetector.fMoveWormBreakpointUpTheStack,
@@ -209,7 +211,7 @@ class cExcessiveCPUUsageDetector(object):
           (time.clock() - oExcessiveCPUUsageDetector.uLastHitTime, oExcessiveCPUUsageDetector.uNextBreakpointAddress), bHideCommand = True);
       oCdbWrapper.fasSendCommandAndReadOutput('.printf "Putting excessive CPU usage bug breakpoint at %%ly...\\r\\n", 0x%X;' % \
           oExcessiveCPUUsageDetector.uLastInstructionPointer, bHideCommand = True);
-#      print "@@@ Setting excessive CPU usage bug breeakpoint...";
+      if bDebugOutput: print "@@@ Setting excessive CPU usage bug breeakpoint...";
       oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
       oExcessiveCPUUsageDetector.uWormBreakpointId = None;
       if not oCdbWrapper.bCdbRunning: return;
@@ -226,7 +228,7 @@ class cExcessiveCPUUsageDetector(object):
       oExcessiveCPUUsageDetector.oLock.release();
   
   def fReportCPUUsageBug(oExcessiveCPUUsageDetector):
-#    print "@@@ Reporting excessive CPU usage bug...";
+    if bDebugOutput: print "@@@ Reporting excessive CPU usage bug...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     sBugTypeId = "CPUUsage";
     sBugDescription = "The application was using %d%% CPU for %d seconds, which is considered excessive." % \
