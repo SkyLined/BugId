@@ -230,7 +230,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
             # remove clutter and reduce memory usage.
             oCdbWrapper.asCdbStdIOBlocksHTML = (
               oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
-              ["<span class=\"CDBIgnoredException\">Exception 0x%08X in process %d ignored.</span>" % (uExceptionCode, uProcessId)] +
+              ["<span class=\"CDBIgnoredException\">Exception 0x%08X in process %d ignored.</span><br/>" % (uExceptionCode, uProcessId)] +
               oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
             );
         # See if a bug needs to be reported
