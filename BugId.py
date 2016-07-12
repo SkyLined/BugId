@@ -1,4 +1,6 @@
-import json, re, os, sys, threading;
+import codecs, json, re, os, sys, threading;
+# Prevent unicode strings from throwing exceptions when output to the console.
+sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
 # The CWD may not be this script's folder; make sure it looks there for modules first:
 sBaseFolderPath = os.path.dirname(__file__);
 for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]:
@@ -171,13 +173,14 @@ if __name__ == "__main__":
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
       sReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
-      if FileSystem.fbWriteDataToFile(
+      eWriteDataToFileResult = FileSystem.feWriteDataToFile(
         oBugId.oBugReport.sDetailsHTML,
         FileSystem.fsLocalPath(FileSystem.fsTranslateToValidName(sReportFileName)),
         fbRetryOnFailure = lambda: False,
-      ):
-        print "  Bug report:       %s (%d bytes)" % (sReportFileName, len(oBugId.oBugReport.sDetailsHTML));
+      );
+      if eWriteDataToFileResult:
+        print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
       else:
-        print "  Bug report:       Cannot be saved";
+        print "  Bug report:       %s (%d bytes)" % (sReportFileName, len(oBugId.oBugReport.sDetailsHTML));
   else:
     print "* The application has terminated without crashing.";
