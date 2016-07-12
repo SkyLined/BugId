@@ -125,17 +125,20 @@ if __name__ == "__main__":
   oBugId = None;
   
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
+  bCheckForExcessiveCPUUsageTimeoutSet = False;
   def fApplicationRunningHandler():
-    global bApplicationIsStarted;
+    global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
     if not bApplicationIsStarted:
       # Running for the first time after being started.
-      print "* The application was started successfully and is running...";
       bApplicationIsStarted = True;
-      # Start checking for excessive CPU usage
-      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
+      print "* The application was started successfully and is running...";
     else:
       # Running after being resumed.
       print "* The application was resumed successfully and is running...";
+    if not bCheckForExcessiveCPUUsageTimeoutSet:
+      # Start checking for excessive CPU usage
+      bCheckForExcessiveCPUUsageTimeoutSet = True;
+      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
   
   def fExceptionDetectedHandler(uCode, sDescription):
     print "* Exception code 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
