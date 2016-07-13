@@ -1,7 +1,10 @@
-import re;
+import re, threading;
 from dxBugIdConfig import dxBugIdConfig;
 
 def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHideCommand = False):
+  # Commands can only be execute from within the cCdbWrapper.fCdbStdInOutThread call.
+  assert  threading.currentThread() == oCdbWrapper.oCdbStdInOutThread, \
+      "Commands can only be sent to cdb from within a cCdbWrapper.fCdbStdInOutThread call.";
   if dxBugIdConfig["bOutputStdIn"]:
     print "cdb<%s" % repr(sCommand)[1:-1];
   try:

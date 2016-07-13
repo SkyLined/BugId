@@ -8,6 +8,7 @@ class cExcessiveCPUUsageDetector(object):
   def __init__(oExcessiveCPUUsageDetector, oCdbWrapper):
     oExcessiveCPUUsageDetector.oCdbWrapper = oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock = threading.Lock();
+    oExcessiveCPUUsageDetector.xCleanupTimeout = None;
     oExcessiveCPUUsageDetector.xStartTimeout = None;
     oExcessiveCPUUsageDetector.xCheckUsageTimeout = None;
     oExcessiveCPUUsageDetector.xWormRunTimeout = None;
@@ -19,28 +20,52 @@ class cExcessiveCPUUsageDetector(object):
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
-      # Stop any analysis in progress...
+      # Stop any analysis timeouts in progress...
       if oExcessiveCPUUsageDetector.xStartTimeout is not None:
         oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xStartTimeout);
         oExcessiveCPUUsageDetector.xStartTimeout = None;
       if oExcessiveCPUUsageDetector.xCheckUsageTimeout is not None:
         oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xCheckUsageTimeout);
         oExcessiveCPUUsageDetector.xCheckUsageTimeout = None;
-      if oExcessiveCPUUsageDetector.uWormBreakpointId is not None:
-        oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
-        oExcessiveCPUUsageDetector.uWormBreakpointId = None;
-        if not oCdbWrapper.bCdbRunning: return;
-      if oExcessiveCPUUsageDetector.uBugBreakpointId is not None:
-        oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uBugBreakpointId);
-        oExcessiveCPUUsageDetector.uBugBreakpointId = None;
-        if not oCdbWrapper.bCdbRunning: return;
       oExcessiveCPUUsageDetector.xPreviousData = None; # Previous data is no longer valid.
+      # Request an immediate timeout to remove old breakpoints when the application is paused. This is needed because
+      # we cannot execute any command while the application is still running, so these breakpoints cannot be removed
+      # here.
+      if oExcessiveCPUUsageDetector.xCleanupTimeout is not None:
+        oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xCleanupTimeout);
+        oExcessiveCPUUsageDetector.xCleanupTimeout = None;
+      oExcessiveCPUUsageDetector.xCleanupTimeout = oCdbWrapper.fxSetTimeout(0, oExcessiveCPUUsageDetector.fCleanup);
       if nTimeout is not None:
         oExcessiveCPUUsageDetector.xStartTimeout = oCdbWrapper.fxSetTimeout(nTimeout, oExcessiveCPUUsageDetector.fStart);
     finally:
       oExcessiveCPUUsageDetector.oLock.release();
   
+  def fCleanup(oExcessiveCPUUsageDetector):
+    # Remove old breakpoints; this is done in a timeout because we cannot execute any command while the application
+    # is still running.
+    oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
+    oExcessiveCPUUsageDetector.oLock.acquire();
+    try:
+      if oExcessiveCPUUsageDetector.xCleanupTimeout:
+        oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xCleanupTimeout);
+        oExcessiveCPUUsageDetector.xCleanupTimeout = None;
+        if bDebugOutput: print "@@@ Cleaning up excessive CPU usage breakpoints..." % nTimeout;
+        if oExcessiveCPUUsageDetector.uWormBreakpointId is not None:
+          oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
+          oExcessiveCPUUsageDetector.uWormBreakpointId = None;
+          if not oCdbWrapper.bCdbRunning: return;
+        if oExcessiveCPUUsageDetector.uBugBreakpointId is not None:
+          oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uBugBreakpointId);
+          oExcessiveCPUUsageDetector.uBugBreakpointId = None;
+          if not oCdbWrapper.bCdbRunning: return;
+    finally:
+      oExcessiveCPUUsageDetector.oLock.release();
+  
   def fStart(oExcessiveCPUUsageDetector):
+    # A timeout to execute the cleanup function was set, but there is no guarantee the timeout has been fired yet; the
+    # timeout to start this function may have been fired first. By calling the cleanup function now, we make sure that
+    # cleanup happens if it has not already, and cancel the cleanup timeout if it has not yet fired.
+    oExcessiveCPUUsageDetector.fCleanup();
     if bDebugOutput: print "@@@ Start excessive CPU usage checks...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     oExcessiveCPUUsageDetector.fGetUsageData();
