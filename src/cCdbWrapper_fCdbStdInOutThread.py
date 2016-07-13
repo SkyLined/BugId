@@ -245,10 +245,10 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           break;
       # Execute any pending timeout callbacks
       for xTimeout in oCdbWrapper.axTimeouts:
-        (nTimeoutTime, fTimeoutCallback) = xTimeout;
+        (nTimeoutTime, fTimeoutCallback, axArguments) = xTimeout;
         if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
           oCdbWrapper.axTimeouts.remove(xTimeout);
-          fTimeoutCallback();
+          fTimeoutCallback(*axArguments);
     # Terminate cdb.
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbWrapper.fasSendCommandAndReadOutput("q");

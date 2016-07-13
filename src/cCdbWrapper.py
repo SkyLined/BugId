@@ -326,7 +326,7 @@ class cCdbWrapper(object):
   def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
     oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
   
-  def fxSetTimeout(oCdbWrapper, nTimeout, fCallback):
+  def fxSetTimeout(oCdbWrapper, nTimeout, fCallback, *axArguments):
 #    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fCallback));
     assert nTimeout >= 0, "Negative timeout does not make sense";
     nTime = oCdbWrapper.nApplicationRunTime + nTimeout;
@@ -334,12 +334,12 @@ class cCdbWrapper(object):
     nApplicationResumeTime = oCdbWrapper.nApplicationResumeTime;
     if nApplicationResumeTime:
       nTime += time.clock() - nApplicationResumeTime;
-    xTimeout = (nTime, fCallback);
+    xTimeout = (nTime, fCallback, axArguments);
     oCdbWrapper.axTimeouts.append(xTimeout);
     return xTimeout;
 
   def fClearTimeout(oCdbWrapper, xTimeout):
-    (nTime, fCallback) = xTimeout;
+    (nTime, fCallback, axArguments) = xTimeout;
 #    print "@@@ clear timeout in %.1f seconds: %s" % (nTime - time.clock(), repr(fCallback));
     try:
       oCdbWrapper.axTimeouts.remove(xTimeout);
