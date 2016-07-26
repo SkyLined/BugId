@@ -121,7 +121,6 @@ if __name__ == "__main__":
     rImportantStdOutLines = None;
     rImportantStdErrLines = None;
   
-  oFinishedEvent = threading.Event();
   oBugId = None;
   
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
