@@ -26,6 +26,12 @@ class cBugId(object):
   def fSetCheckForExcessiveCPUUsageTimeout(oBugId, nTimeout):
     oBugId.__oCdbWrapper.fSetCheckForExcessiveCPUUsageTimeout(nTimeout);
   
+  def fxSetTimeout(oBugId, nTimeout, fCallback, *axArguments):
+    return oBugId.__oCdbWrapper.fxSetTimeout(nTimeout, fCallback, *axArguments);
+  
+  def fClearTimeout(oBugId, xTimeout):
+    oBugId.__oCdbWrapper.fClearTimeout(xTimeout);
+  
   def fbFinished(oBugId):
     oBugId.__oFinishedEvent.isSet();
   
