@@ -3,6 +3,8 @@ BugId
 
 Python module to detect, analyze and id application bugs
 
+[![Codewake](https://www.codewake.com/badges/codewake2.svg)](https://www.codewake.com/p/bugid)
+
 TL;DR
 -----
 Do you...
