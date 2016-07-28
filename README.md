@@ -93,7 +93,7 @@ different bug ids.
   * `Reserved` - memory has been reserved but not committed at this address,
   * `Arbitrary` - memory is allocated at this address, but not accessible,
   The optional `{+/-offset}` part indicates an offset from the address. For
-  example, `AVR:NULL+8` means an attempt to read data at offset 8 of a NULL
+  example, `AVR:NULL+8` means an attempt to read data at offset 8 from a NULL
   pointer, and `AVW:OOB[0x10]+2` means an attempt to read data two bytes after
   a 16 byte buffer.
 * `StackExhaustion` - A function has attempted to allocate too much stack memory.
