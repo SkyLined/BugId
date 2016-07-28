@@ -92,10 +92,22 @@ different bug ids.
   * `Unallocated` - no memory is allocated at the address,
   * `Reserved` - memory has been reserved but not committed at this address,
   * `Arbitrary` - memory is allocated at this address, but not accessible,
+  
   The optional `{+/-offset}` part indicates an offset from the address. For
   example, `AVR:NULL+8` means an attempt to read data at offset 8 from a NULL
   pointer, and `AVW:OOB[0x10]+2` means an attempt to read data two bytes after
   a 16 byte buffer.
+  
+  Both the size of an OOB buffer and the offset can be made *architecture
+  independent* by setting the `dxBugIdConfig` setting
+  `uArchitectureIndependentBugIdBits` to the smallest number of bits for the
+  desired architectures (e.g. 32 when testing a 32-bit and 64-bit architecture).
+  This causes these values to be presented modulo that number of bits, which
+  should make the bug id the same for both architectures. In the case of the 
+  `AVW:OOB[0x10]+2` example, if that was on a 32-bit architecture and the 64-bit
+  version of the application would allocated twice that ammount of memory, the
+  bug id for both would be `AVW:OOB[4*N]+2`, as 0x10 and 0x20 are both divisible
+  by 4 without a remainder, while 2 is not.
 * `StackExhaustion` - A function has attempted to allocate too much stack memory.
 * `RecursiveCall` - A recursive function call loop has used too much stack memory.
 * `C++` - An unhandeled C++ exception 
