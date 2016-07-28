@@ -11,6 +11,13 @@ IF NOT "%GFlags:~0,0%" == "" (
   ) ELSE (
     SET GFlags=C:\Program Files\Windows Kits\8.1\Debuggers\x86\gflags.exe
   )
+  IF NOT EXIST "%GFlags%" (
+    IF "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
+      SET GFlags=C:\Program Files\Windows Kits\10\Debuggers\x64\gflags.exe
+    ) ELSE (
+      SET GFlags=C:\Program Files\Windows Kits\10\Debuggers\x86\gflags.exe
+    )
+  )
 )
 SET GFlags=%GFlags:"=%
 IF NOT EXIST "%GFlags%" (
