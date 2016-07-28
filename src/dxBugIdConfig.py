@@ -24,7 +24,7 @@ for (sName, xValue) in {
   "bOutputStdErr": True,                # Output cdb error output, which probably comes from the debugged application.
   "bOutputFirstChanceExceptions": False, # Are first chance exceptions detected and output?
   "bOutputCommandLine": False,          # Is the cbd.exe command line printed before execution?
-  "bOutputProcesses": False,             # Output process details whenever one is created/attached to/terminated.
+  "bOutputProcesses": False,            # Output process details whenever one is created/attached to/terminated.
   ### Pointer settings
   "uMaxAddressOffset": 0x1000,          # How big an offset from a special address (such as NULL) do you expect in your
                                         # application? Anything within this range from a special address is considered
