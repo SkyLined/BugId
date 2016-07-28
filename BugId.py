@@ -18,17 +18,17 @@ except:
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
-sURL = "http://%s:28876/" % os.getenv("COMPUTERNAME");
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 gasApplicationCommandLine_by_sKnownApplicationKeyword = {
-  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, sURL, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, sURL, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
-  "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), sURL, "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
-  "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, sURL],
-  "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64, sURL],
-  "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, sURL],
+  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "%test%", "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "%test%", "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), "%test%", "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
+  "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, "%test%"],
+  "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64, "%test%"],
+  "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, "%test%"],
+  "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86, "%test%"],
 };
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
 # links to an online source repository:
@@ -57,12 +57,17 @@ if __name__ == "__main__":
   asArguments = sys.argv[1:];
   if len(asArguments) == 0:
     print "Usage:";
-    print "  BugId.py [options] path\\to\\binary.exe [arguments]";
+    print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
     print "    Start the executable in the debugger with the provided arguments.";
+    print "";
+    print "  BugId.py [options] \"known application id\" [test url or file path]";
+    print "    Start a known application and open the given url or file.";
+    print "    Valid ids: %s" % ", ".join(sorted(gasApplicationCommandLine_by_sKnownApplicationKeyword.keys()));
+    print "";
     print "  BugId.py [options] --pids=[comma separated list of process ids]";
     print "    Attach debugger to the process(es) provided in the list. The processes must";
     print "    all have been suspended, as they will be resumed by the debugger.";
-    print;
+    print "";
     print "Options:";
     print "  --bSaveReport=false";
     print "    Do not save a HTML formatted crash report.";
@@ -107,8 +112,12 @@ if __name__ == "__main__":
     asArguments.pop(0);
   asApplicationCommandLine = len(asArguments) and asArguments or None;
   # Rather than a command line, a known application keyword can be provided:
-  sKnownApplicationKeyword = asApplicationCommandLine and len(asApplicationCommandLine) == 1 and asApplicationCommandLine[0].lower() or None; 
+  sKnownApplicationKeyword = asApplicationCommandLine and asApplicationCommandLine[0].lower() or None; 
   if sKnownApplicationKeyword in gasApplicationCommandLine_by_sKnownApplicationKeyword:
+    if len(asApplicationCommandLine) == 2:
+      dxConfig["sTest"] = asApplicationCommandLine[1];
+    else:
+      print "- Superfluous arguments after known application keyword: %s" % " ".join(asApplicationCommandLine[2:]);
     # Translate known application keyword to its command line:
     asApplicationCommandLine = gasApplicationCommandLine_by_sKnownApplicationKeyword[sKnownApplicationKeyword];
     # Get source file path to URL translation rules for known application:
@@ -120,6 +129,9 @@ if __name__ == "__main__":
     dsURLTemplate_by_srSourceFilePath = {};
     rImportantStdOutLines = None;
     rImportantStdErrLines = None;
+  if asApplicationCommandLine is not None:
+    # replace "%test%" with dxConfig["sTest"] in the command line
+    asApplicationCommandLine = [s.replace("%test%", dxConfig["sTest"]) for s in asApplicationCommandLine];
   
   oBugId = None;
   
