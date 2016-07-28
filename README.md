@@ -56,8 +56,8 @@ The bug id follows the format `BugType xxx.xxx`, where:
   A list of keywords and their meaning is provided below.
 * `xxx.xxx` is a stack hash. It consists of a (customizable) number of hashes,
   and each has consists of a (customizable) number of hexadecimal digits. The
-  first hash is for the top-most 'relevant' function on the call stack, the
-  second hash is for the next 'relevant' function on the call stack, etc.
+  first hash is for the top-most *relevant* function on the call stack, the
+  second hash is for the next *relevant* function on the call stack, etc.
   The number of hashes can be set using the `uStackHashFramesCount` setting in
   `dxBugIdConfig.py` and the number of digits can be set using
   `uMaxStackFrameHashChars`. The default settings are 2 and 3 respectively,
@@ -84,14 +84,15 @@ where:
 * `FunctionName` is the name of the function in which the bug is considered to
   be located.
 
-Note that the function in which the bug is considered to be located may not
-be the same as the function in which the detected exception occurred. For
-instance, if a function `A` calls `KERNELBASE.dll!RaiseException` to raise an
-exception, `KERNELBASE.dll!RaiseException` is not considered relevant to the
-bug, but the caller, `A`, is considered to be the function in which the bug is
-located. For some OOM bugs, a large number of function calls from the top of the
-stack may be considered irrelevant because they are part of the memory allocation
-code or OOM handling and not specific to that bug.
+Note that the first *relevant* function (in which the bug is considered to be
+located) may not be the same as the top function on the stacl (the one in which
+the detected exception occurred). For instance, if a function `A` calls
+`KERNELBASE.dll!RaiseException` to raise an exception,
+`KERNELBASE.dll!RaiseException` is not considered relevant to the bug. In this
+case `A` is considered to be the first *relevant* function, and thus the
+location for the bug. For some OOM bugs, a large number of function calls from
+the top of the stack may be considered irrelevant because they are part of the
+memory allocation code, page heap or OOM handling and not specific to that bug.
 
 `BugType` can have many values, including:
 * `AV?:{memory/address type}{+/-offset}` - An access violation was detect while
