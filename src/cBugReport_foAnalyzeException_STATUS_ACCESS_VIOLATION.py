@@ -137,23 +137,27 @@ def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
     or dsFunctionName_sSpecialTypeId.get(oFrame.sSimplifiedAddress)
   );
 
+def fsGetNumberDescription(uNumber, sSign = "+"):
+  if uNumber == 0:
+    return "";
+  uArchitectureIndependentBugIdBytes = dxBugIdConfig["uArchitectureIndependentBugIdBits"] / 8;
+  if uArchitectureIndependentBugIdBytes == 0 or uNumber < uArchitectureIndependentBugIdBytes:
+    # Architecture independent bug ids are disabled, or the number is too small to require fixing.
+    if uNumber < 10:
+      return "%d" % uNumber;
+    return "0x%X" % uNumber;
+  uRemainder = uNumber % uArchitectureIndependentBugIdBytes;
+  sRemainder = uRemainder and sSign + fsGetNumberDescription(uRemainder) or "";
+  return "%d*N%s" % (uArchitectureIndependentBugIdBytes, sRemainder);
+
 def fsGetOffsetDescription(iOffset):
   sSign = iOffset < 0 and "-" or "+";
   uOffset = abs(iOffset);
   # One bug may result in different offsets for 32-bit and 64-bit versions of an application, so using the exact
   # value of the offset may result in different ids on different platforms. This can be disabled by setting a value
   # for uMaxOffsetMultiplier:
-  if dxBugIdConfig["uMaxOffsetMultiplier"] == 0:
-    return "%s 0x%X" % (sSign, uOffset);
-  # Setting a value of 4 for uMaxOffsetMultiplier should work for data aligned to 32 bits and result in value of
-  # +N, + 2 * N or + 4 * N. You may try a lower number of values appear to differ between platforms, or a higher
-  # number if you know you application aligns data at more than 4 bytes.
-  uMultiplier = 1;
-  while uMultiplier < dxBugIdConfig["uMaxOffsetMultiplier"] and uOffset % (uMultiplier * 2) == 0:
-    uMultiplier *= 2;
-  if uMultiplier == 1:
-    return "%sN" % sSign;
-  return "%s%d*N" % (sSign, uMultiplier);
+  sOffset = fsGetNumberDescription(uOffset, sSign);
+  return sOffset and "%s%s" % (sSign, sOffset) or "";
 
 def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrapper, oException):
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
@@ -340,7 +344,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           if bAccessIsBeyondBlock:
             # The access was beyond the end of the block (out-of-bounds, OOB)
             uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
-            sAddressId = "OOB" + fsGetOffsetDescription(uOffsetPastEndOfBlock);
+            sAddressId = "OOB[%s]%s" % (fsGetNumberDescription(uBlockSize), fsGetOffsetDescription(uOffsetPastEndOfBlock));
             sOffsetDescription = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
           else:
             # The access was inside the block but apparently the kind of access attempted is not allowed (e.g. write to

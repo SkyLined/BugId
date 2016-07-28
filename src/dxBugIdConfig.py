@@ -29,8 +29,20 @@ for (sName, xValue) in {
   "uMaxAddressOffset": 0x1000,          # How big an offset from a special address (such as NULL) do you expect in your
                                         # application? Anything within this range from a special address is considered
                                         # to be a pointer to that address + an offset.
-  "uMaxOffsetMultiplier": 4,            # Show <address + N> - <address + X * N> where X is this number. Use 0 for
-                                        # <address + offset>
+  "uArchitectureIndependentBugIdBits": 0, # 0 to disable or 8, 6, 32, ... to enable architecture agnostic sizes
+                                        # and offsets in BugIds. For X > 0, and Y = X/8, the bug id will show numbers
+                                        # that are larger than Y as "Y*N+R", where R is the remainder of the number
+                                        # modulo Y.
+                                        # For example: when testing both 32-bit and 64-bit versions of an application,
+                                        # you may get different bug ids for the same access violation bug, because the
+                                        # sizes and offsets depends on the architecture. However, if you set this value
+                                        # to 32 (X = 32, Y = 4), the uniqueness of the offsets and sizes is reduced to
+                                        # the point where you should get the same bug ids:
+                                        #  0,  1,  2,  3      => "0", "1", "2", "3",
+                                        #  4,  8, 12, 16, ... => "4*N"
+                                        #  5,  9, 13, 17, ... => "4*N+1"
+                                        #  6, 10, 14, 18, ... => "4*N+2"
+                                        #  7, 11, 15, 19, ... => "4*N+3"
   "uMaxFunctionOffset": 0xFFF,          # How big an offset from a function symbol do you expect in your application?
                                         # Anything within this range is considered to be a valid symbol, anything
                                         # further from the symbol is marked as dubious.

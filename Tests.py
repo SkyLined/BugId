@@ -12,6 +12,7 @@ dxBugIdConfig["bOutputStdIn"] = \
     dxBugIdConfig["bOutputStdErr"] = bDebugIO;
 dxBugIdConfig["bOutputProcesses"] = False;
 dxBugIdConfig["uReserveRAM"] = 1024; # Simply test if reserving RAM works, not actually reserve any useful amount.
+dxBugIdConfig["uArchitectureIndependentBugIdBits"] = 32; # Test architecture independent bug ids
 
 sBaseFolderPath = os.path.dirname(__file__);
 sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
@@ -70,7 +71,7 @@ class cTest(object):
         bFailed = True;
         oOutputLock and oOutputLock.acquire();
         oTest.bHasOutputLock = True;
-        print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+        print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
         print "  Expected:    %s" % oTest.sExpectedBugTypeId;
         print "  Exception:   %s" % oException;
         oOutputLock and oOutputLock.release();
@@ -95,12 +96,12 @@ class cTest(object):
       oTest.bHasOutputLock = True;
       if oTest.sExpectedBugTypeId:
         if not oBugReport:
-          print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+          print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
           print "  Expected:    %s" % oTest.sExpectedBugTypeId;
           print "  Got nothing";
           bFailed = True;
         elif not oTest.sExpectedBugTypeId == oBugReport.sBugTypeId:
-          print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+          print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
           print "  Expected:    %s" % oTest.sExpectedBugTypeId;
           print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
           print "               %s" % (oBugReport.sBugDescription);
@@ -108,7 +109,7 @@ class cTest(object):
         else:
           print "+ %s" % oTest;
       elif oBugReport:
-        print "- Failed test: %s" " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+        print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
         print "  Expected no report";
         print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
         print "               %s" % (oBugReport.sBugDescription);
@@ -164,16 +165,24 @@ if __name__ == "__main__":
   for sISA in asTestISAs:
     aoTests.append(cTest(sISA, ["Nop"], None)); # No exceptions, just a clean program exit.
     aoTests.append(cTest(sISA, ["CPUUsage"], "CPUUsage"));
-    sMinusOne = {"x86": "FFFFFFFF", "x64": "FFFFFFFFFFFFFFFF"}[sISA];
-    sMinusTwo = {"x86": "FFFFFFFE", "x64": "FFFFFFFFFFFFFFFE"}[sISA];
-    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+N"));
-    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "2"], "AVR:NULL+2*N"));
-    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "3"], "AVR:NULL+N"));
+    sMinusPadding = {"x86": "", "x64": "FFFFFFFF"}[sISA];
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+1"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "2"], "AVR:NULL+2"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "3"], "AVR:NULL+3"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "4"], "AVR:NULL+4*N"));
-    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "5"], "AVR:NULL+N"));
-    if sISA != "x64": # Does not work on x64 dues to limitations of exception handling (See foAnalyzeException_STATUS_ACCESS_VIOLATION for details).
-      aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusOne], "AVR:NULL-N"));
-    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusTwo], "AVR:NULL-2*N"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "5"], "AVR:NULL+4*N+1"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "6"], "AVR:NULL+4*N+2"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "7"], "AVR:NULL+4*N+3"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", "8"], "AVR:NULL+4*N"));
+#    if sISA != "x64": # Does not work on x64 dues to limitations of exception handling (See foAnalyzeException_STATUS_ACCESS_VIOLATION for details).
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFF"], "%s:NULL-1" % {"x86": "AVR", "x64": "AV?"}[sISA]));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFE"], "AVR:NULL-2"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFD"], "AVR:NULL-3"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFC"], "AVR:NULL-4*N"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFB"], "AVR:NULL-4*N-1"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFA"], "AVR:NULL-4*N-2"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFF9"], "AVR:NULL-4*N-3"));
+    aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFF8"], "AVR:NULL-4*N"));
     aoTests.append(cTest(sISA, ["Breakpoint"], "Breakpoint"));
     aoTests.append(cTest(sISA, ["C++"], "C++:cException"));
     aoTests.append(cTest(sISA, ["IntegerDivideByZero"], "IntegerDivideByZero"));
@@ -193,16 +202,24 @@ if __name__ == "__main__":
       # Page heap does not appear to work for x86 tests on x64 platform.
       aoTests.append(cTest(sISA, ["UseAfterFree", "Read", "20", "0"], "AVR:Free"));
       aoTests.append(cTest(sISA, ["UseAfterFree", "Write", "20", "0"], "AVW:Free"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "20", "4"], "AVR:OOB+4*N"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "20", "4"], "AVW:OOB+4*N"));
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "10"], "AVR:OOB+4*N"));   # Read byte at offset 4 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "11"], "AVR:OOB+N"));     # Read byte at offset 5 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "12"], "AVR:OOB+2*N"));   # Read byte at offset 6 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "13"], "AVR:OOB+N"));     # Read byte at offset 7 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "10"], "AVW:OOB+4*N"));  # Write byte at offset 4 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "11"], "AVW:OOB+N"));    # Write byte at offset 5 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "12"], "AVW:OOB+2*N"));  # Write byte at offset 6 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "13"], "AVW:OOB+N"));    # Write byte at offset 7 from the end of the memory block
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "20", "4"], "AVR:OOB[4*N]"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1f", "4"], "AVR:OOB[4*N+3]+1"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1e", "4"], "AVR:OOB[4*N+2]+2"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1d", "4"], "AVR:OOB[4*N+1]+3"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "20", "4"], "AVW:OOB[4*N]"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1f", "4"], "AVW:OOB[4*N+3]+1"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1e", "4"], "AVW:OOB[4*N+2]+2"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1d", "4"], "AVW:OOB[4*N+1]+3"));
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "10"], "AVR:OOB[4*N]+4*N"));    # Read byte at offset 4 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "11"], "AVR:OOB[4*N]+4*N+1"));  # Read byte at offset 5 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "12"], "AVR:OOB[4*N]+4*N+2"));  # Read byte at offset 6 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "13"], "AVR:OOB[4*N]+4*N+3"));  # Read byte at offset 7 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "14"], "AVR:OOB[4*N]+4*N"));    # Read byte at offset 8 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "10"], "AVW:OOB[4*N]+4*N"));   # Write byte at offset 4 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "11"], "AVW:OOB[4*N]+4*N+1")); # Write byte at offset 5 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "12"], "AVW:OOB[4*N]+4*N+2")); # Write byte at offset 6 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "13"], "AVW:OOB[4*N]+4*N+3")); # Write byte at offset 7 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "14"], "AVW:OOB[4*N]+4*N"));   # Write byte at offset 8 from the end of the memory block
     if False:
       # This does not appear to work at all. TODO: fix this.
       aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "AVW:OOB"));
