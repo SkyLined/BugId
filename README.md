@@ -46,16 +46,33 @@ your own Python project using cBugId.py.
 
 The bug id format
 -----------------
-The bug id follows the format `BugType xxx.xxx Binary.exe![Module.dll!]FunctionName`,
-where:
+The bug id follows the format `BugType xxx.xxx`, where:
 * `BugType` is a keyword that identifies the type of bug that was detected.
   A list of keywords and their meaning is provided below.
-* `xxx.xxx` is a stack hash; a number of hexadecimal digits that represent hash(es)
-  of the name(s) of the function(s) on the call stack that are considered to be
-  uniquely relevant to the bug. In most cases (and with default settings) this
-  includes the function in which the bug is considered to be located and its
-  caller. For recursive function calls, this includes all functions involved in
-  the call loop, which may be any number of functions.
+* `xxx.xxx` is a stack hash. It consists of a (customizable) number of hashes,
+  and each has consists of a (customizable) number of hexadecimal digits. The
+  first hash is for the top-most 'relevant' function on the call stack, the
+  second hash is for the next 'relevant' function on the call stack, etc.
+  The number of hashes can be set using the `uStackHashFramesCount` setting in
+  `dxBugIdConfig.py` and the number of digits can be set using
+  `uMaxStackFrameHashChars`. The default settings are 2 and 3 respectively,
+  meaning the stack hash represents the function in which the bug is considered
+  to be located and its caller. However, for recursive function calls involving
+  multiple functions, it can hard to determine in which function the call loop
+  started. In such cases, one function is deterministically picked from the
+  list and treated as the first. If there are less functions involved in the
+  loop than `uStackHashFramesCount`, the number of hashes will be less. If there
+  are more, the number of hashes will be limited to `uStackHashFramesCount`,
+  with the last hash containing a hash of all the remaining functions.
+
+BugId attempts to generate a bug id for each bug in such a way that it is
+unique to the bug, and not to the crash. In other words: if you crash an
+application twice using the same bug, you should get the same bug id, but if
+you crash an application twice using two different bugs, you should get two
+different bug ids.
+
+The bug location follows the format `Binary.exe![Module.dll!]FunctionName`,
+where:
 * `Binary.exe` is the process' main binary
 * `Module.dll` is the module that contains the function in which the bug is
   considered to be located, if it was not found in the process' main binary.
@@ -72,20 +89,25 @@ stack may be considered irrelevant because they are part of the memory allocatio
 code or OOM handling and not specific to that bug.
 
 `BugType` can have many values, including:
-* `AV?@{memory/address type}` - An access violation was detect while attempting
-  to read (AVR), write (AVW) or execute (AVE) the specified type of memory or
-  address, `{address/memory type}` types include:
+* `AV?:{memory/address type}{+/-offset}` - An access violation was detect while
+  attempting to read (AVR), write (AVW) or execute (AVE) the specified type of
+  memory or address, `{address/memory type}` types include:
   * `NULL` - a NULL pointer was used to address the memory,
   * `Assertion` - this address is used to indicate an assertion has failed.
   * `PoisonUninitialized` - the pointer used was read from uninitialized memory.
   * `Free` - the memory at this address has recently been freed,
   * `PoisonFree` - the pointer used was read from freed memory.
-  * `OOB` - the address is out-of-bounds of allocated memory,
-  * `PoisonOOB` - the pointer used was read memory that is out-of-bounds.
+  * `OOB[N]` - the address is out-of-bounds of allocated memory, where N is the
+    size of the memory allocation.
+  * `PoisonOOB` - the pointer used was read from memory that is out-of-bounds.
   * `Invalid` - the memory at this address is not accessible from userland.
   * `Unallocated` - no memory is allocated at the address,
   * `Reserved` - memory has been reserved but not committed at this address,
   * `Arbitrary` - memory is allocated at this address, but not accessible,
+  The optional `{+/-offset}` part indicates an offset from the address. For
+  example, `AVR:NULL+8` means an attempt to read data at offset 8 of a NULL
+  pointer, and `AVW:OOB[0x10]+2` means an attempt to read data two bytes after
+  a 16 byte buffer.
 * `StackExhaustion` - A function has attempted to allocate too much stack memory.
 * `RecursiveCall` - A recursive function call loop has used too much stack memory.
 * `C++` - An unhandeled C++ exception 
