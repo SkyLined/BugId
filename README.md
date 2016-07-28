@@ -76,24 +76,6 @@ application twice using the same bug, you should get the same bug id, but if
 you crash an application twice using two different bugs, you should get two
 different bug ids.
 
-The bug location follows the format `Binary.exe![Module.dll!]FunctionName`,
-where:
-* `Binary.exe` is the process' main binary
-* `Module.dll` is the module that contains the function in which the bug is
-  considered to be located, if it was not found in the process' main binary.
-* `FunctionName` is the name of the function in which the bug is considered to
-  be located.
-
-Note that the first *relevant* function (in which the bug is considered to be
-located) may not be the same as the top function on the stacl (the one in which
-the detected exception occurred). For instance, if a function `A` calls
-`KERNELBASE.dll!RaiseException` to raise an exception,
-`KERNELBASE.dll!RaiseException` is not considered relevant to the bug. In this
-case `A` is considered to be the first *relevant* function, and thus the
-location for the bug. For some OOM bugs, a large number of function calls from
-the top of the stack may be considered irrelevant because they are part of the
-memory allocation code, page heap or OOM handling and not specific to that bug.
-
 `BugType` can have many values, including:
 * `AV?:{memory/address type}{+/-offset}` - An access violation was detect while
   attempting to read (AVR), write (AVW) or execute (AVE) the specified type of
@@ -134,6 +116,26 @@ memory allocation code, page heap or OOM handling and not specific to that bug.
 These are the values you are likely to see. For a full list, please refer to the
 source code. Every bug report includes a description of the bug, which explains
 the type of issue in more detail.
+
+The bug location
+----------------
+The bug location follows the format `Binary.exe![Module.dll!]FunctionName`,
+where:
+* `Binary.exe` is the process' main binary
+* `Module.dll` is the module that contains the function in which the bug is
+  considered to be located, if it was not found in the process' main binary.
+* `FunctionName` is the name of the function in which the bug is considered to
+  be located.
+
+Note that the first *relevant* function (in which the bug is considered to be
+located) may not be the same as the top function on the stacl (the one in which
+the detected exception occurred). For instance, if a function `A` calls
+`KERNELBASE.dll!RaiseException` to raise an exception,
+`KERNELBASE.dll!RaiseException` is not considered relevant to the bug. In this
+case `A` is considered to be the first *relevant* function, and thus the
+location for the bug. For some OOM bugs, a large number of function calls from
+the top of the stack may be considered irrelevant because they are part of the
+memory allocation code, page heap or OOM handling and not specific to that bug.
 
 PageHeap.cmd
 ------------
