@@ -63,6 +63,13 @@ dtxBugTranslations = {
         "verifier.dll!VerifierStopMessage",
         "verifier.dll!AVrfpDphReportCorruptedBlock",
       ],
+      [
+        "ntdll.dll!RtlReportCriticalFailure",
+        "ntdll.dll!RtlpHeapHandleError",
+      ],
+      [
+        "ntdll.dll!RtlpBreakPointHeap",
+      ],
     ],
   ),
   "Assert": (
@@ -118,9 +125,18 @@ asHiddenTopFrames = [
   # Heap allocation and checking functions for "HeapCorrupt" cases:
   "kernel32.dll!HeapFree",
   "msvcrt.dll!free",
+  "ntdll.dll!RtlAllocateHeap",
+  "ntdll.dll!RtlDebugAllocateHeap",
   "ntdll.dll!RtlDebugFreeHeap",
   "ntdll.dll!RtlFreeHeap",
+  "ntdll.dll!RtlpAllocateHeap",
+  "ntdll.dll!RtlpAllocateHeapInternal",
+  "ntdll.dll!RtlpAnalyzeHeapFailure",
+  "ntdll.dll!RtlpBreakPointHeap",
+  "ntdll.dll!RtlpCheckBusyBlockTail",
   "ntdll.dll!RtlpFreeHeap",
+  "ntdll.dll!RtlpLogHeapFailure",
+  "ntdll.dll!RtlpValidateHeapEntry",
   "verifier.dll!AVrfDebugPageHeapFree",
   "verifier.dll!AVrfpDphCheckNormalFreeHeapBlock",
   "verifier.dll!AVrfpDphCheckNormalHeapBlock",
