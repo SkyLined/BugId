@@ -5,6 +5,11 @@ Python module to detect, analyze and id application bugs
 
 [![Codewake](https://www.codewake.com/badges/codewake2.svg)](https://www.codewake.com/p/bugid)
 
+*This project is under very active development and I appreciate any feedback
+you can give me; if you are having any problems running it, or have any
+questions, please do let me know (e.g. by opening a bug). I will try to help
+you and get the issue resolved as soon as possible.*
+
 TL;DR
 -----
 Do you...
