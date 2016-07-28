@@ -148,6 +148,7 @@ class cCdbWrapper(object):
     oCdbWrapper.oExcessiveCPUUsageDetector = cExcessiveCPUUsageDetector(oCdbWrapper);
     # Keep track of future timeouts and their callbacks
     oCdbWrapper.axTimeouts = [];
+    oCdbWrapper.oTimeoutsLock = threading.Lock();
     # Set to true if cdb has been interrupted by the timeout thread but the stdio thread has not yet handled this. Used
     # to prevent the timeout thread from interrupting it multiple times if the stdio thread is slow.
     oCdbWrapper.bInterruptPending = False;
@@ -326,26 +327,33 @@ class cCdbWrapper(object):
   def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
     oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
   
-  def fxSetTimeout(oCdbWrapper, nTimeout, fCallback, *axArguments):
-#    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fCallback));
+  def fxSetTimeout(oCdbWrapper, nTimeout, fTimeoutCallback, *axTimeoutCallbackArguments):
+#    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fTimeoutCallback));
     assert nTimeout >= 0, "Negative timeout does not make sense";
-    nTime = oCdbWrapper.nApplicationRunTime + nTimeout;
+    nTimeoutTime = oCdbWrapper.nApplicationRunTime + nTimeout;
     # If the application is currently running, nApplicationResumeTime is not None:
     nApplicationResumeTime = oCdbWrapper.nApplicationResumeTime;
     if nApplicationResumeTime:
-      nTime += time.clock() - nApplicationResumeTime;
-    xTimeout = (nTime, fCallback, axArguments);
+      nTimeoutTime += time.clock() - nApplicationResumeTime;
+    xTimeout = (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments);
+    oCdbWrapper.oTimeoutsLock.acquire();
     oCdbWrapper.axTimeouts.append(xTimeout);
+#    print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
+    oCdbWrapper.oTimeoutsLock.release();
     return xTimeout;
 
   def fClearTimeout(oCdbWrapper, xTimeout):
-    (nTime, fCallback, axArguments) = xTimeout;
-#    print "@@@ clear timeout in %.1f seconds: %s" % (nTime - time.clock(), repr(fCallback));
-    try:
+    (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) = xTimeout;
+    oCdbWrapper.oTimeoutsLock.acquire();
+    if xTimeout in oCdbWrapper.axTimeouts:
       oCdbWrapper.axTimeouts.remove(xTimeout);
-    except ValueError:
-      pass; # Timeout has already fired ans been removed: ignore this exception.
-  
+#      print "@@@ cleared timeout: %s" % repr(fTimeoutCallback);
+#    else:
+#      # Timeout has already fired and been removed.
+#      print "@@@ ignored clear fired timeout: %s" % repr(fTimeoutCallback);
+#    print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
+    oCdbWrapper.oTimeoutsLock.release();
+      
   def fStop(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);

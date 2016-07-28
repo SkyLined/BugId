@@ -244,11 +244,17 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           # Stop to report the bug.
           break;
       # Execute any pending timeout callbacks
+      oCdbWrapper.oTimeoutsLock.acquire();
+      axTimeoutsToFire = [];
       for xTimeout in oCdbWrapper.axTimeouts:
-        (nTimeoutTime, fTimeoutCallback, axArguments) = xTimeout;
+        (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) = xTimeout;
         if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
           oCdbWrapper.axTimeouts.remove(xTimeout);
-          fTimeoutCallback(*axArguments);
+          axTimeoutsToFire.append((fTimeoutCallback, axTimeoutCallbackArguments));
+#          print "@@@ firing timeout %.1f seconds late: %s" % (oCdbWrapper.nApplicationRunTime - nTimeoutTime, repr(fTimeoutCallback));
+      oCdbWrapper.oTimeoutsLock.release();
+      for (fTimeoutCallback, axTimeoutCallbackArguments) in axTimeoutsToFire:
+        fTimeoutCallback(*axTimeoutCallbackArguments);
     # Terminate cdb.
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbWrapper.fasSendCommandAndReadOutput("q");

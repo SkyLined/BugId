@@ -17,7 +17,9 @@ def cCdbWrapper_fCdbInterruptOnTimeoutThread(oCdbWrapper):
 #        print "@@@ time                    : %.3f " % time.clock();
 #        print "@@@ application resume time : %.3f " % oCdbWrapper.nApplicationResumeTime;
 #        print "@@@ application run time    : %.3f + %.3f = %.3f" % (oCdbWrapper.nApplicationRunTime, time.clock() - oCdbWrapper.nApplicationResumeTime, nApplicationRunTime);
-        for (nTimeoutTime, fTimeoutCallback, axArguments) in oCdbWrapper.axTimeouts: # Make a copy so modifcation during the loop does not affect it.
+#        print "@@@ number of timeouts      : %d" % len(oCdbWrapper.axTimeouts);
+        oCdbWrapper.oTimeoutsLock.acquire();
+        for (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) in oCdbWrapper.axTimeouts: # Make a copy so modifcation during the loop does not affect it.
           if nTimeoutTime <= nApplicationRunTime:
             # If there was a timeout, and there is no interrupt pending, interrupt cdb.
             oCdbWrapper.bInterruptPending = True;
@@ -27,6 +29,7 @@ def cCdbWrapper_fCdbInterruptOnTimeoutThread(oCdbWrapper):
           else:
 #            print "@@@ sleep for %.3f => %s" % (nTimeoutTime, repr(fTimeoutCallback));
             pass;
+        oCdbWrapper.oTimeoutsLock.release();
     finally:
       oCdbWrapper.oCdbLock.release();
     time.sleep(dxBugIdConfig["nTimeoutGranularity"]);
