@@ -223,6 +223,14 @@ file name of the dump file is based on the crash id.
 
 Tell BugId to use a cdb.exe binary from a specific location.
 
+    --nApplicationMaxRunTime=[number of seconds]
+
+Tell BugId to terminate if the application has been running for this many
+seconds without crashing. For instance, if you want to give an application 3
+seconds to load and process a test case, use "--nApplicationMaxRunTime=3": if
+the application has not crashed after running 3 seconds, it will be terminated
+and no bug is reported.
+
 cBugId.py
 ---------
 You can integrate BugId with your own python project by putting it in a
