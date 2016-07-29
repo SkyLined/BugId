@@ -192,8 +192,8 @@ if __name__ == "__main__":
     print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
     if oBugId.oBugReport.sBugSourceLocation:
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
-    print "  Run time:         %.3f" % oBugId.fnApplicationRunTime();
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
+    print "  Run time:         %.3f" % oBugId.fnApplicationRunTime();
     if dxConfig["bSaveReport"]:
       sReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       eWriteDataToFileResult = FileSystem.feWriteDataToFile(
