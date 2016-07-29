@@ -372,6 +372,7 @@ class cCdbWrapper(object):
     # stops running as well. In other words, termination is guaranteed assuming any active callbacks do not block.
     if oCdbProcess:
       oCdbProcess.wait();
+    oCdbWrapper.bCdbRunning = False;
   
   def fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False):
     return cCdbWrapper_fasReadOutput(oCdbWrapper,

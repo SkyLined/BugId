@@ -39,7 +39,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
     # performed. This is done only if dxBugIdConfig["uReserveRAM"] > 0. The memory is allocated at the start of
     # debugging, freed right before an analysis is performed and reallocated if the exception was not fatal.
     bReserveRAMAllocated = False;
-    while asIntialCdbOutput or len(oCdbWrapper.auProcessIdsPendingAttach) + len(oCdbWrapper.auProcessIds) > 0:
+    while asIntialCdbOutput or len(oCdbWrapper.auProcessIdsPendingAttach) + len(oCdbWrapper.auProcessIds) > 0 and oCdbWrapper.bCdbRunning:
       # If requested, reserve some memory in cdb that can be released later to make analysis under low memory conditions
       # more likely to succeed.
       if dxBugIdConfig["uReserveRAM"] and not bReserveRAMAllocated:
