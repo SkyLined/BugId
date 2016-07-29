@@ -1,10 +1,10 @@
 import os, re, sys, threading;
 
 bDebugStartFinish = False;  # Show some output when a test starts and finishes.
+bSaveTestReports = False;   # Can be set through the "--save-reports" command line option
 bDebugIO = False;           # Show cdb I/O during tests (you'll want to run only 1 test at a time for this).
 uSequentialTests = 32;      # Run multiple tests simultaniously, values >32 will probably not work.
 if bDebugIO: uSequentialTests = 1; # prevent UI mess
-
 from dxConfig import dxConfig;
 dxBugIdConfig = dxConfig["BugId"];
 dxBugIdConfig["bOutputStdIn"] = \
@@ -61,7 +61,7 @@ class cTest(object):
       oTest.oBugId = cBugId(
         asApplicationCommandLine = asApplicationCommandLine,
         asSymbolServerURLs = ["http://msdl.microsoft.com/download/symbols"],
-        bGetDetailsHTML = dxConfig["bSaveTestReports"],
+        bGetDetailsHTML = bSaveTestReports,
         fFinishedCallback = oTest.fFinishedHandler,
         fInternalExceptionCallback = oTest.fInternalExceptionHandler,
       );
@@ -118,7 +118,7 @@ class cTest(object):
         print "+ %s" % oTest;
       oOutputLock and oOutputLock.release();
       oTest.bHasOutputLock = False;
-      if dxConfig["bSaveTestReports"] and oBugReport:
+      if bSaveTestReports and oBugReport:
         sFileNameBase = fsCreateFileName("%s = %s" % (oTest, oBugReport.sId));
         # File name may be too long, keep trying to save it with a shorter name or output an error if that's not possible.
         while len(sFileNameBase) > 0:
@@ -159,7 +159,7 @@ class cTest(object):
 
 if __name__ == "__main__":
   if sys.argv[1:2] == ["--save-reports"]:
-    dxConfig["bSaveTestReports"] = True;
+    bSaveTestReports = True;
   
   aoTests = [];
   for sISA in asTestISAs:
