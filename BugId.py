@@ -158,7 +158,7 @@ if __name__ == "__main__":
     print "* Exception code 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
   
   def fHandleApplicationRunTimeout():
-    print "* Terminating the application because it has been running for %f seconds without crashing." % dxConfig["nApplicationMaxRunTime"];
+    print "* Terminating the application because it has been running for %.1f seconds without crashing." % dxConfig["nApplicationMaxRunTime"];
     oBugId.fStop();
   
   def fApplicationExitHandler():
