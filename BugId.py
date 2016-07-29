@@ -30,6 +30,7 @@ gasApplicationCommandLine_by_sKnownApplicationKeyword = {
   "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, "%test%"],
   "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86, "%test%"],
 };
+
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
 # links to an online source repository:
 srMozillaCentralSourceURLMappings = "".join([
@@ -143,6 +144,8 @@ if __name__ == "__main__":
       # Running for the first time after being started.
       bApplicationIsStarted = True;
       print "* The application was started successfully and is running...";
+      if dxConfig["nApplicationMaxRunTime"] is not None:
+        oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fHandleApplicationRunTimeout);
     else:
       # Running after being resumed.
       print "* The application was resumed successfully and is running...";
@@ -153,6 +156,10 @@ if __name__ == "__main__":
   
   def fExceptionDetectedHandler(uCode, sDescription):
     print "* Exception code 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
+  
+  def fHandleApplicationRunTimeout():
+    print "* Terminating the application because it has been running for %f seconds without crashing." % dxConfig["nApplicationMaxRunTime"];
+    oBugId.fStop();
   
   def fApplicationExitHandler():
     print "* The application has exited...";

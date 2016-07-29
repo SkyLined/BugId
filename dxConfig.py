@@ -10,6 +10,9 @@ dxConfig = {
                                                   # testing and may give false positives if startup takes long.
   "sTest": "http://%s:28876/" % os.getenv("COMPUTERNAME"), # Default URL for browser tests, can be a file path for
                                                   # applications that read test data from a file.
+  "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
+                                                  # seconds without crashing. None to allow the application to run
+                                                  # forever.
   "BugId": {
     # The values from src\dxBugIdConfig.py get loaded here, but you can override them here.
   },
