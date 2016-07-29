@@ -32,6 +32,9 @@ class cBugId(object):
   def fClearTimeout(oBugId, xTimeout):
     oBugId.__oCdbWrapper.fClearTimeout(xTimeout);
   
+  def fnApplicationRunTime(oBugId):
+    return oBugId.__oCdbWrapper.fnApplicationRunTime();
+  
   def fbFinished(oBugId):
     oBugId.__oFinishedEvent.isSet();
   

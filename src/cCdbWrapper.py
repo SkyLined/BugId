@@ -413,3 +413,8 @@ class cCdbWrapper(object):
   
   def fsHTMLEncode(oCdbWrapper, sLine):
     return cCdbWrapper_fsHTMLEncode(oCdbWrapper, sLine);
+  
+  def fnApplicationRunTime(oCdbWrapper):
+    if oCdbWrapper.nApplicationResumeTime is None:
+      return oCdbWrapper.nApplicationRunTime;
+    return oCdbWrapper.nApplicationRunTime + time.clock() - oCdbWrapper.nApplicationResumeTime;

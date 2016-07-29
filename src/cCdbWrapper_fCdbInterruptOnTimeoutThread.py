@@ -13,10 +13,8 @@ def cCdbWrapper_fCdbInterruptOnTimeoutThread(oCdbWrapper):
       if not oCdbWrapper.bCdbStdInOutThreadRunning: return;
       if not oCdbWrapper.bInterruptPending:
         # Time spent running before the application was resumed + time since the application was resumed.
-        nApplicationRunTime = oCdbWrapper.nApplicationRunTime + time.clock() - oCdbWrapper.nApplicationResumeTime;
-#        print "@@@ time                    : %.3f " % time.clock();
-#        print "@@@ application resume time : %.3f " % oCdbWrapper.nApplicationResumeTime;
-#        print "@@@ application run time    : %.3f + %.3f = %.3f" % (oCdbWrapper.nApplicationRunTime, time.clock() - oCdbWrapper.nApplicationResumeTime, nApplicationRunTime);
+        nApplicationRunTime = oCdbWrapper.fnApplicationRunTime();
+#        print "@@@ application run time    : %.3f" % nApplicationRunTime;
 #        print "@@@ number of timeouts      : %d" % len(oCdbWrapper.axTimeouts);
         oCdbWrapper.oTimeoutsLock.acquire();
         for (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) in oCdbWrapper.axTimeouts: # Make a copy so modifcation during the loop does not affect it.
