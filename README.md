@@ -78,8 +78,8 @@ different bug ids.
 
 `BugType` can have many values, including:
 * `AV?:{memory/address type}{+/-offset}` - An access violation was detect while
-  attempting to read (AVR), write (AVW) or execute (AVE) the specified type of
-  memory or address, `{address/memory type}` types include:
+  attempting to read (`AVR`), write (`AVW`) or execute (`AVE`) the specified
+  type of memory or address, `{address/memory type}` types include:
   * `NULL` - a NULL pointer was used to address the memory,
   * `Assertion` - this address is used to indicate an assertion has failed.
   * `PoisonUninitialized` - the pointer used was read from uninitialized memory.
