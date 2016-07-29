@@ -108,7 +108,7 @@ if __name__ == "__main__":
       if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
         print "* The default value for config setting %s is %s." % (sFullName, repr(dxConfigGroup[sSettingName]));
       else:
-        print "* Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
+        print "+ Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
         dxConfigGroup[sSettingName] = xValue;
     asArguments.pop(0);
   asApplicationCommandLine = len(asArguments) and asArguments or None;
@@ -143,33 +143,34 @@ if __name__ == "__main__":
     if not bApplicationIsStarted:
       # Running for the first time after being started.
       bApplicationIsStarted = True;
-      print "* The application was started successfully and is running...";
+      print "+ The application was started successfully and is running...";
       if dxConfig["nApplicationMaxRunTime"] is not None:
         oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fHandleApplicationRunTimeout);
     else:
       # Running after being resumed.
-      print "* The application was resumed successfully and is running...";
+      print "  * T+%.1f The application was resumed successfully and is running..." % oBugId.fnApplicationRunTime();
     if not bCheckForExcessiveCPUUsageTimeoutSet:
       # Start checking for excessive CPU usage
       bCheckForExcessiveCPUUsageTimeoutSet = True;
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
   
   def fExceptionDetectedHandler(uCode, sDescription):
-    print "* Exception code 0x%X (%s) was detected and is being analyzed..." % (uCode, sDescription);
+    print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
   
   def fHandleApplicationRunTimeout():
-    print "* Terminating the application because it has been running for %.1f seconds without crashing." % dxConfig["nApplicationMaxRunTime"];
+    print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
+        (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
     oBugId.fStop();
   
   def fApplicationExitHandler():
-    print "* The application has exited...";
+    print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
     oBugId.fStop();
   
   if asApplicationCommandLine:
-    print "* The debugger is starting the application...";
+    print "+ The debugger is starting the application...";
     print "  Command line: %s" % " ".join(asApplicationCommandLine);
   else:
-    print "* The debugger is attaching to the application...";
+    print "+ The debugger is attaching to the application...";
   oBugId = cBugId(
     asApplicationCommandLine = asApplicationCommandLine,
     auApplicationProcessIds = auApplicationProcessIds,
@@ -184,13 +185,14 @@ if __name__ == "__main__":
   );
   oBugId.fWait();
   if oBugId.oBugReport:
-    print "* A bug was detected in the application.";
+    print "+ A bug was detected in the application.";
     print;
     print "  Id:               %s" % oBugId.oBugReport.sId;
     print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
     print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
     if oBugId.oBugReport.sBugSourceLocation:
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
+    print "  Run time:         %.3f" % oBugId.fnApplicationRunTime();
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     if dxConfig["bSaveReport"]:
       sReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
@@ -204,4 +206,5 @@ if __name__ == "__main__":
       else:
         print "  Bug report:       %s (%d bytes)" % (sReportFileName, len(oBugId.oBugReport.sDetailsHTML));
   else:
-    print "* The application has terminated without crashing.";
+    print "- The application has terminated without crashing.";
+    print "  Run time:         %.3f" % oBugId.fnApplicationRunTime();
