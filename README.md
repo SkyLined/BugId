@@ -3,8 +3,9 @@ BugId
 
 Python module to detect, analyze and id application bugs
 
-[![Codewake](https://www.codewake.com/badges/codewake2.svg)](https://www.codewake.com/p/bugid)
-
+<a href="https://www.codewake.com/p/bugid">
+  <img style="vertical-align: middle; float: left;" src="https://www.codewake.com/badges/codewake2.svg"/>
+</a>
 *This project is under very active development and I appreciate any feedback
 you can give me; if you are having any problems running it, or have any
 questions, please do let me know (e.g. by opening a bug). I will try to help
@@ -406,21 +407,17 @@ and their source are found in the `Tests\` folder. The python script `Tests.py`
 runs a large number of tests and returns an error code of zero if all succeeded
 and a non-zero error code if any failed.
 
-Donations
----------
-This work is provided free of charge for non-commercial use. If you find it
-useful and would like to make a donation, you can send bitcoin to 
-[183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]. If you would like to use it commercially,
-please contact the author at [berendjanwever@gmail.com][] to discuss licensing
-options.
-[183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]:bitcoin:183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX
-[berendjanwever@gmail.com]:mailto:berendjanwever@gmail.com
-
-
 License
 -------
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
+  <img alt="Creative Commons License" style="vertical-align: middle; float: left;" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
+</a>
 This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0
-International License](http://creativecommons.org/licenses/by-nc/4.0/).
+International License](http://creativecommons.org/licenses/by-nc/4.0/). It is
+provided free of charge for non-commercial use only. If you would like to use
+it commercially, please contact the author at [berendjanwever@gmail.com][] to
+discuss licensing options. If you find it useful and would like to make a
+donation, you can send bitcoin to [183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]. 
 
-![Creative Commons License](https://i.creativecommons.org/l/by-nc/4.0/88x31.png
-"Creative Commons License")
+[183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]:bitcoin:183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX
+[berendjanwever@gmail.com]:mailto:berendjanwever@gmail.com
