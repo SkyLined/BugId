@@ -25,6 +25,8 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper):
     asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(@$scopeip, %d)) { u @$scopeip @$scopeip + %d; };" % \
         (uDisassemblyBytesBefore, uDisassemblyBytesBefore - 1));
     if not oCdbWrapper.bCdbRunning: return None;
+  sAtDisassemblyDescription = None;
+  sNextDisassemblyDescription = None;
   if asBeforeDisassembly or asAtAndAfterDisassembly:
     if asAtAndAfterDisassembly:
       asBeforeDisassembly.append(asAtAndAfterDisassembly.pop(0)); # Move symbol from second chunk to chunk before instruction pointer.
@@ -32,7 +34,6 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper):
       sAtDisassembly = asAtAndAfterDisassembly.pop(0); # remove instruction in which exception happened from second chunk.
       sAtDisassemblyDescription = sAtDisassembly and "instruction pointer";
       sNextDisassembly = asAtAndAfterDisassembly and asAtAndAfterDisassembly.pop(0) or None; # remove next instruction after exception from second chunk.
-      sNextDisassemblyDescription = None;
       asAfterDisassembly = asAtAndAfterDisassembly[:16]; # Max sixteen lines
     else:
       sAtDisassembly = None;
