@@ -1,9 +1,7 @@
 sBlockHTMLTemplate = """
     <div class="Block">
-      <h1 class="Header">%(sName)s</h1>
-      <div class="Content">
-        %(sContent)s
-      </div>
+      <h1>%(sName)s</h1>
+      %(sContent)s
     </div>
 """.lstrip("\r\n");
 

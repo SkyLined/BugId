@@ -20,6 +20,7 @@ from cProcess import cProcess;
 from dxBugIdConfig import dxBugIdConfig;
 from NTSTATUS import *;
 from sBlockHTMLTemplate import sBlockHTMLTemplate;
+from sBugIdVersion import sBugIdVersion;
 from sDetailsHTMLTemplate import sDetailsHTMLTemplate;
 
 dfoAnalyzeException_by_uExceptionCode = {
@@ -158,6 +159,7 @@ class cBugReport(object):
       # Convert saved cdb IO HTML into one string and delete everything but the last line to free up some memory.
       sCdbStdIOHTML = '<hr/>'.join(oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML);
       oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML = oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML[-1:];
+      asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Debugger I/O", "sContent": sCdbStdIOHTML});
       # Stick everything together.
       oBugReport.sDetailsHTML = sDetailsHTMLTemplate % {
         "sId": oCdbWrapper.fsHTMLEncode(oBugReport.sId),
@@ -165,8 +167,9 @@ class cBugReport(object):
         "sBugLocation": oCdbWrapper.fsHTMLEncode(oBugReport.sBugLocation),
         "sSecurityImpact": oBugReport.sSecurityImpact and \
               '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "Denial of Service",
-        "sOptionalBlocks": "".join(asBlocksHTML),
+        "sBlocks": "".join(asBlocksHTML),
         "sCdbStdIO": sCdbStdIOHTML,
+        "sBugIdVersion": sBugIdVersion,
       };
     
     return oBugReport;
