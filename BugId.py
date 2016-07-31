@@ -209,3 +209,9 @@ if __name__ == "__main__":
   else:
     print "- The application has terminated without crashing.";
     print "  Run time:         %.3f" % oBugId.fnApplicationRunTime();
+  
+  print "This version of BugId is provided free of charge for non-commercial use only.";
+  print "If you find it useful and would like to make a donation, you can send bitcoin";
+  print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
+  print "use BugId commercially. Contact and licensing information can be found at";
+  print "https://github.com/SkyLined/BugId#license.";
