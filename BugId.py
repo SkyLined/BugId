@@ -117,8 +117,9 @@ if __name__ == "__main__":
   if sKnownApplicationKeyword in gasApplicationCommandLine_by_sKnownApplicationKeyword:
     if len(asApplicationCommandLine) == 2:
       dxConfig["sTest"] = asApplicationCommandLine[1];
-    else:
+    elif len(asApplicationCommandLine) > 2:
       print "- Superfluous arguments after known application keyword: %s" % " ".join(asApplicationCommandLine[2:]);
+      os._exit(-1);
     # Translate known application keyword to its command line:
     asApplicationCommandLine = gasApplicationCommandLine_by_sKnownApplicationKeyword[sKnownApplicationKeyword];
     # Get source file path to URL translation rules for known application:
