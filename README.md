@@ -42,7 +42,8 @@ A human-readable report containing information collected about the bug is
 available in HTML format, for use when manually analyzing bugs. The code
 attempts to determine the security risk of the bug it detected, so even novice
 users may be able to determine whether or not a particular bug is likely to be
-a security vulnerability.
+a security vulnerability. You can download a number of example reports [here]
+(https://github.com/SkyLined/BugId/tree/master/Sample%20reports).
 
 You can tell BugId to save a debugger dump file when it detects a crash, for
 later off-line analysis by a developer.
@@ -89,7 +90,7 @@ different bug ids.
   * `OOB[N]` - the address is out-of-bounds of allocated memory, where N is the
     size of the memory allocation.
   * `PoisonOOB` - the pointer used was read from memory that is out-of-bounds.
-  * `Invalid` - the memory at this address is not accessible from userland.
+  * `Invalid` - the memory at this address is not accessible from user-land.
   * `Unallocated` - no memory is allocated at the address,
   * `Reserved` - memory has been reserved but not committed at this address,
   * `Arbitrary` - memory is allocated at this address, but not accessible,
@@ -106,7 +107,7 @@ different bug ids.
   This causes these values to be presented modulo that number of bits, which
   should make the bug id the same for both architectures. In the case of the 
   `AVW:OOB[0x10]+2` example, if that was on a 32-bit architecture and the 64-bit
-  version of the application would allocated twice that ammount of memory, the
+  version of the application would allocated twice that amount of memory, the
   bug id for both would be `AVW:OOB[4*N]+2`, as 0x10 and 0x20 are both divisible
   by 4 without a remainder, while 2 is not.
 * `StackExhaustion` - A function has attempted to allocate too much stack memory.
@@ -324,7 +325,7 @@ stored in an `cErrorReport` object, specifically in the following properties:
       this is a best-guess and not a guarantee!
     sStackId (string)
       Contains a unique id for the stack for the bug. This is created by
-      concatinating parts of hashes of the return addresses for some of the
+      concatenating parts of hashes of the return addresses for some of the
       top stack frames. If that sounds complex, you should see the source for
       the exact details. The HTML details may also make this more clear, see
       below for details on those. This is used as part of sId.
@@ -353,7 +354,7 @@ result in various exceptions later on during execution may result in
 different bug ids. For instance, a bug that slowly consumes all available
 memory can trigger an out-of-memory crash in many different functions, in
 many different threads in the application. Also, timing based issues, so
-as thread safty issues may result in different crashes too, based on
+as thread safety issues may result in different crashes too, based on
 timing. In these cases, there may be a number of bug ids that are
 associated with a particular bug, and two distinct bugs may result in the
 same bug id. However, more often than not, such a bug will result in a
