@@ -19,7 +19,7 @@ sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
 from cBugId import cBugId;
 from sOSISA import sOSISA;
 from cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
-from fsCreateFileName import fsCreateFileName;
+import FileSystem;
 
 asTestISAs = [sOSISA];
 if sOSISA == "x64":
@@ -30,6 +30,8 @@ dsBinaries_by_sISA = {
   "x86": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x86.exe"),
   "x64": os.path.join(sBaseFolderPath, r"Tests\bin\Tests_x64.exe"),
 };
+
+sReportsFolderName = FileSystem.fsLocalPath("Sample reports");
 
 bFailed = False;
 oOutputLock = threading.Lock();
@@ -91,57 +93,70 @@ class cTest(object):
   
   def fFinishedHandler(oTest, oBugReport):
     global bFailed, oOutputLock;
-    if not bFailed:
-      oOutputLock and oOutputLock.acquire();
-      oTest.bHasOutputLock = True;
-      if oTest.sExpectedBugTypeId:
-        if not oBugReport:
+    try:
+      if not bFailed:
+        oOutputLock and oOutputLock.acquire();
+        oTest.bHasOutputLock = True;
+        if oTest.sExpectedBugTypeId:
+          if not oBugReport:
+            print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+            print "  Expected:    %s" % oTest.sExpectedBugTypeId;
+            print "  Got nothing";
+            bFailed = True;
+          elif not oTest.sExpectedBugTypeId == oBugReport.sBugTypeId:
+            print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+            print "  Expected:    %s" % oTest.sExpectedBugTypeId;
+            print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
+            print "               %s" % (oBugReport.sBugDescription);
+            bFailed = True;
+          else:
+            print "+ %s" % oTest;
+        elif oBugReport:
           print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
-          print "  Expected:    %s" % oTest.sExpectedBugTypeId;
-          print "  Got nothing";
-          bFailed = True;
-        elif not oTest.sExpectedBugTypeId == oBugReport.sBugTypeId:
-          print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
-          print "  Expected:    %s" % oTest.sExpectedBugTypeId;
+          print "  Expected no report";
           print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
           print "               %s" % (oBugReport.sBugDescription);
           bFailed = True;
         else:
           print "+ %s" % oTest;
-      elif oBugReport:
-        print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
-        print "  Expected no report";
-        print "  Reported:    %s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
-        print "               %s" % (oBugReport.sBugDescription);
-        bFailed = True;
-      else:
-        print "+ %s" % oTest;
-      oOutputLock and oOutputLock.release();
-      oTest.bHasOutputLock = False;
-      if bSaveTestReports and oBugReport:
-        sFileNameBase = fsCreateFileName("%s = %s" % (oTest, oBugReport.sId));
-        # File name may be too long, keep trying to save it with a shorter name or output an error if that's not possible.
-        while len(sFileNameBase) > 0:
-          sFilePath = os.path.join(os.path.dirname(__file__), "Test reports", "%s.html" % sFileNameBase);
-          try:
-            oFile = open(sFilePath, "wb");
-          except IOError:
-            sFileNameBase = sFileNameBase[:-1];
-            continue;
-          try:
-            oFile.write(oBugReport.sDetailsHTML);
-          finally:
-            oFile.close();
-          break;
-        else:
-          oOutputLock and oOutputLock.acquire();
-          oTest.bHasOutputLock = True;
-          print "  - Bug report cannot be saved";
-          bFailed = True;
-          oOutputLock and oOutputLock.release();
-          oTest.bHasOutputLock = False;
-    oTest.fFinished();
-    oTest.bHandlingResult = False;
+        oOutputLock and oOutputLock.release();
+        oTest.bHasOutputLock = False;
+        if bSaveTestReports and oBugReport:
+          sReportFileName = "%s @ %s.html" % (oBugReport.sId, oBugReport.sBugLocation);
+          ebCreateFolderResult = FileSystem.febCreateFolder(
+            sReportsFolderName,
+            oTest.asCommandLineArguments[0], # Type of crash
+            fbRetryOnFailure = lambda: False,
+          );
+          if not isinstance(ebCreateFolderResult, bool):
+            oOutputLock and oOutputLock.acquire();
+            oTest.bHasOutputLock = True;
+            print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+            print "  Bug report cannot be saved becasue the folder %s\%s cannot be created (%s)" % \
+                (sReportsFolderName, oTest.asCommandLineArguments[0], repr(eCreateFolderResult));
+            oOutputLock and oOutputLock.release();
+            oTest.bHasOutputLock = False;
+            bFailed = True;
+            return;
+          eWriteDataToFileResult = FileSystem.feWriteDataToFile(
+            oBugReport.sDetailsHTML,
+            sReportsFolderName,
+            oTest.asCommandLineArguments[0], # Type of crash
+            FileSystem.fsTranslateToValidName(sReportFileName),
+            fbRetryOnFailure = lambda: False,
+          );
+          if eWriteDataToFileResult:
+            oOutputLock and oOutputLock.acquire();
+            oTest.bHasOutputLock = True;
+            print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
+            print "  Bug report cannot be saved (%s)" % repr(eWriteDataToFileResult);
+            oOutputLock and oOutputLock.release();
+            oTest.bHasOutputLock = False;
+            bFailed = True;
+            return;
+    finally:
+      oTest.fFinished();
+      oTest.bHandlingResult = False;
   
   def fInternalExceptionHandler(oTest, oException):
     global bFailed;
