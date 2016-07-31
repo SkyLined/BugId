@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+      * {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        border-spacing: 0;
+        border-collapse: collapse;
+        color: rgba(22, 19, 16, 1);
+        background: transparent;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        font-size: inherit;
+      }
+      html {
+        background: #E5E2DE;
+        font-weight: 400;
+        padding: 1em;
+        font-family: monospace;
+      }
+      body {
+        margin: auto;
+        max-width: 80em;
+      }
+      h1, h2, h3, h4, h5 {
+        font-weight: 700;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+        margin-bottom: -1px;
+      }
+      :link {
+        border-bottom: 1px dotted rgba(0,0, 238, 0.25);
+      }
+      :link:hover, :link:active {
+        border-bottom: 1px solid rgba(0,0, 238, 1);
+      }
+      :visited {
+        border-bottom: 1px dotted rgba(85, 26, 139, 0.25);
+      }
+      :visited:hover, :visited:active {
+        border-bottom: 1px solid rgba(85, 26, 139, 1);
+      }
+      table {
+        border-spacing: 0;
+        border-collapse: collapse;
+      }
+      ul {
+        padding-left: 2em;
+      }
+      h1 {
+        padding: 0.5em 1em 0.5em 1em;
+        color: rgba(255, 251, 247, 1);
+        background-color: rgba(22, 19, 16, 1);
+        font-size: 120%;
+        margin-bottom: 0.5em;
+      }
+      h2 {
+        font-size: 120%;
+      }
+      .Block {
+        padding: 1em;
+        border: 1px solid rgba(22, 19, 16, 0.2);
+        border-radius: 0.5em;
+        background-color: rgba(255, 251, 247, 1);
+        box-shadow: 0 1em 2em rgba(22, 19, 16, 0.2), 0 1em 1em rgba(22, 19, 16, 0.05), 0 1em 0.5em rgba(22, 19, 16, 0.05);
+        margin-bottom: 1em;
+        display: block;
+      }
+      .Footer {
+        padding: 1em;
+        text-align: center;
+      }
+      .Important {
+        background-color: rgba(255,255,0,0.3);
+      }
+      .SecurityImpact {
+        background-color: rgba(255,0,0,0.2);
+      }
+      .CDBPrompt {
+        white-space: pre;
+      }
+      .CDBCommand {
+        font-weight: bold;
+        white-space: pre;
+      }
+      .CDBStdOut {
+        color: grey;
+        white-space: pre;
+      }
+      .CDBOrApplicationStdOut {
+        color: black;
+        white-space: pre;
+      }
+      .CDBStdErr {
+        color: maroon;
+        white-space: pre;
+      }
+      .CDBIgnoredException {
+        color: grey;
+        white-space: pre;
+      }
+      .Stack {
+        white-space: pre;
+      }
+      .StackIgnored {
+        color: silver;
+        white-space: pre;
+      }
+      .StackHash {
+        font-weight: bold;
+        background: rgba(255,255,0,0.2);
+        white-space: pre;
+      }
+      .StackNoSymbol {
+        font-style: italic;
+        white-space: pre;
+      }
+      .StackSource {
+        color: grey;
+        white-space: pre;
+      }
+      .Registers {
+        white-space: pre;
+      }
+      .Memory {
+        white-space: pre;
+      }
+      .BinaryInformation {
+        white-space: pre;
+      }
+      .DisassemblyInformation {
+        white-space: pre;
+      }
+      .DisassemblyAddress {
+        color: grey;
+        white-space: pre;
+      }
+      .DisassemblyOpcode {
+        color: grey;
+        white-space: pre;
+      }
+      .DisassemblyInstruction {
+        white-space: pre;
+      }
+      hr {
+        border: dotted black;
+        border-width: 0 0 1pt 0;
+      }
+    </style>
+    <title>Breakpoint ed2.2d8</title>
+  </head>
+  <body>
+    <div class="Block">
+      <h1>BugId v16.08.01 crash report</h1>
+      <div class="Content">
+        <table>
+          <tr><td>BugId:                  &nbsp;</td><td><span class="Important">Breakpoint ed2.2d8</span></td></tr>
+          <tr><td>Description:            &nbsp;</td><td><span class="Important">Break instruction exception (code 0x80000003)</span></td></tr>
+          <tr><td>Location:               &nbsp;</td><td><span class="Important">tests_x64.exe!wmain</span></td></tr>
+          <tr><td>Security&nbsp;impact:   &nbsp;</td><td>Denial of Service</td></tr>
+        </table>
+        <br/>
+        You may not use this version of BugId for commercial purposes.
+        Please contact the author if you wish to use BugId commercially.
+        Contact and licensing information can be found at the bottom of this report.
+      </div>
+    </div>
+    <div class="Block">
+      <h1>Stack</h1>
+      <ul><li><span class="StackHash">Tests_x64.exe!wmain + 0x35C</span> (ed2 in id)<span class="StackSource"> [h:\dev\bugid\tests\src\_tmain.cpp @ 100]</span></li><li><span class="StackHash">Tests_x64.exe!__tmainCRTStartup + 0x144</span> (2d8 in id)<span class="StackSource"> [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crt0.c @ 241]</span></li><li><span class="Stack">KERNEL32.DLL!BaseThreadInitThunk + 0x22</span><span class="StackSource"></span></li><li><span class="Stack">ntdll.dll!RtlUserThreadStart + 0x34</span><span class="StackSource"></span></li><li>... (the remainder of the stack was ignored)</li></ul>
+    </div>
+    <div class="Block">
+      <h1>Disassembly</h1>
+      <span class="DisassemblyAddress">00007ff6`50c014b6 </span><span class="DisassemblyOpcode">4c8b0411        </span><span class="DisassemblyInstruction">mov     r8,qword ptr [rcx+rdx]</span><br/><span class="DisassemblyAddress">00007ff6`50c014ba </span><span class="DisassemblyOpcode">488d150fba0000  </span><span class="DisassemblyInstruction">lea     rdx,[Tests_x64!__xt_z+0xc40 (00007ff6`50c0ced0)]</span><br/><span class="DisassemblyAddress">00007ff6`50c014c1 </span><span class="DisassemblyOpcode">488bc8          </span><span class="DisassemblyInstruction">mov     rcx,rax</span><br/><span class="DisassemblyAddress">00007ff6`50c014c4 </span><span class="DisassemblyOpcode">e8070f0000      </span><span class="DisassemblyInstruction">call    Tests_x64!fwprintf (00007ff6`50c023d0)</span><br/><span class="DisassemblyAddress">00007ff6`50c014c9 </span><span class="DisassemblyOpcode">b801000000      </span><span class="DisassemblyInstruction">mov     eax,1</span><br/><span class="DisassemblyAddress">00007ff6`50c014ce </span><span class="DisassemblyOpcode">e9360a0000      </span><span class="DisassemblyInstruction">jmp     Tests_x64!wmain+0xd69 (00007ff6`50c01f09)</span><br/><span class="DisassemblyAddress">00007ff6`50c014d3 </span><span class="DisassemblyOpcode">e92f0a0000      </span><span class="DisassemblyInstruction">jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="DisassemblyAddress">00007ff6`50c014d8 </span><span class="DisassemblyOpcode">b808000000      </span><span class="DisassemblyInstruction">mov     eax,8</span><br/><span class="DisassemblyAddress">00007ff6`50c014dd </span><span class="DisassemblyOpcode">486bc001        </span><span class="DisassemblyInstruction">imul    rax,rax,1</span><br/><span class="DisassemblyAddress">00007ff6`50c014e1 </span><span class="DisassemblyOpcode">488d1500b20000  </span><span class="DisassemblyInstruction">lea     rdx,[Tests_x64!__xt_z+0x458 (00007ff6`50c0c6e8)]</span><br/><span class="DisassemblyAddress">00007ff6`50c014e8 </span><span class="DisassemblyOpcode">488b8d48010000  </span><span class="DisassemblyInstruction">mov     rcx,qword ptr [rbp+148h]</span><br/><span class="DisassemblyAddress">00007ff6`50c014ef </span><span class="DisassemblyOpcode">488b0c01        </span><span class="DisassemblyInstruction">mov     rcx,qword ptr [rcx+rax]</span><br/><span class="DisassemblyAddress">00007ff6`50c014f3 </span><span class="DisassemblyOpcode">e858150000      </span><span class="DisassemblyInstruction">call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="DisassemblyAddress">00007ff6`50c014f8 </span><span class="DisassemblyOpcode">85c0            </span><span class="DisassemblyInstruction">test    eax,eax</span><br/><span class="DisassemblyAddress">00007ff6`50c014fa </span><span class="DisassemblyOpcode">7506            </span><span class="DisassemblyInstruction">jne     Tests_x64!wmain+0x362 (00007ff6`50c01502)</span><br/><span class="DisassemblyInformation">Tests_x64!wmain+0x35c [h:\dev\bugid\tests\src\_tmain.cpp @ 100]:</span><br/><span class="Important"><span class="DisassemblyAddress">00007ff6`50c014fc </span><span class="DisassemblyOpcode">cc              </span><span class="DisassemblyInstruction">int     3                                     </span> &#8656; instruction pointer</span><br/><span class="DisassemblyAddress">00007ff6`50c014fd </span><span class="DisassemblyOpcode">e9050a0000      </span><span class="DisassemblyInstruction">jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="DisassemblyAddress">00007ff6`50c01502 </span><span class="DisassemblyOpcode">b808000000      </span><span class="DisassemblyInstruction">mov     eax,8</span><br/><span class="DisassemblyAddress">00007ff6`50c01507 </span><span class="DisassemblyOpcode">486bc001        </span><span class="DisassemblyInstruction">imul    rax,rax,1</span><br/><span class="DisassemblyAddress">00007ff6`50c0150b </span><span class="DisassemblyOpcode">488d1596b20000  </span><span class="DisassemblyInstruction">lea     rdx,[Tests_x64!__xt_z+0x518 (00007ff6`50c0c7a8)]</span><br/><span class="DisassemblyAddress">00007ff6`50c01512 </span><span class="DisassemblyOpcode">488b8d48010000  </span><span class="DisassemblyInstruction">mov     rcx,qword ptr [rbp+148h]</span><br/><span class="DisassemblyAddress">00007ff6`50c01519 </span><span class="DisassemblyOpcode">488b0c01        </span><span class="DisassemblyInstruction">mov     rcx,qword ptr [rcx+rax]</span><br/><span class="DisassemblyAddress">00007ff6`50c0151d </span><span class="DisassemblyOpcode">e82e150000      </span><span class="DisassemblyInstruction">call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="DisassemblyAddress">00007ff6`50c01522 </span><span class="DisassemblyOpcode">85c0            </span><span class="DisassemblyInstruction">test    eax,eax</span><br/><span class="DisassemblyAddress">00007ff6`50c01524 </span><span class="DisassemblyOpcode">752b            </span><span class="DisassemblyInstruction">jne     Tests_x64!wmain+0x3b1 (00007ff6`50c01551)</span><br/><span class="DisassemblyAddress">00007ff6`50c01526 </span><span class="DisassemblyOpcode">488d15734e0100  </span><span class="DisassemblyInstruction">lea     rdx,[Tests_x64!oException (00007ff6`50c163a0)]</span><br/><span class="DisassemblyAddress">00007ff6`50c0152d </span><span class="DisassemblyOpcode">488d8df8000000  </span><span class="DisassemblyInstruction">lea     rcx,[rbp+0F8h]</span><br/><span class="DisassemblyAddress">00007ff6`50c01534 </span><span class="DisassemblyOpcode">e8c7faffff      </span><span class="DisassemblyInstruction">call    Tests_x64!cException::cException (00007ff6`50c01000)</span><br/><span class="DisassemblyAddress">00007ff6`50c01539 </span><span class="DisassemblyOpcode">488d1580240100  </span><span class="DisassemblyInstruction">lea     rdx,[Tests_x64!TI2?AVcException (00007ff6`50c139c0)]</span><br/><span class="DisassemblyAddress">00007ff6`50c01540 </span><span class="DisassemblyOpcode">488d8df8000000  </span><span class="DisassemblyInstruction">lea     rcx,[rbp+0F8h]</span><br/><span class="DisassemblyAddress">00007ff6`50c01547 </span><span class="DisassemblyOpcode">e874180000      </span><span class="DisassemblyInstruction">call    Tests_x64!_CxxThrowException (00007ff6`50c02dc0)</span><br/><span class="DisassemblyAddress">00007ff6`50c0154c </span><span class="DisassemblyOpcode">e9b6090000      </span><span class="DisassemblyInstruction">jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="DisassemblyAddress">00007ff6`50c01551 </span><span class="DisassemblyOpcode">b808000000      </span><span class="DisassemblyInstruction">mov     eax,8</span>
+    </div>
+    <div class="Block">
+      <h1>Registers</h1>
+      <span class="Registers">rax=0000000000000000 rbx=0000000000000000 rcx=0000000000000000</span><br/><span class="Registers">rdx=0000000000000000 rsi=000000efba4ed000 rdi=0000000000000001</span><br/><span class="Registers">rip=00007ff650c014fc rsp=000000efba6ffb40 rbp=000000efba6ffb60</span><br/><span class="Registers"> r8=0000000000000000  r9=00007ff650c0c6fe r10=ffff82046ac22900</span><br/><span class="Registers">r11=0000000000000246 r12=0000000000000000 r13=0000000000000000</span><br/><span class="Registers">r14=0000000000000000 r15=0000000000000000</span><br/><span class="Registers">iopl=0         nv up ei pl zr na po nc</span><br/><span class="Registers">cs=0033  ss=002b  ds=002b  es=002b  fs=0053  gs=002b             efl=00000246</span><br/><span class="Registers">fpcw=027F    fpsw=0000    fptw=0000</span><br/><span class="Registers">st0= 0.000000000000000000000e+0000  st1= 0.000000000000000000000e+0000</span><br/><span class="Registers">st2= 0.000000000000000000000e+0000  st3= 0.000000000000000000000e+0000</span><br/><span class="Registers">st4= 0.000000000000000000000e+0000  st5= 0.000000000000000000000e+0000</span><br/><span class="Registers">st6= 0.000000000000000000000e+0000  st7= 0.000000000000000000000e+0000</span><br/><span class="Registers">mm0=0000000000000000  mm1=0000000000000000</span><br/><span class="Registers">mm2=0000000000000000  mm3=0000000000000000</span><br/><span class="Registers">mm4=0000000000000000  mm5=0000000000000000</span><br/><span class="Registers">mm6=0000000000000000  mm7=0000000000000000</span><br/><span class="Registers">xmm0=0 0 0 0</span><br/><span class="Registers">xmm1=0 0 0 0</span><br/><span class="Registers">xmm2=0 0 0 0</span><br/><span class="Registers">xmm3=0 0 0 0</span><br/><span class="Registers">xmm4=0 0 0 0</span><br/><span class="Registers">xmm5=0 0 0 0</span><br/><span class="Registers">xmm6=0 0 0 0</span><br/><span class="Registers">xmm7=0 0 0 0</span><br/><span class="Registers">xmm8=0 0 0 0</span><br/><span class="Registers">xmm9=0 0 0 0</span><br/><span class="Registers">xmm10=0 0 0 0</span><br/><span class="Registers">xmm11=0 0 0 0</span><br/><span class="Registers">xmm12=0 0 0 0</span><br/><span class="Registers">xmm13=0 0 0 0</span><br/><span class="Registers">xmm14=0 0 0 0</span><br/><span class="Registers">xmm15=0 0 0 0</span><br/><span class="Registers">dr0=0000000000000000 dr1=0000000000000000 dr2=0000000000000000</span><br/><span class="Registers">dr3=0000000000000000 dr6=0000000000000000 dr7=0000000000000000</span><br/><span class="Registers">Tests_x64!wmain+0x35c:</span><br/><span class="Registers">00007ff6`50c014fc cc              int     3</span>
+    </div>
+    <div class="Block">
+      <h1>Binary information</h1>
+      <h2 class="SubHeader">Tests_x64.exe</h2><span class="BinaryInformation">    Loaded symbol image file: H:\dev\BugId\Tests\bin\Tests_x64.exe</span><br/><span class="BinaryInformation">    Image path: Tests_x64.exe</span><br/><span class="BinaryInformation">    Image name: Tests_x64.exe</span><br/><span class="BinaryInformation">    Timestamp:        Wed May 11 15:43:57 2016 (5733371D)</span><br/><span class="BinaryInformation">    CheckSum:         00000000</span><br/><span class="BinaryInformation">    ImageSize:        0001C000</span><br/><span class="BinaryInformation">    Translations:     0000.04b0 0000.04e4 0409.04b0 0409.04e4</span>
+    </div>
+    <div class="Block">
+      <h1>Debugger I/O</h1>
+      <span class="CDBStdOut"></span><br/><span class="CDBStdOut">Microsoft (R) Windows Debugger Version 6.3.9600.16384 AMD64</span><br/><span class="CDBStdOut">Copyright (c) Microsoft Corporation. All rights reserved.</span><br/><span class="CDBStdOut"></span><br/><span class="CDBStdOut">CommandLine: Tests\bin\Tests_x64.exe Breakpoint</span><br/><span class="CDBStdOut"></span><br/><span class="CDBStdOut">************* Symbol Path validation summary **************</span><br/><span class="CDBStdOut">Response                         Time (ms)     Location</span><br/><span class="CDBStdOut">Deferred                                       srv*http://msdl.microsoft.com/download/symbols</span><br/><span class="CDBStdOut">Symbol search path is: srv*http://msdl.microsoft.com/download/symbols</span><br/><span class="CDBStdOut">Executable search path is: </span><br/><span class="CDBStdOut">ModLoad: 00007ff6`50c00000 00007ff6`50c1c000   Tests_x64.exe</span><br/><span class="CDBStdOut">ModLoad: 00007fff`e1880000 00007fff`e1a41000   ntdll.dll</span><br/><span class="CDBStdOut">ModLoad: 00007fff`cda30000 00007fff`cda9d000   C:\WINDOWS\system32\verifier.dll</span><br/><span class="CDBStdOut">Page heap: pid 0x24BC: page heap enabled with flags 0x3.</span><br/><span class="CDBStdOut">ModLoad: 00007fff`e1230000 00007fff`e12dd000   C:\WINDOWS\system32\KERNEL32.DLL</span><br/><span class="CDBStdOut">ModLoad: 00007fff`dea90000 00007fff`dec78000   C:\WINDOWS\system32\KERNELBASE.dll</span><br/><span class="CDBStdOut">(24bc.1564): Break instruction exception - code 80000003 (first chance)</span><br/><span class="CDBStdOut">ntdll!LdrpDoDebuggerBreak+0x30:</span><br/><span class="CDBStdOut">00007fff`e194aa60 cc              int     3</span><br/><hr/><span class="CDBIgnoredException">Create process 9404 breakpoint.</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">g</span><br/><span class="CDBOrApplicationStdOut">(24bc.1564): Break instruction exception - code 80000003 (first chance)</span><br/><span class="CDBOrApplicationStdOut">*** WARNING: Unable to verify checksum for Tests_x64.exe</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">.lastevent</span><br/><span class="CDBStdOut">Last event: 24bc.1564: Break instruction exception - code 80000003 (first chance)</span><br/><span class="CDBStdOut">  debugger time: Mon Aug  1 00:42:38.023 2016 (UTC + 2:00)</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">lm on</span><br/><span class="CDBStdOut">start             end                 module name</span><br/><span class="CDBStdOut">00007ff6`50c00000 00007ff6`50c1c000   Tests_x64 Tests_x64.exe</span><br/><span class="CDBStdOut">00007fff`cda30000 00007fff`cda9d000   verifier verifier.dll</span><br/><span class="CDBStdOut">00007fff`dea90000 00007fff`dec78000   KERNELBASE KERNELBASE.dll</span><br/><span class="CDBStdOut">00007fff`e1230000 00007fff`e12dd000   KERNEL32 KERNEL32.DLL</span><br/><span class="CDBStdOut">00007fff`e1880000 00007fff`e1a41000   ntdll    ntdll.dll   </span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">kn 0x14</span><br/><span class="CDBStdOut"> # Child-SP          RetAddr           Call Site</span><br/><span class="CDBStdOut">00 000000ef`ba6ffb40 00007ff6`50c03140 Tests_x64!wmain+0x35c [h:\dev\bugid\tests\src\_tmain.cpp @ 100]</span><br/><span class="CDBStdOut">01 000000ef`ba6ffca0 00007fff`e1248102 Tests_x64!__tmainCRTStartup+0x144 [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crt0.c @ 241]</span><br/><span class="CDBStdOut">02 000000ef`ba6ffce0 00007fff`e18dc5b4 KERNEL32!BaseThreadInitThunk+0x22</span><br/><span class="CDBStdOut">03 000000ef`ba6ffd10 00000000`00000000 ntdll!RtlUserThreadStart+0x34</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">.exr -1</span><br/><span class="CDBStdOut">ExceptionAddress: 00007ff650c014fc (Tests_x64!wmain+0x000000000000035c)</span><br/><span class="CDBStdOut">   ExceptionCode: 80000003 (Break instruction exception)</span><br/><span class="CDBStdOut">  ExceptionFlags: 00000000</span><br/><span class="CDBStdOut">NumberParameters: 1</span><br/><span class="CDBStdOut">   Parameter[0]: 0000000000000000</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">|.</span><br/><span class="CDBStdOut">.  0	id: 24bc	create	name: Tests_x64.exe</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">.if ($vvalid(@$scopeip - 138, 138)) { u @$scopeip - 138 @$scopeip - 1; };</span><br/><span class="CDBStdOut">Tests_x64!wmain+0x224 [h:\dev\bugid\tests\src\_tmain.cpp @ 86]:</span><br/><span class="CDBStdOut">00007ff6`50c013c4 45              ???</span><br/><span class="CDBStdOut">00007ff6`50c013c5 48b808000000486bc002 mov rax,2C06B4800000008h</span><br/><span class="CDBStdOut">00007ff6`50c013cf 488d15caba0000  lea     rdx,[Tests_x64!__xt_z+0xc10 (00007ff6`50c0cea0)]</span><br/><span class="CDBStdOut">00007ff6`50c013d6 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c013dd 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c013e1 e86a160000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c013e6 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c013e8 750e            jne     Tests_x64!wmain+0x258 (00007ff6`50c013f8)</span><br/><span class="CDBStdOut">00007ff6`50c013ea 488b4d48        mov     rcx,qword ptr [rbp+48h]</span><br/><span class="CDBStdOut">00007ff6`50c013ee e83d0b0000      call    Tests_x64!fCall (00007ff6`50c01f30)</span><br/><span class="CDBStdOut">00007ff6`50c013f3 e9db000000      jmp     Tests_x64!wmain+0x333 (00007ff6`50c014d3)</span><br/><span class="CDBStdOut">00007ff6`50c013f8 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c013fd 486bc002        imul    rax,rax,2</span><br/><span class="CDBStdOut">00007ff6`50c01401 488d15a8ba0000  lea     rdx,[Tests_x64!__xt_z+0xc20 (00007ff6`50c0ceb0)]</span><br/><span class="CDBStdOut">00007ff6`50c01408 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c0140f 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c01413 e838160000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c01418 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c0141a 750e            jne     Tests_x64!wmain+0x28a (00007ff6`50c0142a)</span><br/><span class="CDBStdOut">00007ff6`50c0141c 488b4d48        mov     rcx,qword ptr [rbp+48h]</span><br/><span class="CDBStdOut">00007ff6`50c01420 e83b0b0000      call    Tests_x64!fJump (00007ff6`50c01f60)</span><br/><span class="CDBStdOut">00007ff6`50c01425 e9a9000000      jmp     Tests_x64!wmain+0x333 (00007ff6`50c014d3)</span><br/><span class="CDBStdOut">00007ff6`50c0142a b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c0142f 486bc002        imul    rax,rax,2</span><br/><span class="CDBStdOut">00007ff6`50c01433 488d1586ba0000  lea     rdx,[Tests_x64!__xt_z+0xc30 (00007ff6`50c0cec0)]</span><br/><span class="CDBStdOut">00007ff6`50c0143a 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c01441 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c01445 e806160000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c0144a 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c0144c 750c            jne     Tests_x64!wmain+0x2ba (00007ff6`50c0145a)</span><br/><span class="CDBStdOut">00007ff6`50c0144e 488b4548        mov     rax,qword ptr [rbp+48h]</span><br/><span class="CDBStdOut">00007ff6`50c01452 0fb600          movzx   eax,byte ptr [rax]</span><br/><span class="CDBStdOut">00007ff6`50c01455 884508          mov     byte ptr [rbp+8],al</span><br/><span class="CDBStdOut">00007ff6`50c01458 eb79            jmp     Tests_x64!wmain+0x333 (00007ff6`50c014d3)</span><br/><span class="CDBStdOut">00007ff6`50c0145a b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c0145f 486bc002        imul    rax,rax,2</span><br/><span class="CDBStdOut">00007ff6`50c01463 488d150eb60000  lea     rdx,[Tests_x64!__xt_z+0x7e8 (00007ff6`50c0ca78)]</span><br/><span class="CDBStdOut">00007ff6`50c0146a 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c01471 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c01475 e8d6150000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c0147a 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c0147c 7509            jne     Tests_x64!wmain+0x2e7 (00007ff6`50c01487)</span><br/><span class="CDBStdOut">00007ff6`50c0147e 488b4548        mov     rax,qword ptr [rbp+48h]</span><br/><span class="CDBStdOut">00007ff6`50c01482 c60000          mov     byte ptr [rax],0</span><br/><span class="CDBStdOut">00007ff6`50c01485 eb4c            jmp     Tests_x64!wmain+0x333 (00007ff6`50c014d3)</span><br/><span class="CDBStdOut">00007ff6`50c01487 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c0148c 486bc002        imul    rax,rax,2</span><br/><span class="CDBStdOut">00007ff6`50c01490 488985e0000000  mov     qword ptr [rbp+0E0h],rax</span><br/><span class="CDBStdOut">00007ff6`50c01497 e8200e0000      call    Tests_x64!__iob_func (00007ff6`50c022bc)</span><br/><span class="CDBStdOut">00007ff6`50c0149c b930000000      mov     ecx,30h</span><br/><span class="CDBStdOut">00007ff6`50c014a1 486bc902        imul    rcx,rcx,2</span><br/><span class="CDBStdOut">00007ff6`50c014a5 4803c1          add     rax,rcx</span><br/><span class="CDBStdOut">00007ff6`50c014a8 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c014af 488b95e0000000  mov     rdx,qword ptr [rbp+0E0h]</span><br/><span class="CDBStdOut">00007ff6`50c014b6 4c8b0411        mov     r8,qword ptr [rcx+rdx]</span><br/><span class="CDBStdOut">00007ff6`50c014ba 488d150fba0000  lea     rdx,[Tests_x64!__xt_z+0xc40 (00007ff6`50c0ced0)]</span><br/><span class="CDBStdOut">00007ff6`50c014c1 488bc8          mov     rcx,rax</span><br/><span class="CDBStdOut">00007ff6`50c014c4 e8070f0000      call    Tests_x64!fwprintf (00007ff6`50c023d0)</span><br/><span class="CDBStdOut">00007ff6`50c014c9 b801000000      mov     eax,1</span><br/><span class="CDBStdOut">00007ff6`50c014ce e9360a0000      jmp     Tests_x64!wmain+0xd69 (00007ff6`50c01f09)</span><br/><span class="CDBStdOut">00007ff6`50c014d3 e92f0a0000      jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="CDBStdOut">00007ff6`50c014d8 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c014dd 486bc001        imul    rax,rax,1</span><br/><span class="CDBStdOut">00007ff6`50c014e1 488d1500b20000  lea     rdx,[Tests_x64!__xt_z+0x458 (00007ff6`50c0c6e8)]</span><br/><span class="CDBStdOut">00007ff6`50c014e8 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c014ef 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c014f3 e858150000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c014f8 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c014fa 7506            jne     Tests_x64!wmain+0x362 (00007ff6`50c01502)</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">.if ($vvalid(@$scopeip, 138)) { u @$scopeip @$scopeip + 137; };</span><br/><span class="CDBStdOut">Tests_x64!wmain+0x35c [h:\dev\bugid\tests\src\_tmain.cpp @ 100]:</span><br/><span class="CDBStdOut">00007ff6`50c014fc cc              int     3</span><br/><span class="CDBStdOut">00007ff6`50c014fd e9050a0000      jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="CDBStdOut">00007ff6`50c01502 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c01507 486bc001        imul    rax,rax,1</span><br/><span class="CDBStdOut">00007ff6`50c0150b 488d1596b20000  lea     rdx,[Tests_x64!__xt_z+0x518 (00007ff6`50c0c7a8)]</span><br/><span class="CDBStdOut">00007ff6`50c01512 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c01519 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c0151d e82e150000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c01522 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c01524 752b            jne     Tests_x64!wmain+0x3b1 (00007ff6`50c01551)</span><br/><span class="CDBStdOut">00007ff6`50c01526 488d15734e0100  lea     rdx,[Tests_x64!oException (00007ff6`50c163a0)]</span><br/><span class="CDBStdOut">00007ff6`50c0152d 488d8df8000000  lea     rcx,[rbp+0F8h]</span><br/><span class="CDBStdOut">00007ff6`50c01534 e8c7faffff      call    Tests_x64!cException::cException (00007ff6`50c01000)</span><br/><span class="CDBStdOut">00007ff6`50c01539 488d1580240100  lea     rdx,[Tests_x64!TI2?AVcException (00007ff6`50c139c0)]</span><br/><span class="CDBStdOut">00007ff6`50c01540 488d8df8000000  lea     rcx,[rbp+0F8h]</span><br/><span class="CDBStdOut">00007ff6`50c01547 e874180000      call    Tests_x64!_CxxThrowException (00007ff6`50c02dc0)</span><br/><span class="CDBStdOut">00007ff6`50c0154c e9b6090000      jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="CDBStdOut">00007ff6`50c01551 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c01556 486bc001        imul    rax,rax,1</span><br/><span class="CDBStdOut">00007ff6`50c0155a 488d1527b50000  lea     rdx,[Tests_x64!__xt_z+0x7f8 (00007ff6`50c0ca88)]</span><br/><span class="CDBStdOut">00007ff6`50c01561 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c01568 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c0156c e8df140000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c01571 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c01573 751e            jne     Tests_x64!wmain+0x3f3 (00007ff6`50c01593)</span><br/><span class="CDBStdOut">00007ff6`50c01575 c7452c00000000  mov     dword ptr [rbp+2Ch],0</span><br/><span class="CDBStdOut">00007ff6`50c0157c 8b452c          mov     eax,dword ptr [rbp+2Ch]</span><br/><span class="CDBStdOut">00007ff6`50c0157f 89456c          mov     dword ptr [rbp+6Ch],eax</span><br/><span class="CDBStdOut">00007ff6`50c01582 33d2            xor     edx,edx</span><br/><span class="CDBStdOut">00007ff6`50c01584 33c0            xor     eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c01586 8b4d6c          mov     ecx,dword ptr [rbp+6Ch]</span><br/><span class="CDBStdOut">00007ff6`50c01589 f7f1            div     eax,ecx</span><br/><span class="CDBStdOut">00007ff6`50c0158b 89452c          mov     dword ptr [rbp+2Ch],eax</span><br/><span class="CDBStdOut">00007ff6`50c0158e e974090000      jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="CDBStdOut">00007ff6`50c01593 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c01598 486bc001        imul    rax,rax,1</span><br/><span class="CDBStdOut">00007ff6`50c0159c 488d15e5b50000  lea     rdx,[Tests_x64!__xt_z+0x8f8 (00007ff6`50c0cb88)]</span><br/><span class="CDBStdOut">00007ff6`50c015a3 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c015aa 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c015ae e89d140000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><span class="CDBStdOut">00007ff6`50c015b3 85c0            test    eax,eax</span><br/><span class="CDBStdOut">00007ff6`50c015b5 755f            jne     Tests_x64!wmain+0x476 (00007ff6`50c01616)</span><br/><span class="CDBStdOut">00007ff6`50c015b7 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c015bc 486bc002        imul    rax,rax,2</span><br/><span class="CDBStdOut">00007ff6`50c015c0 41b810000000    mov     r8d,10h</span><br/><span class="CDBStdOut">00007ff6`50c015c6 33d2            xor     edx,edx</span><br/><span class="CDBStdOut">00007ff6`50c015c8 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c015cf 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c015d3 e828110000      call    Tests_x64!wcstoul (00007ff6`50c02700)</span><br/><span class="CDBStdOut">00007ff6`50c015d8 894568          mov     dword ptr [rbp+68h],eax</span><br/><span class="CDBStdOut">00007ff6`50c015db b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c015e0 486bc003        imul    rax,rax,3</span><br/><span class="CDBStdOut">00007ff6`50c015e4 41b810000000    mov     r8d,10h</span><br/><span class="CDBStdOut">00007ff6`50c015ea 33d2            xor     edx,edx</span><br/><span class="CDBStdOut">00007ff6`50c015ec 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c015f3 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c015f7 e804110000      call    Tests_x64!wcstoul (00007ff6`50c02700)</span><br/><span class="CDBStdOut">00007ff6`50c015fc 894574          mov     dword ptr [rbp+74h],eax</span><br/><span class="CDBStdOut">00007ff6`50c015ff 4533c9          xor     r9d,r9d</span><br/><span class="CDBStdOut">00007ff6`50c01602 4533c0          xor     r8d,r8d</span><br/><span class="CDBStdOut">00007ff6`50c01605 8b5574          mov     edx,dword ptr [rbp+74h]</span><br/><span class="CDBStdOut">00007ff6`50c01608 8b4d68          mov     ecx,dword ptr [rbp+68h]</span><br/><span class="CDBStdOut">00007ff6`50c0160b ff15efa90000    call    qword ptr [Tests_x64!_imp_RaiseException (00007ff6`50c0c000)]</span><br/><span class="CDBStdOut">00007ff6`50c01611 e9f1080000      jmp     Tests_x64!wmain+0xd67 (00007ff6`50c01f07)</span><br/><span class="CDBStdOut">00007ff6`50c01616 b808000000      mov     eax,8</span><br/><span class="CDBStdOut">00007ff6`50c0161b 486bc001        imul    rax,rax,1</span><br/><span class="CDBStdOut">00007ff6`50c0161f 488d15d2b50000  lea     rdx,[Tests_x64!__xt_z+0x968 (00007ff6`50c0cbf8)]</span><br/><span class="CDBStdOut">00007ff6`50c01626 488b8d48010000  mov     rcx,qword ptr [rbp+148h]</span><br/><span class="CDBStdOut">00007ff6`50c0162d 488b0c01        mov     rcx,qword ptr [rcx+rax]</span><br/><span class="CDBStdOut">00007ff6`50c01631 e81a140000      call    Tests_x64!_wcsicmp (00007ff6`50c02a50)</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">rM 0x7D</span><br/><span class="CDBStdOut">rax=0000000000000000 rbx=0000000000000000 rcx=0000000000000000</span><br/><span class="CDBStdOut">rdx=0000000000000000 rsi=000000efba4ed000 rdi=0000000000000001</span><br/><span class="CDBStdOut">rip=00007ff650c014fc rsp=000000efba6ffb40 rbp=000000efba6ffb60</span><br/><span class="CDBStdOut"> r8=0000000000000000  r9=00007ff650c0c6fe r10=ffff82046ac22900</span><br/><span class="CDBStdOut">r11=0000000000000246 r12=0000000000000000 r13=0000000000000000</span><br/><span class="CDBStdOut">r14=0000000000000000 r15=0000000000000000</span><br/><span class="CDBStdOut">iopl=0         nv up ei pl zr na po nc</span><br/><span class="CDBStdOut">cs=0033  ss=002b  ds=002b  es=002b  fs=0053  gs=002b             efl=00000246</span><br/><span class="CDBStdOut">fpcw=027F    fpsw=0000    fptw=0000</span><br/><span class="CDBStdOut">st0= 0.000000000000000000000e+0000  st1= 0.000000000000000000000e+0000</span><br/><span class="CDBStdOut">st2= 0.000000000000000000000e+0000  st3= 0.000000000000000000000e+0000</span><br/><span class="CDBStdOut">st4= 0.000000000000000000000e+0000  st5= 0.000000000000000000000e+0000</span><br/><span class="CDBStdOut">st6= 0.000000000000000000000e+0000  st7= 0.000000000000000000000e+0000</span><br/><span class="CDBStdOut">mm0=0000000000000000  mm1=0000000000000000</span><br/><span class="CDBStdOut">mm2=0000000000000000  mm3=0000000000000000</span><br/><span class="CDBStdOut">mm4=0000000000000000  mm5=0000000000000000</span><br/><span class="CDBStdOut">mm6=0000000000000000  mm7=0000000000000000</span><br/><span class="CDBStdOut">xmm0=0 0 0 0</span><br/><span class="CDBStdOut">xmm1=0 0 0 0</span><br/><span class="CDBStdOut">xmm2=0 0 0 0</span><br/><span class="CDBStdOut">xmm3=0 0 0 0</span><br/><span class="CDBStdOut">xmm4=0 0 0 0</span><br/><span class="CDBStdOut">xmm5=0 0 0 0</span><br/><span class="CDBStdOut">xmm6=0 0 0 0</span><br/><span class="CDBStdOut">xmm7=0 0 0 0</span><br/><span class="CDBStdOut">xmm8=0 0 0 0</span><br/><span class="CDBStdOut">xmm9=0 0 0 0</span><br/><span class="CDBStdOut">xmm10=0 0 0 0</span><br/><span class="CDBStdOut">xmm11=0 0 0 0</span><br/><span class="CDBStdOut">xmm12=0 0 0 0</span><br/><span class="CDBStdOut">xmm13=0 0 0 0</span><br/><span class="CDBStdOut">xmm14=0 0 0 0</span><br/><span class="CDBStdOut">xmm15=0 0 0 0</span><br/><span class="CDBStdOut">dr0=0000000000000000 dr1=0000000000000000 dr2=0000000000000000</span><br/><span class="CDBStdOut">dr3=0000000000000000 dr6=0000000000000000 dr7=0000000000000000</span><br/><span class="CDBStdOut">Tests_x64!wmain+0x35c:</span><br/><span class="CDBStdOut">00007ff6`50c014fc cc              int     3</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">dpp @$ea - 10*$ptrsize L10;</span><br/><span class="CDBStdOut">Bad register error at '@$ea - 10*$ptrsize '</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">lm M *Tests_x64.exe</span><br/><span class="CDBStdOut">start             end                 module name</span><br/><span class="CDBStdOut">00007ff6`50c00000 00007ff6`50c1c000   Tests_x64 C (private pdb symbols)  H:\dev\BugId\Tests\bin\Tests_x64.pdb</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span><span class="CDBCommand">lmv m *Tests_x64</span><br/><span class="CDBStdOut">start             end                 module name</span><br/><span class="CDBStdOut">00007ff6`50c00000 00007ff6`50c1c000   Tests_x64 C (private pdb symbols)  H:\dev\BugId\Tests\bin\Tests_x64.pdb</span><br/><span class="CDBStdOut">    Loaded symbol image file: H:\dev\BugId\Tests\bin\Tests_x64.exe</span><br/><span class="CDBStdOut">    Image path: Tests_x64.exe</span><br/><span class="CDBStdOut">    Image name: Tests_x64.exe</span><br/><span class="CDBStdOut">    Timestamp:        Wed May 11 15:43:57 2016 (5733371D)</span><br/><span class="CDBStdOut">    CheckSum:         00000000</span><br/><span class="CDBStdOut">    ImageSize:        0001C000</span><br/><span class="CDBStdOut">    Translations:     0000.04b0 0000.04e4 0409.04b0 0409.04e4</span><br/><hr/><span class="CDBPrompt">0:000&gt; </span>
+    </div>
+
+    <div class="Footer Block">
+      <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
+        <img alt="Creative Commons License" style="vertical-align: middle; float: left;" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
+      </a>
+      This report was generated using <a href="https://github.com/SkyLined/BugId">BugId v16.08.01</a>
+        by <a href="mailto:berendjanwever@gmail.com">SkyLined</a>.<br/>
+      BugId is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
+        Creative Commons Attribution-NonCommercial 4.0 International License</a>.<br/>
+      Please contact the author if you wish to use BugId commercially.
+    </div>
+  </body>
+</html>
