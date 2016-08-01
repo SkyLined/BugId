@@ -15,10 +15,10 @@ dxBugIdConfig["uReserveRAM"] = 1024; # Simply test if reserving RAM works, not a
 dxBugIdConfig["uArchitectureIndependentBugIdBits"] = 32; # Test architecture independent bug ids
 
 sBaseFolderPath = os.path.dirname(__file__);
-sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["src", "modules"]]);
+sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["modules"]]);
 from cBugId import cBugId;
-from sOSISA import sOSISA;
-from cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from cBugId.sOSISA import sOSISA;
+from cBugId.cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
 import FileSystem;
 
 asTestISAs = [sOSISA];
