@@ -3,8 +3,8 @@ from cBugReport import cBugReport;
 from dxBugIdConfig import dxBugIdConfig;
 
 bDebugOutput = True;
-bDebugOuputCalculation = True;
-bDebugOutputGetUsageData = True;
+bDebugOuputCalculation = False;
+bDebugOutputGetUsageData = False;
 
 class cExcessiveCPUUsageDetector(object):
   def __init__(oExcessiveCPUUsageDetector, oCdbWrapper):
