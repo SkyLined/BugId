@@ -127,10 +127,14 @@ class cExcessiveCPUUsageDetector(object):
             fsFormat(nPreviousCPUTime), fsFormat(nCurrentCPUTime), fsFormat(nCPUTime),
             fsFormat(nCPUPercent),
           );
-      if bDebugOuputCalculation: print "'".ljust(120, "-");
-
-      if bDebugOutput: print "*** Total CPU usage: %d%%, max: %d%% for pid %d, tid %d" % \
-          (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
+      if bDebugOuputCalculation:
+        print "|".ljust(120, "-");
+        print "| Total CPU usage: %d%%, max: %d%% for pid 0x%X, tid 0x%X" % \
+           (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
+        print "'".ljust(120, "-");
+      elif bDebugOutput:
+        print "*** Total CPU usage: %d%%, max: %d%% for pid %d, tid %d" % \
+            (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
       # If all threads in all processes combined have excessive CPU usage
       if nTotalCPUPercent > dxBugIdConfig["nExcessiveCPUUsagePercent"]:
         # Find out which function is using excessive CPU time in the most active thread.
