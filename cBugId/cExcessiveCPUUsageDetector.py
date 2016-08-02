@@ -2,7 +2,9 @@ import re, threading, time;
 from cBugReport import cBugReport;
 from dxBugIdConfig import dxBugIdConfig;
 
-bDebugOutput = False;
+bDebugOutput = True;
+bDebugOuputCalculation = True;
+bDebugOutputGetUsageData = True;
 
 class cExcessiveCPUUsageDetector(object):
   def __init__(oExcessiveCPUUsageDetector, oCdbWrapper):
@@ -49,7 +51,7 @@ class cExcessiveCPUUsageDetector(object):
       if oExcessiveCPUUsageDetector.xCleanupTimeout:
         oCdbWrapper.fClearTimeout(oExcessiveCPUUsageDetector.xCleanupTimeout);
         oExcessiveCPUUsageDetector.xCleanupTimeout = None;
-        if bDebugOutput: print "@@@ Cleaning up excessive CPU usage breakpoints..." % nTimeout;
+        if bDebugOutput: print "@@@ Cleaning up excessive CPU usage breakpoints...";
         if oExcessiveCPUUsageDetector.uWormBreakpointId is not None:
           oCdbWrapper.fRemoveBreakpoint(oExcessiveCPUUsageDetector.uWormBreakpointId);
           oExcessiveCPUUsageDetector.uWormBreakpointId = None;
@@ -84,37 +86,49 @@ class cExcessiveCPUUsageDetector(object):
       if oExcessiveCPUUsageDetector.xCheckUsageTimeout is None:
         return; # Analysis was stopped because a new timeout was set.
       oExcessiveCPUUsageDetector.xCheckUsageTimeout = None;
-      ddtPrevious_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId = oExcessiveCPUUsageDetector.xMostRecentData;
+      ddnPreviousCPUTime_by_uThreadId_by_uProcessId = oExcessiveCPUUsageDetector.ddnLastCPUTime_by_uThreadId_by_ProcessId;
+      nPreviousRunTime = oExcessiveCPUUsageDetector.nLastRunTime;
       oExcessiveCPUUsageDetector.fGetUsageData();
-      ddtCurrent_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId = oExcessiveCPUUsageDetector.xMostRecentData;
+      ddnCurrentCPUTime_by_uThreadId_by_uProcessId = oExcessiveCPUUsageDetector.ddnLastCPUTime_by_uThreadId_by_ProcessId;
+      nCurrentRunTime = oExcessiveCPUUsageDetector.nLastRunTime;
+      nRunTime = nCurrentRunTime - nPreviousRunTime;
       # Find out which thread in which process used the most CPU time by comparing previous CPU usage and
       # run time values to current values for all threads in all processes that exist in both data sets.
       nMaxCPUPercent = -1;
       nTotalCPUPercent = 0;
-      for (uProcessId, dtCurrent_nCPUTime_and_nRunTime_by_uThreadId) in ddtCurrent_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId.items():
-        if uProcessId in ddtPrevious_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId:
-          dtPrevious_nCPUTime_and_nRunTime_by_uThreadId = ddtPrevious_nCPUTime_and_nRunTime_by_uThreadId_by_uProcessId[uProcessId];
-          for (uThreadId, tCurrent_nCPUTime_and_nRunTime) in dtCurrent_nCPUTime_and_nRunTime_by_uThreadId.items():
-            # nRunTime can be None due to a bug in cdb. In such cases, usage percentage cannot be calculated
-            if tCurrent_nCPUTime_and_nRunTime[1] is not None and uThreadId in dtPrevious_nCPUTime_and_nRunTime_by_uThreadId:
-              tPrevious_nCPUTime_and_nRunTime = dtPrevious_nCPUTime_and_nRunTime_by_uThreadId[uThreadId];
-              if tPrevious_nCPUTime_and_nRunTime[1] is not None:
-                nCPUTime = tCurrent_nCPUTime_and_nRunTime[0] - tPrevious_nCPUTime_and_nRunTime[0];
-                nRunTime = tCurrent_nCPUTime_and_nRunTime[1] - tPrevious_nCPUTime_and_nRunTime[1];
-                nCPUPercent = nRunTime > 0 and (100.0 * nCPUTime / nRunTime) or 0;
-                nTotalCPUPercent += nCPUPercent;
-                if nCPUPercent > nMaxCPUPercent:
-                  nMaxCPUPercent = nCPUPercent;
-                  uMaxCPUProcessId = uProcessId;
-                  uMaxCPUThreadId = uThreadId;
-# Use for debugging
-#                print "   pid %4d tid %4d CPU: %6.3f=>%6.3f (%4.3f) RUN: %6.3f=>%6.3f (%4.3f) USE: %3.0f%%" % (
-#                  uProcessId, uThreadId,
-#                  tPrevious_nCPUTime_and_nRunTime[0], tCurrent_nCPUTime_and_nRunTime[0], nCPUTime,
-#                  tPrevious_nCPUTime_and_nRunTime[1], tCurrent_nCPUTime_and_nRunTime[1], nRunTime,
-#                  nCPUPercent
-#                );
-# Use for debugging
+      if bDebugOuputCalculation:
+        print ",--- cExcessiveCPUUsageDetector.fGetUsageData ".ljust(120, "-");
+        print "| Application run time: %.3f->%.3f=%.3f" % (nPreviousRunTime, nCurrentRunTime, nRunTime);
+      for (uProcessId, dnCurrentCPUTime_by_uThreadId) in ddnCurrentCPUTime_by_uThreadId_by_uProcessId.items():
+        if bDebugOuputCalculation:
+          print ("|--- Process 0x%X" % uProcessId).ljust(120, "-");
+          print "| %3s  %21s  %7s" % ("tid", "CPU time", "% Usage");
+        dnPreviousCPUTime_by_uThreadId = ddnPreviousCPUTime_by_uThreadId_by_uProcessId.get(uProcessId, {});
+        for (uThreadId, nCurrentCPUTime) in dnCurrentCPUTime_by_uThreadId.items():
+          # nRunTime can be None due to a bug in cdb. In such cases, usage percentage cannot be calculated
+          nPreviousCPUTime = dnPreviousCPUTime_by_uThreadId.get(uThreadId);
+          if nPreviousCPUTime is not None and nCurrentCPUTime is not None:
+            nCPUTime = nCurrentCPUTime - nPreviousCPUTime;
+          else:
+            nCPUTime = None;
+          if nCPUTime is not None:
+            nCPUPercent = nRunTime > 0 and (100.0 * nCPUTime / nRunTime) or 0;
+            nTotalCPUPercent += nCPUPercent;
+            if nCPUPercent > nMaxCPUPercent:
+              nMaxCPUPercent = nCPUPercent;
+              uMaxCPUProcessId = uProcessId;
+              uMaxCPUThreadId = uThreadId;
+          else:
+            nCPUPercent = None;
+          def fsFormat(nNumber):
+            return nNumber is None and " - " or ("%.3f" % nNumber);
+          if bDebugOuputCalculation: print "| %4X  %6s->%6s=%6s  %6s%%" % (
+            uThreadId,
+            fsFormat(nPreviousCPUTime), fsFormat(nCurrentCPUTime), fsFormat(nCPUTime),
+            fsFormat(nCPUPercent),
+          );
+      if bDebugOuputCalculation: print "'".ljust(120, "-");
+
       if bDebugOutput: print "*** Total CPU usage: %d%%, max: %d%% for pid %d, tid %d" % \
           (nTotalCPUPercent, nMaxCPUPercent, uMaxCPUProcessId, uMaxCPUThreadId);
       # If all threads in all processes combined have excessive CPU usage
@@ -268,15 +282,20 @@ class cExcessiveCPUUsageDetector(object):
   def fGetUsageData(oExcessiveCPUUsageDetector):
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     # Get the amount of CPU time each thread in each process has consumed
-    ddtnCPUTime_and_nRunTime_by_uThreadId_by_uProcessId = {};
+    ddnCPUTime_by_uThreadId_by_uProcessId = {};
     sTimeType = None;
+    if bDebugOutputGetUsageData:
+      print ",--- cExcessiveCPUUsageDetector.fGetUsageData ".ljust(120, "-");
     for uProcessId in oCdbWrapper.auProcessIds:
+      if bDebugOutputGetUsageData:
+        print ("|--- Process 0x%X" % uProcessId).ljust(120, "-");
+        print "| %4s  %6s  %s" % ("tid", "time", "source line");
       oCdbWrapper.fSelectProcess(uProcessId);
       if not oCdbWrapper.bCdbRunning: return;
       asThreadTimes = oCdbWrapper.fasSendCommandAndReadOutput("!runaway 7", bIsRelevantIO = False);
       if not oCdbWrapper.bCdbRunning: return;
       dnCPUTime_by_uThreadId = {};
-      dtnCPUTime_and_nRunTime_by_uThreadId = ddtnCPUTime_and_nRunTime_by_uThreadId_by_uProcessId[uProcessId] = {};
+      dnCPUTime_by_uThreadId = ddnCPUTime_by_uThreadId_by_uProcessId[uProcessId] = {};
       for sLine in asThreadTimes:
         if re.match(r"^\s*(Thread\s+Time)\s*$", sLine):
           pass; # Header, ignored.
@@ -298,13 +317,12 @@ class cExcessiveCPUUsageDetector(object):
             # In such cases, do not return a value for elapsed time.
             nTime = None;
   # Use for debugging
-  #          print "%4d %4d %s => %s = None" % (uProcessId, uThreadId, sLine, sTimeType);
-  #        else:
-  #          print "%4d %4d %s => %s = %6.3f " % (uProcessId, uThreadId, sLine, sTimeType, nTime);
           if sTimeType == "User Mode Time":
             dnCPUTime_by_uThreadId[uThreadId] = nTime;
+            if bDebugOutputGetUsageData: print "| %4X  %6s %s" % (uThreadId, nTime is None and "?" or ("%.3f" % nTime), repr(sLine));
           elif sTimeType == "Kernel Mode Time":
             dnCPUTime_by_uThreadId[uThreadId] += nTime;
-          else:
-            dtnCPUTime_and_nRunTime_by_uThreadId[uThreadId] = (dnCPUTime_by_uThreadId[uThreadId], nTime);
-    oExcessiveCPUUsageDetector.xMostRecentData = ddtnCPUTime_and_nRunTime_by_uThreadId_by_uProcessId;
+            if bDebugOutputGetUsageData: print "| %4X  %6s %s" % (uThreadId, nTime is None and "?" or ("+%.3f" % nTime), repr(sLine));
+    if bDebugOutputGetUsageData: print "'".ljust(120, "-");
+    oExcessiveCPUUsageDetector.ddnLastCPUTime_by_uThreadId_by_ProcessId = ddnCPUTime_by_uThreadId_by_uProcessId;
+    oExcessiveCPUUsageDetector.nLastRunTime = oCdbWrapper.fnApplicationRunTime();

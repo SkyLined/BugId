@@ -5,6 +5,23 @@ from dxBugIdConfig import dxBugIdConfig;
 from fsCreateFileName import fsCreateFileName;
 from NTSTATUS import *;
 
+def fnGetDebuggerTime(sDebuggerTime):
+  # Parse .time and .lastevent timestamps; return a number of seconds since an arbitrary but constant starting point in time.
+  oTimeMatch = re.match("^%s$" % r"\s+".join([
+    r"(Mon|Tue|Wed|Thu|Fri|Sat|Sun)",                        # Weekday
+    r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)",    # Month
+    r"(\d+)",                                                # Day in month
+    r"(\d+):(\d+):(\d+).(\d+)",                              # Hour:Minute:Second.Milisecond
+    r"(\d+)",                                                # Year
+    r"\(\w+ \+ \d+:\d+\)",                                   # Timezone (don't care).
+  ]), sDebuggerTime);
+  assert oTimeMatch, "Cannot parse debugger time: %s" % repr(sDebuggerTime);
+  sWeekDay, sMonth, sDay, sHour, sMinute, sSecond, sMilisecond, sYear = oTimeMatch.groups();
+  # Convert date and time to a number of seconds since something, and add miliseconds:
+  sTime = " ".join([sYear, sMonth, sDay, sHour, sMinute, sSecond]);
+  nTime = time.mktime(time.strptime(sTime, "%Y %b %d %H %M %S")) + float("0.%s" % sMilisecond);
+  return nTime;
+
 def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # cCdbWrapper initialization code already acquire a lock on cdb on behalf of this thread, so the "interrupt on
   # timeout" thread does not attempt to interrupt cdb while this thread is getting started.
@@ -72,7 +89,16 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           oCdbWrapper.fApplicationRunningCallback and oCdbWrapper.fApplicationRunningCallback();
           bInitialApplicationRunningCallbackFired = True;
         # Mark the time when the application was resumed.
-        oCdbWrapper.nApplicationResumeTime = time.clock();
+        asCdbOutput = oCdbWrapper.fasSendCommandAndReadOutput(".time", bIsRelevantIO = False);
+        if not oCdbWrapper.bCdbRunning: return;
+        oTimeMatch = len(asCdbOutput) > 0 and re.match(r"^Debug session time: (.*?)\s*$", asCdbOutput[0]);
+        assert oTimeMatch, "Failed to get debugger time!\r\n%s" % "\r\n".join(asCdbOutput);
+        oCdbWrapper.oApplicationTimeLock.acquire();
+        try:
+          oCdbWrapper.nApplicationResumeDebuggerTime = fnGetDebuggerTime(oTimeMatch.group(1));
+          oCdbWrapper.nApplicationResumeTime = time.clock();
+        finally:
+          oCdbWrapper.oApplicationTimeLock.release();
         # Release the lock on cdb so the "interrupt on timeout" thread can attempt to interrupt cdb while the
         # application is running.
         if len(oCdbWrapper.auProcessIdsPendingAttach) == 0:
@@ -88,11 +114,6 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           # Let the interrupt-on-timeout thread know that the application has been interrupted, so that when it detects
           # another timeout should be fired, it will try to interrupt the application again.
           oCdbWrapper.bInterruptPending = False;
-        # Add the time since the application was resumed to the total application run time, and mark the application as
-        # suspended by setting nApplicationResumeTime to None. TODO there is a race condition between here and in
-        # oCdbWrapper.fxSetTimeout that must be addressed.
-        oCdbWrapper.nApplicationRunTime += time.clock() - oCdbWrapper.nApplicationResumeTime;
-        oCdbWrapper.nApplicationResumeTime = None;
       if oCdbWrapper.bGetDetailsHTML:
         # Save the current number of blocks of StdIO; if this exception is not relevant it can be used to remove all
         # blocks added while analyzing it. These blocks are not considered to contain useful information and removing
@@ -113,22 +134,35 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
       # - or -
       # |Last event: c74.10e8: Exit process 4:c74, code 0          
       # |  debugger time: Tue Aug 25 00:06:07.311 2015 (UTC + 2:00)
-      bValidLastEventOutput = len(asLastEventOutput) == 2 and re.match(r"^\s*debugger time: .*$", asLastEventOutput[1]);
-      oEventMatch = bValidLastEventOutput and re.match(
-        "".join([
-          r"^Last event: ([0-9a-f]+)\.[0-9a-f]+: ",
+      assert len(asLastEventOutput) == 2, "Invalid .lastevent output:\r\n%s" % "\r\n".join(asLastEventOutput);
+      oEventMatch = re.match(
+        "^%s\s*$" % "".join([
+          r"Last event: ([0-9a-f]+)\.[0-9a-f]+: ",
           r"(?:",
             r"(Create|Exit) process [0-9a-f]+\:([0-9a-f]+)(?:, code [0-9a-f]+)?",
           r"|",
             r"(.*?) \- code ([0-9a-f]+) \(!*\s*(first|second) chance\s*!*\)",
           r"|",
             r"Hit breakpoint (\d+)",
-          r")\s*$",
+          r")",
         ]),
         asLastEventOutput[0],
         re.I
       );
-      assert oEventMatch, "Invalid .lastevent output:\r\n%s" % "\r\n".join(asLastEventOutput);
+      assert oEventMatch, "Invalid .lastevent output on line #1:\r\n%s" % "\r\n".join(asLastEventOutput);
+      oEventTimeMatch = re.match(r"^\s*debugger time: (.*?)\s*$", asLastEventOutput[1]);
+      assert oEventTimeMatch, "Invalid .lastevent output on line #2:\r\n%s" % "\r\n".join(asLastEventOutput);
+      oCdbWrapper.oApplicationTimeLock.acquire();
+      try:
+        if oCdbWrapper.nApplicationResumeDebuggerTime:
+          # Add the time between when the application was resumed and when the event happened to the total application
+          # run time.
+          oCdbWrapper.nApplicationRunTime += fnGetDebuggerTime(oEventTimeMatch.group(1)) - oCdbWrapper.nApplicationResumeDebuggerTime;
+        # Mark the application as suspended by setting nApplicationResumeDebuggerTime to None.
+        oCdbWrapper.nApplicationResumeDebuggerTime = None;
+        oCdbWrapper.nApplicationResumeTime = None;
+      finally:
+        oCdbWrapper.oApplicationTimeLock.release();
       (
         sProcessIdHex,
           sCreateExitProcess, sCreateExitProcessIdHex,
@@ -245,14 +279,16 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           break;
       # Execute any pending timeout callbacks
       oCdbWrapper.oTimeoutsLock.acquire();
-      axTimeoutsToFire = [];
-      for xTimeout in oCdbWrapper.axTimeouts:
-        (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) = xTimeout;
-        if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
-          oCdbWrapper.axTimeouts.remove(xTimeout);
-          axTimeoutsToFire.append((fTimeoutCallback, axTimeoutCallbackArguments));
-#          print "@@@ firing timeout %.1f seconds late: %s" % (oCdbWrapper.nApplicationRunTime - nTimeoutTime, repr(fTimeoutCallback));
-      oCdbWrapper.oTimeoutsLock.release();
+      try:
+        axTimeoutsToFire = [];
+        for xTimeout in oCdbWrapper.axTimeouts:
+          (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) = xTimeout;
+          if nTimeoutTime <= oCdbWrapper.nApplicationRunTime: # This timeout should be fired.
+            oCdbWrapper.axTimeouts.remove(xTimeout);
+            axTimeoutsToFire.append((fTimeoutCallback, axTimeoutCallbackArguments));
+#           print "@@@ firing timeout %.1f seconds late: %s" % (oCdbWrapper.nApplicationRunTime - nTimeoutTime, repr(fTimeoutCallback));
+      finally:
+        oCdbWrapper.oTimeoutsLock.release();
       for (fTimeoutCallback, axTimeoutCallbackArguments) in axTimeoutsToFire:
         fTimeoutCallback(*axTimeoutCallbackArguments);
     # Terminate cdb.

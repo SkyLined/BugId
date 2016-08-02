@@ -160,9 +160,17 @@ class cCdbWrapper(object):
     oCdbWrapper.oCdbLock.acquire();
     oCdbWrapper.bCdbStdInOutThreadRunning = True; # Will be set to false if the thread terminates for any reason.
     # Keep track of how long the application has been running, used for timeouts (see fxSetTimeout, fCdbStdInOutThread
-    # and fCdbInterruptOnTimeoutThread for details.
+    # and fCdbInterruptOnTimeoutThread for details. The debugger can tell is what time it thinks it is before we start
+    # and resume the application as well as what time it thinks it was when an exception happened. The difference is
+    # used to calculate how long the application has been running. We cannot simply use time.clock() before start/
+    # resuming and at the time an event is handled as the debugger may take quite some time processing an event before
+    # we can call time.clock(): this time would incorrectly be added to the time the application has spent running.
+    # However, while the application is running, we cannot ask the debugger what time it thinks it is, so we have to 
+    # rely on time.clock(). Hence, both values are tracked.
+    oCdbWrapper.oApplicationTimeLock = threading.Lock();
     oCdbWrapper.nApplicationRunTime = 0; # Total time spent running before last interruption
-    oCdbWrapper.nApplicationResumeTime = None; # time.clock() value at the moment the application was last resumed
+    oCdbWrapper.nApplicationResumeDebuggerTime = None;  # debugger time at the moment the application was last resumed
+    oCdbWrapper.nApplicationResumeTime = None;          # time.clock() at the moment the application was last resumed
     oCdbWrapper.oCdbProcess = subprocess.Popen(
       args = " ".join(asCommandLine),
       stdin = subprocess.PIPE,
@@ -330,29 +338,36 @@ class cCdbWrapper(object):
   def fxSetTimeout(oCdbWrapper, nTimeout, fTimeoutCallback, *axTimeoutCallbackArguments):
 #    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fTimeoutCallback));
     assert nTimeout >= 0, "Negative timeout does not make sense";
-    nTimeoutTime = oCdbWrapper.nApplicationRunTime + nTimeout;
-    # If the application is currently running, nApplicationResumeTime is not None:
-    nApplicationResumeTime = oCdbWrapper.nApplicationResumeTime;
-    if nApplicationResumeTime:
-      nTimeoutTime += time.clock() - nApplicationResumeTime;
+    oCdbWrapper.oApplicationTimeLock.acquire();
+    try:
+      nTimeoutTime = oCdbWrapper.nApplicationRunTime + nTimeout;
+      if oCdbWrapper.nApplicationResumeTime:
+        # The application is currently running, make an estimate for how long to determine when to stop the application:
+        nTimeoutTime += time.clock() - oCdbWrapper.nApplicationResumeTime;
+    finally:
+      oCdbWrapper.oApplicationTimeLock.release();
     xTimeout = (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments);
     oCdbWrapper.oTimeoutsLock.acquire();
-    oCdbWrapper.axTimeouts.append(xTimeout);
-#    print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
-    oCdbWrapper.oTimeoutsLock.release();
+    try:
+      oCdbWrapper.axTimeouts.append(xTimeout);
+#      print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
+    finally:
+      oCdbWrapper.oTimeoutsLock.release();
     return xTimeout;
 
   def fClearTimeout(oCdbWrapper, xTimeout):
     (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) = xTimeout;
     oCdbWrapper.oTimeoutsLock.acquire();
-    if xTimeout in oCdbWrapper.axTimeouts:
-      oCdbWrapper.axTimeouts.remove(xTimeout);
-#      print "@@@ cleared timeout: %s" % repr(fTimeoutCallback);
-#    else:
-#      # Timeout has already fired and been removed.
-#      print "@@@ ignored clear fired timeout: %s" % repr(fTimeoutCallback);
-#    print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
-    oCdbWrapper.oTimeoutsLock.release();
+    try:
+      if xTimeout in oCdbWrapper.axTimeouts:
+        oCdbWrapper.axTimeouts.remove(xTimeout);
+#        print "@@@ cleared timeout: %s" % repr(fTimeoutCallback);
+#      else:
+#        # Timeout has already fired and been removed.
+#        print "@@@ ignored clear fired timeout: %s" % repr(fTimeoutCallback);
+#      print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
+    finally:
+      oCdbWrapper.oTimeoutsLock.release();
       
   def fStop(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
@@ -415,6 +430,10 @@ class cCdbWrapper(object):
     return cCdbWrapper_fsHTMLEncode(oCdbWrapper, sLine);
   
   def fnApplicationRunTime(oCdbWrapper):
-    if oCdbWrapper.nApplicationResumeTime is None:
-      return oCdbWrapper.nApplicationRunTime;
-    return oCdbWrapper.nApplicationRunTime + time.clock() - oCdbWrapper.nApplicationResumeTime;
+    oCdbWrapper.oApplicationTimeLock.acquire();
+    try:
+      if oCdbWrapper.nApplicationResumeTime is None:
+        return oCdbWrapper.nApplicationRunTime;
+      return oCdbWrapper.nApplicationRunTime + time.clock() - oCdbWrapper.nApplicationResumeTime;
+    finally:
+      oCdbWrapper.oApplicationTimeLock.release();
