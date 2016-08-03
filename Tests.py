@@ -122,7 +122,10 @@ class cTest(object):
         oOutputLock and oOutputLock.release();
         oTest.bHasOutputLock = False;
         if bSaveTestReports and oBugReport:
-          sReportFileName = "%s @ %s.html" % (oBugReport.sId, oBugReport.sBugLocation);
+          # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
+          sDesiredReportFileName = "%s @ %s.html" % (oBugReport.sId, oBugReport.sBugLocation);
+          # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
+          sValidReportFileName = FileSystem.fsTranslateToValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFilenames"]);
           ebCreateFolderResult = FileSystem.febCreateFolder(
             sReportsFolderName,
             oTest.asCommandLineArguments[0], # Type of crash
@@ -142,7 +145,7 @@ class cTest(object):
             oBugReport.sDetailsHTML,
             sReportsFolderName,
             oTest.asCommandLineArguments[0], # Type of crash
-            FileSystem.fsTranslateToValidName(sReportFileName),
+            sValidReportFileName,
             fbRetryOnFailure = lambda: False,
           );
           if eWriteDataToFileResult:

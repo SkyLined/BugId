@@ -196,16 +196,19 @@ if __name__ == "__main__":
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     print "  Run time:         %f seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
     if dxConfig["bSaveReport"]:
-      sReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+      # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
+      sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+      # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
+      sValidReportFileName = FileSystem.fsTranslateToValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFilenames"]);
       eWriteDataToFileResult = FileSystem.feWriteDataToFile(
         oBugId.oBugReport.sDetailsHTML,
-        FileSystem.fsLocalPath(FileSystem.fsTranslateToValidName(sReportFileName)),
+        FileSystem.fsLocalPath(sValidReportFileName),
         fbRetryOnFailure = lambda: False,
       );
       if eWriteDataToFileResult:
         print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
       else:
-        print "  Bug report:       %s (%d bytes)" % (sReportFileName, len(oBugId.oBugReport.sDetailsHTML));
+        print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sDetailsHTML));
   else:
     print "- The application has terminated without crashing.";
     print "  Run time:         %f seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
