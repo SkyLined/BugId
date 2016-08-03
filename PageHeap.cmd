@@ -6,20 +6,10 @@ IF ERRORLEVEL 1 (
   EXIT /B 1
 )
 IF NOT DEFINED GFlags (
-  IF "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
-    SET GFlags=C:\Program Files\Windows Kits\8.1\Debuggers\x64\gflags.exe
-  ) ELSE (
-    SET GFlags=C:\Program Files\Windows Kits\8.1\Debuggers\x86\gflags.exe
-  )
-  IF NOT EXIST "%GFlags%" (
-    IF "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
-      SET GFlags=C:\Program Files\Windows Kits\10\Debuggers\x64\gflags.exe
-    ) ELSE (
-      SET GFlags=C:\Program Files\Windows Kits\10\Debuggers\x86\gflags.exe
-    )
-  )
+  CALL :SET_GFLAGS
+) ELSE (
+  SET GFlags=%GFlags:"=%
 )
-SET GFlags=%GFlags:"=%
 IF NOT EXIST "%GFlags%" (
   ECHO - Cannot find gflags.exe at "%GFlags%", please set the "GFlags" environment variable to the correct path.
   EXIT /B 1
@@ -39,6 +29,21 @@ IF "%~2" == "OFF" (
   ECHO   %~nx0 ^<binary file name^> [ON^|OFF]
 )
 EXIT /B 0
+
+:SET_GFLAGS
+  IF "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
+    SET GFlags=C:\Program Files\Windows Kits\8.1\Debuggers\x64\gflags.exe
+  ) ELSE (
+    SET GFlags=C:\Program Files\Windows Kits\8.1\Debuggers\x86\gflags.exe
+  )
+  IF NOT EXIST "%GFlags%" (
+    IF "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
+      SET GFlags=C:\Program Files\Windows Kits\10\Debuggers\x64\gflags.exe
+    ) ELSE (
+      SET GFlags=C:\Program Files\Windows Kits\10\Debuggers\x86\gflags.exe
+    )
+  )
+  EXIT /B 0
 
 :ERROR
   ECHO - Error code %ERRORLEVEL%.
