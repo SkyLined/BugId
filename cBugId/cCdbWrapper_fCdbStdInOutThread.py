@@ -1,4 +1,4 @@
-import re, time;
+import datetime, re, time;
 from cBugReport import cBugReport;
 from daxExceptionHandling import daxExceptionHandling;
 from dxBugIdConfig import dxBugIdConfig;
@@ -7,9 +7,10 @@ from NTSTATUS import *;
 
 def fnGetDebuggerTime(sDebuggerTime):
   # Parse .time and .lastevent timestamps; return a number of seconds since an arbitrary but constant starting point in time.
+  sMonths = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
   oTimeMatch = re.match("^%s$" % r"\s+".join([
     r"(Mon|Tue|Wed|Thu|Fri|Sat|Sun)",                        # Weekday
-    r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)",    # Month
+    r"(%s)" % sMonths,                                       # Month
     r"(\d+)",                                                # Day in month
     r"(\d+):(\d+):(\d+).(\d+)",                              # Hour:Minute:Second.Milisecond
     r"(\d+)",                                                # Year
@@ -19,8 +20,16 @@ def fnGetDebuggerTime(sDebuggerTime):
   sWeekDay, sMonth, sDay, sHour, sMinute, sSecond, sMilisecond, sYear = oTimeMatch.groups();
   # Convert date and time to a number of seconds since something, and add miliseconds:
   sTime = " ".join([sYear, sMonth, sDay, sHour, sMinute, sSecond]);
-  nTime = time.mktime(time.strptime(sTime, "%Y %b %d %H %M %S")) + float("0.%s" % sMilisecond);
-  return nTime;
+  oDateTime = datetime.datetime(
+    long(sYear),
+    sMonths.find(sMonth) / 4 + 1,
+    long(sDay),
+    long(sHour),
+    long(sMinute),
+    long(sSecond),
+    long(sMilisecond.ljust(6, "0")),
+  );
+  return (oDateTime - datetime.datetime(1976,8,28)).total_seconds();
 
 def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # cCdbWrapper initialization code already acquire a lock on cdb on behalf of this thread, so the "interrupt on
