@@ -15,7 +15,7 @@ dxConfig = {
                                                   # forever.
   "bShowLincenseAndDonationInfo": True,           # Set to False to disable the licensing and donations information
                                                   # shown at the end of each run. Feel free to act on it first :)
-  "bUseUnicodeReportFilenames": False,            # Disable if you are experiencing "Invalid file name" errors
+  "bUseUnicodeReportFileNames": False,            # Disable if you are experiencing "Invalid file name" errors
                                                   # when trying to write bug reports. Enable if you want the report
                                                   # file name to look very similar to the BugId by translating invalid
                                                   # characters to similarly looking Unicode characters.
