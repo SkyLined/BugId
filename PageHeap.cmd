@@ -12,14 +12,13 @@ IF NOT DEFINED GFlags (
     EXIT /B 1
   )
 ) ELSE (
-  :: Make sure GFlags is quoted
   SET GFlags="%GFlags:"=%"
 )
-
 IF NOT EXIST %GFlags% (
   ECHO - Cannot find gflags.exe at %GFlags%, please set the "GFlags" environment variable to the correct path.
   EXIT /B 1
 )
+
 IF "%~2" == "OFF" (
   ECHO * Disabling page heap for %1...
   %GFlags% -i %1 -FFFFFFFF >nul
