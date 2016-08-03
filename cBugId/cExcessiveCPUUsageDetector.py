@@ -2,7 +2,7 @@ import re, threading, time;
 from cBugReport import cBugReport;
 from dxBugIdConfig import dxBugIdConfig;
 
-bDebugOutput = True;
+bDebugOutput = False;
 bDebugOuputCalculation = False;
 bDebugOutputGetUsageData = False;
 
