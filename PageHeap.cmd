@@ -34,17 +34,17 @@ EXIT /B 0
 
 :SET_GFLAGS_AMD64
   CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles%\Windows Kits\10\Debuggers\x64\gflags.exe"
+  CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles(x86)%\Windows Kits\10\Debuggers\x86\gflags.exe"
   CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles%\Windows Kits\8.1\Debuggers\x64\gflags.exe"
+  CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles(x86)%\Windows Kits\8.1\Debuggers\x86\gflags.exe"
   CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles%\Windows Kits\8.0\Debuggers\x64\gflags.exe"
+  CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles(x86)%\Windows Kits\8.0\Debuggers\x86\gflags.exe"
   EXIT /B 0
 
 :SET_GFLAGS_x86
   CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles%\Windows Kits\10\Debuggers\x86\gflags.exe"
-  CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles(x86)%\Windows Kits\10\Debuggers\x86\gflags.exe"
   CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles%\Windows Kits\8.1\Debuggers\x86\gflags.exe"
-  CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles(x86)%\Windows Kits\8.1\Debuggers\x86\gflags.exe"
   CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles%\Windows Kits\8.0\Debuggers\x86\gflags.exe"
-  CALL :SET_GFLAGS_IF_EXISTS "%ProgramFiles(x86)%\Windows Kits\8.0\Debuggers\x86\gflags.exe"
   EXIT /B 0
 
 :SET_GFLAGS_IF_EXISTS
