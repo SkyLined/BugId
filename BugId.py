@@ -194,7 +194,7 @@ if __name__ == "__main__":
     if oBugId.oBugReport.sBugSourceLocation:
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
-    print "  Run time:         %f seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+    print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
     if dxConfig["bSaveReport"]:
       # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
       sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sDetailsHTML));
   else:
     print "- The application has terminated without crashing.";
-    print "  Run time:         %f seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+    print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
   
   if dxConfig["bShowLincenseAndDonationInfo"]:
     print;
