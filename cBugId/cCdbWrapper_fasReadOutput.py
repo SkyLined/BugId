@@ -1,6 +1,21 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
 
+dsTip_by_sErrorCode = {
+  "NTSTATUS 0xC00000BB": "Are you using a 32-bit debugger with a 64-bit process?",
+};
+
+def fDetectFatalErrorsInOutput(asLines):
+  for sLine in asLines:
+    oCannotAttachMatch = re.match(r"^Cannot debug pid (\d+), (?:Win32 error 0n(\d+)|NTSTATUS 0x(\w+))\s*$", sLine);
+    if oCannotAttachMatch:
+      sProcessId, sWin32Error, sNTStatus = oCannotAttachMatch.groups();
+      uProcessId = long(sProcessId);
+      sErrorCode = sWin32Error and "Win32 %s" % sWin32Error or "NTSTATUS 0x%s" % sNTStatus;
+      sTip = dsTip_by_sErrorCode.get(sErrorCode);
+      raise AssertionError("Failed to attach to process %d/0x%X!\r\n%scdb output:\r\n%s" % \
+          (uProcessId, uProcessId, sTip and "%s\r\n" % sTip or "", "\r\n".join(asLines)));
+
 def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False):
   sLine = "";
   asLines = [];
@@ -42,6 +57,8 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
         if oCdbWrapper.bGetDetailsHTML:
           # The prompt is stored in a new block of I/O
           oCdbWrapper.asCdbStdIOBlocksHTML.append("<span class=\"CDBPrompt\">%s</span>" % oCdbWrapper.fsHTMLEncode(sLine));
+        fDetectFatalErrorsInOutput(asLines);
         return asLines;
+  fDetectFatalErrorsInOutput(asLines);
   oCdbWrapper.bCdbRunning = False;
   return None;

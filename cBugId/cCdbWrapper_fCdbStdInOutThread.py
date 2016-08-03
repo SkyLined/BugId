@@ -129,11 +129,6 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # them can  reduce the risk of OOM when irrelevant exceptions happens very often. The last block contains a
         # prompt, which will become the first analysis command's block, so it is not saved.
         uOriginalHTMLCdbStdIOBlocks = len(oCdbWrapper.asCdbStdIOBlocksHTML) - 1;
-      # If cdb is attaching to a process, make sure it worked.
-      for sLine in asCdbOutput:
-        oFailedAttachMatch = re.match(r"^Cannot debug pid \d+, Win32 error 0n\d+\s*$", sLine);
-        assert not oFailedAttachMatch, "Failed to attach to process!\r\n%s" % "\r\n".join(asCdbOutput);
-      if not oCdbWrapper.bCdbRunning: return;
       # Find out what event caused the debugger break
       asLastEventOutput = oCdbWrapper.fasSendCommandAndReadOutput(".lastevent");
       if not oCdbWrapper.bCdbRunning: return;
