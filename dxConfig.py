@@ -13,6 +13,8 @@ dxConfig = {
   "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
+  "bShowLincenseAndDonationInfo": True,           # Set to False to disable the licensing and donations information
+                                                  # shown at the end of each run. Feel free to act on it first :)
   "BugId": {
     # The values from src\dxBugIdConfig.py get loaded here, but you can override them here.
   },
