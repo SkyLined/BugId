@@ -19,6 +19,7 @@ from cStack import cStack;
 from cProcess import cProcess;
 from dxBugIdConfig import dxBugIdConfig;
 from NTSTATUS import *;
+from HRESULT import *;
 from sBlockHTMLTemplate import sBlockHTMLTemplate;
 from sBugIdVersion import sBugIdVersion;
 from sDetailsHTMLTemplate import sDetailsHTMLTemplate;
