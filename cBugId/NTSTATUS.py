@@ -46,12 +46,8 @@ STATUS_ASSERTION_FAILURE = 0xC0000420;
 STATUS_VERIFIER_STOP = 0xC0000421;
 STATUS_FAIL_FAST_EXCEPTION = 0xC0000602;
 
-# Not strictly part of ntstatus
-# Source: http://blogs.microsoft.co.il/sasha/2008/08/20/converting-win32-and-c-exceptions-to-managed-exceptions/
-CLR_EXCEPTION_CODE = 0xE0434F4D;
-CPP_EXCEPTION_CODE = 0xE06D7363;
-
 # Not defined anywhere that I know of, but exception has been found repeatedly with these top stack frames:
 # KERNELBASE.dll!RaiseFailFastException
 # KERNELBASE.dll!TerminateProcessOnMemoryExhaustion
 STATUS_FAILFAST_OOM_EXCEPTION = 0xC00001AD;
+

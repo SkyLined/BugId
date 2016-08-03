@@ -1,4 +1,5 @@
 from NTSTATUS import *;
+from HRESULT import *;
 
 dtsTypeId_and_sSecurityImpact_by_uExceptionCode = {
   # uException Code                 # sTypeId                 # sSecurityImpact
@@ -10,7 +11,7 @@ dtsTypeId_and_sSecurityImpact_by_uExceptionCode = {
   STATUS_DATATYPE_MISALIGNMENT:     ("DataMisalign",          "May be a security issue"),
   STATUS_BREAKPOINT:                ("Breakpoint",            None),
   STATUS_SINGLE_STEP:               ("SingleStep",            None),
-  0x8007000E:                       ("OOM",                   None),
+  E_OUTOFMEMORY:                    ("OOM",                   None),
   STATUS_NOT_IMPLEMENTED:           ("PureCall",              "May be a security issue"),
   STATUS_ACCESS_VIOLATION:          ("AV",                    "May be a security issue"), # Special cased if exception parameters are available
   STATUS_IN_PAGE_ERROR:             ("InPageIO",              None),
