@@ -194,7 +194,7 @@ if __name__ == "__main__":
     if oBugId.oBugReport.sBugSourceLocation:
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
-    print "  Run time:         %f seconds" % long(oBugId.fnApplicationRunTime() * 1000) / 1000.0;
+    print "  Run time:         %f seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
     if dxConfig["bSaveReport"]:
       sReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       eWriteDataToFileResult = FileSystem.feWriteDataToFile(
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         print "  Bug report:       %s (%d bytes)" % (sReportFileName, len(oBugId.oBugReport.sDetailsHTML));
   else:
     print "- The application has terminated without crashing.";
-    print "  Run time:         %f seconds" % long(oBugId.fnApplicationRunTime() * 1000) / 1000.0;
+    print "  Run time:         %f seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
   
   if dxConfig["bShowLincenseAndDonationInfo"]:
     print;
