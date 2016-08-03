@@ -7,9 +7,9 @@ IF ERRORLEVEL 1 (
 )
 IF NOT DEFINED GFlags (
   CALL :SET_GFLAGS
-) ELSE (
-  SET GFlags=%GFlags:"=%
 )
+SET GFlags=%GFlags:"=%
+
 IF NOT EXIST "%GFlags%" (
   ECHO - Cannot find gflags.exe at "%GFlags%", please set the "GFlags" environment variable to the correct path.
   EXIT /B 1
