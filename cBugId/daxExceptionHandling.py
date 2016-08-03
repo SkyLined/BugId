@@ -1,4 +1,5 @@
 from NTSTATUS import *;
+from HRESULT import *;
 from dxBugIdConfig import dxBugIdConfig;
 
 daxExceptionHandling = {
