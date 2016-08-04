@@ -3,6 +3,7 @@ from dxBugIdConfig import dxBugIdConfig;
 
 dsTip_by_sErrorCode = {
   "NTSTATUS 0xC00000BB": "Are you using a 32-bit debugger with a 64-bit process?",
+  "NTSTATUS 0xC000010A": "The process was terminated before the debugger could attach",
 };
 
 def fDetectFatalErrorsInOutput(asLines):
