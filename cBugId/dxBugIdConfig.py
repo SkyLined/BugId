@@ -100,7 +100,7 @@ for (sName, xValue) in {
                                         # report. Value in percent of the check interval, e.g. a value of 75 for a
                                         # check interval of 10s means a bug will be reported if the application uses
                                         # the CPU more than 7.5 seconds during a 10s interval.
-  "nExcessiveCPUUsageWormRunTime": 3.0, # How many seconds to allow a function to run to find the topmost function
+  "nExcessiveCPUUsageWormRunTime": 5.0, # How many seconds to allow a function to run to find the topmost function
                                         # involved in the CPU usage? Lower values yield results quicker, but may be
                                         # inaccurate. Higher values increase the time in which the code can run and
                                         # return to the topmost function. If you provide too large a value the CPU
