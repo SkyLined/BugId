@@ -77,12 +77,15 @@ for (sName, xValue) in {
   "uStackHashFramesCount": 2,           # How many stack frames are hashed for the crash id?
   "uMaxStackFrameHashChars": 3,         # How many characters of hash to use in the id for each stack frame.
   ### Symbol loading settings
-  "bEnhancedSymbolLoading": True,       # Enable additional checks when getting a stack that can detect and fix errors
+  "uMaxSymbolLoadingRetries": 10,       # Enable additional checks when getting a stack that can detect and fix errors
                                         # in symbol loading caused by corrupted pdb files. This turns on "noisy symbol
                                         # loading" which may provide useful information to fix symbol loading errors.
-                                        # It has a large impact on performance, so you may want to disable it if you
-                                        # can guarantee correct symbol files are available and do not need to be
-                                        # downloaded (which I think is what sometimes causes this corruption).
+                                        # It has a large impact on performance, so you may want to disable it by setting
+                                        # it to 0 if you can guarantee correct symbol files are available and do not
+                                        # need to be downloaded (which I think is what sometimes causes this
+                                        # corruption).
+                                        # If you often see "CDB failed to load symbols" assertion errors, try
+                                        # increasing the number and see if that resolves it.
   "asSymbolCachePaths": [],             # Where should symbols be cached?
   ### Source code settings
   "bEnableSourceCodeSupport": True,     # Tell cdb to load source line symbols or not.

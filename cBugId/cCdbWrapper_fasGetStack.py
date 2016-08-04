@@ -2,14 +2,16 @@ import os, re;
 from dxBugIdConfig import dxBugIdConfig;
 
 def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
-  if dxBugIdConfig["bEnhancedSymbolLoading"]:
+  asSymbolLoadStackOutput = None;
+  asLastSymbolReloadOutput = None;
+  if dxBugIdConfig["uMaxSymbolLoadingRetries"] > 0:
     # Turn noisy symbol loading on
     oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000", bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
     # Get the stack, which should make sure all relevant symbols are loaded or at least marked as requiring loading.
     # There will be symbol loading debug messages in between the stack output, so the stack cannot easily be parsed.
     # The output is saved in a local variable in case an assertion is thrown.
-    asSymbolLoadDebugStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand, bIsRelevantIO = False);
+    asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand, bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
     # Try to reload all modules and symbols. The symbol loader will not reload all symbols, but only those symbols that
     # were loaded before or those it attempted to load before, but failed. The symbol loader will output all kinds of
@@ -18,12 +20,12 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
     # again and any further issues can be detected and fixed. The code loops until there are no more issues that can be
     # fixed, or it has run ten times.
     # This step may also provide some help debugging symbol loading problems that cannot be fixed automatically.
-    for x in xrange(10):
-      asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".reload /v", bIsRelevantIO = False);
+    for x in xrange(dxBugIdConfig["uMaxSymbolLoadingRetries"]):
+      asLastSymbolReloadOutput = oCdbWrapper.fasSendCommandAndReadOutput(".reload /v", bIsRelevantIO = False);
       if not oCdbWrapper.bCdbRunning: return None;
       asCorruptPDBFilePaths = set();
       bErrorsDuringLoading = False;
-      for sLine in asOutput:
+      for sLine in asLastSymbolReloadOutput:
         # If there are any corrupt PDB files, try to delete them.
         oCorruptPDBFilePathMatch = re.match(r"^DBGHELP: (.*?) (\- E_PDB_CORRUPT|dia error 0x[0-9a-f]+)\s*$", sLine);
         if oCorruptPDBFilePathMatch:
@@ -43,18 +45,22 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
       if not (bErrorsDuringLoading or bCorruptPDBFilesDeleted):
         break;
     # Turn noisy symbol loading back off
-    asOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000", bIsRelevantIO = False);
+    oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000", bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return None;
   # Get the stack for real. At this point, no output from symbol loader is expected or handled.
-  asStack = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
+  asStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
   if not oCdbWrapper.bCdbRunning: return None;
   # Remove checksum warning, if any.
-  if re.match(r"^\*\*\* WARNING: Unable to verify checksum for .*$", asStack[0]):
-    asStack.pop(0);
-  assert asStack, "CDB did not return any stack information for command %s" % repr(sGetStackCommand);
+  if re.match(r"^\*\*\* WARNING: Unable to verify checksum for .*$", asStackOutput[0]):
+    asStackOutput.pop(0);
+  assert asStackOutput, "CDB did not return any stack information for command %s" % repr(sGetStackCommand);
   # Getting the stack twice does not always work: for unknown reasons the second time the stack may be truncated or
   # incorrect. So, if an error in symbol loading is detected while getting the stack, there is no reliable way to try
   # to reload the symbols and get the stack again: we must throw an exception.
-  assert not re.match(r"^\*\*\* ERROR: Module load completed but symbols could not be loaded for .+$", asStack[0]), \
-      "CDB failed to load symbols: %s" % asStack[0];
-  return asStack;
+  assert not re.match(r"^\*\*\* ERROR: Module load completed but symbols could not be loaded for .+$", asStackOutput[0]), \
+      "CDB failed to load symbols:\r\n%s%s%s" % (
+        "\r\n".join(["  %s" % s for s in asStackOutput]),
+        asSymbolLoadStackOutput is not None and ("\r\nasSymbolLoadStackOutput:\r\n%s" % "\r\n".join(["  %s" % s for s in asSymbolLoadStackOutput])) or "",
+        asLastSymbolReloadOutput is not None and ("\r\nasLastSymbolReloadOutput:\r\n%s" % "\r\n".join(["  %s" % s for s in asLastSymbolReloadOutput])) or "",
+      );
+  return asStackOutput;
