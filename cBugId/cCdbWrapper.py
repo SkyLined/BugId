@@ -437,3 +437,24 @@ class cCdbWrapper(object):
       return oCdbWrapper.nApplicationRunTime + time.clock() - oCdbWrapper.nApplicationResumeTime;
     finally:
       oCdbWrapper.oApplicationTimeLock.release();
+
+  def fsGetSymbol(oCdbWrapper, sAddress):
+    asSymbolResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%ly\\n", %s;lmn a %s;' % (sAddress, sAddress), bIsRelevantIO = False);
+    if not oCdbWrapper.bCdbRunning: return;
+    assert len(asSymbolResult) == 3, \
+        "Unexpected symbol result:\r\n%s" % "\r\n".join(asSymbolResult);
+    oFirstLine = re.match(r"^([^!]+)!"r"([^\+]+)"r"(?:\+0x\w+)? "r"\([\w`]+\)"r"\s*$", asSymbolResult[0]);
+    assert oFirstLine, \
+        "Unexpected symbol result first line:\r\n%s" % "\r\n".join(asSymbolResult);
+    sCdbModuleName1, sSymbolName = oFirstLine.groups();
+    oSecondLine = re.match(r"^start\s+end\s+module name\s*$", asSymbolResult[1]);
+    assert oSecondLine, \
+        "Unexpected symbol result second line:\r\n%s" % "\r\n".join(asSymbolResult);
+    oThirdLine = re.match(r"^[\w`]+\s+"r"[\w`]+\s+"r"(\S+)\s+"r"(.+?)"r"\s*$", asSymbolResult[2]);
+    sCdbModuleName2, sModuleFileName = oThirdLine.groups();
+    assert oThirdLine, \
+        "Unexpected symbol result third line:\r\n%s" % "\r\n".join(asSymbolResult);
+    assert sCdbModuleName1 == sCdbModuleName2, \
+        "Unexpected symbol module name difference between first and third line:\r\n%s" % "\r\n".join(asSymbolResult);
+    return "%s!%s" % (sModuleFileName, sSymbolName);
+  

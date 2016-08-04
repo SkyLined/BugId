@@ -86,20 +86,6 @@ dtxBugTranslations = {
     None,
     None,
     [
-      # When a 32-bit application is running on a 64-bit OS, creating a new processes can generate two exceptions
-      # (STATUS_BREAKPOINT/STATUS_WX86_BREAKPOINT). The first is recognized as the initial process breakpoint, and the
-      # new process is registered. The later is not, but it can be recognized by its stack and should be ignored:
-      [
-        "ntdll.dll!LdrpDoDebuggerBreak",
-        "ntdll.dll!LdrpInitializeProcess",
-      ],
-      # When BugId attempts to interrupt the application, a CDB_CONTROL_BREAK is created and handled. However,
-      # a STATUS_BREAKPOINT exception may also be generated for the same event, which should be ignored as the event
-      # must not be handled twice.
-      [
-        "ntdll.dll!DbgBreakPoint",
-        "ntdll.dll!DbgUiRemoteBreakin",
-      ],
       [ # Chrome Asan builds trigger a breakpoint in __sanitizer_cov, apparently to determine the return address.
         "chrome.dll!__sanitizer_cov",
       ],

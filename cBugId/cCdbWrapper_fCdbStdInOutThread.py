@@ -186,6 +186,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # performance cost, so until proven otherwise, the code is based on this assumption.
         sCreateExitProcess = "Create";
         sCreateExitProcessIdHex = sProcessIdHex;
+      bGetBugReportForException = True;
       if sCreateExitProcess:
         # Make sure the created/exited process is the current process.
         assert sProcessIdHex == sCreateExitProcessIdHex, "%s vs %s" % (sProcessIdHex, sCreateExitProcessIdHex);
@@ -221,24 +222,39 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
             ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span><br/>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
             oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
           );
+        bGetBugReportForException = False;
       elif uExceptionCode == DBG_CONTROL_BREAK:
         # Debugging the application was interrupted and the application suspended to fire some timeouts. This exception
         # is not a bug and should be ignored.
-        pass;
+        bGetBugReportForException = False;
       elif uExceptionCode == STATUS_SINGLE_STEP:
         # A bug in cdb causes single step exceptions at locations where a breakpoint is set. Since I have never seen a
         # single step exception caused by a bug in an application, I am assuming these are all caused by this bug and
         # ignore them:
-        pass;
-      elif (
-        uExceptionCode in [STATUS_WX86_BREAKPOINT, STATUS_BREAKPOINT]
-        and dxBugIdConfig["bIgnoreFirstChanceBreakpoints"]
-        and sChance == "first"
-      ):
-        pass;
-      else:
-        # And potentially report that the application is resumed later...
-        bApplicationWasPausedToAnalyzeAnException = True;
+        bGetBugReportForException = False;
+      elif uExceptionCode == STATUS_BREAKPOINT:
+        if dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
+          bGetBugReportForException = False;
+        else:
+          # When BugId interrupts the application, a CDB_CONTROL_BREAK exception is generated first and a
+          # STATUS_BREAKPOINT second. Since only one exception is needed, the second one is ignored.
+          # The two top stack frames can be used to detect certain breakpoints that should be ignored:
+          if oCdbWrapper.fsGetSymbol("@$ip") == "ntdll.dll!DbgBreakPoint":
+            if oCdbWrapper.fsGetSymbol("@$ra") == "ntdll.dll!DbgUiRemoteBreakin":
+              bGetBugReportForException = False;
+          if not oCdbWrapper.bCdbRunning: return;
+      elif uExceptionCode == STATUS_WX86_BREAKPOINT:
+        if dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
+          bGetBugReportForException = False;
+        else:
+          # When a 32-bit application is running on a 64-bit OS, creating a new processes can generate two exceptions;
+          # first a STATUS_BREAKPOINT, then a STATUS_WX86_BREAKPOINT. Only the first exception is needed, so the
+          # second is ignored.
+          if oCdbWrapper.fsGetSymbol("@$ip") == "ntdll.dll!LdrpDoDebuggerBreak":
+            if oCdbWrapper.fsGetSymbol("@$ra") == "ntdll.dll!LdrpInitializeProcess":
+              bGetBugReportForException = False;
+          if not oCdbWrapper.bCdbRunning: return;
+      if bGetBugReportForException:
         # If available, free previously allocated memory to allow analysis in low memory conditions.
         if bReserveRAMAllocated:
           # This command is not relevant to the bug, so it is hidden in the cdb IO to prevent OOM.
@@ -260,6 +276,8 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
               oCdbWrapper.fExceptionDetectedCallback(STATUS_BREAKPOINT, "A BugId breakpoint");
             else:
               oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
+          # And potentially report that the application is resumed later...
+          bApplicationWasPausedToAnalyzeAnException = True;
           # Create a bug report, if the exception is fatal.
           oCdbWrapper.oBugReport = cBugReport.foCreateForException(oCdbWrapper, uExceptionCode, sExceptionDescription);
           if not oCdbWrapper.bCdbRunning: return;
