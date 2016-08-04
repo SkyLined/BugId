@@ -446,7 +446,7 @@ class cCdbWrapper(object):
     return long(asValueResult[0], 16);
   
   def fsGetSymbol(oCdbWrapper, sAddress):
-    asSymbolResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%ly\\n", %s;lmn a %s;' % (sAddress, sAddress), bIsRelevantIO = False);
+    asSymbolResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%y\\n", %s;lmn a %s;' % (sAddress, sAddress), bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return;
     assert len(asSymbolResult) == 3, \
         "Unexpected symbol result:\r\n%s" % "\r\n".join(asSymbolResult);
