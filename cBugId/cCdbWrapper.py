@@ -438,6 +438,13 @@ class cCdbWrapper(object):
     finally:
       oCdbWrapper.oApplicationTimeLock.release();
 
+  def fuGetValue(oCdbWrapper, sAddress):
+    asValueResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%p\\n", %s;' % sAddress, bIsRelevantIO = False);
+    if not oCdbWrapper.bCdbRunning: return;
+    assert len(asValueResult) == 1, \
+        "Unexpected value result:\r\n%s" % "\r\n".join(asValueResult);
+    return long(asValueResult[0], 16);
+  
   def fsGetSymbol(oCdbWrapper, sAddress):
     asSymbolResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%ly\\n", %s;lmn a %s;' % (sAddress, sAddress), bIsRelevantIO = False);
     if not oCdbWrapper.bCdbRunning: return;

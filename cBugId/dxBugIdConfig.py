@@ -95,7 +95,7 @@ for (sName, xValue) in {
                                         # be released later to allow analysis under low memory conditions.
   ### Excessive CPU usage detection
   "nExcessiveCPUUsageCheckInterval": 10.0, # How many seconds to gather thread CPU usage data.
-  "nExcessiveCPUUsagePercent": 75,      # How long do all threads in all processes for the application need to use the
+  "nExcessiveCPUUsagePercent": 90,      # How long do all threads in all processes for the application need to use the
                                         # CPU during the usage check interval to trigger an excessive CPU usage bug
                                         # report. Value in percent of the check interval, e.g. a value of 75 for a
                                         # check interval of 10s means a bug will be reported if the application uses
