@@ -232,28 +232,26 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # single step exception caused by a bug in an application, I am assuming these are all caused by this bug and
         # ignore them:
         bGetBugReportForException = False;
-      elif uExceptionCode == STATUS_BREAKPOINT:
+      elif uExceptionCode in [STATUS_BREAKPOINT, STATUS_WX86_BREAKPOINT]:
         if dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
           bGetBugReportForException = False;
         else:
-          # When BugId interrupts the application, a CDB_CONTROL_BREAK exception is generated first and a
-          # STATUS_BREAKPOINT second. Since only one exception is needed, the second one is ignored.
-          # The two top stack frames can be used to detect certain breakpoints that should be ignored:
-          if oCdbWrapper.fsGetSymbol("@$ip") == "ntdll.dll!DbgBreakPoint":
-            if oCdbWrapper.fsGetSymbol("@$ra") == "ntdll.dll!DbgUiRemoteBreakin":
-              bGetBugReportForException = False;
+          sCurrentFunctionSymbol = oCdbWrapper.fsGetSymbol("@$ip");
           if not oCdbWrapper.bCdbRunning: return;
-      elif uExceptionCode == STATUS_WX86_BREAKPOINT:
-        if dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
-          bGetBugReportForException = False;
-        else:
-          # When a 32-bit application is running on a 64-bit OS, creating a new processes can generate two exceptions;
-          # first a STATUS_BREAKPOINT, then a STATUS_WX86_BREAKPOINT. Only the first exception is needed, so the
-          # second is ignored.
-          if oCdbWrapper.fsGetSymbol("@$ip") == "ntdll.dll!LdrpDoDebuggerBreak":
-            if oCdbWrapper.fsGetSymbol("@$ra") == "ntdll.dll!LdrpInitializeProcess":
-              bGetBugReportForException = False;
+          sCallerFunctionSymbol = oCdbWrapper.fsGetSymbol("@$ra");
           if not oCdbWrapper.bCdbRunning: return;
+          if (
+            # When BugId interrupts the application, a CDB_CONTROL_BREAK exception is generated first and a
+            # STATUS_BREAKPOINT second. Since only one exception is needed, the second one is ignored.
+            # The two top stack frames can be used to detect certain breakpoints that should be ignored:
+            sCurrentFunctionSymbol == "ntdll.dll!DbgBreakPoint" and sCallerFunctionSymbol == "ntdll.dll!DbgUiRemoteBreakin"
+          ) or (
+            # When a 32-bit application is running on a 64-bit OS, creating a new processes can generate two exceptions;
+            # first a STATUS_BREAKPOINT, then a STATUS_WX86_BREAKPOINT. Only the first exception is needed, so the
+            # second is ignored.
+            sCurrentFunctionSymbol == "ntdll.dll!LdrpDoDebuggerBreak" and sCallerFunctionSymbol == "ntdll.dll!LdrpInitializeProcess"
+          ):
+             bGetBugReportForException = False;
       if bGetBugReportForException:
         # If available, free previously allocated memory to allow analysis in low memory conditions.
         if bReserveRAMAllocated:
