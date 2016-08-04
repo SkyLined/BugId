@@ -181,23 +181,27 @@ class cExcessiveCPUUsageDetector(object):
     if not oCdbWrapper.bCdbRunning: return;
     uStackPointer = oCdbWrapper.fuGetValue("@$csp");
     if not oCdbWrapper.bCdbRunning: return;
-    uReturnAddress = oCdbWrapper.fuGetValue("@$ra");
-    if not oCdbWrapper.bCdbRunning: return;
+# Ideally, we'de use the return address here but for some unknown reason cdb may not give a valid value at this point.
+# However, we can use the instruction pointer to set our first breakpoint and when it is hit, the return addres will be
+# correct... sigh.
+#    uReturnAddress = oCdbWrapper.fuGetValue("@$ra");
+#    if not oCdbWrapper.bCdbRunning: return;
+    uBreakpointAddress = uInstructionPointer; # uReturnAddress would be preferred.
     oCdbWrapper.fasSendCommandAndReadOutput('.printf "Starting excessive CPU usage worm at %%ly...\\r\\n", 0x%X;' % \
-        uReturnAddress, bHideCommand = True);
-    if bDebugOutput: print "@@@ Excessive CPU usage worm installed at ip=0x%X(sp=0x%X)..." % (uReturnAddress, uStackPointer);
+        uBreakpointAddress, bHideCommand = True);
+    if bDebugOutput: print "@@@ Excessive CPU usage worm installed at ip=0x%X(sp=0x%X)..." % (uBreakpointAddress, uStackPointer);
     oExcessiveCPUUsageDetector.uLastInstructionPointer = uInstructionPointer;
     oExcessiveCPUUsageDetector.uLastStackPointer = uStackPointer;
-    oExcessiveCPUUsageDetector.uNextBreakpointAddress = uReturnAddress;
+    oExcessiveCPUUsageDetector.uNextBreakpointAddress = uBreakpointAddress;
     oExcessiveCPUUsageDetector.uWormBreakpointId = oCdbWrapper.fuAddBreakpoint(
-      uAddress = uReturnAddress,
+      uAddress = uBreakpointAddress,
       fCallback = oExcessiveCPUUsageDetector.fMoveWormBreakpointUpTheStack,
       uProcessId = oExcessiveCPUUsageDetector.uProcessId,
       uThreadId = oExcessiveCPUUsageDetector.uThreadId,
     );
+    if not oCdbWrapper.bCdbRunning: return;
     assert oExcessiveCPUUsageDetector.uWormBreakpointId is not None, \
         "Could not set breakpoint at 0x%X" % oExcessiveCPUUsageDetector.uLastInstructionPointer;
-    if not oCdbWrapper.bCdbRunning: return;
     nTimeout = dxBugIdConfig["nExcessiveCPUUsageWormRunTime"];
     oExcessiveCPUUsageDetector.xWormRunTimeout = oCdbWrapper.fxSetTimeout(nTimeout, oExcessiveCPUUsageDetector.fSetBugBreakpointAfterTimeout);
   
