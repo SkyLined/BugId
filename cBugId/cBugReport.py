@@ -138,11 +138,15 @@ class cBugReport(object):
       asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Stack", "sContent": sStackHTML});
       # Add exception specific blocks if needed:
       asBlocksHTML += oBugReport.asExceptionSpecificBlocksHTML;
-      # Create and add disassembly block if possible
-      sDisassemblyHTML = cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper);
-      if sDisassemblyHTML is None: return None;
-      if sDisassemblyHTML:
-        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly", "sContent": sDisassemblyHTML});
+      # Create and add disassembly blocks if possible
+      sCurrentInstructionDisassemblyHTML = cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, "@$ip", "current instruction");
+      if not oCdbWrapper.bCdbRunning: return None;
+      if sCurrentInstructionDisassemblyHTML:
+        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly around current instruction", "sContent": sCurrentInstructionDisassemblyHTML});
+      sReturnAddressDisassemblyHTML = cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, "@$ra", "return address", "call");
+      if not oCdbWrapper.bCdbRunning: return None;
+      if sReturnAddressDisassemblyHTML:
+        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly around return address", "sContent": sReturnAddressDisassemblyHTML});
       # Create and add registers block
       asRegisters = oCdbWrapper.fasSendCommandAndReadOutput("rM 0x%X" % (0x1 + 0x4 + 0x8 + 0x10 + 0x20 + 0x40));
       if not oCdbWrapper.bCdbRunning: return None;

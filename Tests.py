@@ -125,7 +125,7 @@ class cTest(object):
           # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
           sDesiredReportFileName = "%s @ %s.html" % (oBugReport.sId, oBugReport.sBugLocation);
           # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
-          sValidReportFileName = FileSystem.fsTranslateToValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFilenames"]);
+          sValidReportFileName = FileSystem.fsTranslateToValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
           ebCreateFolderResult = FileSystem.febCreateFolder(
             sReportsFolderName,
             oTest.asCommandLineArguments[0], # Type of crash
