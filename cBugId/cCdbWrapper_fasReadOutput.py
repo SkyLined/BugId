@@ -1,5 +1,6 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
+from FileSystem import FileSystem;
 
 dsTip_by_sErrorCode = {
   "NTSTATUS 0xC00000BB": "Are you using a 32-bit debugger with a 64-bit process?",
@@ -19,16 +20,30 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
       raise AssertionError("Failed to attach to process %d/0x%X!\r\n%scdb output:\r\n%s" % \
           (uProcessId, uProcessId, sTip and "%s\r\n" % sTip or "", "\r\n".join(asLines)));
     if oCdbWrapper.bCdbRunning: # These errors only need to be handled if cdb is still running.
+      oBadPDBFileError = re.match(r"^%s\s*$" % "|".join([
+        r"DBGHELP: (.*?) (\- E_PDB_CORRUPT|dia error 0x[0-9a-f]+)",
+      ]), sLine);
+      if oBadPDBFileError:
+        sPDBFilePath = [s for s in oBadPDBFileError.groups() if s][0];
+        FileSystem.fbDeleteFile(sPDBFilePath);
+        asLines.pop(uIndex);
+        continue;
       if bHandleSymbolLoadErrors:
-        oFailedToLoadSymbolsError = re.match(r"^\*\*\* ERROR: Module load completed but symbols could not be loaded for (.*\\)([^\\]+)$", sLine);
+        oFailedToLoadSymbolsError = re.match(r"^%s\s*$" % "|".join([
+          r"\*\*\* ERROR: Module load completed but symbols could not be loaded for (?:.*\\)*([^\\]+)",
+        ]), sLine);
         if oFailedToLoadSymbolsError:
-          sModuleFolderPath, sModuleFileName = oFailedToLoadSymbolsError.groups();
+          sModuleFileName = [s for s in oFailedToLoadSymbolsError.groups() if s][0];
           # Turn noisy symbol loading on, reload the module and symbols, turn noisy symbol loading back off
           oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;.reload /f /o /v /w %s;.symopt- 0x80000000;" % sModuleFileName, bHandleSymbolLoadErrors = False);
           if not oCdbWrapper.bCdbRunning: return;
+          asLines.pop(uIndex);
+          continue;
       # Strip symbol warnings:
-      oSymbolWarnings = re.match(r"^\*\*\* Warning: Unable to verify checksum for (.*\\)([^\\]+)$", sLine);
-      if oSymbolWarnings:
+      if re.match(r"^%s\s*$" % "|".join([
+        "\*\*\* Warning: Unable to verify checksum for .*",
+        "\*\*\* DBGHELP: SharedUserData \- virtual symbol module",
+      ]), sLine):
         asLines.pop(uIndex);
         continue;
     uIndex += 1;
