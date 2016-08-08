@@ -224,7 +224,8 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           # description of the exception to remove clutter and reduce memory usage. 
           oCdbWrapper.asCdbStdIOBlocksHTML = (
             oCdbWrapper.asCdbStdIOBlocksHTML[0:uOriginalHTMLCdbStdIOBlocks] + # IO before analysis commands
-            ["<span class=\"CDBIgnoredException\">%s process %d breakpoint.</span><br/>" % (sCreateExitProcess, uProcessId)] + # Replacement for analysis commands
+            ["<span class=\"CDBIgnoredException\">%s process %d/0x%X breakpoint.</span><br/>" % \
+                (sCreateExitProcess, uProcessId, uProcessId)] + # Replacement for analysis commands
             oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
           );
         bGetBugReportForException = False;
