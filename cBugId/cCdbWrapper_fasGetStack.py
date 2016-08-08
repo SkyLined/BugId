@@ -4,13 +4,13 @@ from dxBugIdConfig import dxBugIdConfig;
 def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
   asSymbolLoadStackOutput = None;
   asLastSymbolReloadOutput = None;
+  # Get the stack, which should make sure all relevant symbols are loaded or at least marked as requiring loading.
+  # Noisy symbol loading is turned on during the command, so there will be symbol loading debug messages in between
+  # the stack output, which makes the stack hard to parse: it is therefore discarded and the command is executed
+  # again later (without noisy symbol loading) when symbols ae loaded.
+  asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;%s;.symopt- 0x80000000;" % sGetStackCommand);
+  if not oCdbWrapper.bCdbRunning: return None;
   if dxBugIdConfig["uMaxSymbolLoadingRetries"] > 0:
-    # Get the stack, which should make sure all relevant symbols are loaded or at least marked as requiring loading.
-    # Noisy symbol loading is turned on during the command, so there will be symbol loading debug messages in between
-    # the stack output, which makes the stack hard to parse: it is therefore discarded and the command is executed
-    # again later (without noisy symbol loading) when symbols ae loaded.
-    asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;%s;.symopt- 0x80000000;" % sGetStackCommand);
-    if not oCdbWrapper.bCdbRunning: return None;
     # Try to reload all modules and symbols. The symbol loader will not reload all symbols, but only those symbols that
     # were loaded before or those it attempted to load before, but failed. The symbol loader will output all kinds of
     # cruft, which may contain information about PDB files that cannot be loaded (e.g. corrupt files). If any such
