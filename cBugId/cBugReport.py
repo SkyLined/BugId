@@ -183,10 +183,11 @@ class cBugReport(object):
       assert len(aoProcessBinaryModules) > 0, "Cannot find binary %s module" % oBugReport.sProcessBinaryName;
       # If the binary is loaded as a module multiple times in the process, the first should be the binary that was
       # executed.
-      oProcessBinaryModule = aoProcessBinaryModules[0];
+      aoModules = aoProcessBinaryModules[:1];
       # Get the id frame's module cdb name for retreiving version information:
       oRelevantModule = oBugReport.oStack and oBugReport.oStack.oTopmostRelevantFrame and oBugReport.oStack.oTopmostRelevantFrame.oModule;
-      aoModules = [oProcessBinaryModule] + (oRelevantModule == oProcessBinaryModule and [] or [oRelevantModule]);
+      if oRelevantModule and oRelevantModule not in aoModules:
+        aoModules.append(oRelevantModule);
       asBinaryInformationHTML = [];
       asBinaryVersionHTML = [];
       for oModule in aoModules:
