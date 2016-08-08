@@ -6,6 +6,7 @@ class cStack(object):
   def __init__(oStack, asCdbLines):
     oStack.asCdbLines = asCdbLines;
     oStack.aoFrames = [];
+    oStack.oTopmostRelevantFrame = None; # Will be set later.
     oStack.bPartialStack = True;
     oStack.uHashFramesCount = dxBugIdConfig["uStackHashFramesCount"];
   
@@ -18,13 +19,13 @@ class cStack(object):
         break;
   
   def fCreateAndAddStackFrame(oStack, uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
-      oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber):
+      oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber, uReturnAddress):
     # frames must be created in order:
     assert uNumber == len(oStack.aoFrames), \
         "Unexpected frame number %d vs %d" % (uNumber, len(oStack.aoFrames));
     uMaxStackFramesCount = dxBugIdConfig["uMaxStackFramesCount"];
     oStackFrame = cStackFrame(uNumber, sCdbLine, uAddress, sUnloadedModuleFileName, oModule, uModuleOffset, \
-        oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber)
+        oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber, uReturnAddress)
     oStack.aoFrames.append(oStackFrame);
     
   @classmethod
@@ -43,7 +44,7 @@ class cStack(object):
       oMatch = re.match(r"^\s*%s\s*$" % (
         r"(?:"                                  # either {
           r"[0-9A-F`]+" r"\s+"                  #   stack_address whitespace
-          r"[0-9A-F`]+" r"\s+"                  #   ret_address whitespace
+          r"([0-9A-F`]+)" r"\s+"                #   (return_address) whitespace
         r"|"                                    # } or {
           r"\(Inline(?: Function)?\)" r"\s+"    #   "(Inline" [" Function"] ")" whitespace
           r"\-{8}(?:`\-{8})?" r"\s+"            #   "--------" [`--------] whitespace
@@ -52,15 +53,16 @@ class cStack(object):
         r"(?: \[(.+) @ (\d+)\])?"               # [ "[" source_file_path " @ " line_number "]" ]
       ), sLine, re.I);
       assert oMatch, "Unknown stack output: %s" % sLine;
-      sSymbolOrAddress = oMatch.group(1);
+      sReturnAddress, sCdbSymbolOrAddress = oMatch.groups();
       (
         uAddress,
         sUnloadedModuleFileName, oModule, uModuleOffset,
         oFunction, uFunctionOffset
-      ) = oCdbWrapper.ftxSplitSymbolOrAddress(sSymbolOrAddress, doModules_by_sCdbId);
+      ) = oCdbWrapper.ftxSplitSymbolOrAddress(sCdbSymbolOrAddress, doModules_by_sCdbId);
       uSourceFileLineNumber = sSourceFileLineNumber and long(sSourceFileLineNumber);
-      oStack.fCreateAndAddStackFrame(uFrameNumber, sSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, \
-          uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber);
+      uReturnAddress = sReturnAddress and long(sReturnAddress.replace("`", ""), 16);
+      oStack.fCreateAndAddStackFrame(uFrameNumber, sCdbSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, \
+          uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber, uReturnAddress);
       if not oCdbWrapper.bCdbRunning: return None;
       uFrameNumber += 1;
     oStack.bPartialStack = uStackFramesCount != uFrameNumber;
@@ -101,28 +103,29 @@ class cStack(object):
         r"Unable to read dynamic function table list head",
       ]), sLine):
         oMatch = re.match(r"^\s*%s\s*$" % (
-          r"([0-9A-F]+)" r"\s+"                 # (frame_number) whitespace
-          r"(?:"                                # either {
-            r"[0-9A-F`]+" r"\s+"                #   stack_address whitespace
-            r"[0-9A-F`]+" r"\s+"                #   ret_address whitespace
-          r"|"                                  # } or {
-            r"\(Inline(?: Function)?\)" r"\s+"  #   "(Inline" [" Function"] ")" whitespace
-            r"\-{8}(?:`\-{8})?" r"\s+"          #   "--------" [`--------] whitespace
-          r")"                                  # }
-          r"(.+?)"                              # Symbol or address
-        r"(?: \[(.+) @ (\d+)\])?"               # [ "[" source_file_path " @ " line_number "]" ]
+          r"([0-9A-F]+)" r"\s+"                   # (frame_number) whitespace
+          r"(?:"                                  # either {
+            r"[0-9A-F`]+" r"\s+"                  #   stack_address whitespace
+            r"([0-9A-F`]+)" r"\s+"                #   (return_address) whitespace
+          r"|"                                    # } or {
+            r"\(Inline(?: Function)?\)" r"\s+"    #   "(Inline" [" Function"] ")" whitespace
+            r"\-{8}(?:`\-{8})?" r"\s+"            #   "--------" [`--------] whitespace
+          r")"                                    # }
+          r"(.+?)"                                # Symbol or address
+        r"(?: \[(.+) @ (\d+)\])?"                 # [ "[" source_file_path " @ " line_number "]" ]
         ), sLine, re.I);
         assert oMatch, "Unknown stack output: %s\r\n%s" % (repr(sLine), "\r\n".join(asStack));
-        (sFrameNumber, sSymbolOrAddress, sSourceFilePath, sSourceFileLineNumber) = oMatch.groups();
+        (sFrameNumber, sReturnAddress, sCdbSymbolOrAddress, sSourceFilePath, sSourceFileLineNumber) = oMatch.groups();
         assert uFrameNumber == int(sFrameNumber, 16), "Unexpected frame number: %s vs %d" % (sFrameNumber, uFrameNumber);
         (
           uAddress,
           sUnloadedModuleFileName, oModule, uModuleOffset,
           oFunction, uFunctionOffset
-        ) = oCdbWrapper.ftxSplitSymbolOrAddress(sSymbolOrAddress, doModules_by_sCdbId);
+        ) = oCdbWrapper.ftxSplitSymbolOrAddress(sCdbSymbolOrAddress, doModules_by_sCdbId);
         uSourceFileLineNumber = sSourceFileLineNumber and long(sSourceFileLineNumber);
-        oStack.fCreateAndAddStackFrame(uFrameNumber, sSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, \
-            uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber);
+        uReturnAddress = sReturnAddress and long(sReturnAddress.replace("`", ""), 16);
+        oStack.fCreateAndAddStackFrame(uFrameNumber, sCdbSymbolOrAddress, uAddress, sUnloadedModuleFileName, oModule, \
+            uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber, uReturnAddress);
         if not oCdbWrapper.bCdbRunning: return None;
         uFrameNumber += 1;
     oStack.bPartialStack = uStackFramesCount != uFrameNumber;

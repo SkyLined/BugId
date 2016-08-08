@@ -1,5 +1,7 @@
 import re;
 from dxBugIdConfig import dxBugIdConfig;
+from fsGetNumberDescription import fsGetNumberDescription;
+from fsGetOffsetDescription import fsGetOffsetDescription;
 from sBlockHTMLTemplate import sBlockHTMLTemplate;
 
 # Hide some functions at the top of the stack that are not relevant to the bug:
@@ -137,27 +139,6 @@ def fsGetSpecialExceptionTypeId(sTypeId, oFrame):
     or dsFunctionName_sSpecialTypeId.get(oFrame.sSimplifiedAddress)
   );
 
-def fsGetNumberDescription(uNumber, sSign = "+"):
-  if uNumber == 0:
-    return "";
-  uArchitectureIndependentBugIdBytes = dxBugIdConfig["uArchitectureIndependentBugIdBits"] / 8;
-  if uArchitectureIndependentBugIdBytes == 0 or uNumber < uArchitectureIndependentBugIdBytes:
-    # Architecture independent bug ids are disabled, or the number is too small to require fixing.
-    if uNumber < 10:
-      return "%d" % uNumber;
-    return "0x%X" % uNumber;
-  uRemainder = uNumber % uArchitectureIndependentBugIdBytes;
-  sRemainder = uRemainder and sSign + fsGetNumberDescription(uRemainder) or "";
-  return "%d*N%s" % (uArchitectureIndependentBugIdBytes, sRemainder);
-
-def fsGetOffsetDescription(iOffset):
-  sSign = iOffset < 0 and "-" or "+";
-  uOffset = abs(iOffset);
-  # One bug may result in different offsets for 32-bit and 64-bit versions of an application, so using the exact
-  # value of the offset may result in different ids on different platforms. This can be disabled by setting a value
-  # for uMaxOffsetMultiplier:
-  sOffset = fsGetNumberDescription(uOffset, sSign);
-  return sOffset and "%s%s" % (sSign, sOffset) or "";
 
 def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrapper, oException):
   # Parameter[0] = access type (0 = read, 1 = write, 8 = execute)
@@ -351,8 +332,7 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
             # read-only memory).
             sAddressId = "AccessDenied" + fsGetOffsetDescription(uOffsetFromStartOfBlock);
             sOffsetDescription = "%d/0x%X bytes into" % (uOffsetFromStartOfBlock, uOffsetFromStartOfBlock);
-          sBugDescription = "Access violation while %s memory at 0x%X; " \
-              "%s a %d/0x%X byte memory block at 0x%X" % \
+          sBugDescription = "Access violation while %s memory at 0x%X; %s a %d/0x%X byte heap block at 0x%X" % \
               (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
           sSecurityImpact = "Potentially exploitable security issue";
         else:
@@ -465,4 +445,6 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
     oBugReport = oBugReport.foTranslate(dtxBugTranslations);
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
+  if uAddress is not None:
+    oBugReport.auRelevantAddresses.append(uAddress);
   return oBugReport;

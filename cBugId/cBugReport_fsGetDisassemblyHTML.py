@@ -9,7 +9,7 @@ def fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sLine):
         tuple([oCdbWrapper.fsHTMLEncode(s) for s in oMatch.groups()]);
   return '<span class="DisassemblyInformation">%s</span>' % oCdbWrapper.fsHTMLEncode(sLine);
   
-def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sAddressDescription, sBeforeAddressDescription = None):
+def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sBeforeAddressInstructionDescription = None, sAtAddressInstructionDescription = None):
   # See dxBugIdConfig for a description of these "magic" values.
   uDisassemblyBytesBefore = dxBugIdConfig["uDisassemblyInstructionsBefore"] * dxBugIdConfig["uDisassemblyAverageInstructionSize"] + \
       dxBugIdConfig["uDisassemblyAlignmentBytes"];
@@ -18,36 +18,40 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sAddressD
   asDisassemblyHTML = [];
   if uDisassemblyBytesBefore > 0:
     # Get disassembly before address
-    asBeforeDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(%s - %d, %d)) { u %s - %d %s - 1; };" % \
+    asBeforeDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(%s - 0x%X, 0x%X)) { u %s - 0x%X %s - 1; };" % \
         (sAddress, uDisassemblyBytesBefore, uDisassemblyBytesBefore, sAddress, uDisassemblyBytesBefore, sAddress));
     if not oCdbWrapper.bCdbRunning: return None;
     # Limit number of instructions
     asBeforeDisassembly = asBeforeDisassembly[-dxBugIdConfig["uDisassemblyInstructionsBefore"]:];
     if asBeforeDisassembly:
       # Optionally highlight and describe instruction before the address:
-      if sBeforeAddressDescription:
+      if sBeforeAddressInstructionDescription:
         sBeforeAddressDisassembly = asBeforeDisassembly.pop(-1);
       asDisassemblyHTML += [fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, s) for s in asBeforeDisassembly];
-      if sBeforeAddressDescription:
+      if sBeforeAddressInstructionDescription:
         asDisassemblyHTML.append(
           "<span class=\"Important\">%s &#8656; %s</span>" % \
-              (fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sBeforeAddressDisassembly.ljust(80)), sBeforeAddressDescription)
+              (fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sBeforeAddressDisassembly.ljust(80)), sBeforeAddressInstructionDescription)
         );
   if uDisassemblyBytesAfter > 0:
-    asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(%s, %d)) { u %s %s + %d; };" % \
+    asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(%s, 0x%X)) { u %s %s + 0x%X; };" % \
         (sAddress, uDisassemblyBytesAfter, sAddress, sAddress, uDisassemblyBytesAfter - 1));
     if not oCdbWrapper.bCdbRunning: return None;
     # Limit number of instructions
     asAtAndAfterDisassembly = asAtAndAfterDisassembly[-dxBugIdConfig["uDisassemblyInstructionsAfter"]:];
     if asAtAndAfterDisassembly:
+      if not asDisassemblyHTML:
+        asDisassemblyHTML.append("(prior disassembly not possible)");
       # Optionally highlight and describe instruction at the address:
-      if sAddressDescription:
+      if sAtAddressInstructionDescription:
         sAtAddressDisassembly = asAtAndAfterDisassembly.pop(0);
         asDisassemblyHTML.append(
           "<span class=\"Important\">%s &#8656; %s</span>" % \
-              (fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sAtAddressDisassembly.ljust(80)), sAddressDescription)
+              (fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sAtAddressDisassembly.ljust(80)), sAtAddressInstructionDescription)
         );
       asDisassemblyHTML += [fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, s) for s in asAtAndAfterDisassembly];
+    elif asDisassemblyHTML:
+      asDisassemblyHTML.append("(further disassembly not possible)");
   if asDisassemblyHTML:
     return "<br/>".join(asDisassemblyHTML);
   return None;

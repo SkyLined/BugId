@@ -1,7 +1,8 @@
 import re, threading;
 from dxBugIdConfig import dxBugIdConfig;
 
-def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHideCommand = False):
+def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHideCommand = False, \
+    bHandleSymbolLoadErrors = True):
   # Commands can only be execute from within the cCdbWrapper.fCdbStdInOutThread call.
   assert  threading.currentThread() == oCdbWrapper.oCdbStdInOutThread, \
       "Commands can only be sent to cdb from within a cCdbWrapper.fCdbStdInOutThread call.";
@@ -21,7 +22,8 @@ def cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO
       # has become irrelevant.
       oCdbWrapper.asCdbStdIOBlocksHTML.pop(-1);
   # The following command will always add a new output block with the new cdb prompt, regardless of bDoNotSaveIO.
-  asOutput = oCdbWrapper.fasReadOutput(bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput);
+  asOutput = oCdbWrapper.fasReadOutput(bIsRelevantIO = bIsRelevantIO, bMayContainApplicationOutput = bMayContainApplicationOutput, \
+      bHandleSymbolLoadErrors = bHandleSymbolLoadErrors);
   # Detect obvious errors executing the command. (this will not catch everything, but does help development)
   assert asOutput is None or len(asOutput) != 1 or not re.match(r"^(\s*\^ .*|Couldn't resolve error at .+)$", asOutput[0]), \
       "There was a problem executing the command %s:\r\n%s" % \

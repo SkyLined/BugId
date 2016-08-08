@@ -6,18 +6,35 @@ dsTip_by_sErrorCode = {
   "NTSTATUS 0xC000010A": "The process was terminated before the debugger could attach",
 };
 
-def fDetectFatalErrorsInOutput(asLines):
-  for sLine in asLines:
+def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbolLoadErrors):
+  uIndex = 0;
+  while uIndex < len(asLines):
+    sLine = asLines[uIndex];
     oCannotAttachMatch = re.match(r"^Cannot debug pid (\d+), (?:Win32 error 0n(\d+)|NTSTATUS 0x(\w+))\s*$", sLine);
-    if oCannotAttachMatch:
+    if oCannotAttachMatch: # Some of these errors can cause cdb to exit, so report them even if cdb is no longer running.
       sProcessId, sWin32Error, sNTStatus = oCannotAttachMatch.groups();
       uProcessId = long(sProcessId);
       sErrorCode = sWin32Error and "Win32 %s" % sWin32Error or "NTSTATUS 0x%s" % sNTStatus;
       sTip = dsTip_by_sErrorCode.get(sErrorCode);
       raise AssertionError("Failed to attach to process %d/0x%X!\r\n%scdb output:\r\n%s" % \
           (uProcessId, uProcessId, sTip and "%s\r\n" % sTip or "", "\r\n".join(asLines)));
+    if oCdbWrapper.bCdbRunning: # These errors only need to be handled if cdb is still running.
+      if bHandleSymbolLoadErrors:
+        oFailedToLoadSymbolsError = re.match(r"^\*\*\* ERROR: Module load completed but symbols could not be loaded for (.*\\)([^\\]+)$", sLine);
+        if oFailedToLoadSymbolsError:
+          sModuleFolderPath, sModuleFileName = oFailedToLoadSymbolsError.groups();
+          # Turn noisy symbol loading on, reload the module and symbols, turn noisy symbol loading back off
+          oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;.reload /f /o /v /w %s;.symopt- 0x80000000;" % sModuleFileName, bHandleSymbolLoadErrors = False);
+          if not oCdbWrapper.bCdbRunning: return;
+      # Strip symbol warnings:
+      oSymbolWarnings = re.match(r"^\*\*\* Warning: Unable to verify checksum for (.*\\)([^\\]+)$", sLine);
+      if oSymbolWarnings:
+        asLines.pop(uIndex);
+        continue;
+    uIndex += 1;
+  return asLines;
 
-def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False):
+def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHandleSymbolLoadErrors = True):
   sLine = "";
   asLines = [];
   while 1:
@@ -58,8 +75,7 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
         if oCdbWrapper.bGetDetailsHTML:
           # The prompt is stored in a new block of I/O
           oCdbWrapper.asCdbStdIOBlocksHTML.append("<span class=\"CDBPrompt\">%s</span>" % oCdbWrapper.fsHTMLEncode(sLine));
-        fDetectFatalErrorsInOutput(asLines);
-        return asLines;
-  fDetectFatalErrorsInOutput(asLines);
+        return fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbolLoadErrors);
   oCdbWrapper.bCdbRunning = False;
+  fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbolLoadErrors);
   return None;

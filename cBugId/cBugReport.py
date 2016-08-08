@@ -11,13 +11,13 @@ from cBugReport_foAnalyzeException_STATUS_STOWED_EXCEPTION import cBugReport_foA
 from cBugReport_foAnalyzeException_STATUS_WX86_BREAKPOINT import cBugReport_foAnalyzeException_STATUS_WX86_BREAKPOINT;
 from cBugReport_foTranslate import cBugReport_foTranslate;
 from cBugReport_fsGetDisassemblyHTML import cBugReport_fsGetDisassemblyHTML;
-from cBugReport_fsGetReferencedMemoryHTML import cBugReport_fsGetReferencedMemoryHTML;
-from cBugReport_fsGetBinaryInformationHTML import cBugReport_fsGetBinaryInformationHTML;
+from cBugReport_fsGetRelevantMemoryHTML import cBugReport_fsGetRelevantMemoryHTML;
 from cBugReport_fsProcessStack import cBugReport_fsProcessStack;
 from cException import cException;
 from cStack import cStack;
 from cProcess import cProcess;
 from dxBugIdConfig import dxBugIdConfig;
+from FileSystem import FileSystem;
 from NTSTATUS import *;
 from HRESULT import *;
 from sBlockHTMLTemplate import sBlockHTMLTemplate;
@@ -53,6 +53,7 @@ class cBugReport(object):
     oBugReport.sSecurityImpact = sSecurityImpact;
     oBugReport.oProcess = cProcess.foCreate(oCdbWrapper);
     oBugReport.oStack = oStack;
+    oBugReport.auRelevantAddresses = [];
     
     if oCdbWrapper.bGetDetailsHTML:
       oBugReport.sImportantOutputHTML = oCdbWrapper.sImportantOutputHTML;
@@ -61,7 +62,6 @@ class cBugReport(object):
     # This information is gathered later, when it turns out this bug needs to be reported:
     oBugReport.sStackId = None;
     oBugReport.sId = None;
-    oBugReport.oTopmostRelevantCodeFrame = None;
     oBugReport.sBugLocation = None;
     oBugReport.sBugSourceLocation = None;
   
@@ -104,8 +104,7 @@ class cBugReport(object):
       if not oBugReport:
         # This exception is not a bug, continue the application.
         return None;
-    
-    return oBugReport.foPostProcess(oCdbWrapper);
+    return oBugReport;
 
   @classmethod
   def foCreate(cBugReport, oCdbWrapper, sBugTypeId, sBugDescription, sSecurityImpact):
@@ -122,11 +121,11 @@ class cBugReport(object):
       sSecurityImpact = sSecurityImpact,
       oStack = oStack,
     );
-    return oBugReport.foPostProcess(oCdbWrapper);
+    return oBugReport;
   
-  def foPostProcess(oBugReport, oCdbWrapper):
+  def fPostProcess(oBugReport, oCdbWrapper):
     # Calculate sStackId, determine sBugLocation and optionally create and return sStackHTML.
-    sStackHTML = cBugReport_fsProcessStack(oBugReport, oCdbWrapper);
+    sStackHTML = cBugReport_fsProcessStack(oBugReport, oCdbWrapper); # Also sets oStack.oTopmostRelevantFrame
     oBugReport.sId = "%s %s" % (oBugReport.sBugTypeId, oBugReport.sStackId);
     if oCdbWrapper.bGetDetailsHTML: # Generate sDetailsHTML?
       # Create HTML details
@@ -134,33 +133,71 @@ class cBugReport(object):
       # Create and add important output block if needed
       if oBugReport.sImportantOutputHTML:
         asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Potentially important application output", "sContent": oBugReport.sImportantOutputHTML});
+      
       # Add stack block
       asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Stack", "sContent": sStackHTML});
+      
       # Add exception specific blocks if needed:
       asBlocksHTML += oBugReport.asExceptionSpecificBlocksHTML;
-      # Create and add disassembly blocks if possible
-      sCurrentInstructionDisassemblyHTML = cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, "@$ip", "current instruction");
-      if not oCdbWrapper.bCdbRunning: return None;
-      if sCurrentInstructionDisassemblyHTML:
-        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly around current instruction", "sContent": sCurrentInstructionDisassemblyHTML});
-      sReturnAddressDisassemblyHTML = cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, "@$ra", "return address", "call");
-      if not oCdbWrapper.bCdbRunning: return None;
-      if sReturnAddressDisassemblyHTML:
-        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly around return address", "sContent": sReturnAddressDisassemblyHTML});
+      
       # Create and add registers block
       asRegisters = oCdbWrapper.fasSendCommandAndReadOutput("rM 0x%X" % (0x1 + 0x4 + 0x8 + 0x10 + 0x20 + 0x40));
       if not oCdbWrapper.bCdbRunning: return None;
       sRegistersHTML = "<br/>".join(['<span class="Registers">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asRegisters]);
       asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Registers", "sContent": sRegistersHTML});
-      # Add referenced memory to memory block and add memory block if needed
-      sReferencedMemoryHTML = cBugReport_fsGetReferencedMemoryHTML(oBugReport, oCdbWrapper)
-      if sReferencedMemoryHTML is None: return None;
-      if sReferencedMemoryHTML:
-        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Referenced memory", "sContent": sReferencedMemoryHTML});
-      sBinaryInformationHTML = cBugReport_fsGetBinaryInformationHTML(oBugReport, oCdbWrapper);
-      if sBinaryInformationHTML is None: return None;
+      
+      # Add relevant memory to memory block and add memory block if needed
+      for uRelevantAddress in sorted(list(set(oBugReport.auRelevantAddresses))):
+        sRelevantMemoryHTML = cBugReport_fsGetRelevantMemoryHTML(oBugReport, oCdbWrapper, uRelevantAddress)
+        if not oCdbWrapper.bCdbRunning: return None;
+        if sRelevantMemoryHTML:
+          asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Relevant memory at 0x%X" % uRelevantAddress, "sContent": sRelevantMemoryHTML});
+      
+      # Create and add disassembly blocks if needed:
+      if dxBugIdConfig["uDisassemblyNumberOfStackFrames"] > 0:
+        aoDisassemblyFrames = oBugReport.oStack.aoFrames[:1]; # Always disassemble top frame (current instruction).
+        # Potentially disassemble more frames starting at topmost relevant frame:
+        uTopmostRelevantFrameNumber = max(1, oBugReport.oStack.oTopmostRelevantFrame.uNumber); # first frame has already been shown.
+        uEndFrameNumber = oBugReport.oStack.oTopmostRelevantFrame.uNumber + dxBugIdConfig["uDisassemblyNumberOfStackFrames"];
+        if uEndFrameNumber > uTopmostRelevantFrameNumber:
+          aoDisassemblyFrames += oBugReport.oStack.aoFrames[uTopmostRelevantFrameNumber:uEndFrameNumber]
+        for oFrame in aoDisassemblyFrames:
+          if oFrame.uNumber == 0:
+            sAddress = "@$ip";
+            sBeforeAddressInstructionDescription = None;
+            sAtAddressInstructionDescription = "current instruction";
+          else:
+            oPreviousFrame = oBugReport.oStack.aoFrames[oFrame.uNumber - 1];
+            sAddress = "0x%X" % oPreviousFrame.uReturnAddress;
+            sBeforeAddressInstructionDescription = "call";
+            sAtAddressInstructionDescription = "return address";
+          sFrameDisassemblyHTML = cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, \
+              sBeforeAddressInstructionDescription, sAtAddressInstructionDescription);
+          if not oCdbWrapper.bCdbRunning: return None;
+          if sFrameDisassemblyHTML:
+            asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly at %s" % oFrame.sAddress, "sContent": sFrameDisassemblyHTML});
+      
+      # Add relevant binaries block
+      aoProcessBinaryModules = oCdbWrapper.faoGetModulesForFileNameInCurrentProcess(oBugReport.sProcessBinaryName);
+      if not oCdbWrapper.bCdbRunning: return None;
+      assert len(aoProcessBinaryModules) > 0, "Cannot find binary %s module" % oBugReport.sProcessBinaryName;
+      # If the binary is loaded as a module multiple times in the process, the first should be the binary that was
+      # executed.
+      oProcessBinaryModule = aoProcessBinaryModules[0];
+      # Get the id frame's module cdb name for retreiving version information:
+      oRelevantModule = oBugReport.oStack and oBugReport.oStack.oTopmostRelevantFrame and oBugReport.oStack.oTopmostRelevantFrame.oModule;
+      aoModules = [oProcessBinaryModule] + (oRelevantModule == oProcessBinaryModule and [] or [oRelevantModule]);
+      asBinaryInformationHTML = [];
+      asBinaryVersionHTML = [];
+      for oModule in aoModules:
+        asBinaryInformationHTML.append(oModule.fsGetInformationHTML(oCdbWrapper));
+        if not oCdbWrapper.bCdbRunning: return None;
+        asBinaryVersionHTML.append("<b>%s</b>: %s" % (oModule.sBinaryName, oModule.sFileVersion or oModule.sTimestamp or "unknown"));
+      sBinaryInformationHTML = "<br/><br/>".join(asBinaryInformationHTML);
+      sBinaryVersionHTML = "<br/>".join(asBinaryVersionHTML);
       if sBinaryInformationHTML:
         asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Binary information", "sContent": sBinaryInformationHTML});
+      
       # Convert saved cdb IO HTML into one string and delete everything but the last line to free up some memory.
       sCdbStdIOHTML = '<hr/>'.join(oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML);
       oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML = oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML[-1:];
@@ -172,9 +209,19 @@ class cBugReport(object):
         "sBugLocation": oCdbWrapper.fsHTMLEncode(oBugReport.sBugLocation),
         "sSecurityImpact": oBugReport.sSecurityImpact and \
               '<span class="SecurityImpact">%s</span>' % oCdbWrapper.fsHTMLEncode(oBugReport.sSecurityImpact) or "Denial of Service",
+        "sBinaryVersionHTML": sBinaryVersionHTML,
         "sBlocks": "".join(asBlocksHTML),
         "sCdbStdIO": sCdbStdIOHTML,
         "sBugIdVersion": sBugIdVersion,
       };
     
-    return oBugReport;
+    # See if a dump should be saved
+    if dxBugIdConfig["bSaveDump"]:
+      # We'd like a dump file name base on the BugId, but the later may contain characters that are not valid in a file name
+      sDesiredDumpFileName = "%s @ %s.dmp" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+      # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId. 
+      # Unfortunately, we cannot use Unicode as the communication channel with cdb is ASCII.
+      sValidDumpFileName = FileSystem.fsTranslateToValidName(sDesiredDumpFileName, bUnicode = False);
+      sOverwriteFlag = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
+      oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s\"" % (sOverwriteFlag, sValidDumpFileName));
+      if not oCdbWrapper.bCdbRunning: return;

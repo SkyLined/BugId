@@ -2,7 +2,7 @@ import datetime, re, time;
 from cBugReport import cBugReport;
 from daxExceptionHandling import daxExceptionHandling;
 from dxBugIdConfig import dxBugIdConfig;
-from fsCreateFileName import fsCreateFileName;
+from cCdbWrapper_fbDetectAndReportVerifierErrors import cCdbWrapper_fbDetectAndReportVerifierErrors;
 from NTSTATUS import *;
 
 def fnGetDebuggerTime(sDebuggerTime):
@@ -98,10 +98,11 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
           oCdbWrapper.fApplicationRunningCallback and oCdbWrapper.fApplicationRunningCallback();
           bInitialApplicationRunningCallbackFired = True;
         # Mark the time when the application was resumed.
-        asCdbOutput = oCdbWrapper.fasSendCommandAndReadOutput(".time", bIsRelevantIO = False);
+        asCdbTimeOutput = oCdbWrapper.fasSendCommandAndReadOutput(".time", bIsRelevantIO = False);
         if not oCdbWrapper.bCdbRunning: return;
-        oTimeMatch = len(asCdbOutput) > 0 and re.match(r"^Debug session time: (.*?)\s*$", asCdbOutput[0]);
-        assert oTimeMatch, "Failed to get debugger time!\r\n%s" % "\r\n".join(asCdbOutput);
+        oTimeMatch = len(asCdbTimeOutput) > 0 and re.match(r"^Debug session time: (.*?)\s*$", asCdbTimeOutput[0]);
+        assert oTimeMatch, "Failed to get debugger time!\r\n%s" % "\r\n".join(asCdbTimeOutput);
+        del asCdbTimeOutput;
         oCdbWrapper.oApplicationTimeLock.acquire();
         try:
           oCdbWrapper.nApplicationResumeDebuggerTime = fnGetDebuggerTime(oTimeMatch.group(1));
@@ -181,15 +182,19 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         and uProcessId not in oCdbWrapper.auProcessIds
       ):
         # This is assumed to be the initial breakpoint after starting/attaching to the first process or after a new
-        # process was created by the application. This assumption may not be correct, in which case the code needs to
-        # be modifed to check the stack to determine if this really is the initial breakpoint. But that comes at a
-        # performance cost, so until proven otherwise, the code is based on this assumption.
+        # process was created by the application.
         sCreateExitProcess = "Create";
         sCreateExitProcessIdHex = sProcessIdHex;
       bGetBugReportForException = True;
-      if sCreateExitProcess:
+      bIsWOW64BreakpointForNewProcess = uExceptionCode == STATUS_WX86_BREAKPOINT and uLastExceptionWasBreakpointForNewProcessId == uProcessId;
+      uLastExceptionWasBreakpointForNewProcessId = None;
+      if bIsWOW64BreakpointForNewProcess:
+        bGetBugReportForException = False;
+      elif sCreateExitProcess:
         # Make sure the created/exited process is the current process.
         assert sProcessIdHex == sCreateExitProcessIdHex, "%s vs %s" % (sProcessIdHex, sCreateExitProcessIdHex);
+        if sCreateExitProcess == "Create":
+          uLastExceptionWasBreakpointForNewProcessId = uProcessId;
         oCdbWrapper.fHandleCreateExitProcess(sCreateExitProcess, uProcessId);
         # If there are more processes to attach to, do so:
         if len(oCdbWrapper.auProcessIdsPendingAttach) > 0:
@@ -233,7 +238,9 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # ignore them:
         bGetBugReportForException = False;
       elif uExceptionCode in [STATUS_BREAKPOINT, STATUS_WX86_BREAKPOINT]:
-        if dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
+        if cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
+          bGetBugReportForException = False; # We already have one
+        elif dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
           bGetBugReportForException = False;
         else:
           sCurrentFunctionSymbol = oCdbWrapper.fsGetSymbol("@$ip");
@@ -287,16 +294,11 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
               ["<span class=\"CDBIgnoredException\">Exception 0x%08X in process %d ignored.</span><br/>" % (uExceptionCode, uProcessId)] +
               oCdbWrapper.asCdbStdIOBlocksHTML[-1:] # Last block contains prompt and must be conserved.
             );
-        # See if a bug needs to be reported
-        if oCdbWrapper.oBugReport is not None:
-          # See if a dump should be saved
-          if dxBugIdConfig["bSaveDump"]:
-            sDumpFileName = fsCreateFileName(oCdbWrapper.oBugReport.sId);
-            sOverwrite = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
-            oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s.dmp\"" % (sOverwrite, sDumpFileName));
-            if not oCdbWrapper.bCdbRunning: return;
-          # Stop to report the bug.
-          break;
+      # See if a bug needs to be reported
+      if oCdbWrapper.oBugReport is not None:
+        oCdbWrapper.oBugReport.fPostProcess(oCdbWrapper);
+        # Stop to report the bug.
+        break;
       # Execute any pending timeout callbacks
       oCdbWrapper.oTimeoutsLock.acquire();
       try:

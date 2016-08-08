@@ -63,6 +63,9 @@ sDetailsHTMLTemplate = ("""
       h2 {
         font-size: 120%%;
       }
+      td {
+        vertical-align: top;
+      }
       .Block {
         padding: 1em;
         border: 1px solid rgba(22, 19, 16, 0.2);
@@ -163,6 +166,7 @@ sDetailsHTMLTemplate = ("""
           <tr><td>BugId:                  &nbsp;</td><td><span class="Important">%(sId)s</span></td></tr>
           <tr><td>Description:            &nbsp;</td><td><span class="Important">%(sBugDescription)s</span></td></tr>
           <tr><td>Location:               &nbsp;</td><td><span class="Important">%(sBugLocation)s</span></td></tr>
+          <tr><td>Version:                &nbsp;</td><td>%(sBinaryVersionHTML)s</td></tr>
           <tr><td>Security&nbsp;impact:   &nbsp;</td><td>%(sSecurityImpact)s</td></tr>
         </table>
         <br/>

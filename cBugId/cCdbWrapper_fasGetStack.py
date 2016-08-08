@@ -5,13 +5,11 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
   asSymbolLoadStackOutput = None;
   asLastSymbolReloadOutput = None;
   if dxBugIdConfig["uMaxSymbolLoadingRetries"] > 0:
-    # Turn noisy symbol loading on
-    oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000", bIsRelevantIO = False);
-    if not oCdbWrapper.bCdbRunning: return None;
     # Get the stack, which should make sure all relevant symbols are loaded or at least marked as requiring loading.
-    # There will be symbol loading debug messages in between the stack output, so the stack cannot easily be parsed.
-    # The output is saved in a local variable in case an assertion is thrown.
-    asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand, bIsRelevantIO = False);
+    # Noisy symbol loading is turned on during the command, so there will be symbol loading debug messages in between
+    # the stack output, which makes the stack hard to parse: it is therefore discarded and the command is executed
+    # again later (without noisy symbol loading) when symbols ae loaded.
+    asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;%s;.symopt- 0x80000000;" % sGetStackCommand);
     if not oCdbWrapper.bCdbRunning: return None;
     # Try to reload all modules and symbols. The symbol loader will not reload all symbols, but only those symbols that
     # were loaded before or those it attempted to load before, but failed. The symbol loader will output all kinds of
@@ -21,32 +19,23 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
     # fixed, or it has run ten times.
     # This step may also provide some help debugging symbol loading problems that cannot be fixed automatically.
     for x in xrange(dxBugIdConfig["uMaxSymbolLoadingRetries"]):
-      asLastSymbolReloadOutput = oCdbWrapper.fasSendCommandAndReadOutput(".reload /v", bIsRelevantIO = False);
+      # Reload all modules with noisy symbol loading on to detect any errors. These errors are automatically detected
+      # and handled in cCdbOutput.fHandleCommonErrorsInOutput, so all we have to do is check if any errors were found
+      # and try again to see if they have been fixed.
+      asLastSymbolReloadOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;.reload /v;.symopt- 0x80000000;");
       if not oCdbWrapper.bCdbRunning: return None;
-      asCorruptPDBFilePaths = set();
       bErrorsDuringLoading = False;
       for sLine in asLastSymbolReloadOutput:
-        # If there are any corrupt PDB files, try to delete them.
-        oCorruptPDBFilePathMatch = re.match(r"^DBGHELP: (.*?) (\- E_PDB_CORRUPT|dia error 0x[0-9a-f]+)\s*$", sLine);
-        if oCorruptPDBFilePathMatch:
-          sPDBFilePath = oCorruptPDBFilePathMatch.group(1);
-          asCorruptPDBFilePaths.add(sPDBFilePath);
         # If there were any errors, make sure we try loading again.
-        bErrorsDuringLoading |= re.match(r"^\*\*\* ERROR: .+$", sLine) and True or False;
-      bCorruptPDBFilesDeleted = False;
-      for sCorruptPDBFilePath in asCorruptPDBFilePaths:
-        print "* Deleting corrupt pdb file: %s" % sCorruptPDBFilePath;
-        try:
-          os.remove(sCorruptPDBFilePath);
-        except Exception, oException:
-          print "- Cannot delete corrupt pdb file: %s" % repr(oException);
-        else:
-          bCorruptPDBFilesDeleted = True;
-      if not (bErrorsDuringLoading or bCorruptPDBFilesDeleted):
+        if re.match(r"^%s\s*$" % "|".join([
+          r"DBGHELP: (.*?) (\- E_PDB_CORRUPT|dia error 0x[0-9a-f]+)",
+          r"\*\*\* ERROR: .+",
+        ]), sLine):
+          break;
+          # Found an error, stop this loop and try again.
+      else:
+        # Loop completed: no errors found, stop reloading modules.
         break;
-    # Turn noisy symbol loading back off
-    oCdbWrapper.fasSendCommandAndReadOutput(".symopt- 0x80000000", bIsRelevantIO = False);
-    if not oCdbWrapper.bCdbRunning: return None;
   # Get the stack for real. At this point, no output from symbol loader is expected or handled.
   asStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
   if not oCdbWrapper.bCdbRunning: return None;

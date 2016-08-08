@@ -2,14 +2,12 @@ from dxBugIdConfig import dxBugIdConfig;
 import hashlib;
 
 def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
-  # Find out which frame should be the "main" frame and get stack id.
-  oTopmostRelevantFrame = None;          # topmost relevant frame
-  oTopmostRelevantFunctionFrame = None;  # topmost relevant frame that has a function symbol
-  oTopmostRelevantModuleFrame = None;    # topmost relevant frame that has no function symbol but a module
+  # Get a HTML representation of the stack, find the topmost relevatn stack frame and get stack id.
   uFramesHashed = 0;
   if oCdbWrapper.bGetDetailsHTML:
     asStackHTML = [];
   asStackFrameIds = [];
+  oTopmostRelevantFrame = None;
   for oStackFrame in oBugReport.oStack.aoFrames:
     if oCdbWrapper.bGetDetailsHTML:
       sAddressHTML = oCdbWrapper.fsHTMLEncode(oStackFrame.sAddress);
@@ -22,7 +20,8 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
       if oCdbWrapper.bGetDetailsHTML:
         asStackHTML.append('<span class="StackIgnored">%s</span><span class="StackSource">%s</span>' % (sAddressHTML, sSourceHTML));
     else:
-      oTopmostRelevantFrame = oTopmostRelevantFrame or oStackFrame;
+      if oTopmostRelevantFrame is None:
+        oTopmostRelevantFrame = oStackFrame;
       # Make stack frames without a function symbol italic
       if oCdbWrapper.bGetDetailsHTML and not oStackFrame.oFunction:
         sAddressHTML = '<span class="StackNoSymbol">%s</span>' % sAddressHTML;
@@ -37,11 +36,6 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
         uFramesHashed += 1;
         if oCdbWrapper.bGetDetailsHTML:
           asStackHTML.append('<span class="StackHash">%s</span> (%s in id)<span class="StackSource">%s</span>' % (sAddressHTML, oStackFrame.sId, sSourceHTML));
-        # Determine the top frame for the id:
-        if oStackFrame.oFunction:
-          oTopmostRelevantFunctionFrame = oTopmostRelevantFunctionFrame or oStackFrame;
-        elif oStackFrame.oModule:
-          oTopmostRelevantModuleFrame = oTopmostRelevantModuleFrame or oStackFrame;
   if len(asStackFrameIds) > dxBugIdConfig["uStackHashFramesCount"]:
     # For certain bugs, such as recursive function calls, ids may have been generated for more functions than the value
     # in uStackHashFramesCount. In this case, the last ids are hashes into one id to reduce the number of hashes:
@@ -52,23 +46,21 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
   oBugReport.sStackId = ".".join([s for s in asStackFrameIds]);
   if oCdbWrapper.bGetDetailsHTML and oBugReport.oStack.bPartialStack:
     asStackHTML.append("... (the remainder of the stack was ignored)");
-  # Get the topmost relevant code frame; prefer one with a function symbol, otherwise one with a module or just the first non-hidden.
-  oTopmostRelevantCodeFrame = oTopmostRelevantFunctionFrame or oTopmostRelevantModuleFrame or oTopmostRelevantFrame;
-  oBugReport.oTopmostRelevantCodeFrame = oTopmostRelevantCodeFrame;
   # Get the bug location.
   oBugReport.sBugLocation = "(unknown)";
-  if oTopmostRelevantCodeFrame:
-    if oTopmostRelevantCodeFrame.sSimplifiedAddress:
-      oBugReport.sBugLocation = oTopmostRelevantCodeFrame.sSimplifiedAddress;
-    if oTopmostRelevantCodeFrame.sSourceFilePath:
-      oBugReport.sBugSourceLocation = "%s @ %d" % (oTopmostRelevantCodeFrame.sSourceFilePath, oTopmostRelevantCodeFrame.uSourceFileLineNumber);
+  if oTopmostRelevantFrame:
+    if oTopmostRelevantFrame.sSimplifiedAddress:
+      oBugReport.sBugLocation = oTopmostRelevantFrame.sSimplifiedAddress;
+    if oTopmostRelevantFrame.sSourceFilePath:
+      oBugReport.sBugSourceLocation = "%s @ %d" % (oTopmostRelevantFrame.sSourceFilePath, oTopmostRelevantFrame.uSourceFileLineNumber);
   if (
       oBugReport.sProcessBinaryName and (
-        not oTopmostRelevantCodeFrame or
-        not oTopmostRelevantCodeFrame.oModule or
-        oTopmostRelevantCodeFrame.oModule.sBinaryName != oBugReport.sProcessBinaryName
+        not oTopmostRelevantFrame or
+        not oTopmostRelevantFrame.oModule or
+        oTopmostRelevantFrame.oModule.sBinaryName != oBugReport.sProcessBinaryName
      )
    ):
     # Exception happened in a module, not the process' binary: add process' binary name:
     oBugReport.sBugLocation = oBugReport.sProcessBinaryName + "!" + oBugReport.sBugLocation;
+  oBugReport.oStack.oTopmostRelevantFrame = oTopmostRelevantFrame;
   return oCdbWrapper.bGetDetailsHTML and "<ul>%s</ul>" % "".join(["<li>%s</li>" % s for s in asStackHTML]) or None;

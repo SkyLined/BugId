@@ -47,13 +47,14 @@ for (sName, xValue) in {
                                         # Anything within this range is considered to be a valid symbol, anything
                                         # further from the symbol is marked as dubious.
   ### Disassembly settings
-  "uDisassemblyInstructionsBefore": 0x20, # How many instructions to disassemble before the instruction that triggered
-                                        # the crash
-  "uDisassemblyInstructionsAfter": 0x10, # How many instructions to disassemble after the instruction that triggered
-                                        # the crash
-  "uDisassemblyAlignmentBytes": 10,     # How many instructions to start disassembling before the first instruction
-                                        # we're interested in, in order to make sure we don't start diassembling in the
-                                        # middle of that instruction.
+  "uDisassemblyNumberOfStackFrames": 3, # The number of stack frames to shown disassembly for.
+  "uDisassemblyInstructionsBefore": 0x20, # How many instructions to disassemble before the current instruction or the
+                                        # return address of the stack frame.
+  "uDisassemblyInstructionsAfter": 0x10, # How many instructions to disassemble after the current instruction or the
+                                        # return address of the stack frame.
+  "uDisassemblyAlignmentBytes": 10,     # How many instructions to start disassembling before an address in order to
+                                        # make sure we don't start diassembling in the middle of the instruction that
+                                        # at that address.
   "uDisassemblyAverageInstructionSize": 4, # Use to guess how many bytes to disassemble to get the requested number of
                                         # instructions
                                         # Note: BugId disassembles A * B + C bytes before and after the instruction
@@ -67,6 +68,9 @@ for (sName, xValue) in {
                                         # bytes get disassembled to get the requested number of instructions. If the
                                         # total number of bytes disassembled is too large, you may get no disassembly
                                         # at all when part of the memory it attempts to disassemble is not readable.
+  ### Memory dump settings
+  "uRelevantMemoryPointersBefore": 0x10, # How many pointer sized values should be dumped before a relevant address.
+  "uRelevantMemoryPointersAfter": 0x20, # How many pointer sized values should be dumped after a relevant address.
   ### Stack settings
   "uMaxStackFramesCount": 20,           # How many stack frames are retreived for analysis?
   "uMinStackRecursionLoops": 3,         # How many recursive functions call loops are needed to assume a stack overflow
@@ -77,7 +81,7 @@ for (sName, xValue) in {
   "uStackHashFramesCount": 2,           # How many stack frames are hashed for the crash id?
   "uMaxStackFrameHashChars": 3,         # How many characters of hash to use in the id for each stack frame.
   ### Symbol loading settings
-  "uMaxSymbolLoadingRetries": 10,       # Enable additional checks when getting a stack that can detect and fix errors
+  "uMaxSymbolLoadingRetries": 1,        # Enable additional checks when getting a stack that can detect and fix errors
                                         # in symbol loading caused by corrupted pdb files. This turns on "noisy symbol
                                         # loading" which may provide useful information to fix symbol loading errors.
                                         # It has a large impact on performance, so you may want to disable it by setting
