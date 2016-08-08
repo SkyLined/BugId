@@ -167,6 +167,12 @@ if __name__ == "__main__":
     print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
     oBugId.fStop();
   
+  oInternalException = None;
+  def fInternalExceptionCallback(oException):
+    global oInternalException;
+    oInternalException = oException;
+    raise;
+  
   if asApplicationCommandLine:
     print "+ The debugger is starting the application...";
     print "  Command line: %s" % " ".join(asApplicationCommandLine);
@@ -183,9 +189,16 @@ if __name__ == "__main__":
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,
     fApplicationExitCallback = fApplicationExitHandler,
+    fInternalExceptionCallback = fInternalExceptionCallback,
   );
   oBugId.fWait();
-  if oBugId.oBugReport:
+  if oInternalException is not None:
+    print "+ BugId run into an internal error:";
+    print "  %s" % repr(oInternalException);
+    print;
+    print "  Please report this issue at the below web-page so it can be addressed:";
+    print "  https://github.com/SkyLined/BugId/issues/new";
+  elif oBugId.oBugReport is not None:
     print "+ A bug was detected in the application.";
     print;
     print "  Id:               %s" % oBugId.oBugReport.sId;
