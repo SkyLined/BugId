@@ -1,1 +1,1 @@
-sBugIdVersion = "16.08.01";
+sBugIdVersion = "16-08-08";
