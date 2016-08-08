@@ -212,8 +212,9 @@ if __name__ == "__main__":
     aoTests.append(cTest(sISA, ["StackExhaustion"], "StackExhaustion"));
     aoTests.append(cTest(sISA, ["RecursiveCall"], "RecursiveCall"));
     aoTests.append(cTest(sISA, ["StaticBufferOverrun10", "Write", "20"], "FailFast2:StackCookie"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "-1"], "HeapCorrupt"));  # Write the byte at offset -1 from the start of the buffer.
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "d"], "HeapCorrupt"));   # Write the byte at offset 0 from the end of the buffer.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "-1"], "HeapCorrupt:OOB[4*N]-1"));  # Write the byte at offset -1 from the start of the buffer.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "c"], "HeapCorrupt:OOB[4*N]"));     # Write the byte at offset 0 from the end of the buffer.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "d"], "HeapCorrupt:OOB[4*N]+1"));   # Write the byte at offset 1 from the end of the buffer.
     if sISA not in ["x86"]:
       # x86 test results in "0BA2 FailFast2:AppExit Tests_x86.exe!abort (A critical issue was detected (code C0000409, fail fast code 7: FAST_FAIL_FATAL_APP_EXIT))"
       aoTests.append(cTest(sISA, ["PureCall"], "PureCall"));
