@@ -10,6 +10,7 @@ def cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
   uHeapBlockAddress = None;
   uHeapBlockSize = None;
   uCorruptedStamp = None;
+  asRelevantLines = [];
   for sLine in asCdbOutput:
     # Ignore exmpty lines
     if not sLine:
@@ -18,11 +19,12 @@ def cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
     if uErrorNumber is None:
       oErrorMessageMatch = re.match(r"^VERIFIER STOP ([0-9A-F]+): pid 0x([0-9A-F]+): (.*?)\s*$", sLine);
       if oErrorMessageMatch:
-        print "*** Detected heap verifier error ".ljust(120, "*");
         sErrorNumber, sProcessId, sMessage = oErrorMessageMatch.groups();
         uErrorNumber = long(sErrorNumber, 16);
         uProcessId = long(sProcessId, 16);
+      asRelevantLines.append(sLine);
       continue;
+    asRelevantLines.append(sLine);
     # A VERIFIER STOP message has been detected, gather what information verifier provides:
     oInformationMatch = re.match(r"\t([0-9A-F]+) : (.*?)\s*$", sLine);
     if oInformationMatch:
@@ -83,14 +85,21 @@ def cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
           break;
       else:
         raise AssertionError("Cannot find any sign of corruption");
+    elif sMessage == "corrupted suffix pattern":
+      # Page heap stores the heap as close as possible to the edge of a page, taking into account that the start of the
+      # heap block must be properly aligned. Bytes between the heap block and the end of the page are initialized to
+      # 0xD0 and verifier has detected that one of them was corrupted; we'll try to find out which one
+      uCorruptionAddress = uHeapBlockAddress + uHeapBlockSize;
+      while oCdbWrapper.fuGetValue("by(0x%X)" % uCorruptionAddress) == 0xD0:
     if uCorruptionAddress is not None:
       sMessage = "heap corruption";
       uCorruptionOffset = uCorruptionAddress - uHeapBlockAddress;
-      if uCorruptionOffset > uHeapBlockSize:
+      if uCorruptionOffset >= uHeapBlockSize:
         uCorruptionOffset -= uHeapBlockSize;
         sOffsetDescription = "%d/0x%X bytes beyond" % (uCorruptionOffset, uCorruptionOffset);
       else:
-        assert uCorruptionOffset < 0, "Page heap unexpectedly detected corruption inside a heap block!?";
+        assert uCorruptionOffset < 0, "Page heap unexpectedly detected corruption at offset 0x%X of a 0x%X byte heap block!?\r\n%s" % \
+            (uCorruptionOffset, uHeapBlockSize, "\r\n".join(asRelevantLines));
         sOffsetDescription = "%d/0x%X bytes before" % (-uCorruptionOffset, -uCorruptionOffset);
       sBugTypeId = "HeapCorrupt:OOB[%s]%s" % (fsGetNumberDescription(uHeapBlockSize), fsGetOffsetDescription(uCorruptionOffset));
       sBugDescription = "Page heap detected %s at 0x%X; %s a %d/0x%X byte heap block at address 0x%X" % \
