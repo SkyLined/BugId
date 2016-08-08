@@ -91,6 +91,7 @@ def cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
       # 0xD0 and verifier has detected that one of them was corrupted; we'll try to find out which one
       uCorruptionAddress = uHeapBlockAddress + uHeapBlockSize;
       while oCdbWrapper.fuGetValue("by(0x%X)" % uCorruptionAddress) == 0xD0:
+        uCorruptionAddress += 1;
     if uCorruptionAddress is not None:
       sMessage = "heap corruption";
       uCorruptionOffset = uCorruptionAddress - uHeapBlockAddress;
