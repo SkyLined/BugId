@@ -160,7 +160,7 @@ sDetailsHTMLTemplate = ("""
   </head>
   <body>
     <div class="Block">
-      <h1>BugId v%(sBugIdVersion)s crash report</h1>
+      <h1>BugId v%(sBugIdVersion)s application bug report</h1>
       <div class="Content">
         <table>
           <tr><td>BugId:                  &nbsp;</td><td><span class="Important">%(sId)s</span></td></tr>
