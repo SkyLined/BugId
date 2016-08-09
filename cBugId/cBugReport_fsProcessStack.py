@@ -44,8 +44,6 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
       oHasher.update(asStackFrameIds.pop());
     asStackFrameIds.append(oHasher.hexdigest()[:dxBugIdConfig["uMaxStackFrameHashChars"]]);
   oBugReport.sStackId = ".".join([s for s in asStackFrameIds]);
-  if oCdbWrapper.bGetDetailsHTML and oBugReport.oStack.bPartialStack:
-    asStackHTML.append("... (the remainder of the stack was ignored)");
   # Get the bug location.
   oBugReport.sBugLocation = "(unknown)";
   if oTopmostRelevantFrame:
@@ -63,4 +61,10 @@ def cBugReport_fsProcessStack(oBugReport, oCdbWrapper):
     # Exception happened in a module, not the process' binary: add process' binary name:
     oBugReport.sBugLocation = oBugReport.sProcessBinaryName + "!" + oBugReport.sBugLocation;
   oBugReport.oStack.oTopmostRelevantFrame = oTopmostRelevantFrame;
-  return oCdbWrapper.bGetDetailsHTML and "<ul>%s</ul>" % "".join(["<li>%s</li>" % s for s in asStackHTML]) or None;
+  if not oCdbWrapper.bGetDetailsHTML:
+    return None;
+  # Construct stack HTML
+  sStackHTML = "<ol>%s</ol>\r\n" % "".join(["<li>%s</li>" % s for s in asStackHTML]);
+  if oBugReport.oStack.bPartialStack:
+    sStackHTML += "There were more stack frames, but these were considered irrelevant and subsequently ignored.";
+  return sStackHTML;

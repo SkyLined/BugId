@@ -7,7 +7,7 @@ def cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper):
   if oCdbWrapper.doModules_by_sCdbId is None:
     # Gather start and end address and binary name information for loaded modules.
     # See also cCdbWrapper_fasGetCdbIdsForModuleFileNameInCurrentProcess.py
-    asModules = oCdbWrapper.fasSendCommandAndReadOutput("lm on");
+    asModules = oCdbWrapper.fasSendCommandAndReadOutput("lm on; $$ List loaded modules");
     if not oCdbWrapper.bCdbRunning: return None;
     sHeader = asModules.pop(0);
     assert re.sub(r"\s+", " ", sHeader.strip()) in ["start end module name"], \

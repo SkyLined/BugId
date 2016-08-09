@@ -32,15 +32,15 @@ class cStack(object):
   def foCreateFromAddress(cStack, oCdbWrapper, pAddress, uSize):
     # Create the stack object
     uStackFramesCount = min(dxBugIdConfig["uMaxStackFramesCount"], uSize);
-    asStack = oCdbWrapper.fasGetStack("dps 0x%X L0x%X" % (pAddress, uStackFramesCount));
+    asStack = oCdbWrapper.fasGetStack("dps 0x%X L0x%X" % (pAddress, uStackFramesCount + 1));
     if not asStack: return None;
     oStack = cStack(asStack);
     # Here are some lines you might expect to parse:
     # |TODO put something here...
     uFrameNumber = 0;
     for sLine in asStack:
-      assert uFrameNumber < uStackFramesCount, \
-          "Got more frames than requested";
+      if uFrameNumber == uStackFramesCount:
+        break;
       oMatch = re.match(r"^\s*%s\s*$" % (
         r"(?:"                                  # either {
           r"[0-9A-F`]+" r"\s+"                  #   stack_address whitespace
@@ -65,7 +65,7 @@ class cStack(object):
           uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber, uReturnAddress);
       if not oCdbWrapper.bCdbRunning: return None;
       uFrameNumber += 1;
-    oStack.bPartialStack = uStackFramesCount != uFrameNumber;
+    oStack.bPartialStack = uFrameNumber == uStackFramesCount;
     return oStack;
   
   @classmethod
@@ -74,7 +74,7 @@ class cStack(object):
     doModules_by_sCdbId = oCdbWrapper.fdoGetModulesByCdbIdForCurrentProcess();
     if not oCdbWrapper.bCdbRunning: return None;
     # Create the stack object
-    asStack = oCdbWrapper.fasGetStack("kn 0x%X" % uStackFramesCount);
+    asStack = oCdbWrapper.fasGetStack("kn 0x%X" % (uStackFramesCount + 1));
     if not asStack: return None;
     oStack = cStack(asStack);
     sHeader = asStack.pop(0);
@@ -102,6 +102,8 @@ class cStack(object):
         r"\*\*\* WARNING: Unable to verify checksum for .*",
         r"Unable to read dynamic function table list head",
       ]), sLine):
+        if uFrameNumber == uStackFramesCount:
+          break;
         oMatch = re.match(r"^\s*%s\s*$" % (
           r"([0-9A-F]+)" r"\s+"                   # (frame_number) whitespace
           r"(?:"                                  # either {
@@ -128,5 +130,5 @@ class cStack(object):
             uModuleOffset, oFunction, uFunctionOffset, sSourceFilePath, uSourceFileLineNumber, uReturnAddress);
         if not oCdbWrapper.bCdbRunning: return None;
         uFrameNumber += 1;
-    oStack.bPartialStack = uStackFramesCount != uFrameNumber;
+    oStack.bPartialStack = uFrameNumber == uStackFramesCount;
     return oStack;

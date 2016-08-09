@@ -8,7 +8,8 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
   # Noisy symbol loading is turned on during the command, so there will be symbol loading debug messages in between
   # the stack output, which makes the stack hard to parse: it is therefore discarded and the command is executed
   # again later (without noisy symbol loading) when symbols ae loaded.
-  asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;%s;.symopt- 0x80000000;" % sGetStackCommand);
+  asSymbolLoadStackOutput = oCdbWrapper.fasSendCommandAndReadOutput( \
+      ".symopt+ 0x80000000;%s;.symopt- 0x80000000; $$ Get stack with debug symbols enabled" % sGetStackCommand);
   if not oCdbWrapper.bCdbRunning: return None;
   if dxBugIdConfig["uMaxSymbolLoadingRetries"] > 0:
     # Try to reload all modules and symbols. The symbol loader will not reload all symbols, but only those symbols that
@@ -22,7 +23,8 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
       # Reload all modules with noisy symbol loading on to detect any errors. These errors are automatically detected
       # and handled in cCdbOutput.fHandleCommonErrorsInOutput, so all we have to do is check if any errors were found
       # and try again to see if they have been fixed.
-      asLastSymbolReloadOutput = oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;.reload /v;.symopt- 0x80000000;");
+      asLastSymbolReloadOutput = oCdbWrapper.fasSendCommandAndReadOutput( \
+          ".symopt+ 0x80000000;.reload /v;.symopt- 0x80000000; $$ Reload symbols for all modules");
       if not oCdbWrapper.bCdbRunning: return None;
       bErrorsDuringLoading = False;
       for sLine in asLastSymbolReloadOutput:
@@ -37,7 +39,10 @@ def cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand):
         # Loop completed: no errors found, stop reloading modules.
         break;
   # Get the stack for real. At this point, no output from symbol loader is expected or handled.
-  asStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(sGetStackCommand);
+  asStackOutput = oCdbWrapper.fasSendCommandAndReadOutput(
+    "%s; $$ Get stack" % sGetStackCommand,
+    bOutputIsInformative = True,
+  );
   if not oCdbWrapper.bCdbRunning: return None;
   # Remove checksum warning, if any.
   if re.match(r"^\*\*\* WARNING: Unable to verify checksum for .*$", asStackOutput[0]):

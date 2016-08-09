@@ -2,7 +2,8 @@ import re;
 
 def cCdbWrapper_faoGetModulesForFileNameInCurrentProcess(oCdbWrapper, sModuleFileName):
   # See also cProcess.py/fdoGetModulesByCdbIdForCurrentProcess
-  asModuleInformationOutput = oCdbWrapper.fasSendCommandAndReadOutput("lm M *%s" % sModuleFileName);
+  asModuleInformationOutput = oCdbWrapper.fasSendCommandAndReadOutput( \
+      "lm M *%s; $$ Get module information" % sModuleFileName);
   if not oCdbWrapper.bCdbRunning: return [];
   assert len(asModuleInformationOutput) >= 1 and re.match(r"^start\s+end\s+module name\s*$", asModuleInformationOutput[0]), \
       "Unexpected module information output:\r\n%s" % "\r\n".join(asModuleInformationOutput);

@@ -44,7 +44,10 @@ def cBugReport_foAnalyzeException_Cpp(oBugReport, oCdbWrapper, oException):
   assert len(oException.auParameters) >= 3, \
       "Expected a C++ Exception to have at least 3 parameters, got %d" % len(oException.auParameters);
   poException = oException.auParameters[1];
-  asExceptionVFtablePointer = oCdbWrapper.fasSendCommandAndReadOutput("dps 0x%X L1" % poException);
+  asExceptionVFtablePointer = oCdbWrapper.fasSendCommandAndReadOutput(
+    "dps 0x%X L1; $$ Get C++ exception vftable pointer" % poException,
+    bOutputIsInformative = True,
+  );
   if not oCdbWrapper.bCdbRunning: return None;
   sCarriedLine = "";
   for sLine in asExceptionVFtablePointer:

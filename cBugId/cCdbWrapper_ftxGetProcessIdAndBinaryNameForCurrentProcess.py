@@ -2,7 +2,7 @@ import os, re;
 
 def cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper):
   # Gather process id and binary name for the current process.
-  asProcessesOutput = oCdbWrapper.fasSendCommandAndReadOutput("|.");
+  asProcessesOutput = oCdbWrapper.fasSendCommandAndReadOutput("|.; $$ Get current process");
   if not oCdbWrapper.bCdbRunning: return None, None;
   #Output:
   # |.  2 id:  e44 child   name: chrome.exe

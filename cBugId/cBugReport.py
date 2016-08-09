@@ -53,7 +53,8 @@ class cBugReport(object):
     oBugReport.sSecurityImpact = sSecurityImpact;
     oBugReport.oProcess = cProcess.foCreate(oCdbWrapper);
     oBugReport.oStack = oStack;
-    oBugReport.auRelevantAddresses = [];
+    oBugReport.duRelevantAddress_by_sDescription = {};
+    oBugReport.bRegistersRelevant = True; # Set to false if register contents are not relevant to the crash
     
     if oCdbWrapper.bGetDetailsHTML:
       oBugReport.sImportantOutputHTML = oCdbWrapper.sImportantOutputHTML;
@@ -132,7 +133,10 @@ class cBugReport(object):
       asBlocksHTML = [];
       # Create and add important output block if needed
       if oBugReport.sImportantOutputHTML:
-        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Potentially important application output", "sContent": oBugReport.sImportantOutputHTML});
+        asBlocksHTML.append(sBlockHTMLTemplate % {
+          "sName": "Potentially important application output",
+          "sContent": oBugReport.sImportantOutputHTML,
+        });
       
       # Add stack block
       asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Stack", "sContent": sStackHTML});
@@ -140,18 +144,27 @@ class cBugReport(object):
       # Add exception specific blocks if needed:
       asBlocksHTML += oBugReport.asExceptionSpecificBlocksHTML;
       
-      # Create and add registers block
-      asRegisters = oCdbWrapper.fasSendCommandAndReadOutput("rM 0x%X" % (0x1 + 0x4 + 0x8 + 0x10 + 0x20 + 0x40));
-      if not oCdbWrapper.bCdbRunning: return None;
-      sRegistersHTML = "<br/>".join(['<span class="Registers">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asRegisters]);
-      asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Registers", "sContent": sRegistersHTML});
-      
-      # Add relevant memory to memory block and add memory block if needed
-      for uRelevantAddress in sorted(list(set(oBugReport.auRelevantAddresses))):
-        sRelevantMemoryHTML = cBugReport_fsGetRelevantMemoryHTML(oBugReport, oCdbWrapper, uRelevantAddress)
+      if oBugReport.bRegistersRelevant:
+        # Create and add registers block
+        asRegisters = oCdbWrapper.fasSendCommandAndReadOutput(
+          "rM 0x%X; $$ Get register information" % (0x1 + 0x4 + 0x8 + 0x10 + 0x20 + 0x40),
+          bOutputIsInformative = True,
+        );
         if not oCdbWrapper.bCdbRunning: return None;
-        if sRelevantMemoryHTML:
-          asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Relevant memory at 0x%X" % uRelevantAddress, "sContent": sRelevantMemoryHTML});
+        sRegistersHTML = "<br/>".join(['<span class="Registers">%s</span>' % oCdbWrapper.fsHTMLEncode(s) for s in asRegisters]);
+        asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Registers", "sContent": sRegistersHTML});
+      
+      # Add relevant memory blocks in order if needed
+      for uSequentialAddress in sorted(list(set(oBugReport.duRelevantAddress_by_sDescription.values()))):
+        for (sDescription, uRelevantAddress) in oBugReport.duRelevantAddress_by_sDescription.items():
+          if uRelevantAddress == uSequentialAddress:
+            sRelevantMemoryHTML = cBugReport_fsGetRelevantMemoryHTML(oBugReport, oCdbWrapper, uRelevantAddress)
+            if not oCdbWrapper.bCdbRunning: return None;
+            if sRelevantMemoryHTML:
+              asBlocksHTML.append(sBlockHTMLTemplate % {
+                "sName": sDescription,
+                "sContent": sRelevantMemoryHTML,
+              });
       
       # Create and add disassembly blocks if needed:
       if dxBugIdConfig["uDisassemblyNumberOfStackFrames"] > 0:
@@ -175,7 +188,10 @@ class cBugReport(object):
               sBeforeAddressInstructionDescription, sAtAddressInstructionDescription);
           if not oCdbWrapper.bCdbRunning: return None;
           if sFrameDisassemblyHTML:
-            asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Disassembly at %s" % oFrame.sAddress, "sContent": sFrameDisassemblyHTML});
+            asBlocksHTML.append(sBlockHTMLTemplate % {
+              "sName": "Disassembly of stack frame %d at %s" % (oFrame.uNumber + 1, oFrame.sAddress),
+              "sContent": sFrameDisassemblyHTML,
+            });
       
       # Add relevant binaries block
       aoProcessBinaryModules = oCdbWrapper.faoGetModulesForFileNameInCurrentProcess(oBugReport.sProcessBinaryName);
@@ -202,7 +218,7 @@ class cBugReport(object):
       # Convert saved cdb IO HTML into one string and delete everything but the last line to free up some memory.
       sCdbStdIOHTML = '<hr/>'.join(oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML);
       oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML = oBugReport.oCdbWrapper.asCdbStdIOBlocksHTML[-1:];
-      asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Debugger I/O", "sContent": sCdbStdIOHTML});
+      asBlocksHTML.append(sBlockHTMLTemplate % {"sName": "Application and cdb output log", "sContent": sCdbStdIOHTML});
       # Stick everything together.
       oBugReport.sDetailsHTML = sDetailsHTMLTemplate % {
         "sId": oCdbWrapper.fsHTMLEncode(oBugReport.sId),
@@ -224,5 +240,6 @@ class cBugReport(object):
       # Unfortunately, we cannot use Unicode as the communication channel with cdb is ASCII.
       sValidDumpFileName = FileSystem.fsTranslateToValidName(sDesiredDumpFileName, bUnicode = False);
       sOverwriteFlag = dxBugIdConfig["bOverwriteDump"] and "/o" or "";
-      oCdbWrapper.fasSendCommandAndReadOutput(".dump %s /ma \"%s\"" % (sOverwriteFlag, sValidDumpFileName));
+      oCdbWrapper.fasSendCommandAndReadOutput( \
+          ".dump %s /ma \"%s\"; $$ Save dump to file" % (sOverwriteFlag, sValidDumpFileName));
       if not oCdbWrapper.bCdbRunning: return;

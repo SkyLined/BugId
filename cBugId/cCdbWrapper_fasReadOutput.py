@@ -35,7 +35,11 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
         if oFailedToLoadSymbolsError:
           sModuleFileName = [s for s in oFailedToLoadSymbolsError.groups() if s][0];
           # Turn noisy symbol loading on, reload the module and symbols, turn noisy symbol loading back off
-          oCdbWrapper.fasSendCommandAndReadOutput(".symopt+ 0x80000000;.reload /f /o /v /w %s;.symopt- 0x80000000;" % sModuleFileName, bHandleSymbolLoadErrors = False);
+          oCdbWrapper.fasSendCommandAndReadOutput(
+            ".symopt+ 0x80000000;.reload /f /o /v /w %s;.symopt- 0x80000000; $$ Attempt to reload module symbols" %
+                sModuleFileName,
+            bHandleSymbolLoadErrors = False,
+          );
           if not oCdbWrapper.bCdbRunning: return;
           asLines.pop(uIndex);
           continue;
@@ -49,9 +53,22 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
     uIndex += 1;
   return asLines;
 
-def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHandleSymbolLoadErrors = True):
+def cCdbWrapper_fasReadOutput(oCdbWrapper,
+  bOutputIsInformative = False, \
+  bOutputCanContainApplicationOutput = False,
+  bHandleSymbolLoadErrors = True,
+):
   sLine = "";
   asLines = [];
+  bAddOutputToHTML = oCdbWrapper.bGetDetailsHTML and (
+    dxBugIdConfig["bShowAllCdbCommandsInReport"]
+    or (bOutputIsInformative and dxBugIdConfig["bShowInformativeCdbCommandsInReport"])
+    or bOutputCanContainApplicationOutput
+  );
+  bAddImportantLinesToHTML = oCdbWrapper.bGetDetailsHTML and (
+    bOutputCanContainApplicationOutput
+    and oCdbWrapper.rImportantStdOutLines
+  );
   while 1:
     sChar = oCdbWrapper.oCdbProcess.stdout.read(1);
     if sChar == "\r":
@@ -67,13 +84,13 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
           # chance exceptions.
           pass; 
         else:
-          if oCdbWrapper.bGetDetailsHTML and bIsRelevantIO:
-            sClass = bMayContainApplicationOutput and "CDBOrApplicationStdOut" or "CDBStdOut";
+          if bAddOutputToHTML:
+            sClass = bOutputCanContainApplicationOutput and "CDBOrApplicationStdOut" or "CDBStdOut";
             sLineHTML = "<span class=\"%s\">%s</span><br/>" % (sClass, oCdbWrapper.fsHTMLEncode(sLine));
             # Add the line to the current block of I/O
             oCdbWrapper.asCdbStdIOBlocksHTML[-1] += sLineHTML;
             # Optionally add the line to the important output
-            if bMayContainApplicationOutput and oCdbWrapper.rImportantStdOutLines and oCdbWrapper.rImportantStdOutLines.match(sLine):
+            if bAddImportantLinesToHTML and oCdbWrapper.rImportantStdOutLines.match(sLine):
               oCdbWrapper.sImportantOutputHTML += sLineHTML;
           asLines.append(sLine);
       if sChar == "":
@@ -81,14 +98,14 @@ def cCdbWrapper_fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainAppl
       sLine = "";
     else:
       sLine += sChar;
-      # Detect the prompt.
+      # Detect the prompt. This only works if the prompt starts on a new line!
       oPromptMatch = re.match("^\d+:\d+(:x86)?> $", sLine);
       if oPromptMatch:
         oCdbWrapper.sCurrentISA = oPromptMatch.group(1) and "x86" or oCdbWrapper.sCdbISA;
         if dxBugIdConfig["bOutputStdOut"]:
           print "cdb>%s" % repr(sLine)[1:-1];
         if oCdbWrapper.bGetDetailsHTML:
-          # The prompt is stored in a new block of I/O
+          # The prompt is always stored in a new block of I/O
           oCdbWrapper.asCdbStdIOBlocksHTML.append("<span class=\"CDBPrompt\">%s</span>" % oCdbWrapper.fsHTMLEncode(sLine));
         return fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbolLoadErrors);
   oCdbWrapper.bCdbRunning = False;

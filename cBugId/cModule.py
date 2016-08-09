@@ -20,7 +20,10 @@ class cModule(object):
   
   def fsGetInformationHTML(oModule, oCdbWrapper):
     # Also sets oModule.sFileVersion if possible.
-    asModuleInformationOutput = oCdbWrapper.fasSendCommandAndReadOutput("lmv m *%s" % oModule.sCdbId);
+    asModuleInformationOutput = oCdbWrapper.fasSendCommandAndReadOutput(
+      "lmv m *%s; $$ Get module information" % oModule.sCdbId,
+      bOutputIsInformative = True,
+    );
     if not oCdbWrapper.bCdbRunning: return None;
     # Sample output:
     # |0:004> lmv M firefox.exe

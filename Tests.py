@@ -136,7 +136,7 @@ class cTest(object):
             oTest.bHasOutputLock = True;
             print "- Failed test: %s" % " ".join([dsBinaries_by_sISA[oTest.sISA]] + oTest.asCommandLineArguments);
             print "  Bug report cannot be saved becasue the folder %s\%s cannot be created (%s)" % \
-                (sReportsFolderName, oTest.asCommandLineArguments[0], repr(eCreateFolderResult));
+                (sReportsFolderName, oTest.asCommandLineArguments[0], repr(ebCreateFolderResult));
             oOutputLock and oOutputLock.release();
             oTest.bHasOutputLock = False;
             bFailed = True;

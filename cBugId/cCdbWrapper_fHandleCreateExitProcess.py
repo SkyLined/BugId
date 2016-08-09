@@ -23,7 +23,7 @@ def cCdbWrapper_fHandleNewProcess(oCdbWrapper, uProcessId):
     # Make sure all child processes of this process are debugged as well.
   # This may be superfluous, as I believe this is a global flag, not per-process, but it should have negligable
   # affect on performance and would prevent bugs if this assumption is not true.
-  oCdbWrapper.fasSendCommandAndReadOutput(".childdbg 1", bIsRelevantIO = False);
+  oCdbWrapper.fasSendCommandAndReadOutput(".childdbg 1; $$ Debug child processes");
   if not oCdbWrapper.bCdbRunning: return;
 
 def cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):

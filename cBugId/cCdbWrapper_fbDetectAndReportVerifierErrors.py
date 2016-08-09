@@ -113,6 +113,8 @@ def cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
       uRelevantAddress = uHeapBlockAddress;
     sSecurityImpact = "Potentially exploitable security issue, if the corruption is attacker controlled";
     oCdbWrapper.oBugReport = cBugReport.foCreate(oCdbWrapper, sBugTypeId, sBugDescription, sSecurityImpact);
-    oCdbWrapper.oBugReport.auRelevantAddresses.append(uRelevantAddress);
+    oCdbWrapper.oBugReport.duRelevantAddress_by_sDescription \
+        ["Corrupted memory around address 0x%X" % uRelevantAddress] = uRelevantAddress;
+    oCdbWrapper.oBugReport.bRegistersRelevant = False;
     return True;
   return False;

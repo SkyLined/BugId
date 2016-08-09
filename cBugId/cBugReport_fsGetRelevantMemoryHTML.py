@@ -6,11 +6,17 @@ def cBugReport_fsGetRelevantMemoryHTML(oBugReport, oCdbWrapper, uAddress):
   if not oCdbWrapper.bCdbRunning: return None;
   uAlignedAddress = uAddress - (uAddress % uPointerSize);
   # Get data from the memory the last instruction may have been refering.
-  asBeforeReferencedMemory = oCdbWrapper.fasSendCommandAndReadOutput("dpp 0x%X L0x%X;" % \
-      (uAlignedAddress - uPointerSize * dxBugIdConfig["uRelevantMemoryPointersBefore"], dxBugIdConfig["uRelevantMemoryPointersBefore"]));
+  uBeforeAddress = uAlignedAddress - uPointerSize * dxBugIdConfig["uRelevantMemoryPointersBefore"]
+  asBeforeReferencedMemory = oCdbWrapper.fasSendCommandAndReadOutput(
+    "dpp 0x%X L0x%X; $$ Get memory before address" % (uBeforeAddress, dxBugIdConfig["uRelevantMemoryPointersBefore"]),
+    bOutputIsInformative = True,
+  );
   if not oCdbWrapper.bCdbRunning: return None;
-  asAtAndAfterReferencedMemory = oCdbWrapper.fasSendCommandAndReadOutput("dpp 0x%X L0x%X;" % \
-      (uAlignedAddress, dxBugIdConfig["uRelevantMemoryPointersAfter"] + 1));
+  asAtAndAfterReferencedMemory = oCdbWrapper.fasSendCommandAndReadOutput(
+    "dpp 0x%X L0x%X; $$ Get memory at and after address" % \
+        (uAlignedAddress, dxBugIdConfig["uRelevantMemoryPointersAfter"] + 1),
+    bOutputIsInformative = True,
+  );
   if not oCdbWrapper.bCdbRunning: return None;
   sAtReferencedMemory = asAtAndAfterReferencedMemory.pop(0);
   asAfterReferencedMemory = asAtAndAfterReferencedMemory;

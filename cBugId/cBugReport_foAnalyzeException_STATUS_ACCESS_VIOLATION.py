@@ -156,15 +156,21 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
     # e.g. the address is always reported as 0xFFFFFFFFFFFFFFFF was and the access type is always "read".
     # A partial work-around is to get the address from the last instruction output, which can be retreived by asking
     # cdb to output disassembly and address after each command. This may also tell us if the access type was "execute".
-    oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow +dis +ea;", bIsRelevantIO = False);
+    oCdbWrapper.fasSendCommandAndReadOutput( \
+        ".prompt_allow +dis +ea; $$ Enable disassembly and address in cdb prompt");
     # Do this twice in case the first time requires loading symbols, which can output junk that makes parsing ouput difficult.
     if not oCdbWrapper.bCdbRunning: return None;
-    oCdbWrapper.fasSendCommandAndReadOutput("~s", bIsRelevantIO = False);
+    oCdbWrapper.fasSendCommandAndReadOutput( \
+        "~s; $$ Show disassembly and optional symbol loading stuff");
     if not oCdbWrapper.bCdbRunning: return None;
-    asLastInstructionAndAddress = oCdbWrapper.fasSendCommandAndReadOutput("~s");
+    asLastInstructionAndAddress = oCdbWrapper.fasSendCommandAndReadOutput(
+      "~s; $$ Show disassembly",
+      bOutputIsInformative = True,
+    );
     if not oCdbWrapper.bCdbRunning: return None;
     # Revert to not showing disassembly and address:
-    oCdbWrapper.fasSendCommandAndReadOutput(".prompt_allow -dis -ea;", bIsRelevantIO = False);
+    oCdbWrapper.fasSendCommandAndReadOutput( \
+        ".prompt_allow -dis -ea; $$ Revert to clean cdb prompt");
     if not oCdbWrapper.bCdbRunning: return None;
     # Sample output:
     # |00007ffd`420b213e 488b14c2        mov     rdx,qword ptr [rdx+rax*8] ds:00007df5`ffb60000=????????????????
@@ -211,6 +217,8 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
         sViolationTypeDescription = "executing";
     uAddress = long(sAddress.replace("`", ""), 16);
   
+  sMemoryDumpDescription = "Memory near access violation address 0x%X" % uAddress;
+  
   if sViolationTypeId == "E":
     # Hide the stack frame for the address at which the execute access violation happened: (e.g. 0x0 for a NULL pointer).
     asHiddenTopFrames = ["0x%X" % uAddress];
@@ -241,7 +249,10 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
     else:
       # This is not a special marker or NULL, so it must be an invalid pointer
       # See is page heap has more details on the address at which the access violation happened:
-      asPageHeapReport = oCdbWrapper.fasSendCommandAndReadOutput("!heap -p -a 0x%X" % uAddress);
+      asPageHeapReport = oCdbWrapper.fasSendCommandAndReadOutput(
+        "!heap -p -a 0x%X; $$ Get page heap information" % uAddress,
+        bOutputIsInformative = True,
+      );
       if not oCdbWrapper.bCdbRunning: return None;
       # Sample output:
       # |    address 0e948ffc found in
@@ -340,13 +351,15 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
                     # We detected a modified byte; there was an OOB write before the one that caused this access
                     # violation. Use it's offset instead and add this fact to the description.
                     uOffsetPastEndOfBlock = uCorruptionAddress - (uBlockAddress + uBlockSize);
-                    sBugDescription += " An earlier out-of-bounds write was detected at %d/0x%X bytes beyond the " \
-                        "block because it modified the page heap suffix pattern.";
+                    sBugDescription += (" An earlier out-of-bounds write was detected at 0x%X, %d/0x%X bytes " \
+                        "beyond that block because it modified the page heap suffix pattern.") % \
+                        (uCorruptionAddress, uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
+                    sMemoryDumpDescription = "Memory near corruption address 0x%X" % uCorruptionAddress;
+                    uAddress = uCorruptionAddress; # Used later on to dump memory
                     break;
               elif uAddress == uGuardPageAddress and uAddress > uBlockAddress + uBlockSize:
-                sBugDescription += " Note that earlier out-of-bounds access before this address could have happened " \
-                    "without having triggered an access violation.";
-              
+                sBugDescription += " An earlier out-of-bounds access before this address may have happened without " \
+                    "having triggered an access violation.";
             # The access was beyond the end of the block (out-of-bounds, OOB)
             oBugReport.sBugTypeId = "OOB%s[%s]%s" % (sViolationTypeId, fsGetNumberDescription(uBlockSize), \
                 fsGetOffsetDescription(uOffsetPastEndOfBlock));
@@ -362,15 +375,15 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
         else:
           raise NotImplemented("NOT REACHED");
         sBLockHTML = sBlockHTMLTemplate % {
-          "sName": "Page heap",
-          "sContent": (
-            "<h2 class=\"SubHeader\">Page heap report for address 0x%X:</h2>" % uAddress +
-            "<br/>".join([oCdbWrapper.fsHTMLEncode(s) for s in asPageHeapReport])
-          )
+          "sName": "Page heap report for address 0x%X" % uAddress,
+          "sContent": "<br/>".join([oCdbWrapper.fsHTMLEncode(s) for s in asPageHeapReport])
         };
         oBugReport.asExceptionSpecificBlocksHTML.append(sBLockHTML);
       else:
-        asMemoryProtectionInformation = oCdbWrapper.fasSendCommandAndReadOutput("!vprot 0x%X" % uAddress);
+        asMemoryProtectionInformation = oCdbWrapper.fasSendCommandAndReadOutput(
+          "!vprot 0x%X; $$ Get memory protection information" % uAddress,
+          bOutputIsInformative = True,
+        );
         if not oCdbWrapper.bCdbRunning: return None;
         # BaseAddress:       00007df5ff5f0000
         # AllocationBase:    00007df5ff5f0000
@@ -469,5 +482,5 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
   if oBugReport:
     oBugReport.oStack.fHideTopFrames(asHiddenTopFrames);
   if uAddress is not None:
-    oBugReport.auRelevantAddresses.append(uAddress);
+    oBugReport.duRelevantAddress_by_sDescription[sMemoryDumpDescription] = uAddress;
   return oBugReport;

@@ -27,7 +27,10 @@ class cException(object):
   
   @classmethod
   def foCreate(cException, oCdbWrapper, uCode, sCodeDescription, oStack):
-    asExceptionRecord = oCdbWrapper.fasSendCommandAndReadOutput(".exr -1");
+    asExceptionRecord = oCdbWrapper.fasSendCommandAndReadOutput(
+      ".exr -1; $$ Get exception record",
+      bOutputIsInformative = True,
+    );
     if not oCdbWrapper.bCdbRunning: return None;
     oException = cException(asExceptionRecord, uCode, sCodeDescription);
     # Sample output:

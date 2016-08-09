@@ -46,7 +46,10 @@ for (sName, xValue) in {
   "uMaxFunctionOffset": 0xFFF,          # How big an offset from a function symbol do you expect in your application?
                                         # Anything within this range is considered to be a valid symbol, anything
                                         # further from the symbol is marked as dubious.
-  ### Disassembly settings
+  ### Stack hash settings
+  "uStackHashFramesCount": 2,           # How many stack frames are hashed for the crash id?
+  "uMaxStackFrameHashChars": 3,         # How many characters of hash to use in the id for each stack frame.
+  ### HTML Report Disassembly settings
   "uDisassemblyNumberOfStackFrames": 3, # The number of stack frames to shown disassembly for.
   "uDisassemblyInstructionsBefore": 0x20, # How many instructions to disassemble before the current instruction or the
                                         # return address of the stack frame.
@@ -68,18 +71,16 @@ for (sName, xValue) in {
                                         # bytes get disassembled to get the requested number of instructions. If the
                                         # total number of bytes disassembled is too large, you may get no disassembly
                                         # at all when part of the memory it attempts to disassemble is not readable.
-  ### Memory dump settings
+  ### HTML Report Memory dump settings
   "uRelevantMemoryPointersBefore": 0x10, # How many pointer sized values should be dumped before a relevant address.
   "uRelevantMemoryPointersAfter": 0x20, # How many pointer sized values should be dumped after a relevant address.
-  ### Stack settings
+  ### HTML Report Stack settings
   "uMaxStackFramesCount": 20,           # How many stack frames are retreived for analysis?
   "uMinStackRecursionLoops": 3,         # How many recursive functions call loops are needed to assume a stack overflow
                                         # is caused by such a loop?
   "uMaxStackRecursionLoopSize": 50,     # The maximum number of functions expected to be in a loop (less increases
                                         # analysis speed, but might miss-analyze a recursion loop involving many
                                         # functions as a simple stack exhaustion). I've seen 43 functions in one loop.
-  "uStackHashFramesCount": 2,           # How many stack frames are hashed for the crash id?
-  "uMaxStackFrameHashChars": 3,         # How many characters of hash to use in the id for each stack frame.
   ### Symbol loading settings
   "uMaxSymbolLoadingRetries": 1,        # Enable additional checks when getting a stack that can detect and fix errors
                                         # in symbol loading caused by corrupted pdb files. This turns on "noisy symbol
@@ -122,6 +123,22 @@ for (sName, xValue) in {
                                         # unhandled C++ exceptions. These will cause the application to terminate if
                                         # this setting is enabled, so you may still be able to detect an unhandled C++
                                         # exception through unexpected application termination.
+  ### HTML Report debug output settings
+  "bShowAllCdbCommandsInReport": False, # Set to True to see all commands that are executed in cdb by BugId. Set to
+                                        # False to let BugId determine what to show based on the
+                                        # bShowInformativeCdbCommandsInReport setting below. Note that setting this
+                                        # to True can result in high memory usage, slower debugging and large reports.
+                                        # Only really useful when tracking down an internal BugId error.
+  "bShowInformativeCdbCommandsInReport": False, # Set to True to see the most informative commands that are executed in
+                                        # cdb by BugId and the output returned by them. This includes commands that are
+                                        # executed to gather information about exceptions, memory contents, disassebly,
+                                        # the binaries, etc. This can be useful if you are not getting enough
+                                        # information from the information BugId gathers in a report by default.
+                                        # Set to False to see only cdb output returned while running the application
+                                        # (this can contain both cdb and application output). In most cases, you won't
+                                        # need to switch this to True. If you do; you should consider contacting the
+                                        # author to ask if the information you are looking for can be included in the
+                                        # report by default, rather than having to flip this setting.
 }.items():
   if sName not in dxBugIdConfig:
     dxBugIdConfig[sName] = xValue;

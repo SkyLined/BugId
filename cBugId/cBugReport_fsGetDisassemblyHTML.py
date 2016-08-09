@@ -18,8 +18,11 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sBeforeAd
   asDisassemblyHTML = [];
   if uDisassemblyBytesBefore > 0:
     # Get disassembly before address
-    asBeforeDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(%s - 0x%X, 0x%X)) { u %s - 0x%X %s - 1; };" % \
-        (sAddress, uDisassemblyBytesBefore, uDisassemblyBytesBefore, sAddress, uDisassemblyBytesBefore, sAddress));
+    asBeforeDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(
+      ".if ($vvalid(%s - 0x%X, 0x%X)) { u %s - 0x%X %s - 1; }; $$ disassemble before address" %
+          (sAddress, uDisassemblyBytesBefore, uDisassemblyBytesBefore, sAddress, uDisassemblyBytesBefore, sAddress),
+      bOutputIsInformative = True,
+    );
     if not oCdbWrapper.bCdbRunning: return None;
     # Limit number of instructions
     asBeforeDisassembly = asBeforeDisassembly[-dxBugIdConfig["uDisassemblyInstructionsBefore"]:];
@@ -34,8 +37,11 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sBeforeAd
               (fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sBeforeAddressDisassembly.ljust(80)), sBeforeAddressInstructionDescription)
         );
   if uDisassemblyBytesAfter > 0:
-    asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(".if ($vvalid(%s, 0x%X)) { u %s %s + 0x%X; };" % \
-        (sAddress, uDisassemblyBytesAfter, sAddress, sAddress, uDisassemblyBytesAfter - 1));
+    asAtAndAfterDisassembly = oCdbWrapper.fasSendCommandAndReadOutput(
+      ".if ($vvalid(%s, 0x%X)) { u %s %s + 0x%X; }; $$ Disassemble after address" %
+          (sAddress, uDisassemblyBytesAfter, sAddress, sAddress, uDisassemblyBytesAfter - 1),
+      bOutputIsInformative = True,
+    );
     if not oCdbWrapper.bCdbRunning: return None;
     # Limit number of instructions
     asAtAndAfterDisassembly = asAtAndAfterDisassembly[-dxBugIdConfig["uDisassemblyInstructionsAfter"]:];

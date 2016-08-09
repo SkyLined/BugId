@@ -9,11 +9,12 @@ from cCdbWrapper_fCdbStdErrThread import cCdbWrapper_fCdbStdErrThread;
 from cCdbWrapper_fCdbStdInOutThread import cCdbWrapper_fCdbStdInOutThread;
 from cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess import cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess;
 from cCdbWrapper_fHandleCreateExitProcess import cCdbWrapper_fHandleCreateExitProcess;
-from cCdbWrapper_fiEvaluateExpression import cCdbWrapper_fiEvaluateExpression;
 from cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess import cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess;
-from cCdbWrapper_fuEvaluateExpression import cCdbWrapper_fuEvaluateExpression;
 from cCdbWrapper_ftxSplitSymbolOrAddress import cCdbWrapper_ftxSplitSymbolOrAddress;
 from cCdbWrapper_fsHTMLEncode import cCdbWrapper_fsHTMLEncode;
+from cCdbWrapper_f_Timeout import cCdbWrapper_fxSetTimeout, cCdbWrapper_fClearTimeout;
+from cCdbWrapper_f_Breakpoint import cCdbWrapper_fuAddBreakpoint, cCdbWrapper_fRemoveBreakpoint;
+from cCdbWrapper_fsGetSymbolForAddress import cCdbWrapper_fsGetSymbolForAddress;
 from cExcessiveCPUUsageDetector import cExcessiveCPUUsageDetector;
 from dxBugIdConfig import dxBugIdConfig;
 from sOSISA import sOSISA;
@@ -245,130 +246,6 @@ class cCdbWrapper(object):
     oCdbWrapper.bCdbRunning = False;
     return;
   
-  def __del__(oCdbWrapper):
-    # Check to make sure the debugger process is not running
-    oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
-    if oCdbProcess and oCdbProcess.poll() is None:
-      print "*** INTERNAL ERROR: cCdbWrapper did not terminate, the cdb process is still running.";
-      oCdbProcess.terminate();
-  
-  def fuGetVariableId(oCdbWrapper):
-    return oCdbWrapper.uAvailableVariableIds.pop();
-  def fReleaseVariableId(oCdbWrapper, uVariableId):
-    oCdbWrapper.uAvailableVariableIds.append(uVariableId);
-  
-  def fuAddBreakpoint(oCdbWrapper, uAddress, fCallback, uProcessId, uThreadId = None, sCommand = None):
-    # Select the right process.
-    oCdbWrapper.fSelectProcess(uProcessId);
-    if not oCdbWrapper.bCdbRunning: return;
-    # Put breakpoint only on relevant thread if provided.
-    if uThreadId is not None:
-      sCommand = ".if (@$tid != 0x%X) {gh;}%s;" % (uThreadId, sCommand is not None and " .else {%s};" % sCommand or "");
-    uBreakpointId = oCdbWrapper.oBreakpointCounter.next();
-    sBreakpointCommand = ".if ($vvalid(0x%X,1)) {bp%d 0x%X%s;}; .else {.echo Invalid address;};" % (
-      uAddress, 
-      uBreakpointId,
-      uAddress, 
-      sCommand and (' "%s"' % sCommand.replace("\\", "\\\\").replace('"', '\\"')) or ""
-    );
-    asBreakpointResult = oCdbWrapper.fasSendCommandAndReadOutput(sBreakpointCommand); #, bIsRelevantIO = False);
-    if not oCdbWrapper.bCdbRunning: return;
-    oCdbWrapper.fasSendCommandAndReadOutput("bl;"); # debugging
-    if not oCdbWrapper.bCdbRunning: return;
-    # It could be that a previous breakpoint existed at the given location, in which case that breakpoint id is used
-    # by cdb instead. This must be detected so we can return the correct breakpoint id to the caller and match the
-    # callback to the right breakpoint as well.
-    if len(asBreakpointResult) == 1:
-      if asBreakpointResult[0] == "Invalid address":
-        return None;
-      oActualBreakpointIdMatch = re.match(r"^breakpoint (\d+) (?:exists, redefining|redefined)$", asBreakpointResult[0]);
-      assert oActualBreakpointIdMatch, \
-          "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
-      uBreakpointId = long(oActualBreakpointIdMatch.group(1));
-      # This breakpoint must have been "removed" with fRemoveBreakpoint before a new breakpoint can be set at this
-      # location. If it was not, throw an exception.
-      assert uBreakpointId not in oCdbWrapper.dfCallback_by_uBreakpointId, \
-          "Two active breakpoints at the same location is not supported";
-    else:
-      assert len(asBreakpointResult) == 0, \
-          "bad breakpoint result\r\n%s" % "\r\n".join(asBreakpointResult);
-    if not oCdbWrapper.bCdbRunning: return;
-    oCdbWrapper.fasSendCommandAndReadOutput("bl;", bIsRelevantIO = False);
-    oCdbWrapper.duAddress_by_uBreakpointId[uBreakpointId] = uAddress;
-    oCdbWrapper.duProcessId_by_uBreakpointId[uBreakpointId] = uProcessId;
-    oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId] = fCallback;
-    return uBreakpointId;
-  
-  def fRemoveBreakpoint(oCdbWrapper, uBreakpointId):
-    uProcessId = oCdbWrapper.duProcessId_by_uBreakpointId[uBreakpointId];
-    oCdbWrapper.fSelectProcess(uProcessId);
-    # There can be any number of breakpoints according to the docs, so no need to reuse them. There is a bug in cdb:
-    # using "bc" to clear a breakpoint can still lead to a STATUS_BREAKPOINT exception at the original address later.
-    # There is nothing to detect this exception was caused by this bug, and filtering these exceptions is therefore
-    # hard to do correctly. An easier way to address this issue is to not "clear" the breakpoint, but replace the
-    # command executed when the breakpoint is hit with "gh" (go with exception handled).
-    oCdbWrapper.fasSendCommandAndReadOutput("bl;"); # debugging
-    if not oCdbWrapper.bCdbRunning: return;
-    asClearBreakpoint = oCdbWrapper.fasSendCommandAndReadOutput('bp%d "gh";' % uBreakpointId); #, bIsRelevantIO = False);
-    oCdbWrapper.fasSendCommandAndReadOutput("bl;", bIsRelevantIO = False);
-    del oCdbWrapper.dfCallback_by_uBreakpointId[uBreakpointId];
-  
-  def fSelectProcess(oCdbWrapper, uProcessId):
-    return oCdbWrapper.fSelectProcessAndThread(uProcessId = uProcessId);
-  def fSelectThread(oCdbWrapper, uThreadId):
-    return oCdbWrapper.fSelectProcessAndThread(uThreadId = uThreadId);
-  def fSelectProcessAndThread(oCdbWrapper, uProcessId = None, uThreadId = None):
-    # Both arguments are optional
-    sSelectCommand = "";
-    if uProcessId is not None:
-      sSelectCommand += "|~[0x%X]s;" % uProcessId;
-    if uThreadId is not None:
-      sSelectCommand += "~~[0x%X]s;" % uThreadId;
-    if sSelectCommand:
-      asSelectOutput = oCdbWrapper.fasSendCommandAndReadOutput(sSelectCommand, bIsRelevantIO = False);
-      if not oCdbWrapper.bCdbRunning: return;
-      srIgnoredErrors = r"^\*\*\* (WARNING: Unable to verify checksum for|ERROR: Module load completed but symbols could not be loaded for) .*$";
-      for sLine in asSelectOutput:
-        assert re.match(srIgnoredErrors, sLine), \
-            "Unexpected select process/thread output:\r\n%s" % "\r\n".join(asSelectOutput);
-  
-  def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
-    oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
-  
-  def fxSetTimeout(oCdbWrapper, nTimeout, fTimeoutCallback, *axTimeoutCallbackArguments):
-#    print "@@@ timeout in %.1f seconds: %s" % (nTimeout, repr(fTimeoutCallback));
-    assert nTimeout >= 0, "Negative timeout does not make sense";
-    oCdbWrapper.oApplicationTimeLock.acquire();
-    try:
-      nTimeoutTime = oCdbWrapper.nApplicationRunTime + nTimeout;
-      if oCdbWrapper.nApplicationResumeTime:
-        # The application is currently running, make an estimate for how long to determine when to stop the application:
-        nTimeoutTime += time.clock() - oCdbWrapper.nApplicationResumeTime;
-    finally:
-      oCdbWrapper.oApplicationTimeLock.release();
-    xTimeout = (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments);
-    oCdbWrapper.oTimeoutsLock.acquire();
-    try:
-      oCdbWrapper.axTimeouts.append(xTimeout);
-#      print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
-    finally:
-      oCdbWrapper.oTimeoutsLock.release();
-    return xTimeout;
-
-  def fClearTimeout(oCdbWrapper, xTimeout):
-    (nTimeoutTime, fTimeoutCallback, axTimeoutCallbackArguments) = xTimeout;
-    oCdbWrapper.oTimeoutsLock.acquire();
-    try:
-      if xTimeout in oCdbWrapper.axTimeouts:
-        oCdbWrapper.axTimeouts.remove(xTimeout);
-#        print "@@@ cleared timeout: %s" % repr(fTimeoutCallback);
-#      else:
-#        # Timeout has already fired and been removed.
-#        print "@@@ ignored clear fired timeout: %s" % repr(fTimeoutCallback);
-#      print "@@@ number of timeouts: %d" % len(oCdbWrapper.axTimeouts);
-    finally:
-      oCdbWrapper.oTimeoutsLock.release();
-      
   def fStop(oCdbWrapper):
     oCdbWrapper.bCdbWasTerminatedOnPurpose = True;
     oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
@@ -389,48 +266,47 @@ class cCdbWrapper(object):
       oCdbProcess.wait();
     oCdbWrapper.bCdbRunning = False;
   
-  def fasReadOutput(oCdbWrapper, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHandleSymbolLoadErrors = True):
-    return cCdbWrapper_fasReadOutput(oCdbWrapper,
-      bIsRelevantIO = bIsRelevantIO,
-      bMayContainApplicationOutput = bMayContainApplicationOutput,
-      bHandleSymbolLoadErrors = bHandleSymbolLoadErrors,
-    );
+  def __del__(oCdbWrapper):
+    # Check to make sure the debugger process is not running
+    oCdbProcess = getattr(oCdbWrapper, "oCdbProcess", None);
+    if oCdbProcess and oCdbProcess.poll() is None:
+      print "*** INTERNAL ERROR: cCdbWrapper did not terminate, the cdb process is still running.";
+      oCdbProcess.terminate();
   
-  def fasSendCommandAndReadOutput(oCdbWrapper, sCommand, bIsRelevantIO = True, bMayContainApplicationOutput = False, bHideCommand = False, \
-      bHandleSymbolLoadErrors = True):
-    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, sCommand,
-      bIsRelevantIO = bIsRelevantIO,
-      bMayContainApplicationOutput = bMayContainApplicationOutput,
-      bHideCommand = bHideCommand,
-      bHandleSymbolLoadErrors = bHandleSymbolLoadErrors,
-    );
+  def fuGetVariableId(oCdbWrapper):
+    return oCdbWrapper.uAvailableVariableIds.pop();
+  def fReleaseVariableId(oCdbWrapper, uVariableId):
+    oCdbWrapper.uAvailableVariableIds.append(uVariableId);
   
-  def fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId):
-    return cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, sCreateExit, uProcessId);
-  
-  def fiEvaluateExpression(oCdbWrapper, sExpression):
-    return cCdbWrapper_fiEvaluateExpression(oCdbWrapper, sExpression);
-  
-  def fuEvaluateExpression(oCdbWrapper, sExpression):
-    return cCdbWrapper_fuEvaluateExpression(oCdbWrapper, sExpression);
-  
-  def ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper):
-    return cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper);
-  
-  def faoGetModulesForFileNameInCurrentProcess(oCdbWrapper, sModuleFileName):
-    return cCdbWrapper_faoGetModulesForFileNameInCurrentProcess(oCdbWrapper, sModuleFileName);
-  
-  def fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper):
-    return cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper);
-  
-  def fasGetStack(oCdbWrapper, sGetStackCommand):
-    return cCdbWrapper_fasGetStack(oCdbWrapper, sGetStackCommand);
-  
-  def ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules_by_sCdbId):
-    return cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, sSymbolOrAddress, doModules_by_sCdbId);
-  
-  def fsHTMLEncode(oCdbWrapper, sLine):
-    return cCdbWrapper_fsHTMLEncode(oCdbWrapper, sLine);
+  # Select process/thread
+  def fSelectProcess(oCdbWrapper, uProcessId):
+    return oCdbWrapper.fSelectProcessAndThread(uProcessId = uProcessId);
+  def fSelectThread(oCdbWrapper, uThreadId):
+    return oCdbWrapper.fSelectProcessAndThread(uThreadId = uThreadId);
+  def fSelectProcessAndThread(oCdbWrapper, uProcessId = None, uThreadId = None):
+    # Both arguments are optional
+    sSelectCommand = "";
+    asSelected = [];
+    if uProcessId is not None:
+      sSelectCommand += "|~[0x%X]s;" % uProcessId;
+      asSelected.append("process");
+    if uThreadId is not None:
+      sSelectCommand += "~~[0x%X]s;" % uThreadId;
+      asSelected.append("thread");
+    if sSelectCommand:
+      sSelectCommand += " $$ Select %s" % " and ".join(asSelected);
+      asSelectOutput = oCdbWrapper.fasSendCommandAndReadOutput(sSelectCommand);
+      if not oCdbWrapper.bCdbRunning: return;
+      srIgnoredErrors = r"^\*\*\* (%s) .*$" % "|".join([
+        r"WARNING: Unable to verify checksum for",
+        r"ERROR: Module load completed but symbols could not be loaded for",
+      ]);
+      for sLine in asSelectOutput:
+        assert re.match(srIgnoredErrors, sLine), \
+            "Unexpected select process/thread output:\r\n%s" % "\r\n".join(asSelectOutput);
+  # Excessive CPU usage
+  def fSetCheckForExcessiveCPUUsageTimeout(oCdbWrapper, nTimeout):
+    oCdbWrapper.oExcessiveCPUUsageDetector.fStartTimeout(nTimeout);
   
   def fnApplicationRunTime(oCdbWrapper):
     oCdbWrapper.oApplicationTimeLock.acquire();
@@ -440,69 +316,51 @@ class cCdbWrapper(object):
       return oCdbWrapper.nApplicationRunTime + time.clock() - oCdbWrapper.nApplicationResumeTime;
     finally:
       oCdbWrapper.oApplicationTimeLock.release();
-
-  def fuGetValue(oCdbWrapper, sAddress):
-    asValueResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%p\\n", %s;' % sAddress, bIsRelevantIO = False);
+  
+  def fuGetValue(oCdbWrapper, sValue):
+    asValueResult = oCdbWrapper.fasSendCommandAndReadOutput( \
+        '.printf "%%p\\n", %s; $$ Get value' % sValue);
     if not oCdbWrapper.bCdbRunning: return;
     assert len(asValueResult) == 1, \
         "Unexpected value result:\r\n%s" % "\r\n".join(asValueResult);
     return long(asValueResult[0], 16);
   
-  def fsGetSymbol(oCdbWrapper, sAddress):
-    asSymbolResult = oCdbWrapper.fasSendCommandAndReadOutput('.printf "%%y\\n", %s;lmi a %s;' % (sAddress, sAddress), bIsRelevantIO = False);
-    if not oCdbWrapper.bCdbRunning: return;
-    # Output for a NULL pointer:
-    #   >00000000
-    #   >start    end        module name
-    #   (list of all modules)
-    # Output for an invalid address (1):
-    #   >00000001
-    #   >start    end        module name
-    if re.match(r"^[0-9A-F`]+\s*$", asSymbolResult[0]):
-      return None; # Invalid address.
-    # Output for a module without symbol information (in x64 debugger):
-    #   >nmozglue+0xf0c4 (73f1f0c4)
-    #   >start             end                 module name
-    #   >73f10000 73f2d000   mozglue    (no symbols)           
-    # Output for a valid symbol (in x86 debugger, notice different header aligning):
-    #   >ntdll!DbgBreakPoint (77ec1250)
-    #   >start    end        module name
-    #   >77e30000 77fab000   nldll      (pdb symbols)          C:\WINDOWS\SYSTEM32\ntdll.dll
-    assert len(asSymbolResult) == 3, \
-        "Unexpected symbol result:\r\n%s" % "\r\n".join(asSymbolResult);
-    oFirstLine = re.match(r"^%s\s*$" % "".join([
-      r"(?:([^!]+)!)?",    # module (optional)
-      r"([^\+]+)",         # symbol (or module if not above)
-      r"(?:\+0x\w+)? ",    # offset (optional)
-      r"\([\w`]+\)",       # address
-    ]), asSymbolResult[0]);
-    assert oFirstLine, \
-        "Unexpected symbol result first line:\r\n%s" % "\r\n".join(asSymbolResult);
-    sCdbModuleName1, sSymbolName = oFirstLine.groups();
-    if sCdbModuleName1 is None:
-      sCdbModuleName1 = sSymbolName;
-      sSymbolName = None;
-    oSecondLine = re.match(r"^start\s+end\s+module name\s*$", asSymbolResult[1]);
-    assert oSecondLine, \
-        "Unexpected symbol result second line:\r\n%s" % "\r\n".join(asSymbolResult);
-    oThirdLine = re.match(r"^%s\s*$" % "".join([
-      r"[\w`]+\s+",         # start " "
-      r"[\w`]+\s+",         # end " "
-      r"(\S+)\s+",          # module name " "
-      r"(?:C)?\s+",         # "C" sometimes appears... no idea what it means.
-      r"\(([^\)]+)\)\s+",   # "(" symbol info ")"  " "
-      r"(?:.+\\)?",        # file path
-      r"([^\\]+?)",         # file name
-    ]), asSymbolResult[2]);
-    assert oThirdLine, \
-        "Unexpected symbol result third line:\r\n%s" % "\r\n".join(asSymbolResult);
-    sCdbModuleName2, sSymbolInfo, sModuleFileName = oThirdLine.groups();
-    assert sCdbModuleName1 == sCdbModuleName2, \
-        "Unexpected symbol module name difference between first and third line:\r\n%s" % "\r\n".join(asSymbolResult);
-    if sSymbolName is None:
-      assert sSymbolInfo == "no symbols", \
-          "Unexpected lack of symbol information:\r\n%s" % "\r\n".join(asSymbolResult);
-      # This module has no symbol information, so there are no symbols at this address.
-      return None;
-    return "%s!%s" % (sModuleFileName, sSymbolName);
+  # Breakpoints
+  def fuAddBreakpoint(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fuAddBreakpoint(oCdbWrapper, *axArguments, **dxArguments);
+  def fRemoveBreakpoint(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fRemoveBreakpoint(oCdbWrapper, *axArguments, **dxArguments);
+  # Timeouts
+  def fxSetTimeout(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fxSetTimeout(oCdbWrapper, *axArguments, **dxArguments);
+  def fClearTimeout(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fClearTimeout(oCdbWrapper, *axArguments, **dxArguments);
+  # cdb I/O
+  def fasReadOutput(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fasReadOutput(oCdbWrapper, *axArguments, **dxArguments);
+  def fasSendCommandAndReadOutput(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fasSendCommandAndReadOutput(oCdbWrapper, *axArguments, **dxArguments);
   
+  def fHandleCreateExitProcess(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fHandleCreateExitProcess(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_ftxGetProcessIdAndBinaryNameForCurrentProcess(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def faoGetModulesForFileNameInCurrentProcess(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_faoGetModulesForFileNameInCurrentProcess(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fdoGetModulesByCdbIdForCurrentProcess(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def fasGetStack(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fasGetStack(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def ftxSplitSymbolOrAddress(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_ftxSplitSymbolOrAddress(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def fsHTMLEncode(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fsHTMLEncode(oCdbWrapper, *axArguments, **dxArguments);
+  
+  def fsGetSymbolForAddress(oCdbWrapper, *axArguments, **dxArguments):
+    return cCdbWrapper_fsGetSymbolForAddress(oCdbWrapper, *axArguments, **dxArguments);
