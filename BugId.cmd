@@ -1,7 +1,7 @@
 @ECHO OFF
 SETLOCAL
 IF NOT DEFINED PYTHON (
-  SET PYTHON="%SystemDrive%:\Python27\python.exe"
+  SET PYTHON="%SystemDrive%\Python27\python.exe"
 ) ELSE (
   SET PYTHON="%PYTHON:"=%"
 )
