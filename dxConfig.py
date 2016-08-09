@@ -19,6 +19,9 @@ dxConfig = {
                                                   # when trying to write bug reports. Enable if you want the report
                                                   # file name to look very similar to the BugId by translating invalid
                                                   # characters to similarly looking Unicode characters.
+  "sReportFolderPath": None,                      # You can specify a folder in which you want to save reports. If you
+                                                  # set this to None, reports will be stored in the current working
+                                                  # directory.
   "BugId": {
     # The values from src\dxBugIdConfig.py get loaded here, but you can override them here.
   },

@@ -69,12 +69,19 @@ if __name__ == "__main__":
     print "    Attach debugger to the process(es) provided in the list. The processes must";
     print "    all have been suspended, as they will be resumed by the debugger.";
     print "";
-    print "Options:";
+    print "Options are of the form --[name]=[JSON value]. Note that you may need to do a";
+    print "bit of quote juggling because Windows likes to eat quotes from the JSON value";
+    print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
+    print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
     print "  --bSaveReport=false";
     print "    Do not save a HTML formatted crash report.";
+    print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
+    print "    Save report to the specified folder, in this case \"BugId\". The quotes";
+    print "    mess is needed because of the Windows quirck explained above.";
     print "  --BugId.bSaveDump=true";
     print "    Save a dump file when a crash is detected.";
-    print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true, --BugId.bOutputStdErr=true";
+    print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true,";
+    print "      --BugId.bOutputStdErr=true";
     print "    Show verbose cdb input / output during debugging.";
     print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
     print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
@@ -91,7 +98,11 @@ if __name__ == "__main__":
       auApplicationProcessIds = [int(x) for x in asArguments[0].split("=", 1)[1].split(",")];
     else:
       sSettingName, sValue = asArguments[0][2:].split("=", 1);
-      xValue = json.loads(sValue);
+      try:
+        xValue = json.loads(sValue);
+      except ValueError:
+        print "- Cannot decode argument JSON value %s" % sValue;
+        os._exit(1);
       asGroupNames = sSettingName.split("."); # last element is not a group name
       sFullName = ".".join(asGroupNames);
       sSettingName = asGroupNames.pop();          # so pop it.
@@ -213,9 +224,13 @@ if __name__ == "__main__":
       sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
       sValidReportFileName = FileSystem.fsTranslateToValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
+      if dxConfig["sReportFolderPath"] is not None:
+        sReportFilePath = FileSystem.fsLocalPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+      else:
+        sReportFilePath = FileSystem.fsLocalPath(sValidReportFileName);
       eWriteDataToFileResult = FileSystem.feWriteDataToFile(
         oBugId.oBugReport.sDetailsHTML,
-        FileSystem.fsLocalPath(sValidReportFileName),
+        sReportFilePath,
         fbRetryOnFailure = lambda: False,
       );
       if eWriteDataToFileResult:
