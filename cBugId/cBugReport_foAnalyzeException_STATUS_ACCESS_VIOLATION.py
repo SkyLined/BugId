@@ -93,7 +93,7 @@ ddtxBugTranslations = {
     ),
   },
 };
-ddtsDetails_uAddress_sISA = {
+ddtsDetails_uSpecialAddress_sISA = {
   "x86": {              # Id                 Description                                           Security impact
             0x00000000: ('NULL',                  "a NULL ptr",                                         None),
             0xBBADBEEF: ('Assertion',             "an address that indicates an assertion has failed",  None),
@@ -218,27 +218,26 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
     # Hide common 
     asHiddenTopFrames = asHiddenTopFramesForReadAndWriteAVs;
   
-  dtsDetails_uAddress = ddtsDetails_uAddress_sISA[oCdbWrapper.sCurrentISA];
-  for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
-    sBugDescription = "Access violation while %s memory at 0x%X using %s" % \
+  dtsDetails_uSpecialAddress = ddtsDetails_uSpecialAddress_sISA[oCdbWrapper.sCurrentISA];
+  for (uSpecialAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uSpecialAddress.items():
+    sBugDescription = "Access violation while %s memory at 0x%X using %s." % \
         (sViolationTypeDescription, uAddress, sAddressDescription);
-    iOffset = uAddress - uBaseAddress;
-    if iOffset == 0:
-      break;
-    uOverflow = {"x86": 1 << 32, "x64": 1 << 64}[oCdbWrapper.sCurrentISA];
-    if iOffset > dxBugIdConfig["uMaxAddressOffset"]: # Maybe this is wrapping:
-      iOffset -= uOverflow;
-    elif iOffset < -dxBugIdConfig["uMaxAddressOffset"]: # Maybe this is wrapping:
-      iOffset += uOverflow;
+    iOffset = uAddress - uSpecialAddress;
+    if iOffset != 0:
+      uOverflow = {"x86": 1 << 32, "x64": 1 << 64}[oCdbWrapper.sCurrentISA];
+      if iOffset > dxBugIdConfig["uMaxAddressOffset"]: # Maybe this is wrapping:
+        iOffset -= uOverflow;
+      elif iOffset < -dxBugIdConfig["uMaxAddressOffset"]: # Maybe this is wrapping:
+        iOffset += uOverflow;
     uOffset = abs(iOffset);
     if uOffset <= dxBugIdConfig["uMaxAddressOffset"]:
-      sAddressId += fsGetOffsetDescription(iOffset);
+      oBugReport.sBugTypeId = "AV%s:%s%s" % (sViolationTypeId, sAddressId, fsGetOffsetDescription(iOffset));
       break;
   else:
     if uAddress >= 0x800000000000:
-      sAddressId = "Invalid";
-      sBugDescription = "Access violation while %s memory at the invalid address 0x%X" % (sViolationTypeDescription, uAddress);
-      sSecurityImpact = "Potentially exploitable security issue";
+      oBugReport.sBugTypeId = "AV%s:Invalid" % sViolationTypeId;
+      sBugDescription = "Access violation while %s memory at the invalid address 0x%X." % (sViolationTypeDescription, uAddress);
+      sSecurityImpact = "Potentially exploitable security issue.";
     else:
       # This is not a special marker or NULL, so it must be an invalid pointer
       # See is page heap has more details on the address at which the access violation happened:
@@ -307,14 +306,14 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
         sBlockAddress, sBlockSize = oBlockAdressAndSizeMatch.groups();
         if sBlockType == "free-ed":
           # Page heap says the memory was freed:
-          sAddressId = "Free";
+          oBugReport.sBugTypeId = "UAF%s" % sViolationTypeId;
           sAddressDescription = "freed memory";
-          sBugDescription = "Access violation while %s %s at 0x%X" % \
+          sBugDescription = "Access violation while %s %s at 0x%X indicates a use-after-free." % \
               (sViolationTypeDescription, sAddressDescription, uAddress);
-          sSecurityImpact = "Potentially exploitable security issue";
+          sSecurityImpact = "Potentially exploitable security issue.";
         elif sBlockType == "busy":
-          # Page heap says the region is allocated,  only logical explanation known is that the read was beyond the
-          # end of the heap block, inside a guard page:
+          # Page heap says the region is allocated, so the heap block must be inaccessible or the access must have been
+          # beyond the end of the heap block, in  the next memory page:
           uBlockAddress = long(sBlockAddress.replace("`", ""), 16);
           uBlockSize = long(sBlockSize.replace("`", ""), 16);
           uGuardPageAddress = (uBlockAddress | 0xFFF) + 1; # Follows the page in which the block is located.
@@ -323,18 +322,43 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           # cannot be used in the id. The same is true for the offset, but the fact that there is an offset is unique to
           # the bug, so that can be added.
           if bAccessIsBeyondBlock:
-            # The access was beyond the end of the block (out-of-bounds, OOB)
             uOffsetPastEndOfBlock = uAddress - uBlockAddress - uBlockSize;
-            sAddressId = "OOB[%s]%s" % (fsGetNumberDescription(uBlockSize), fsGetOffsetDescription(uOffsetPastEndOfBlock));
             sOffsetDescription = "%d/0x%X bytes beyond" % (uOffsetPastEndOfBlock, uOffsetPastEndOfBlock);
+            sBugDescription = "Out-of-bounds access violation while %s memory at 0x%X; %s a %d/0x%X byte heap block at 0x%X." % \
+                (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
+            if uOffsetPastEndOfBlock != 0:
+              if sViolationTypeDescription == "writing":
+                # Page heap stores the heap as close as possible to the edge of a page, taking into account that the start
+                # of the heap block must be properly aligned. Bytes between the heap block and the end of the page are
+                # initialized to 0xD0 and may have been modified before the program wrote beyond the end of the page.
+                # We can use this to get a better idea of where to OOB write started:
+                uCorruptionAddress = uBlockAddress + uBlockSize;
+                while uCorruptionAddress < uGuardPageAddress:
+                  if oCdbWrapper.fuGetValue("by(0x%X)" % uCorruptionAddress) == 0xD0:
+                    uCorruptionAddress += 1;
+                  else:
+                    # We detected a modified byte; there was an OOB write before the one that caused this access
+                    # violation. Use it's offset instead and add this fact to the description.
+                    uOffsetPastEndOfBlock = uCorruptionAddress - (uBlockAddress + uBlockSize);
+                    sBugDescription += " An earlier out-of-bounds write was detected at %d/0x%X bytes beyond the " \
+                        "block because it modified the page heap suffix pattern.";
+                    break;
+              elif uAddress == uGuardPageAddress and uAddress > uBlockAddress + uBlockSize:
+                sBugDescription += " Note that earlier out-of-bounds access before this address could have happened " \
+                    "without having triggered an access violation.";
+              
+            # The access was beyond the end of the block (out-of-bounds, OOB)
+            oBugReport.sBugTypeId = "OOB%s[%s]%s" % (sViolationTypeId, fsGetNumberDescription(uBlockSize), \
+                fsGetOffsetDescription(uOffsetPastEndOfBlock));
           else:
             # The access was inside the block but apparently the kind of access attempted is not allowed (e.g. write to
             # read-only memory).
-            sAddressId = "AccessDenied" + fsGetOffsetDescription(uOffsetFromStartOfBlock);
+            oBugReport.sBugTypeId = "AV%s[%s]@%s" % (sViolationTypeId, fsGetNumberDescription(uBlockSize), \
+                fsGetOffsetDescription(uOffsetFromStartOfBlock));
             sOffsetDescription = "%d/0x%X bytes into" % (uOffsetFromStartOfBlock, uOffsetFromStartOfBlock);
-          sBugDescription = "Access violation while %s memory at 0x%X; %s a %d/0x%X byte heap block at 0x%X" % \
-              (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
-          sSecurityImpact = "Potentially exploitable security issue";
+            sBugDescription = "Access violation while %s memory at 0x%X; %s a %d/0x%X byte heap block at 0x%X." % \
+                (sViolationTypeDescription, uAddress, sOffsetDescription, uBlockSize, uBlockSize, uBlockAddress);
+          sSecurityImpact = "Potentially exploitable security issue.";
         else:
           raise NotImplemented("NOT REACHED");
         sBLockHTML = sBlockHTMLTemplate % {
@@ -378,9 +402,9 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
           "!vprot: No containing memory region found",
           "No export vprot found",
         ]), asMemoryProtectionInformation[0]):
-          sAddressId = "Unallocated";
-          sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-          sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address";
+          oBugReport.sBugTypeId = "AV%s:Unallocated" % sViolationTypeId;
+          sBugDescription = "Access violation while %s unallocated memory at 0x%X." % (sViolationTypeDescription, uAddress);
+          sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address.";
         else:
           uAllocationStartAddress = None;
           uAllocationProtectionFlags = None;
@@ -409,9 +433,9 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
             elif sInfoType == "Type":
               uTypeFlags = uValue;
           if uStateFlags == 0x10000:
-            sAddressId = "Unallocated";
-            sBugDescription = "Access violation while %s unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-            sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address";
+            oBugReport.sBugTypeId = "AV%s:Unallocated" % sViolationTypeId;
+            sBugDescription = "Access violation while %s unallocated memory at 0x%X." % (sViolationTypeDescription, uAddress);
+            sSecurityImpact = "Potentially exploitable security issue, if the attacker can control the address or the memory at the address.";
           elif uStateFlags == 0x2000: # MEM_RESERVE
 # These checks were added to make sure I understood exactly what was going on. However, it turns out that I don't
 # because these checks fail without me being able to understand why. So, I've decided to disable them and see what
@@ -421,9 +445,9 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
 #            # PAGE_READONLY !? Apparently...
 #            assert uProtectionFlags == 0x1 or uAllocationProtectionFlags in [0x1, 02], \
 #                "Expected MEM_RESERVE memory to have protection PAGE_NOACCESS or PAGE_READONLY\r\n%s" % "\r\n".join(asMemoryProtectionInformation);
-            sAddressId = "Reserved";
-            sBugDescription = "Access violation while %s reserved but unallocated memory at 0x%X" % (sViolationTypeDescription, uAddress);
-            sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled";
+            oBugReport.sBugTypeId = "AV%s:Reserved" % sViolationTypeId;
+            sBugDescription = "Access violation while %s reserved but unallocated memory at 0x%X." % (sViolationTypeDescription, uAddress);
+            sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled.";
           elif uStateFlags == 0x1000: # MEM_COMMIT
             dsMemoryProtectionsDescription_by_uFlags = {
               0x01: "inaccessible",  0x02: "read-only",  0x04: "read- and writable",  0x08: "read- and writable",
@@ -432,12 +456,11 @@ def cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION(oBugReport, oCdbWrappe
             sMemoryProtectionsDescription = dsMemoryProtectionsDescription_by_uFlags.get(uAllocationProtectionFlags);
             assert sMemoryProtectionsDescription, \
                 "Unexpected MEM_COMMIT memory to have protection value 0x%X\r\n%s" % (uAllocationProtectionFlags, "\r\n".join(asMemoryProtectionInformation));
-            sAddressId = "Arbitrary";
-            sBugDescription = "Access violation while %s %s memory at 0x%X" % (sViolationTypeDescription, sMemoryProtectionsDescription, uAddress);
-            sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled";
+            oBugReport.sBugTypeId = "AV%s:Arbitrary" % sViolationTypeId;
+            sBugDescription = "Access violation while %s %s memory at 0x%X." % (sViolationTypeDescription, sMemoryProtectionsDescription, uAddress);
+            sSecurityImpact = "Potentially exploitable security issue, if the address is attacker controlled.";
           else:
             raise AssertionError("Unexpected memory state 0x%X\r\n%s" % (uStateFlags, "\r\n".join(asMemoryProtectionInformation)));
-  oBugReport.sBugTypeId = "%s%s:%s" % (oBugReport.sBugTypeId, sViolationTypeId, sAddressId);
   oBugReport.sBugDescription = sBugDescription + sViolationTypeNotes;
   oBugReport.sSecurityImpact = sSecurityImpact;
   dtxBugTranslations = ddtxBugTranslations.get(oBugReport.sBugTypeId, None);

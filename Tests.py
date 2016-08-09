@@ -18,7 +18,7 @@ sBaseFolderPath = os.path.dirname(__file__);
 sys.path.extend([os.path.join(sBaseFolderPath, x) for x in ["modules"]]);
 from cBugId import cBugId;
 from cBugId.sOSISA import sOSISA;
-from cBugId.cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uAddress_sISA;
+from cBugId.cBugReport_foAnalyzeException_STATUS_ACCESS_VIOLATION import ddtsDetails_uSpecialAddress_sISA;
 import FileSystem;
 
 asTestISAs = [sOSISA];
@@ -183,7 +183,6 @@ if __name__ == "__main__":
   for sISA in asTestISAs:
     aoTests.append(cTest(sISA, ["Nop"], None)); # No exceptions, just a clean program exit.
     aoTests.append(cTest(sISA, ["CPUUsage"], "CPUUsage"));
-    sMinusPadding = {"x86": "", "x64": "FFFFFFFF"}[sISA];
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "1"], "AVR:NULL+1"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "2"], "AVR:NULL+2"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "3"], "AVR:NULL+3"));
@@ -193,6 +192,7 @@ if __name__ == "__main__":
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "7"], "AVR:NULL+4*N+3"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", "8"], "AVR:NULL+4*N"));
 #    if sISA != "x64": # Does not work on x64 dues to limitations of exception handling (See foAnalyzeException_STATUS_ACCESS_VIOLATION for details).
+    sMinusPadding = {"x86": "", "x64": "FFFFFFFF"}[sISA];
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFF"], "%s:NULL-1" % {"x86": "AVR", "x64": "AV?"}[sISA]));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFE"], "AVR:NULL-2"));
     aoTests.append(cTest(sISA, ["AccessViolation", "READ", sMinusPadding+"FFFFFFFD"], "AVR:NULL-3"));
@@ -212,36 +212,42 @@ if __name__ == "__main__":
     aoTests.append(cTest(sISA, ["StackExhaustion"], "StackExhaustion"));
     aoTests.append(cTest(sISA, ["RecursiveCall"], "RecursiveCall"));
     aoTests.append(cTest(sISA, ["StaticBufferOverrun10", "Write", "20"], "FailFast2:StackCookie"));
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "-1"], "HeapCorrupt:OOB[4*N]-1"));  # Write the byte at offset -1 from the start of the buffer.
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "c"], "HeapCorrupt:OOB[4*N]"));     # Write the byte at offset 0 from the end of the buffer.
-    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "d"], "HeapCorrupt:OOB[4*N]+1"));   # Write the byte at offset 1 from the end of the buffer.
+    # These are detected by Page Heap / Application Verifier
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "-1"], "OOBW[4*N]-1"));  # Write the byte at offset -1 from the start of the buffer.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c",  "c"], "OOBW[4*N]"));    # Write the byte at offset 0 from the end of the buffer.
+    aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c",  "d"], "OOBW[4*N]+1"));  # Write the byte at offset 1 from the end of the buffer.
     if sISA not in ["x86"]:
+      # These are detected because they cause an access violation.
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "1c"], "OOBW[4*N]+4*N")); # Write the byte at offset 0x10 from the end of the buffer.
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "1d"], "OOBW[4*N]+4*N+1")); # Write the byte at offset 0x10 from the end of the buffer.
       # x86 test results in "0BA2 FailFast2:AppExit Tests_x86.exe!abort (A critical issue was detected (code C0000409, fail fast code 7: FAST_FAIL_FATAL_APP_EXIT))"
       aoTests.append(cTest(sISA, ["PureCall"], "PureCall"));
       # Page heap does not appear to work for x86 tests on x64 platform.
-      aoTests.append(cTest(sISA, ["UseAfterFree", "Read", "20", "0"], "AVR:Free"));
-      aoTests.append(cTest(sISA, ["UseAfterFree", "Write", "20", "0"], "AVW:Free"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "20", "4"], "AVR:OOB[4*N]"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1f", "4"], "AVR:OOB[4*N+3]+1"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1e", "4"], "AVR:OOB[4*N+2]+2"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1d", "4"], "AVR:OOB[4*N+1]+3"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "20", "4"], "AVW:OOB[4*N]"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1f", "4"], "AVW:OOB[4*N+3]+1"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1e", "4"], "AVW:OOB[4*N+2]+2"));
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1d", "4"], "AVW:OOB[4*N+1]+3"));
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "10"], "AVR:OOB[4*N]+4*N"));    # Read byte at offset 4 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "11"], "AVR:OOB[4*N]+4*N+1"));  # Read byte at offset 5 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "12"], "AVR:OOB[4*N]+4*N+2"));  # Read byte at offset 6 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "13"], "AVR:OOB[4*N]+4*N+3"));  # Read byte at offset 7 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "14"], "AVR:OOB[4*N]+4*N"));    # Read byte at offset 8 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "10"], "AVW:OOB[4*N]+4*N"));   # Write byte at offset 4 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "11"], "AVW:OOB[4*N]+4*N+1")); # Write byte at offset 5 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "12"], "AVW:OOB[4*N]+4*N+2")); # Write byte at offset 6 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "13"], "AVW:OOB[4*N]+4*N+3")); # Write byte at offset 7 from the end of the memory block
-      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "14"], "AVW:OOB[4*N]+4*N"));   # Write byte at offset 8 from the end of the memory block
+      aoTests.append(cTest(sISA, ["UseAfterFree", "Read", "20", "0"], "UAFR"));
+      aoTests.append(cTest(sISA, ["UseAfterFree", "Write", "20", "0"], "UAFW"));
+      # These issues are not detected until they cause an access violation; there is no way to detect and report OOBRs before this happens.
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "20", "4"], "OOBR[4*N]"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1f", "4"], "OOBR[4*N+3]+1"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1e", "4"], "OOBR[4*N+2]+2"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Read", "1d", "4"], "OOBR[4*N+1]+3"));
+      # These issues are detected when they cause an access violation; but the earlier OOBWs can be detected because the page heap suffix was modified.
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "20", "4"], "OOBW[4*N]"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1f", "4"], "OOBW[4*N+3]"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1e", "4"], "OOBW[4*N+2]"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Heap", "Write", "1d", "4"], "OOBW[4*N+1]"));
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "10"], "OOBR[4*N]+4*N"));    # Read byte at offset 4 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "11"], "OOBR[4*N]+4*N+1"));  # Read byte at offset 5 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "12"], "OOBR[4*N]+4*N+2"));  # Read byte at offset 6 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "13"], "OOBR[4*N]+4*N+3"));  # Read byte at offset 7 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Read", "c", "14"], "OOBR[4*N]+4*N"));    # Read byte at offset 8 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "10"], "OOBW[4*N]+4*N"));   # Write byte at offset 4 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "11"], "OOBW[4*N]+4*N+1")); # Write byte at offset 5 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "12"], "OOBW[4*N]+4*N+2")); # Write byte at offset 6 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "13"], "OOBW[4*N]+4*N+3")); # Write byte at offset 7 from the end of the memory block
+      aoTests.append(cTest(sISA, ["OutOfBounds", "Heap", "Write", "c", "14"], "OOBW[4*N]+4*N"));   # Write byte at offset 8 from the end of the memory block
     if False:
       # This does not appear to work at all. TODO: fix this.
-      aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "AVW:OOB"));
+      aoTests.append(cTest(sISA, ["BufferOverrun", "Stack", "Write", "20", "1000"], "OOBW"));
     
     for (uBaseAddress, sDescription) in [
       # 0123456789ABCDEF
@@ -272,8 +278,8 @@ if __name__ == "__main__":
         cTest(sISA, ["AccessViolation", "Call", "%X" % uBaseAddress], "AVE:%s" % sDescription),
         cTest(sISA, ["AccessViolation", "Jump", "%X" % uBaseAddress], "AVE:%s" % sDescription),
   
-  for (sISA, dtsDetails_uAddress) in ddtsDetails_uAddress_sISA.items():
-    for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uAddress.items():
+  for (sISA, dtsDetails_uSpecialAddress) in ddtsDetails_uSpecialAddress_sISA.items():
+    for (uBaseAddress, (sAddressId, sAddressDescription, sSecurityImpact)) in dtsDetails_uSpecialAddress.items():
       if uBaseAddress < (1 << 32) or (sISA == "x64" and uBaseAddress < (1 << 47)):
         aoTests.append(cTest(sISA, ["AccessViolation", "Read", "%X" % uBaseAddress], "AVR:%s" % sAddressId));
         aoTests.append(cTest(sISA, ["AccessViolation", "Write", "%X" % uBaseAddress], "AVW:%s" % sAddressId));

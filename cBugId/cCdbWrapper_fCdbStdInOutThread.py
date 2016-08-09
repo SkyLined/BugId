@@ -240,6 +240,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         bGetBugReportForException = False;
       elif uExceptionCode in [STATUS_BREAKPOINT, STATUS_WX86_BREAKPOINT]:
         if cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
+          # Detected output from application verifier (page heap) indicating it has detected a bug.
           bGetBugReportForException = False; # We already have one
         elif dxBugIdConfig["bIgnoreFirstChanceBreakpoints"] and sChance == "first":
           bGetBugReportForException = False;

@@ -102,12 +102,12 @@ def cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
         assert uCorruptionOffset < 0, "Page heap unexpectedly detected corruption at offset 0x%X of a 0x%X byte heap block!?\r\n%s" % \
             (uCorruptionOffset, uHeapBlockSize, "\r\n".join(asRelevantLines));
         sOffsetDescription = "%d/0x%X bytes before" % (-uCorruptionOffset, -uCorruptionOffset);
-      sBugTypeId = "HeapCorrupt:OOB[%s]%s" % (fsGetNumberDescription(uHeapBlockSize), fsGetOffsetDescription(uCorruptionOffset));
+      sBugTypeId = "OOBW[%s]%s" % (fsGetNumberDescription(uHeapBlockSize), fsGetOffsetDescription(uCorruptionOffset));
       sBugDescription = "Page heap detected %s at 0x%X; %s a %d/0x%X byte heap block at address 0x%X" % \
           (sMessage, uCorruptionAddress, sOffsetDescription, uHeapBlockSize, uHeapBlockSize, uHeapBlockAddress);
       uRelevantAddress = uCorruptionAddress;
     else:
-      sBugTypeId = "HeapCorrupt:???[%s]" % fsGetNumberDescription(uHeapBlockSize);
+      sBugTypeId = "HeapCorrupt[%s]" % fsGetNumberDescription(uHeapBlockSize);
       sBugDescription = "Page heap detected %s in a %d/0x%X byte heap block at address 0x%X." % \
           (sMessage, uHeapBlockSize, uHeapBlockSize, uHeapBlockAddress);
       uRelevantAddress = uHeapBlockAddress;

@@ -79,37 +79,51 @@ you crash an application twice using two different bugs, you should get two
 different bug ids.
 
 `BugType` can have many values, including:
-* `AV?:{memory/address type}{+/-offset}` - An access violation was detect while
-  attempting to read (`AVR`), write (`AVW`) or execute (`AVE`) the specified
-  type of memory or address, `{address/memory type}` types include:
+* `AV?:{memory/address type}{+/-offset}` - An access violation was detected
+  while attempting to read (`AVR`), write (`AVW`) or execute (`AVE`) the
+  specified type of memory or address, `{address/memory type}` types include:
   * `NULL` - a NULL pointer was used to address the memory,
   * `Assertion` - this address is used to indicate an assertion has failed.
   * `PoisonUninitialized` - the pointer used was read from uninitialized memory.
-  * `Free` - the memory at this address has recently been freed,
   * `PoisonFree` - the pointer used was read from freed memory.
-  * `OOB[N]` - the address is out-of-bounds of allocated memory, where N is the
-    size of the memory allocation.
   * `PoisonOOB` - the pointer used was read from memory that is out-of-bounds.
   * `Invalid` - the memory at this address is not accessible from user-land.
   * `Unallocated` - no memory is allocated at the address,
   * `Reserved` - memory has been reserved but not committed at this address,
   * `Arbitrary` - memory is allocated at this address, but not accessible,
   
-  The optional `{+/-offset}` part indicates an offset from the address. For
-  example, `AVR:NULL+8` means an attempt to read data at offset 8 from a NULL
-  pointer, and `AVW:OOB[0x10]+2` means an attempt to read data two bytes after
-  a 16 byte buffer.
+  An optional offset is added if the access violation happened near the exact
+  address, e.g. AVR:NULL+8 is an attempt to write at offset 8 from a NULL
+  pointer (i.e. at address 8).
   
-  Both the size of an OOB buffer and the offset can be made *architecture
-  independent* by setting the `dxBugIdConfig` setting
+* `AV?[size]{+/-/@offset}` - Similar to above, but the access violation
+  happened at the given offset before, in or after an allocated heap block of
+  given size, e.g. AVW[4]-1 is 1 byte before, AVW[4]@1 is at offset one inside,
+  and AVW[4]+1 is one byte beyond a 4 byte memory block.
+
+* `UAF?` - (Use-After-Free) An access violation was detected while attempting
+  to access freed memory. Unfortunately, no information about the size of the
+  freed memory block and the offset at which it was accessed can be provided.
+
+* `OOB?[size]{+/-offset}` - (Out-Of-Bounds) The application has written or
+  attempted to access a heap block of the given size at the given offset
+  before or after the heap block.
+  
+  Both the sizes and the offsets used in the above BugIds can be made
+  *architecture independent* by setting the `dxBugIdConfig` setting
   `uArchitectureIndependentBugIdBits` to the smallest number of bits for the
   desired architectures (e.g. 32 when testing a 32-bit and 64-bit architecture).
   This causes these values to be presented modulo that number of bits, which
-  should make the bug id the same for both architectures. In the case of the 
-  `AVW:OOB[0x10]+2` example, if that was on a 32-bit architecture and the 64-bit
-  version of the application would allocated twice that amount of memory, the
-  bug id for both would be `AVW:OOB[4*N]+2`, as 0x10 and 0x20 are both divisible
-  by 4 without a remainder, while 2 is not.
+  should make the bug id the same for both architectures. For instance, if a
+  32-bit application allocates 0x10 bytes and a 64-bit application 0x20 bytes
+  for the same structure (e.g. an array of 4 pointers), an attempt to write to
+  the *sixth* entry in this array would lead to BugId `OOBW[0x10]+4` and
+  `OOBW[0x20]+8` respectively. With `uArchitectureIndependentBugIdBits` set to
+  32 however, both would lead to `OOBW[4*N]`, as 0x4, 0x8, 0x10 and 0x20 are
+  all divisible by 4. An attempt to read the *second WORD* after the *fifth*
+  pointer (`OOBW[0x10]+6`; 4+2 and `OOBW[0x20]+0xA`; 8+2) would result in
+  `OOBW[4*N]+2` for both.
+
 * `StackExhaustion` - A function has attempted to allocate too much stack memory.
 * `RecursiveCall` - A recursive function call loop has used too much stack memory.
 * `C++` - An unhandeled C++ exception 
