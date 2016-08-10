@@ -167,7 +167,10 @@ if __name__ == "__main__":
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
   
   def fExceptionDetectedHandler(uCode, sDescription):
-    print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
+    if uCode:
+      print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
+    else:
+      print "  * T+%.1f A potential bug (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), sDescription);
   
   def fHandleApplicationRunTimeout():
     print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \

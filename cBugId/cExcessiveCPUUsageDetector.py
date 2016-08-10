@@ -82,6 +82,8 @@ class cExcessiveCPUUsageDetector(object):
   def fCheckUsage(oExcessiveCPUUsageDetector):
     if bDebugOutput: print "@@@ Checking for excessive CPU usage...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
+    if oCdbWrapper.fExceptionDetectedCallback:
+      oCdbWrapper.fExceptionDetectedCallback(None, "Excessive CPU usage check"); # No exception code
     oExcessiveCPUUsageDetector.oLock.acquire();
     try:
       if oExcessiveCPUUsageDetector.xCheckUsageTimeout is None:
@@ -165,6 +167,8 @@ class cExcessiveCPUUsageDetector(object):
     if bDebugOutput: print "@@@ Installing excessive CPU usage worm...";
     oCdbWrapper = oExcessiveCPUUsageDetector.oCdbWrapper;
     # NO LOCK! Called from method that already locked it.
+    if oCdbWrapper.fExceptionDetectedCallback:
+      oCdbWrapper.fExceptionDetectedCallback(None, "Excessive CPU usage"); # No exception code
     
     # Excessive CPU usage is assumed to be caused by code running in a loop for too long, causing the function that
     # contains the code to never return to its caller. The way a useful BugId is determined, is by finding an address
