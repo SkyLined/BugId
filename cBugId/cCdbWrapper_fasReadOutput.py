@@ -11,6 +11,7 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
   uIndex = 0;
   while uIndex < len(asLines):
     sLine = asLines[uIndex];
+    uSkipLines = 0;
     oCannotAttachMatch = re.match(r"^Cannot debug pid (\d+), (?:Win32 error 0n(\d+)|NTSTATUS 0x(\w+))\s*$", sLine);
     if oCannotAttachMatch: # Some of these errors can cause cdb to exit, so report them even if cdb is no longer running.
       sProcessId, sWin32Error, sNTStatus = oCannotAttachMatch.groups();
@@ -26,10 +27,9 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
       if oBadPDBFileError:
         sPDBFilePath = [s for s in oBadPDBFileError.groups() if s][0];
         FileSystem.fbDeleteFile(sPDBFilePath);
-        asLines.pop(uIndex);
-        continue;
-      if bHandleSymbolLoadErrors:
-        oFailedToLoadSymbolsError = re.match(r"^%s\s*$" % "|".join([
+        uSkipLines = 1;
+      else:
+        oFailedToLoadSymbolsError = not oBadPDBFileError and bHandleSymbolLoadErrors and re.match(r"^%s\s*$" % "|".join([
           r"\*\*\* ERROR: Module load completed but symbols could not be loaded for (?:.*\\)*([^\\]+)",
         ]), sLine);
         if oFailedToLoadSymbolsError:
@@ -41,16 +41,19 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
             bHandleSymbolLoadErrors = False,
           );
           if not oCdbWrapper.bCdbRunning: return;
-          asLines.pop(uIndex);
-          continue;
-      # Strip symbol warnings:
-      if re.match(r"^%s\s*$" % "|".join([
-        "\*\*\* Warning: Unable to verify checksum for .*",
-        "\*\*\* DBGHELP: SharedUserData \- virtual symbol module",
-      ]), sLine):
+          uSkipLines = 1;
+        # Strip useless symbol warnings and errors:
+        elif re.match(r"^%s\s*$" % "|".join([
+          r"\*\*\* ERROR: Symbol file could not be found\.  Defaulted to export symbols for .* \-",
+          r"\*\*\* WARNING: Unable to verify checksum for .*",
+          r"\*\*\* DBGHELP: SharedUserData \- virtual symbol module",
+        ]), sLine):
+          uSkipLines = 1;
+      # This was some symbol loading error that should be removed from the output:
+      for x in xrange(uSkipLines):
         asLines.pop(uIndex);
-        continue;
-    uIndex += 1;
+    if uSkipLines == 0:
+      uIndex += 1;
   return asLines;
 
 def cCdbWrapper_fasReadOutput(oCdbWrapper,
