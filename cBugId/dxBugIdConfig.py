@@ -92,6 +92,10 @@ for (sName, xValue) in {
                                         # If you often see "CDB failed to load symbols" assertion errors, try
                                         # increasing the number and see if that resolves it.
   "asSymbolCachePaths": [],             # Where should symbols be cached?
+  "bDeferredSymbolLoads": True,         # True means enable SYMOPT_DEFERRED_LOADS in cdb, see Debugger help for details.
+  "bUse_NT_SYMBOL_PATH": True,          # Set to True to have BugId use _NT_SYMBOL_PATH for symbol caches and servers.
+                                        # Set to False to have BugId ignore it and only use values from dxBugIdConfig
+                                        # and the arguments provided to cBugId.
   ### Source code settings
   "bEnableSourceCodeSupport": True,     # Tell cdb to load source line symbols or not.
   "dsURLTemplate_by_srSourceFilePath": {}, # Used to translate source file paths to links to online code repository.
