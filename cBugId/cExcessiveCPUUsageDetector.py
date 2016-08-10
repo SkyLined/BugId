@@ -243,7 +243,7 @@ class cExcessiveCPUUsageDetector(object):
       if not oCdbWrapper.bCdbRunning: return;
       oExcessiveCPUUsageDetector.fWormDebugOutput(
         "Moving from IP=%ly, SP=%p by setting breakpoint at IP=%ly...",
-        uInstructioNpointer, uStackPointer, uReturnAddress
+        uInstructionPointer, uStackPointer, uReturnAddress
       );
       if not oCdbWrapper.bCdbRunning: return;
       # Try to move the breakpoint to the return addess:
