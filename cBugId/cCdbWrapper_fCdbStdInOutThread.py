@@ -269,10 +269,7 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         else:
           # Report that the application is paused for analysis...
           if oCdbWrapper.fExceptionDetectedCallback:
-            if sBreakpointId:
-              oCdbWrapper.fExceptionDetectedCallback(STATUS_BREAKPOINT, "A BugId breakpoint");
-            else:
-              oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
+            oCdbWrapper.fExceptionDetectedCallback(uExceptionCode, sExceptionDescription);
           # And potentially report that the application is resumed later...
           bApplicationWasPausedToAnalyzeAnException = True;
           # Create a bug report, if the exception is fatal.
