@@ -244,7 +244,7 @@ if __name__ == "__main__":
     print "- The application has terminated without crashing.";
     print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
   
-  if dxConfig["bShowLincenseAndDonationInfo"]:
+  if dxConfig["bShowLicenseAndDonationInfo"]:
     print;
     print "This version of BugId is provided free of charge for non-commercial use only.";
     print "If you find it useful and would like to make a donation, you can send bitcoin";

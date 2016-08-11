@@ -13,7 +13,7 @@ dxConfig = {
   "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
-  "bShowLincenseAndDonationInfo": True,           # Set to False to disable the licensing and donations information
+  "bShowLicenseAndDonationInfo": True,            # Set to False to disable the licensing and donations information
                                                   # shown at the end of each run. Feel free to act on it first :)
   "bUseUnicodeReportFileNames": False,            # Disable if you are experiencing "Invalid file name" errors
                                                   # when trying to write bug reports. Enable if you want the report
