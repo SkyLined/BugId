@@ -7,12 +7,22 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["mo
   sys.path.insert(0, sPath);
 
 from dxConfig import dxConfig;
-from cBugId import cBugId;
+try:
+  from cBugId import cBugId;
+except:
+  print "*" * 80;
+  print "BugId.py depends on cBugId, which you can download at:";
+  print "    https://github.com/SkyLined/cBugId/";
+  print "After downloading, please copy the files to the \"modules\\cBugId\" folder.";
+  print "*" * 80;
+  raise;
 try:
   import FileSystem;
 except:
   print "*" * 80;
-  print "BugId.py depends on FileSystem, which you can download at https://github.com/SkyLined/FileSystem/";
+  print "BugId.py depends on FileSystem, which you can download at:";
+  print "    https://github.com/SkyLined/FileSystem/";
+  print "After downloading, please copy the files to the \"modules\\FileSystem\" folder.";
   print "*" * 80;
   raise;
 
