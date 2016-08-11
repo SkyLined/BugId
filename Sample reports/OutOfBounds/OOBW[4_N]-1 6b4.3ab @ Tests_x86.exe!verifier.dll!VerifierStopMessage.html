@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+      * {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        border-spacing: 0;
+        border-collapse: collapse;
+        color: inherit;
+        background: transparent;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        font-size: inherit;
+      }
+      html {
+        overflow-y: scroll; /* prevent center jumping */
+        color: rgba(22, 19, 16, 1);
+        background: #E5E2DE;
+        font-weight: 400;
+        padding: 1em;
+        font-family: Monospace;
+      }
+      body {
+        margin: auto;
+        max-width: 80em;
+      }
+      h1, h2, h3, h4, h5 {
+        font-weight: 700;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+        margin-bottom: -1px;
+      }
+      :link {
+        border-bottom: 1px dotted rgba(0,0, 238, 0.25);
+      }
+      :link:hover, :link:active {
+        border-bottom: 1px solid rgba(0,0, 238, 1);
+      }
+      :visited {
+        border-bottom: 1px dotted rgba(85, 26, 139, 0.25);
+      }
+      :visited:hover, :visited:active {
+        border-bottom: 1px solid rgba(85, 26, 139, 1);
+      }
+      table {
+        border-spacing: 0;
+        border-collapse: collapse;
+      }
+      ul, ol {
+        padding-left: 2em;
+      }
+      h1 {
+        padding: 0.5em 1em 0.5em 1em;
+        color: rgba(255, 251, 247, 1);
+        background-color: rgba(22, 19, 16, 1);
+        font-size: 120%;
+        margin-bottom: 0.5em;
+      }
+      h2 {
+        font-size: 120%;
+      }
+      td {
+        vertical-align: top;
+      }
+      sup, sub {
+        font-size: 50%;
+      }
+      .Block {
+        padding: 1em;
+        border: 1px solid rgba(22, 19, 16, 0.2);
+        border-radius: 0.5em;
+        background-color: rgba(255, 251, 247, 1);
+        box-shadow: 0 1em   2em rgba(22, 19, 16, 0.2),
+                    0 1em   1em rgba(22, 19, 16, 0.05),
+                    0 1em 0.5em rgba(22, 19, 16, 0.05);
+        margin-bottom: 1em;
+        display: block;
+      }
+      .Content {
+        overflow-x: auto;
+      }
+      .Collapsable > .Content,
+      .Collapsed > .CollapsedPlaceholder {
+        display: block;
+      }
+      .Collapsable > .CollapsedPlaceholder,
+      .Collapsed > .Content {
+        display: none;
+      }
+      .BlockHeaderIcon {
+        float: right;
+        vertical-align: top;
+        border: 1px solid rgba(255, 251, 247, 1);
+      }
+      .Collapsable .BlockHeaderIcon {
+        padding: 1px 0.8em 0 0;
+      }
+      .Collapsed .BlockHeaderIcon {
+        padding: 0.8em 0.8em 0 0;
+      }
+      .Footer {
+        padding: 1em;
+        text-align: center;
+      }
+      .Important {
+        background-color: rgba(255,255,0,0.3);
+      }
+      .SecurityImpact {
+        background-color: rgba(255,0,0,0.2);
+      }
+      .CDBPrompt {
+        white-space: pre;
+      }
+      .CDBCommand {
+        font-weight: bold;
+        white-space: pre;
+      }
+      .CDBStdOut {
+        color: grey;
+        white-space: pre;
+      }
+      .CDBOrApplicationStdOut {
+        color: black;
+        white-space: pre;
+      }
+      .CDBStdErr {
+        color: maroon;
+        white-space: pre;
+      }
+      .CDBIgnoredException {
+        color: grey;
+        white-space: pre;
+      }
+      .Stack {
+        white-space: pre;
+      }
+      .StackIgnored {
+        color: silver;
+        white-space: pre;
+      }
+      .StackHash {
+        font-weight: bold;
+        background: rgba(255,255,0,0.2);
+        white-space: pre;
+      }
+      .StackNoSymbol {
+        font-style: italic;
+        white-space: pre;
+      }
+      .StackSource {
+        color: grey;
+        white-space: pre;
+      }
+      .Registers {
+        white-space: pre;
+      }
+      .Memory {
+        white-space: pre;
+      }
+      .BinaryInformation {
+        white-space: pre;
+      }
+      .DisassemblyInformation {
+        white-space: pre;
+      }
+      .DisassemblyAddress {
+        color: grey;
+        white-space: pre;
+      }
+      .DisassemblyOpcode {
+        color: grey;
+        white-space: pre;
+      }
+      .DisassemblyInstruction {
+        white-space: pre;
+      }
+      hr {
+        border: dotted black;
+        border-width: 0 0 1pt 0;
+      }
+    </style>
+    <script>
+      function fAddClickHandler(oBlockHeaderElement) {
+        var oBlockElement = oBlockHeaderElement.parentElement,
+            bCollapsedPlaceholdersRemoved = false;
+        oBlockHeaderElement.onclick = function () {
+          oBlockElement.className = oBlockElement.className.replace(
+            /\b(Collapsed|Collapsable)\b/,
+            function (sCurrentClassName) {
+              return {"Collapsable": "Collapsed", "Collapsed": "Collapsable"}[sCurrentClassName];
+            }
+          );
+          if (!bCollapsedPlaceholdersRemoved) {
+            // A copy of this list is needed as it is dynamic and we plan to remove elements.
+            var aoCollapsedPlaceholderElements = Array.prototype.slice.call(document.getElementsByClassName("CollapsedPlaceholder"));
+            for (var u = 0; u < aoCollapsedPlaceholderElements.length; u++) {
+              var oCollapsedPlaceholderElement = aoCollapsedPlaceholderElements[u];
+              oCollapsedPlaceholderElement.parentNode.removeChild(oCollapsedPlaceholderElement);
+            };
+          };
+        };
+      };
+      onload = function() {
+        var aoBlockHeaderElements = document.getElementsByClassName("BlockHeader");
+        for (var u = 0; u < aoBlockHeaderElements.length; u++) {
+          fAddClickHandler(aoBlockHeaderElements[u]);
+        };
+      };
+    </script>
+    <title>OOBW[4*N]-1 6b4.3ab @ Tests_x86.exe!verifier.dll!VerifierStopMessage</title>
+  </head>
+  <body>
+    <div class="Block Collapsable">
+      <h1 class="BlockHeader">BugId OOBW[4*N]-1 6b4.3ab @ Tests_x86.exe!verifier.dll!VerifierStopMessage summary<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <table>
+          <tr><td>BugId:                  &nbsp;</td><td><span class="Important"><b>OOBW[4*N]-1 6b4.3ab</b></span></td></tr>
+          <tr><td>Location:               &nbsp;</td><td><span class="Important">Tests_x86.exe!verifier.dll!VerifierStopMessage</span></td></tr>
+          <tr><td>Description:            &nbsp;</td><td><span class="Important">Page heap detected heap corruption at 0x5B2EFEF; 1/0x1 bytes before a 12/0xC byte heap block at address 0x5B2EFF0</span></td></tr>
+          <tr><td>Version:                &nbsp;</td><td><b>Tests_x86.exe</b>: Wed May 11 15:44:05 2016 (57333725)<br/><b>verifier.dll</b>: 10.0.14393.0</td></tr>
+          <tr><td>Security&nbsp;impact:   &nbsp;</td><td><span class="SecurityImpact">Potentially exploitable security issue, if the corruption is attacker controlled</span></td></tr>
+        </table>
+        <br/>
+        BugId version <b>16-08-11</b>. You may not use this version of BugId for commercial purposes. Please
+        contact the author if you wish to use BugId commercially. Contact and licensing information can be found at the
+        bottom of this report.
+      </div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Stack<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <ol><li><span class="StackHash">verifier.dll!VerifierStopMessage + 0x27E</span> (6b4 in id)<span class="StackSource"></span></li><li><span class="StackHash">verifier.dll!VerifierDisableFaultInjectionExclusionRange + 0x4279 (this may not be correct)</span> (3ab in id)<span class="StackSource"></span></li><li><span class="Stack">verifier.dll!VerifierDisableFaultInjectionExclusionRange + 0x463A (this may not be correct)</span><span class="StackSource"></span></li><li><span class="Stack">verifier.dll!VerifierDisableFaultInjectionExclusionRange + 0x4B72 (this may not be correct)</span><span class="StackSource"></span></li><li><span class="Stack">verifier.dll!VerifierDisableFaultInjectionExclusionRange + 0x34A3 (this may not be correct)</span><span class="StackSource"></span></li><li><span class="Stack">ntdll.dll!RtlpNtSetValueKey + 0x606E (this may not be correct)</span><span class="StackSource"></span></li><li><span class="Stack">ntdll.dll!RtlFreeHeap + 0x12BD (this may not be correct)</span><span class="StackSource"></span></li><li><span class="Stack">ntdll.dll!RtlFreeHeap + 0xBA</span><span class="StackSource"></span></li><li><span class="Stack">Tests_x86.exe!free + 0x1A</span><span class="StackSource"> [f:\dd\vctools\crt_bld\self_x86\crt\src\free.c @ 51]</span></li><li><span class="Stack">Tests_x86.exe!wmain + 0x7A9</span><span class="StackSource"> [h:\dev\bugid\tests\src\_tmain.cpp @ 156]</span></li><li><span class="Stack">Tests_x86.exe!__tmainCRTStartup + 0xFE</span><span class="StackSource"> [f:\dd\vctools\crt_bld\self_x86\crt\src\crt0.c @ 241]</span></li><li><span class="Stack">KERNEL32.DLL!BaseThreadInitThunk + 0x24</span><span class="StackSource"></span></li><li><span class="Stack">ntdll.dll!RtlSubscribeWnfStateChangeNotification + 0x439</span><span class="StackSource"></span></li><li><span class="Stack">ntdll.dll!RtlSubscribeWnfStateChangeNotification + 0x404</span><span class="StackSource"></span></li></ol>
+
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Corrupted memory around address 0x5B2EFEF<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <span class="Memory">05b2efac  00000000</span><br/><span class="Memory">05b2efb0  00000000</span><br/><span class="Memory">05b2efb4  00000000</span><br/><span class="Memory">05b2efb8  00000000</span><br/><span class="Memory">05b2efbc  00000000</span><br/><span class="Memory">05b2efc0  00000000</span><br/><span class="Memory">05b2efc4  00000000</span><br/><span class="Memory">05b2efc8  00000000</span><br/><span class="Memory">05b2efcc  00000000</span><br/><span class="Memory">05b2efd0  abcdbbbb</span><br/><span class="Memory">05b2efd4  03601000 ffeeddcc</span><br/><span class="Memory">05b2efd8  0000000c</span><br/><span class="Memory">05b2efdc  00001000</span><br/><span class="Memory">05b2efe0  00000000</span><br/><span class="Memory">05b2efe4  00000000</span><br/><span class="Memory">05b2efe8  047e3fb4 00000000</span><br/><span class="Memory Important">05b2efec  00babbbb 79007200                                                      &#8656; at offset 0x3</span><br/><span class="Memory">05b2eff0  c0c0c0c0</span><br/><span class="Memory">05b2eff4  c0c0c0c0</span><br/><span class="Memory">05b2eff8  c0c0c0c0</span><br/><span class="Memory">05b2effc  d0d0d0d0</span><br/><span class="Memory">05b2f000  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f004  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f008  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f00c  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f010  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f014  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f018  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f01c  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f020  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f024  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f028  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f02c  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f030  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f034  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f038  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f03c  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f040  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f044  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f048  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f04c  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f050  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f054  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f058  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f05c  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f060  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f064  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f068  &lt;inaccessible&gt;</span><br/><span class="Memory">05b2f06c  &lt;inaccessible&gt;</span>
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Disassembly of stack frame 1 at verifier.dll!VerifierStopMessage + 0x27E<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <span class="DisassemblyAddress">6d12cd06 </span><span class="DisassemblyOpcode">e8a5f4ffff      </span><span class="DisassemblyInstruction">call    verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x57f0 (6d12c1b0)</span><br/><span class="DisassemblyAddress">6d12cd0b </span><span class="DisassemblyOpcode">8b4820          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [eax+20h]</span><br/><span class="DisassemblyAddress">6d12cd0e </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12cd0f </span><span class="DisassemblyOpcode">8b5508          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+8]</span><br/><span class="DisassemblyAddress">6d12cd12 </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="DisassemblyAddress">6d12cd13 </span><span class="DisassemblyOpcode">681820126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x2018 (6d122018)</span><br/><span class="DisassemblyAddress">6d12cd18 </span><span class="DisassemblyOpcode">6a00            </span><span class="DisassemblyInstruction">push    0</span><br/><span class="DisassemblyAddress">6d12cd1a </span><span class="DisassemblyOpcode">6a5d            </span><span class="DisassemblyInstruction">push    5Dh</span><br/><span class="DisassemblyAddress">6d12cd1c </span><span class="DisassemblyOpcode">ff1580c0156d    </span><span class="DisassemblyInstruction">call    dword ptr [verifier_6d120000!VerifierGetPropertyValueByName+0x2aca0 (6d15c080)]</span><br/><span class="DisassemblyAddress">6d12cd22 </span><span class="DisassemblyOpcode">83c438          </span><span class="DisassemblyInstruction">add     esp,38h</span><br/><span class="DisassemblyAddress">6d12cd25 </span><span class="DisassemblyOpcode">8b45e4          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-1Ch]</span><br/><span class="DisassemblyAddress">6d12cd28 </span><span class="DisassemblyOpcode">50              </span><span class="DisassemblyInstruction">push    eax</span><br/><span class="DisassemblyAddress">6d12cd29 </span><span class="DisassemblyOpcode">686020126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x2060 (6d122060)</span><br/><span class="DisassemblyAddress">6d12cd2e </span><span class="DisassemblyOpcode">6a00            </span><span class="DisassemblyInstruction">push    0</span><br/><span class="DisassemblyAddress">6d12cd30 </span><span class="DisassemblyOpcode">6a5d            </span><span class="DisassemblyInstruction">push    5Dh</span><br/><span class="DisassemblyAddress">6d12cd32 </span><span class="DisassemblyOpcode">ff1580c0156d    </span><span class="DisassemblyInstruction">call    dword ptr [verifier_6d120000!VerifierGetPropertyValueByName+0x2aca0 (6d15c080)]</span><br/><span class="DisassemblyAddress">6d12cd38 </span><span class="DisassemblyOpcode">83c410          </span><span class="DisassemblyInstruction">add     esp,10h</span><br/><span class="DisassemblyAddress">6d12cd3b </span><span class="DisassemblyOpcode">837df000        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-10h],0</span><br/><span class="DisassemblyAddress">6d12cd3f </span><span class="DisassemblyOpcode">7554            </span><span class="DisassemblyInstruction">jne     verifier_6d120000!VerifierStopMessage+0x2a5 (6d12cd95)</span><br/><span class="DisassemblyAddress">6d12cd41 </span><span class="DisassemblyOpcode">f0ff05a054156d  </span><span class="DisassemblyInstruction">lock inc dword ptr [verifier_6d120000!VerifierGetPropertyValueByName+0x240c0 (6d1554a0)]</span><br/><span class="DisassemblyAddress">6d12cd48 </span><span class="DisassemblyOpcode">e8c0900000      </span><span class="DisassemblyInstruction">call    verifier_6d120000!VerifierGetPropertyValueByName+0x4a2d (6d135e0d)</span><br/><span class="DisassemblyAddress">6d12cd4d </span><span class="DisassemblyOpcode">8945f8          </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-8],eax</span><br/><span class="DisassemblyAddress">6d12cd50 </span><span class="DisassemblyOpcode">837df800        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-8],0</span><br/><span class="DisassemblyAddress">6d12cd54 </span><span class="DisassemblyOpcode">7418            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierStopMessage+0x27e (6d12cd6e)</span><br/><span class="DisassemblyAddress">6d12cd56 </span><span class="DisassemblyOpcode">8b4df8          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-8]</span><br/><span class="DisassemblyAddress">6d12cd59 </span><span class="DisassemblyOpcode">8b5104          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ecx+4]</span><br/><span class="DisassemblyAddress">6d12cd5c </span><span class="DisassemblyOpcode">83ca02          </span><span class="DisassemblyInstruction">or      edx,2</span><br/><span class="DisassemblyAddress">6d12cd5f </span><span class="DisassemblyOpcode">8b45f8          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-8]</span><br/><span class="DisassemblyAddress">6d12cd62 </span><span class="DisassemblyOpcode">895004          </span><span class="DisassemblyInstruction">mov     dword ptr [eax+4],edx</span><br/><span class="DisassemblyAddress">6d12cd65 </span><span class="DisassemblyOpcode">8b4df8          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-8]</span><br/><span class="DisassemblyAddress">6d12cd68 </span><span class="DisassemblyOpcode">8b5508          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+8]</span><br/><span class="DisassemblyAddress">6d12cd6b </span><span class="DisassemblyOpcode">895138          </span><span class="DisassemblyInstruction">mov     dword ptr [ecx+38h],edx</span><br/><span class="Important"><span class="DisassemblyInformation">verifier_6d120000!VerifierStopMessage+0x27e:                                    </span> &#8656; current instruction</span><br/><span class="DisassemblyAddress">6d12cd6e </span><span class="DisassemblyOpcode">cc              </span><span class="DisassemblyInstruction">int     3</span><br/><span class="DisassemblyAddress">6d12cd6f </span><span class="DisassemblyOpcode">837df800        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-8],0</span><br/><span class="DisassemblyAddress">6d12cd73 </span><span class="DisassemblyOpcode">7419            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierStopMessage+0x29e (6d12cd8e)</span><br/><span class="DisassemblyAddress">6d12cd75 </span><span class="DisassemblyOpcode">8b45f8          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-8]</span><br/><span class="DisassemblyAddress">6d12cd78 </span><span class="DisassemblyOpcode">8b4804          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [eax+4]</span><br/><span class="DisassemblyAddress">6d12cd7b </span><span class="DisassemblyOpcode">83e1fd          </span><span class="DisassemblyInstruction">and     ecx,0FFFFFFFDh</span><br/><span class="DisassemblyAddress">6d12cd7e </span><span class="DisassemblyOpcode">8b55f8          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp-8]</span><br/><span class="DisassemblyAddress">6d12cd81 </span><span class="DisassemblyOpcode">894a04          </span><span class="DisassemblyInstruction">mov     dword ptr [edx+4],ecx</span><br/><span class="DisassemblyAddress">6d12cd84 </span><span class="DisassemblyOpcode">8b45f8          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-8]</span><br/><span class="DisassemblyAddress">6d12cd87 </span><span class="DisassemblyOpcode">c7403800000000  </span><span class="DisassemblyInstruction">mov     dword ptr [eax+38h],0</span><br/><span class="DisassemblyAddress">6d12cd8e </span><span class="DisassemblyOpcode">f0ff0da054156d  </span><span class="DisassemblyInstruction">lock dec dword ptr [verifier_6d120000!VerifierGetPropertyValueByName+0x240c0 (6d1554a0)]</span><br/><span class="DisassemblyAddress">6d12cd95 </span><span class="DisassemblyOpcode">837df400        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-0Ch],0</span><br/><span class="DisassemblyAddress">6d12cd99 </span><span class="DisassemblyOpcode">750f            </span><span class="DisassemblyInstruction">jne     verifier_6d120000!VerifierStopMessage+0x2ba (6d12cdaa)</span><br/><span class="DisassemblyAddress">6d12cd9b </span><span class="DisassemblyOpcode">837df000        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-10h],0</span><br/><span class="DisassemblyAddress">6d12cd9f </span><span class="DisassemblyOpcode">7509            </span><span class="DisassemblyInstruction">jne     verifier_6d120000!VerifierStopMessage+0x2ba (6d12cdaa)</span>
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Disassembly of stack frame 2 at verifier.dll!VerifierDisableFaultInjectionExclusionRange + 0x4279 (this may not be correct)<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <span class="DisassemblyAddress">6d12abd7 </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12abd8 </span><span class="DisassemblyOpcode">68001c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1c00 (6d121c00)</span><br/><span class="DisassemblyAddress">6d12abdd </span><span class="DisassemblyOpcode">8b55fc          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp-4]</span><br/><span class="DisassemblyAddress">6d12abe0 </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="DisassemblyAddress">6d12abe1 </span><span class="DisassemblyOpcode">680c1c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1c0c (6d121c0c)</span><br/><span class="DisassemblyAddress">6d12abe6 </span><span class="DisassemblyOpcode">8b4510          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp+10h]</span><br/><span class="DisassemblyAddress">6d12abe9 </span><span class="DisassemblyOpcode">50              </span><span class="DisassemblyInstruction">push    eax</span><br/><span class="DisassemblyAddress">6d12abea </span><span class="DisassemblyOpcode">68281a126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1a28 (6d121a28)</span><br/><span class="DisassemblyAddress">6d12abef </span><span class="DisassemblyOpcode">8b4d08          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp+8]</span><br/><span class="DisassemblyAddress">6d12abf2 </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12abf3 </span><span class="DisassemblyOpcode">68f41c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1cf4 (6d121cf4)</span><br/><span class="DisassemblyAddress">6d12abf8 </span><span class="DisassemblyOpcode">6a12            </span><span class="DisassemblyInstruction">push    12h</span><br/><span class="DisassemblyAddress">6d12abfa </span><span class="DisassemblyOpcode">e8f11e0000      </span><span class="DisassemblyInstruction">call    verifier_6d120000!VerifierStopMessage (6d12caf0)</span><br/><span class="DisassemblyAddress">6d12abff </span><span class="DisassemblyOpcode">8b5514          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+14h]</span><br/><span class="DisassemblyAddress">6d12ac02 </span><span class="DisassemblyOpcode">8b02            </span><span class="DisassemblyInstruction">mov     eax,dword ptr [edx]</span><br/><span class="DisassemblyAddress">6d12ac04 </span><span class="DisassemblyOpcode">83e001          </span><span class="DisassemblyInstruction">and     eax,1</span><br/><span class="DisassemblyAddress">6d12ac07 </span><span class="DisassemblyOpcode">7430            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x4279 (6d12ac39)</span><br/><span class="DisassemblyAddress">6d12ac09 </span><span class="DisassemblyOpcode">68101d126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1d10 (6d121d10)</span><br/><span class="DisassemblyAddress">6d12ac0e </span><span class="DisassemblyOpcode">8b4dcc          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-34h]</span><br/><span class="DisassemblyAddress">6d12ac11 </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12ac12 </span><span class="DisassemblyOpcode">68001c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1c00 (6d121c00)</span><br/><span class="DisassemblyAddress">6d12ac17 </span><span class="DisassemblyOpcode">8b55fc          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp-4]</span><br/><span class="DisassemblyAddress">6d12ac1a </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="DisassemblyAddress">6d12ac1b </span><span class="DisassemblyOpcode">680c1c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1c0c (6d121c0c)</span><br/><span class="DisassemblyAddress">6d12ac20 </span><span class="DisassemblyOpcode">8b4510          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp+10h]</span><br/><span class="DisassemblyAddress">6d12ac23 </span><span class="DisassemblyOpcode">50              </span><span class="DisassemblyInstruction">push    eax</span><br/><span class="DisassemblyAddress">6d12ac24 </span><span class="DisassemblyOpcode">68281a126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1a28 (6d121a28)</span><br/><span class="DisassemblyAddress">6d12ac29 </span><span class="DisassemblyOpcode">8b4d08          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp+8]</span><br/><span class="DisassemblyAddress">6d12ac2c </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12ac2d </span><span class="DisassemblyOpcode">68201d126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1d20 (6d121d20)</span><br/><span class="DisassemblyAddress">6d12ac32 </span><span class="DisassemblyOpcode">6a10            </span><span class="DisassemblyInstruction">push    10h</span><br/><span class="Important"><span class="DisassemblyAddress">6d12ac34 </span><span class="DisassemblyOpcode">e8b71e0000      </span><span class="DisassemblyInstruction">call    verifier_6d120000!VerifierStopMessage (6d12caf0)</span> &#8656; call</span><br/><span class="Important"><span class="DisassemblyInformation">verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x4279:           </span> &#8656; return address</span><br/><span class="DisassemblyAddress">6d12ac39 </span><span class="DisassemblyOpcode">8b5514          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+14h]</span><br/><span class="DisassemblyAddress">6d12ac3c </span><span class="DisassemblyOpcode">8b02            </span><span class="DisassemblyInstruction">mov     eax,dword ptr [edx]</span><br/><span class="DisassemblyAddress">6d12ac3e </span><span class="DisassemblyOpcode">83e002          </span><span class="DisassemblyInstruction">and     eax,2</span><br/><span class="DisassemblyAddress">6d12ac41 </span><span class="DisassemblyOpcode">7430            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x42b3 (6d12ac73)</span><br/><span class="DisassemblyAddress">6d12ac43 </span><span class="DisassemblyOpcode">68101d126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1d10 (6d121d10)</span><br/><span class="DisassemblyAddress">6d12ac48 </span><span class="DisassemblyOpcode">8b4de8          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-18h]</span><br/><span class="DisassemblyAddress">6d12ac4b </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12ac4c </span><span class="DisassemblyOpcode">68001c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1c00 (6d121c00)</span><br/><span class="DisassemblyAddress">6d12ac51 </span><span class="DisassemblyOpcode">8b55fc          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp-4]</span><br/><span class="DisassemblyAddress">6d12ac54 </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="DisassemblyAddress">6d12ac55 </span><span class="DisassemblyOpcode">680c1c126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1c0c (6d121c0c)</span><br/><span class="DisassemblyAddress">6d12ac5a </span><span class="DisassemblyOpcode">8b4510          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp+10h]</span><br/><span class="DisassemblyAddress">6d12ac5d </span><span class="DisassemblyOpcode">50              </span><span class="DisassemblyInstruction">push    eax</span><br/><span class="DisassemblyAddress">6d12ac5e </span><span class="DisassemblyOpcode">68281a126d      </span><span class="DisassemblyInstruction">push    offset verifier_6d120000+0x1a28 (6d121a28)</span><br/><span class="DisassemblyAddress">6d12ac63 </span><span class="DisassemblyOpcode">8b4d08          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp+8]</span>
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Disassembly of stack frame 3 at verifier.dll!VerifierDisableFaultInjectionExclusionRange + 0x463A (this may not be correct)<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <span class="DisassemblyAddress">6d12af9d </span><span class="DisassemblyOpcode">85c9            </span><span class="DisassemblyInstruction">test    ecx,ecx</span><br/><span class="DisassemblyAddress">6d12af9f </span><span class="DisassemblyOpcode">743e            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x461f (6d12afdf)</span><br/><span class="DisassemblyAddress">6d12afa1 </span><span class="DisassemblyOpcode">8b5508          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+8]</span><br/><span class="DisassemblyAddress">6d12afa4 </span><span class="DisassemblyOpcode">8b82ac000000    </span><span class="DisassemblyInstruction">mov     eax,dword ptr [edx+0ACh]</span><br/><span class="DisassemblyAddress">6d12afaa </span><span class="DisassemblyOpcode">2500000200      </span><span class="DisassemblyInstruction">and     eax,20000h</span><br/><span class="DisassemblyAddress">6d12afaf </span><span class="DisassemblyOpcode">752e            </span><span class="DisassemblyInstruction">jne     verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x461f (6d12afdf)</span><br/><span class="DisassemblyAddress">6d12afb1 </span><span class="DisassemblyOpcode">68a0000000      </span><span class="DisassemblyInstruction">push    0A0h</span><br/><span class="DisassemblyAddress">6d12afb6 </span><span class="DisassemblyOpcode">6a08            </span><span class="DisassemblyInstruction">push    8</span><br/><span class="DisassemblyAddress">6d12afb8 </span><span class="DisassemblyOpcode">8b4de4          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-1Ch]</span><br/><span class="DisassemblyAddress">6d12afbb </span><span class="DisassemblyOpcode">8b550c          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+0Ch]</span><br/><span class="DisassemblyAddress">6d12afbe </span><span class="DisassemblyOpcode">035108          </span><span class="DisassemblyInstruction">add     edx,dword ptr [ecx+8]</span><br/><span class="DisassemblyAddress">6d12afc1 </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="DisassemblyAddress">6d12afc2 </span><span class="DisassemblyOpcode">e8f90d0000      </span><span class="DisassemblyInstruction">call    verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x5400 (6d12bdc0)</span><br/><span class="DisassemblyAddress">6d12afc7 </span><span class="DisassemblyOpcode">8945e0          </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-20h],eax</span><br/><span class="DisassemblyAddress">6d12afca </span><span class="DisassemblyOpcode">837de000        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-20h],0</span><br/><span class="DisassemblyAddress">6d12afce </span><span class="DisassemblyOpcode">740f            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x461f (6d12afdf)</span><br/><span class="DisassemblyAddress">6d12afd0 </span><span class="DisassemblyOpcode">8b45cc          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-34h]</span><br/><span class="DisassemblyAddress">6d12afd3 </span><span class="DisassemblyOpcode">83c810          </span><span class="DisassemblyInstruction">or      eax,10h</span><br/><span class="DisassemblyAddress">6d12afd6 </span><span class="DisassemblyOpcode">8945cc          </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-34h],eax</span><br/><span class="DisassemblyAddress">6d12afd9 </span><span class="DisassemblyOpcode">8b4de0          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-20h]</span><br/><span class="DisassemblyAddress">6d12afdc </span><span class="DisassemblyOpcode">894dd4          </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-2Ch],ecx</span><br/><span class="DisassemblyAddress">6d12afdf </span><span class="DisassemblyOpcode">837dcc00        </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-34h],0</span><br/><span class="DisassemblyAddress">6d12afe3 </span><span class="DisassemblyOpcode">7415            </span><span class="DisassemblyInstruction">je      verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x463a (6d12affa)</span><br/><span class="DisassemblyAddress">6d12afe5 </span><span class="DisassemblyOpcode">8d55cc          </span><span class="DisassemblyInstruction">lea     edx,[ebp-34h]</span><br/><span class="DisassemblyAddress">6d12afe8 </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="DisassemblyAddress">6d12afe9 </span><span class="DisassemblyOpcode">8b450c          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp+0Ch]</span><br/><span class="DisassemblyAddress">6d12afec </span><span class="DisassemblyOpcode">50              </span><span class="DisassemblyInstruction">push    eax</span><br/><span class="DisassemblyAddress">6d12afed </span><span class="DisassemblyOpcode">8b4d10          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp+10h]</span><br/><span class="DisassemblyAddress">6d12aff0 </span><span class="DisassemblyOpcode">51              </span><span class="DisassemblyInstruction">push    ecx</span><br/><span class="DisassemblyAddress">6d12aff1 </span><span class="DisassemblyOpcode">8b5508          </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ebp+8]</span><br/><span class="DisassemblyAddress">6d12aff4 </span><span class="DisassemblyOpcode">52              </span><span class="DisassemblyInstruction">push    edx</span><br/><span class="Important"><span class="DisassemblyAddress">6d12aff5 </span><span class="DisassemblyOpcode">e806faffff      </span><span class="DisassemblyInstruction">call    verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x4040 (6d12aa00)</span> &#8656; call</span><br/><span class="Important"><span class="DisassemblyInformation">verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x463a:           </span> &#8656; return address</span><br/><span class="DisassemblyAddress">6d12affa </span><span class="DisassemblyOpcode">c745fcfeffffff  </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-4],0FFFFFFFEh</span><br/><span class="DisassemblyAddress">6d12b001 </span><span class="DisassemblyOpcode">eb6a            </span><span class="DisassemblyInstruction">jmp     verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x46ad (6d12b06d)</span><br/><span class="DisassemblyAddress">6d12b003 </span><span class="DisassemblyOpcode">8b45ec          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-14h]</span><br/><span class="DisassemblyAddress">6d12b006 </span><span class="DisassemblyOpcode">8b08            </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [eax]</span><br/><span class="DisassemblyAddress">6d12b008 </span><span class="DisassemblyOpcode">8b11            </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ecx]</span><br/><span class="DisassemblyAddress">6d12b00a </span><span class="DisassemblyOpcode">8955d8          </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-28h],edx</span><br/><span class="DisassemblyAddress">6d12b00d </span><span class="DisassemblyOpcode">817dd8050000c0  </span><span class="DisassemblyInstruction">cmp     dword ptr [ebp-28h],0C0000005h</span><br/><span class="DisassemblyAddress">6d12b014 </span><span class="DisassemblyOpcode">7542            </span><span class="DisassemblyInstruction">jne     verifier_6d120000!VerifierDisableFaultInjectionExclusionRange+0x4698 (6d12b058)</span><br/><span class="DisassemblyAddress">6d12b016 </span><span class="DisassemblyOpcode">c745d0050000c0  </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-30h],0C0000005h</span><br/><span class="DisassemblyAddress">6d12b01d </span><span class="DisassemblyOpcode">8b45cc          </span><span class="DisassemblyInstruction">mov     eax,dword ptr [ebp-34h]</span><br/><span class="DisassemblyAddress">6d12b020 </span><span class="DisassemblyOpcode">83c820          </span><span class="DisassemblyInstruction">or      eax,20h</span><br/><span class="DisassemblyAddress">6d12b023 </span><span class="DisassemblyOpcode">8945cc          </span><span class="DisassemblyInstruction">mov     dword ptr [ebp-34h],eax</span><br/><span class="DisassemblyAddress">6d12b026 </span><span class="DisassemblyOpcode">8b4dec          </span><span class="DisassemblyInstruction">mov     ecx,dword ptr [ebp-14h]</span><br/><span class="DisassemblyAddress">6d12b029 </span><span class="DisassemblyOpcode">8b11            </span><span class="DisassemblyInstruction">mov     edx,dword ptr [ecx]</span><br/><span class="DisassemblyAddress">6d12b02b </span><span class="DisassemblyOpcode">b804000000      </span><span class="DisassemblyInstruction">mov     eax,4</span>
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Binary information<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <h2 class="SubHeader">Tests_x86.exe</h2><br/><span class="BinaryInformation">    Loaded symbol image file: H:\dev\BugId\Tests\bin\Tests_x86.exe</span><br/><span class="BinaryInformation">    Image path: Tests_x86.exe</span><br/><span class="BinaryInformation">    Image name: Tests_x86.exe</span><br/><span class="BinaryInformation">    Timestamp:        Wed May 11 15:44:05 2016 (57333725)</span><br/><span class="BinaryInformation">    CheckSum:         00000000</span><br/><span class="BinaryInformation">    ImageSize:        00019000</span><br/><span class="BinaryInformation">    Translations:     0000.04b0 0000.04e4 0409.04b0 0409.04e4</span><br/><br/><h2 class="SubHeader">verifier.dll</h2><br/><span class="BinaryInformation">    Loaded symbol image file: C:\WINDOWS\SysWoW64\verifier.dll</span><br/><span class="BinaryInformation">    Image path: C:\WINDOWS\SysWoW64\verifier.dll</span><br/><span class="BinaryInformation">    Image name: verifier.dll</span><br/><span class="BinaryInformation">    Timestamp:        Sat Jul 16 03:34:17 2016 (57898F19)</span><br/><span class="BinaryInformation">    CheckSum:         00064995</span><br/><span class="BinaryInformation">    ImageSize:        00062000</span><br/><span class="BinaryInformation">    File version:     10.0.14393.0</span><br/><span class="BinaryInformation">    Product version:  10.0.14393.0</span><br/><span class="BinaryInformation">    File flags:       0 (Mask 3F)</span><br/><span class="BinaryInformation">    File OS:          40004 NT Win32</span><br/><span class="BinaryInformation">    File type:        2.0 Dll</span><br/><span class="BinaryInformation">    File date:        00000000.00000000</span><br/><span class="BinaryInformation">    Translations:     0409.04b0</span><br/><span class="BinaryInformation">    CompanyName:      Microsoft Corporation</span><br/><span class="BinaryInformation">    ProductName:      Microsoft® Windows® Operating System</span><br/><span class="BinaryInformation">    InternalName:     verifier.dll</span><br/><span class="BinaryInformation">    OriginalFilename: verifier.dll</span><br/><span class="BinaryInformation">    ProductVersion:   10.0.14393.0</span><br/><span class="BinaryInformation">    FileVersion:      10.0.14393.0 (rs1_release.160715-1616)</span><br/><span class="BinaryInformation">    FileDescription:  Standard application verifier provider dll</span><br/><span class="BinaryInformation">    LegalCopyright:   © Microsoft Corporation. All rights reserved.</span>
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+    <div class="Block Collapsed">
+      <h1 class="BlockHeader">Application and cdb output log<span class="BlockHeaderIcon"></span></h1>
+      <div class="Content">
+        <span class="CDBOrApplicationStdOut">Page heap: pid 0x28C: page heap enabled with flags 0x3.</span><br/><span class="CDBOrApplicationStdOut">(28c.1db0): WOW64 breakpoint - code 4000001f (first chance)</span><br/><span class="CDBOrApplicationStdOut">First chance exceptions are reported before any exception handling.</span><br/><span class="CDBOrApplicationStdOut">This exception may be expected and handled.</span><br/><span class="CDBOrApplicationStdOut"></span><br/><span class="CDBOrApplicationStdOut"></span><br/><span class="CDBOrApplicationStdOut">===========================================================</span><br/><span class="CDBOrApplicationStdOut">VERIFIER STOP 00000010: pid 0x28C: corrupted start stamp </span><br/><span class="CDBOrApplicationStdOut"></span><br/><span class="CDBOrApplicationStdOut">	03601000 : Heap handle</span><br/><span class="CDBOrApplicationStdOut">	05B2EFF0 : Heap block</span><br/><span class="CDBOrApplicationStdOut">	0000000C : Block size</span><br/><span class="CDBOrApplicationStdOut">	ABCDBBBB : Corrupted stamp</span><br/><span class="CDBOrApplicationStdOut">===========================================================</span><br/><span class="CDBOrApplicationStdOut">This verifier stop is not continuable. Process will be terminated </span><br/><span class="CDBOrApplicationStdOut">when you use the `go' debugger command.</span><br/><span class="CDBOrApplicationStdOut">===========================================================</span><br/><span class="CDBOrApplicationStdOut"></span><br/><span class="CDBOrApplicationStdOut">(28c.1db0): WOW64 breakpoint - code 4000001f (first chance)</span><br/><span class="CDBOrApplicationStdOut">First chance exceptions are reported before any exception handling.</span><br/><span class="CDBOrApplicationStdOut">This exception may be expected and handled.</span><br/><hr/><span class="CDBPrompt">0:000:x86&gt; </span>
+      </div>
+      <div class="CollapsedPlaceholder">&#x21D3; click on the title of a section to open or close it.</div>
+    </div>
+
+    <div class="Footer Block">
+      <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
+        <img alt="Creative Commons License" style="vertical-align: middle; float: left;"
+            src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
+      </a>
+      This report was generated using <a href="https://github.com/SkyLined/BugId">BugId v16-08-11</a>
+        by <a href="mailto:bugid@skylined.nl">SkyLined</a>.<br/>
+      BugId is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
+        Creative Commons Attribution-NonCommercial 4.0 International License</a>.<br/>
+      Please contact the author if you wish to use BugId commercially.
+    </div>
+  </body>
+</html>
