@@ -19,17 +19,20 @@ daxExceptionHandling = {
     STATUS_ILLEGAL_INSTRUCTION,
     STATUS_IN_PAGE_ERROR,
     STATUS_PRIVILEGED_INSTRUCTION,
-    STATUS_SINGLE_STEP,
     STATUS_STACK_BUFFER_OVERRUN,
     STATUS_STACK_OVERFLOW,
     STATUS_WX86_BREAKPOINT,
-    STATUS_WX86_SINGLE_STEP,
     STATUS_WAKE_SYSTEM_DEBUGGER,
   ],
   "sxd": [ # break on second chance exceptions
     STATUS_INTEGER_DIVIDE_BY_ZERO,
     STATUS_INTEGER_OVERFLOW, 
     STATUS_INVALID_HANDLE, 
+    # It appears a bug in cdb causes single step exceptions at locations where a breakpoint is set. Since I have never
+    # seen a single step exception caused by a bug in an application, I am assuming only detecting second chance single
+    # step exceptions will not reduce BugId's effectiveness.
+    STATUS_SINGLE_STEP,
+    STATUS_WX86_SINGLE_STEP,
   ],
   "sxi": [ # ignored
     "ld", "ud", # Load/unload module
