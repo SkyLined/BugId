@@ -207,7 +207,9 @@ if __name__ == "__main__":
     fInternalExceptionCallback = fInternalExceptionCallback,
   );
   oBugId.fWait();
-  if oInternalException is not None:
+  if not bApplicationIsStarted:
+    print "- BugId was unable to debug the application.";
+  elif oInternalException is not None:
     print "+ BugId run into an internal error:";
     print "  %s" % repr(oInternalException);
     print;

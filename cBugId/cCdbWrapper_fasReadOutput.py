@@ -3,6 +3,7 @@ from dxBugIdConfig import dxBugIdConfig;
 from FileSystem import FileSystem;
 
 dsTip_by_sErrorCode = {
+  "Win32 error 0x2": "Did you provide the correct the path and name of the executable?",
   "NTSTATUS 0xC00000BB": "Are you using a 32-bit debugger with a 64-bit process?",
   "NTSTATUS 0xC000010A": "The process was terminated before the debugger could attach",
 };
@@ -12,15 +13,21 @@ def fasHandleCommonErrorsAndWarningsInOutput(oCdbWrapper, asLines, bHandleSymbol
   while uIndex < len(asLines):
     sLine = asLines[uIndex];
     uSkipLines = 0;
-    oCannotAttachMatch = re.match(r"^Cannot debug pid (\d+), (?:Win32 error 0n(\d+)|NTSTATUS 0x(\w+))\s*$", sLine);
+    # Some of these errors can cause cdb to exit, so report them even if cdb is no longer running.
+    oCannotAttachMatch = re.match(r"^Cannot (?:debug pid (\d+)|execute '(.*?)'), (Win32 error 0n\d+|NTSTATUS 0x\w+)\s*$", sLine);
     if oCannotAttachMatch: # Some of these errors can cause cdb to exit, so report them even if cdb is no longer running.
-      sProcessId, sWin32Error, sNTStatus = oCannotAttachMatch.groups();
-      uProcessId = long(sProcessId);
-      sErrorCode = sWin32Error and "Win32 %s" % sWin32Error or "NTSTATUS 0x%s" % sNTStatus;
-      sTip = dsTip_by_sErrorCode.get(sErrorCode);
-      raise AssertionError("Failed to attach to process %d/0x%X!\r\n%scdb output:\r\n%s" % \
-          (uProcessId, uProcessId, sTip and "%s\r\n" % sTip or "", "\r\n".join(asLines)));
-    if oCdbWrapper.bCdbRunning: # These errors only need to be handled if cdb is still running.
+      sProcessId, sApplicationExecutable, sErrorCode = oCannotAttachMatch.groups();
+      if sProcessId:
+        uProcessId = long(sProcessId);
+        print "Failed to attach to process %d/0x%X: %s!" % (uProcessId, uProcessId, sErrorCode);
+      else:
+        print "Failed to start application \"%s\": %s!" % (sApplicationExecutable, sErrorCode);
+      if sErrorCode in dsTip_by_sErrorCode:
+        print dsTip_by_sErrorCode[sErrorCode];
+      oCdbWrapper.fStop();
+      return None;
+    if oCdbWrapper.bCdbRunning:
+      # These errors only need to be handled if cdb is still running.
       oBadPDBFileError = re.match(r"^%s\s*$" % "|".join([
         r"DBGHELP: (.*?) (\- E_PDB_CORRUPT|dia error 0x[0-9a-f]+)",
       ]), sLine);
