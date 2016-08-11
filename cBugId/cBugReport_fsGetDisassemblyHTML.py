@@ -43,6 +43,9 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sBeforeAd
       bOutputIsInformative = True,
     );
     if not oCdbWrapper.bCdbRunning: return None;
+    # The first line contains the address of the instruction
+    sAddress = asAtAndAfterDisassembly.pop(0);
+    asDisassemblyHTML.append(fsHTMLEncodeAndColorDisassemblyLine(oCdbWrapper, sAddress));
     # Limit number of instructions
     asAtAndAfterDisassembly = asAtAndAfterDisassembly[:dxBugIdConfig["uDisassemblyInstructionsAfter"]];
     if asAtAndAfterDisassembly:
