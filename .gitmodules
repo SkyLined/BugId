@@ -4,3 +4,6 @@
 [submodule "modules/FileSystem"]
 	path = modules/FileSystem
 	url = https://github.com/SkyLined/FileSystem
+[submodule "modules/cBugId"]
+	path = modules/cBugId
+	url = https://github.com/SkyLined/cBugId/
