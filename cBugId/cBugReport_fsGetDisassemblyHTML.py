@@ -44,7 +44,7 @@ def cBugReport_fsGetDisassemblyHTML(oBugReport, oCdbWrapper, sAddress, sBeforeAd
     );
     if not oCdbWrapper.bCdbRunning: return None;
     # Limit number of instructions
-    asAtAndAfterDisassembly = asAtAndAfterDisassembly[-dxBugIdConfig["uDisassemblyInstructionsAfter"]:];
+    asAtAndAfterDisassembly = asAtAndAfterDisassembly[:dxBugIdConfig["uDisassemblyInstructionsAfter"]];
     if asAtAndAfterDisassembly:
       if not asDisassemblyHTML:
         asDisassemblyHTML.append("(prior disassembly not possible)");
