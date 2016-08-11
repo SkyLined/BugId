@@ -35,6 +35,8 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
   # cCdbWrapper initialization code already acquire a lock on cdb on behalf of this thread, so the "interrupt on
   # timeout" thread does not attempt to interrupt cdb while this thread is getting started.
   try:
+    uLastExceptionWasCreateProcessForNewProcessId = None;
+    uLastExceptionWasBreakpointForNewProcessId = None;
     # Create a list of commands to set up event handling. The default for any exception not explicitly mentioned is to
     # be handled as a second chance exception.
     asExceptionHandlingCommands = ["sxd *"];
@@ -179,6 +181,15 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
       uProcessId = long(sProcessIdHex, 16);
       uExceptionCode = sExceptionCode and long(sExceptionCode, 16);
       uBreakpointId = sBreakpointId and long(sBreakpointId);
+      # cdb can throw a "Create Process" event, a STATUS_BREAKPOINT exception and a STATUS_WAKE_SYSTEM_DEBUGGER
+      # exception (in that order) whenever there is a new process. We want to register the new process when the first
+      # such event or exception happens and ignore the rest. To do this:
+      # A "Create Process" event sets uLastExceptionWasCreateProcessForNewProcessId to the current process id.
+      # If the next event is a STATUS_BREAKPOINT exception in the same process, do not report it.
+      # A STATUS_BREAKPOINT exception sets uLastExceptionWasBreakpointForNewProcessId to the current process id.
+      # If the next event is a STATUS_WX86_BREAKPOINT exception in the same process, do not report it.
+      if sCreateExitProcess == "Create":
+        uLastExceptionWasCreateProcessForNewProcessId = uProcessId;
       if (
         uExceptionCode in (STATUS_BREAKPOINT, STATUS_WAKE_SYSTEM_DEBUGGER)
         and uProcessId not in oCdbWrapper.auProcessIds
@@ -188,12 +199,16 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         sCreateExitProcess = "Create";
         sCreateExitProcessIdHex = sProcessIdHex;
       bGetBugReportForException = True;
-      bIsWOW64BreakpointForNewProcess = (
+      bSuperfluousBreakpointForNewProcess = (
+          uExceptionCode == STATUS_BREAKPOINT
+          and uLastExceptionWasCreateProcessForNewProcessId == uProcessId
+      ) or (
           uExceptionCode == STATUS_WX86_BREAKPOINT
           and uLastExceptionWasBreakpointForNewProcessId == uProcessId
       );
+      uLastExceptionWasCreateProcessForNewProcessId = None;
       uLastExceptionWasBreakpointForNewProcessId = None;
-      if bIsWOW64BreakpointForNewProcess:
+      if bSuperfluousBreakpointForNewProcess:
         bGetBugReportForException = False;
       elif sCreateExitProcess:
         # Make sure the created/exited process is the current process.
@@ -230,11 +245,6 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
         # Debugging the application was interrupted and the application suspended to fire some timeouts. This exception
         # is not a bug and should be ignored.
         bGetBugReportForException = False;
-      elif uExceptionCode == STATUS_SINGLE_STEP:
-        # A bug in cdb causes single step exceptions at locations where a breakpoint is set. Since I have never seen a
-        # single step exception caused by a bug in an application, I am assuming these are all caused by this bug and
-        # ignore them:
-        bGetBugReportForException = False;
       elif uExceptionCode in [STATUS_BREAKPOINT, STATUS_WX86_BREAKPOINT]:
         if cCdbWrapper_fbDetectAndReportVerifierErrors(oCdbWrapper, asCdbOutput):
           # Detected output from application verifier (page heap) indicating it has detected a bug.
@@ -256,6 +266,10 @@ def cCdbWrapper_fCdbStdInOutThread(oCdbWrapper):
             # first a STATUS_BREAKPOINT, then a STATUS_WX86_BREAKPOINT. Only the first exception is needed, so the
             # second is ignored.
             uLastExceptionWasBreakpointForNewProcessId = uProcessId;
+            bGetBugReportForException = False;
+          if sCurrentFunctionSymbol == "ntdll.dll!LdrInitShimEngineDynamic" and sCallerFunctionSymbol == "ntdll.dll!WinSqmAddToStream":
+            # When a 32-bit application is running on a 64-bit OS, this exception can happen for unknown reasons.
+            # AFAIK it can safely be ignored.
             bGetBugReportForException = False;
       if bGetBugReportForException:
         # If available, free previously allocated memory to allow analysis in low memory conditions.
