@@ -32,7 +32,7 @@ sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 gasApplicationCommandLine_by_sKnownApplicationKeyword = {
-  "aoo-writer": [r"%s\\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck", "%test%"],
+  "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck", "%test%"],
   "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "%test%", "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
   "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "%test%", "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
   "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), "%test%", "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
