@@ -187,31 +187,51 @@ BugId.py
 `BugId.py` is a command-line utility to start an application in BugId. It can be
 used in the following ways:
 
-    BugId.py [options] path\to\application.exe [arguments]
+    BugId.py [options] "path\to\binary.exe" [arguments]
 
-Runs the application in the debugger with the provided arguments.
+Start the binary in the debugger with the provided arguments.
 
-    BugId.py [options] --pids=[comma separated list of process ids]
+    BugId.py [options] @application [additional arguments]
 
-Attach debugger to the process(es) provided in the list. Not that the processes
-*must* all have been suspended, as they will be resumed by the debugger.
+(Where `application` is a known application keyword, see below for details)
+Start the application identified by the keyword in the debugger using the
+application's default binary path and arguments followed by the default
+additional arguments or the additional arguments provided and apply application
+specific BugId settings.
 
-    BugId.py [options] [known application] [additional arguments]
+    BugId.py [options] @application="path\to\binary.exe" [arguments]
 
-Start the given "known" application in the debugger with default argument and
-optional additional arguments. A number of "known" applications have been
-pre-defined for which BugId.py knows the path to the binary to be executed and
-and optionally a number of default arguments to be passed to the application. 
-Currently the know applications are:
-* firefox: Mozilla Firefox
-* chrome: Google Chrome 
-* msie: Microsoft Internet Explorer
-* msie86: Microsoft Internet Explorer, 32-bit application
-* msie64: Microsoft Internet Explorer, 64-bit application
+Start the application identified by the keyword in the debugger using the
+provided binary and arguments (instead of the default binary path and
+arguments) followed by the default additional arguments or the additional
+arguments provided and apply application specific settings. This allows you to
+run a known application with custom binary path and arguments, but default
+application specific BugId settings.
 
-You can add your own applications if you don't want to type the entire binary
-path every time you use BugId, or if you want to run it with certain arguments
-by default. 
+    BugId.py [options] [@application] --pids=[process id, process id, ...]
+
+Attach debugger to the process(es) provided in the list. The processes *must
+all have been suspended*, as they will be resumed by the debugger. If you
+specify the option application keyword, the default application specific
+BugId settings will be applied.
+
+### Known application keywords
+A few application are known to BugId and can be run without having to specify
+their full command-line and/or with application specific settings by using one
+of these application specific keywords:
+  @aoo-writer: Apache OpenOffice Writer
+  @firefox: Mozilla Firefox
+  @foxit: Foxit Software Reader
+  @chrome: Google Chrome 
+  @msie: Microsoft Internet Explorer (32-/64-bit depending on OS)
+  @msie86: Microsoft Internet Explorer, 32-bit application
+  @msie64: Microsoft Internet Explorer, 64-bit application
+  @nightly: Mozilla Firefox Nightly builds
+
+You can find out what these build-in application specific settings are by asking
+BugId using the following command line:
+
+    BugId.py @application?
 
 ### Options
 The file `dxBugIdConfig.py` contains a number of configuration options that
