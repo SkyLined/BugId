@@ -251,10 +251,8 @@ if __name__ == "__main__":
     
     for (uBaseAddress, sDescription) in [
       # 0123456789ABCDEF
-             (0x60000000, "Unallocated"), # This is not guaranteed; this test may fail by chance
-            (0x100000000, "Unallocated"), # This is not guaranteed; this test may fail by chance
-         (0x7ffffffd0000, "Unallocated"),
-         (0x7ffffffdffff, "Unallocated"),
+                (0x10000, "Unallocated"), # Not sure if this is guaranteed, but in my experience it's reliable.
+         (0x7ffffffdffff, "Unallocated"), # Highly unlikely to be allocated as it is at the very top of allocatable mem.
          (0x7ffffffe0000, "Reserved"),
          (0x7ffffffeffff, "Reserved"),
          (0x7fffffff0000, "Unallocated"),
