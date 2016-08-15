@@ -189,8 +189,8 @@ if __name__ == "__main__":
     print "line, arguments and settings.";
     os._exit(0);
   auApplicationProcessIds = [];
-  asApplicationCommandLine = None;
   sApplicationKeyword = None;
+  asApplicationCommandLine = [];
   asAdditionalArguments = [];
   while asArguments:
     sArgument = asArguments[0];
@@ -247,11 +247,12 @@ if __name__ == "__main__":
     for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
       fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
 
-  if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and not asApplicationCommandLine:
+  if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and len(asApplicationCommandLine) == 0:
     # Translate known application keyword to its command line:
     asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
-  if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and not asAdditionalArguments:
+  if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and len(asAdditionalArguments) == 0:
     asAdditionalArguments = gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword];
+  asApplicationCommandLine += asAdditionalArguments;
   if asApplicationCommandLine:
     if auApplicationProcessIds:
       print "You cannot specify both an application command-line and its process ids";
