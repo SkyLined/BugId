@@ -31,15 +31,56 @@ except:
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
-gasApplicationCommandLine_by_sKnownApplicationKeyword = {
-  "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck", "%test%"],
-  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "%test%", "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "%test%", "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
-  "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), "%test%", "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
-  "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath, "%test%"],
-  "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64, "%test%"],
-  "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86, "%test%"],
-  "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86, "%test%"],
+gdApplication_asCommandLine_by_sKeyword = {
+  "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
+  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86],
+  "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath],
+  "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64],
+  "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86],
+  "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
+};
+DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
+gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
+  "chrome": [DEFAULT_BROWSER_TEST_URL],
+  "firefox": [DEFAULT_BROWSER_TEST_URL],
+  "nightly": [DEFAULT_BROWSER_TEST_URL],
+  "msie": [DEFAULT_BROWSER_TEST_URL],
+  "msie64": [DEFAULT_BROWSER_TEST_URL],
+  "msie86": [DEFAULT_BROWSER_TEST_URL],
+  "foxit": ["repro.pdf"],
+};
+dxBrowserSettings = {
+  # Settings used by all browsers (these should eventually be fine-tuned for each browser)
+  "nExcessiveCPUUsageCheckInitialTimeout": 30.0, # Give browser some time to load repro
+  "BugId.nExcessiveCPUUsageCheckInterval": 30.0, # Browser may be busy for a bit, but no longer than 30 seconds.
+  "BugId.nExcessiveCPUUsagePercent": 95,      # Browser msust be very, very busy.
+  "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+};
+
+gdApplication_dxSettings_by_sKeyword = {
+  "aoo-writer": {
+    "nApplicationMaxRunTime": 10.0, # Writer can be a bit slow to load, so give it some time.
+    "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
+    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+  },
+  "chrome": dxBrowserSettings,
+  "edge": dxBrowserSettings,
+  "firefox": dxBrowserSettings,
+  "foxit": {
+    "nApplicationMaxRunTime": 3.0, # Normally loads within 2 seconds, but give it one more to be sure.
+    "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
+    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+  },
+  "nightly": dxBrowserSettings,
+  "msie": dxBrowserSettings, 
+  "msie86": dxBrowserSettings,
+  "msie64": dxBrowserSettings,
 };
 
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
@@ -50,14 +91,14 @@ srMozillaCentralSourceURLMappings = "".join([
   r"(:| @ |, line )", # separator
   r"(?P<lineno>\d+)",  # line number
 ]);
-gdsURLTemplate_by_srSourceFilePath_by_sKnownApplicationKeyword = {
+gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword = {
   "firefox": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
   "nightly": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
 };
 # Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
 # HTML for any detected bug.
-grImportantStdOutLines_by_sKnownApplicationKeyword = {};
-grImportantStdErrLines_by_sKnownApplicationKeyword = {
+gdApplication_rImportantStdOutLines_by_sKeyword = {};
+gdApplication_rImportantStdErrLines_by_sKeyword = {
   "nightly": re.compile("^((\?h)+: C)*(%s)$" % "|".join([
     r"Assertion failure: .*",
     r"Hit MOZ_CRASH: .*",
@@ -65,16 +106,54 @@ grImportantStdErrLines_by_sKnownApplicationKeyword = {
   ])),
 };
 
+asApplicationKeywords = sorted(list(set(
+  gdApplication_asCommandLine_by_sKeyword.keys() +
+  gdApplication_asDefaultAdditionalArguments_by_sKeyword.keys() +
+  gdApplication_dxSettings_by_sKeyword.keys() +
+  gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.keys() + 
+  gdApplication_rImportantStdOutLines_by_sKeyword.keys() +
+  gdApplication_rImportantStdErrLines_by_sKeyword.keys()
+)));
+
+def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
+  asGroupNames = sSettingName.split("."); # last element is not a group name
+  sFullName = ".".join(asGroupNames);
+  sSettingName = asGroupNames.pop();          # so pop it.
+  dxConfigGroup = dxConfig;
+  asHandledGroupNames = [];
+  for sGroupName in asGroupNames:
+    asHandledGroupNames.append(sGroupName);
+    assert sGroupName in dxConfigGroup, \
+        "Unknown config group %s in setting name %s." % (repr(".".join(asHandledGroupNames)), repr(sFullName));
+    dxConfigGroup = dxConfigGroup.get(sGroupName, {});
+  assert sSettingName in dxConfigGroup, \
+      "Unknown setting name %s%s." % (sSettingName, \
+          len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
+  if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
+    print "%s* The default value for config setting %s is %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]));
+  else:
+    print "%s+ Changed config setting %s from %s to %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
+    dxConfigGroup[sSettingName] = xValue;
+
 if __name__ == "__main__":
   asArguments = sys.argv[1:];
   if len(asArguments) == 0:
     print "Usage:";
     print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
-    print "    Start the executable in the debugger with the provided arguments.";
+    print "    Start the binary in the debugger with the provided arguments.";
     print "";
-    print "  BugId.py [options] \"known application id\" [test url or file path]";
-    print "    Start a known application and open the given url or file.";
-    print "    Valid ids: %s" % ", ".join(sorted(gasApplicationCommandLine_by_sKnownApplicationKeyword.keys()));
+    print "  BugId.py [options] @application [additional arguments]";
+    print "    (Where \"application\" is a known application keyword, see below)";
+    print "    Start the application identified by the keyword in the debugger";
+    print "    using the application's default command-line and arguments followed";
+    print "    by the additional arguments provided and apply application specific";
+    print "    settings.";
+    print "";
+    print "  BugId.py [options] @application=\"path\\to\\binary.exe\" [arguments]";
+    print "    Start the application identified by the keyword in the debugger";
+    print "    using the provided binary and arguments and apply application specific";
+    print "    settings. (i.e. the application's default command-line is ignored in";
+    print "    favor of the provided binary and arguments).";
     print "";
     print "  BugId.py [options] --pids=[comma separated list of process ids]";
     print "    Attach debugger to the process(es) provided in the list. The processes must";
@@ -102,60 +181,100 @@ if __name__ == "__main__":
     print "  change. All values must be valid JSON of the appropriate type. No checks are";
     print "  made to ensure this. Providing illegal values may result in exceptions at any";
     print "  time during execution. You have been warned.";
+    print "";
+    print "Known application keywords:";
+    for sApplicationKeyword in asApplicationKeywords:
+      print "  @%s" % sApplicationKeyword;
+    print "Run BugId.py @application? for an overview of the application specific command";
+    print "line, arguments and settings.";
     os._exit(0);
-  auApplicationProcessIds = None;
-  while len(asArguments) and asArguments[0].startswith("--"):
-    if asArguments[0].startswith("--pids="):
-      auApplicationProcessIds = [int(x) for x in asArguments[0].split("=", 1)[1].split(",")];
-    else:
-      sSettingName, sValue = asArguments[0][2:].split("=", 1);
-      try:
-        xValue = json.loads(sValue);
-      except ValueError:
-        print "- Cannot decode argument JSON value %s" % sValue;
+  auApplicationProcessIds = [];
+  asApplicationCommandLine = None;
+  sApplicationKeyword = None;
+  asAdditionalArguments = [];
+  while asArguments:
+    sArgument = asArguments[0];
+    if sArgument.startswith("@"):
+      asArguments.pop(0);
+      if sApplicationKeyword is not None:
+        print "- Cannot provide more than one application keyword";
         os._exit(1);
-      asGroupNames = sSettingName.split("."); # last element is not a group name
-      sFullName = ".".join(asGroupNames);
-      sSettingName = asGroupNames.pop();          # so pop it.
-      dxConfigGroup = dxConfig;
-      asHandledGroupNames = [];
-      for sGroupName in asGroupNames:
-        asHandledGroupNames.append(sGroupName);
-        assert sGroupName in dxConfigGroup, \
-            "Unknown config group %s in setting name %s." % (repr(".".join(asHandledGroupNames)), repr(sFullName));
-        dxConfigGroup = dxConfigGroup.get(sGroupName, {});
-      assert sSettingName in dxConfigGroup, \
-          "Unknown setting name %s%s." % (sSettingName, \
-              len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
-      if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
-        print "* The default value for config setting %s is %s." % (sFullName, repr(dxConfigGroup[sSettingName]));
+      if "=" in sArgument:
+        sApplicationKeyword, sApplicationBinary = sArgument[1:].split("=", 1);
+        asApplicationCommandLine = [sApplicationBinary];
       else:
-        print "+ Changed config setting %s from %s to %s." % (sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
-        dxConfigGroup[sSettingName] = xValue;
-    asArguments.pop(0);
-  asApplicationCommandLine = len(asArguments) and asArguments or None;
-  # Rather than a command line, a known application keyword can be provided:
-  sKnownApplicationKeyword = asApplicationCommandLine and asApplicationCommandLine[0].lower() or None; 
-  if sKnownApplicationKeyword in gasApplicationCommandLine_by_sKnownApplicationKeyword:
-    if len(asApplicationCommandLine) == 2:
-      dxConfig["sTest"] = asApplicationCommandLine[1];
-    elif len(asApplicationCommandLine) > 2:
-      print "- Superfluous arguments after known application keyword: %s" % " ".join(asApplicationCommandLine[2:]);
-      os._exit(-1);
+        sApplicationKeyword = sArgument[1:];
+      if sApplicationKeyword.endswith("?"):
+        sApplicationKeyword = sApplicationKeyword[:-1];
+        if sApplicationKeyword not in asApplicationKeywords:
+          print "- Unknown application keyword";
+          os._exit(1);
+        print "Known application settings for @%s" % sApplicationKeyword;
+        if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
+          print "  Base command-line:";
+          print "    %s" % " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]);
+        if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
+          print "  Default additional arguments:";
+          print "    %s" % " ".join([
+            sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
+            for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
+          ]);
+        if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+          print "  Application specific settings:";
+          for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+            print "    %s = %s" % (sSettingName, json.dumps(xValue));
+        os._exit(0);
+      if sApplicationKeyword not in asApplicationKeywords:
+        print "- Unknown application keyword";
+        os._exit(1);
+    elif sArgument.startswith("--"):
+      asArguments.pop(0);
+      sSettingName, sValue = sArgument[2:].split("=", 1);
+      if sSettingName in ["pid", "pids"]:
+        auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+      else:
+        try:
+          xValue = json.loads(sValue);
+        except ValueError:
+          print "- Cannot decode argument JSON value %s" % sValue;
+          os._exit(1);
+        fApplyConfigSetting(sSettingName, xValue); # Apply and show result
+    else:
+      asAdditionalArguments = asArguments;
+      break;
+  if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+    print "* Applying application specific settings:";
+    for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+      fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+
+  if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and not asApplicationCommandLine:
     # Translate known application keyword to its command line:
-    asApplicationCommandLine = gasApplicationCommandLine_by_sKnownApplicationKeyword[sKnownApplicationKeyword];
-    # Get source file path to URL translation rules for known application:
-    dsURLTemplate_by_srSourceFilePath = gdsURLTemplate_by_srSourceFilePath_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword, {});
-    # Get important stdout/stderr lines rules for known application:
-    rImportantStdOutLines = grImportantStdOutLines_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword);
-    rImportantStdErrLines = grImportantStdErrLines_by_sKnownApplicationKeyword.get(sKnownApplicationKeyword);
-  else:
-    dsURLTemplate_by_srSourceFilePath = {};
-    rImportantStdOutLines = None;
-    rImportantStdErrLines = None;
-  if asApplicationCommandLine is not None:
-    # replace "%test%" with dxConfig["sTest"] in the command line
-    asApplicationCommandLine = [s.replace("%test%", dxConfig["sTest"]) for s in asApplicationCommandLine];
+    asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
+  if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and not asAdditionalArguments:
+    asAdditionalArguments = gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword];
+  if asApplicationCommandLine:
+    if auApplicationProcessIds:
+      print "You cannot specify both an application command-line and its process ids";
+      os._exit(1);
+    asApplicationCommandLine += [
+      sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
+      for sArgument in asAdditionalArguments
+    ];
+  elif not auApplicationProcessIds:
+    print "You must specify an application command-line or its process ids";
+    os._exit(1);
+  elif asAdditionalArguments:
+    print "You cannot specify command-line arguments to an application that is already running";
+    os._exit(1);
+  dsURLTemplate_by_srSourceFilePath = {};
+  if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
+    dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.get(sApplicationKeyword, {});
+  rImportantStdOutLines = None;
+  if sApplicationKeyword in gdApplication_rImportantStdOutLines_by_sKeyword:
+    rImportantStdOutLines = gdApplication_rImportantStdOutLines_by_sKeyword.get(sApplicationKeyword);
+  rImportantStdErrLines = None;
+  if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
+    rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword.get(sApplicationKeyword);
   
   oBugId = None;
   
@@ -204,8 +323,8 @@ if __name__ == "__main__":
   else:
     print "+ The debugger is attaching to the application...";
   oBugId = cBugId(
-    asApplicationCommandLine = asApplicationCommandLine,
-    auApplicationProcessIds = auApplicationProcessIds,
+    asApplicationCommandLine = asApplicationCommandLine or None,
+    auApplicationProcessIds = auApplicationProcessIds or None,
     asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
     dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
     rImportantStdOutLines = rImportantStdOutLines,
