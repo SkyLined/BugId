@@ -359,11 +359,11 @@ if __name__ == "__main__":
       # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
       sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
-      sValidReportFileName = FileSystem.fsTranslateToValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
+      sValidReportFileName = FileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
       if dxConfig["sReportFolderPath"] is not None:
-        sReportFilePath = FileSystem.fsLocalPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+        sReportFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
       else:
-        sReportFilePath = FileSystem.fsLocalPath(sValidReportFileName);
+        sReportFilePath = FileSystem.fsPath(sValidReportFileName);
       eWriteDataToFileResult = FileSystem.feWriteDataToFile(
         oBugId.oBugReport.sDetailsHTML,
         sReportFilePath,
