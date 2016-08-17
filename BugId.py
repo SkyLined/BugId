@@ -136,7 +136,52 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
     print "%s+ Changed config setting %s from %s to %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
     dxConfigGroup[sSettingName] = xValue;
 
+oBugId = None;
+bApplicationIsStarted = False;
+bCheckForExcessiveCPUUsageTimeoutSet = False;
+oInternalException = None;
+
+def fApplicationRunningHandler():
+  global oBugId, bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
+  if not bApplicationIsStarted:
+    # Running for the first time after being started.
+    bApplicationIsStarted = True;
+    print "+ The application was started successfully and is running...";
+    if dxConfig["nApplicationMaxRunTime"] is not None:
+      oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fHandleApplicationRunTimeout);
+  else:
+    # Running after being resumed.
+    print "  * T+%.1f The application was resumed successfully and is running..." % oBugId.fnApplicationRunTime();
+  if not bCheckForExcessiveCPUUsageTimeoutSet:
+    # Start checking for excessive CPU usage
+    bCheckForExcessiveCPUUsageTimeoutSet = True;
+    oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
+
+def fExceptionDetectedHandler(uCode, sDescription):
+  global oBugId;
+  if uCode:
+    print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
+  else:
+    print "  * T+%.1f A potential bug (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), sDescription);
+
+def fHandleApplicationRunTimeout():
+  global oBugId;
+  print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
+      (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
+  oBugId.fStop();
+
+def fApplicationExitHandler():
+  global oBugId;
+  print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
+  oBugId.fStop();
+
+def fInternalExceptionCallback(oException):
+  global oInternalException;
+  oInternalException = oException;
+  raise;
+
 def fuMain(asArguments):
+  global oBugId, bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
   # returns an exit code, values are:
   # 0 = executed successfully, no bugs found.
   # 1 = executed successfully, bug detected.
@@ -230,47 +275,7 @@ def fuMain(asArguments):
   if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
     rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword.get(sApplicationKeyword);
   
-  oBugId = None;
-  
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
-  bCheckForExcessiveCPUUsageTimeoutSet = False;
-  def fApplicationRunningHandler():
-    global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
-    if not bApplicationIsStarted:
-      # Running for the first time after being started.
-      bApplicationIsStarted = True;
-      print "+ The application was started successfully and is running...";
-      if dxConfig["nApplicationMaxRunTime"] is not None:
-        oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fHandleApplicationRunTimeout);
-    else:
-      # Running after being resumed.
-      print "  * T+%.1f The application was resumed successfully and is running..." % oBugId.fnApplicationRunTime();
-    if not bCheckForExcessiveCPUUsageTimeoutSet:
-      # Start checking for excessive CPU usage
-      bCheckForExcessiveCPUUsageTimeoutSet = True;
-      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
-  
-  def fExceptionDetectedHandler(uCode, sDescription):
-    if uCode:
-      print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
-    else:
-      print "  * T+%.1f A potential bug (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), sDescription);
-  
-  def fHandleApplicationRunTimeout():
-    print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
-        (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
-    oBugId.fStop();
-  
-  def fApplicationExitHandler():
-    print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
-    oBugId.fStop();
-  
-  oInternalException = None;
-  def fInternalExceptionCallback(oException):
-    global oInternalException;
-    oInternalException = oException;
-    raise;
-  
   if asApplicationCommandLine:
     print "+ The debugger is starting the application...";
     print "  Command line: %s" % " ".join(asApplicationCommandLine);
