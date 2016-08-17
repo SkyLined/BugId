@@ -135,59 +135,12 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
     print "%s+ Changed config setting %s from %s to %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
     dxConfigGroup[sSettingName] = xValue;
 
-if __name__ == "__main__":
-  asArguments = sys.argv[1:];
-  if len(asArguments) == 0:
-    print "Usage:";
-    print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
-    print "    Start the binary in the debugger with the provided arguments.";
-    print "";
-    print "  BugId.py [options] @application [additional arguments]";
-    print "    (Where \"application\" is a known application keyword, see below)";
-    print "    Start the application identified by the keyword in the debugger";
-    print "    using the application's default command-line and arguments followed";
-    print "    by the additional arguments provided and apply application specific";
-    print "    settings.";
-    print "";
-    print "  BugId.py [options] @application=\"path\\to\\binary.exe\" [arguments]";
-    print "    Start the application identified by the keyword in the debugger";
-    print "    using the provided binary and arguments and apply application specific";
-    print "    settings. (i.e. the application's default command-line is ignored in";
-    print "    favor of the provided binary and arguments).";
-    print "";
-    print "  BugId.py [options] --pids=[comma separated list of process ids]";
-    print "    Attach debugger to the process(es) provided in the list. The processes must";
-    print "    all have been suspended, as they will be resumed by the debugger.";
-    print "";
-    print "Options are of the form --[name]=[JSON value]. Note that you may need to do a";
-    print "bit of quote juggling because Windows likes to eat quotes from the JSON value";
-    print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
-    print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
-    print "  --bSaveReport=false";
-    print "    Do not save a HTML formatted crash report.";
-    print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
-    print "    Save report to the specified folder, in this case \"BugId\". The quotes";
-    print "    mess is needed because of the Windows quirck explained above.";
-    print "  --BugId.bSaveDump=true";
-    print "    Save a dump file when a crash is detected.";
-    print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true,";
-    print "      --BugId.bOutputStdErr=true";
-    print "    Show verbose cdb input / output during debugging.";
-    print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
-    print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
-    print "  --BugId.asSymbolCachePaths=[\"C:\\Symbols\"]";
-    print "    Use C:\\Symbols to cache symbol files.";
-    print "  See dxConfig.py and srv\dxBugIdConfig.py for a list of settings that you can";
-    print "  change. All values must be valid JSON of the appropriate type. No checks are";
-    print "  made to ensure this. Providing illegal values may result in exceptions at any";
-    print "  time during execution. You have been warned.";
-    print "";
-    print "Known application keywords:";
-    for sApplicationKeyword in asApplicationKeywords:
-      print "  @%s" % sApplicationKeyword;
-    print "Run BugId.py @application? for an overview of the application specific command";
-    print "line, arguments and settings.";
-    os._exit(0);
+def fuMain(asArguments):
+  # returns an exit code, values are:
+  # 0 = executed successfully, no bugs found.
+  # 1 = executed successfully, bug detected.
+  # 2 = bad arguments
+  # 3 = internal error
   auApplicationProcessIds = [];
   sApplicationKeyword = None;
   asApplicationCommandLine = [];
@@ -198,7 +151,7 @@ if __name__ == "__main__":
       asArguments.pop(0);
       if sApplicationKeyword is not None:
         print "- Cannot provide more than one application keyword";
-        os._exit(1);
+        return 2;
       if "=" in sArgument:
         sApplicationKeyword, sApplicationBinary = sArgument[1:].split("=", 1);
         asApplicationCommandLine = [sApplicationBinary];
@@ -208,7 +161,7 @@ if __name__ == "__main__":
         sApplicationKeyword = sApplicationKeyword[:-1];
         if sApplicationKeyword not in asApplicationKeywords:
           print "- Unknown application keyword";
-          os._exit(1);
+          return 2;
         print "Known application settings for @%s" % sApplicationKeyword;
         if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
           print "  Base command-line:";
@@ -223,10 +176,10 @@ if __name__ == "__main__":
           print "  Application specific settings:";
           for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
             print "    %s = %s" % (sSettingName, json.dumps(xValue));
-        os._exit(0);
+        return 0;
       if sApplicationKeyword not in asApplicationKeywords:
         print "- Unknown application keyword";
-        os._exit(1);
+        return 2;
     elif sArgument.startswith("--"):
       asArguments.pop(0);
       sSettingName, sValue = sArgument[2:].split("=", 1);
@@ -237,7 +190,7 @@ if __name__ == "__main__":
           xValue = json.loads(sValue);
         except ValueError:
           print "- Cannot decode argument JSON value %s" % sValue;
-          os._exit(1);
+          return 2;
         fApplyConfigSetting(sSettingName, xValue); # Apply and show result
     else:
       asAdditionalArguments = asArguments;
@@ -258,14 +211,14 @@ if __name__ == "__main__":
   if asApplicationCommandLine:
     if auApplicationProcessIds:
       print "You cannot specify both an application command-line and its process ids";
-      os._exit(1);
+      return 2;
     asApplicationCommandLine += asAdditionalArguments;
   elif not auApplicationProcessIds:
     print "You must specify an application command-line or its process ids";
-    os._exit(1);
+    return 2;
   elif asAdditionalArguments:
     print "You cannot specify command-line arguments to an application that is already running";
-    os._exit(1);
+    return 2;
   dsURLTemplate_by_srSourceFilePath = {};
   if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
     dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.get(sApplicationKeyword, {});
@@ -338,12 +291,14 @@ if __name__ == "__main__":
   oBugId.fWait();
   if not bApplicationIsStarted:
     print "- BugId was unable to debug the application.";
+    return 3;
   elif oInternalException is not None:
     print "+ BugId run into an internal error:";
     print "  %s" % repr(oInternalException);
     print;
     print "  Please report this issue at the below web-page so it can be addressed:";
     print "  https://github.com/SkyLined/BugId/issues/new";
+    return 3;
   elif oBugId.oBugReport is not None:
     print "+ A bug was detected in the application.";
     print;
@@ -372,9 +327,66 @@ if __name__ == "__main__":
         print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
       else:
         print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sDetailsHTML));
+    return 1;
   else:
     print "- The application has terminated without crashing.";
     print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+    return 0;
+
+if __name__ == "__main__":
+  if len(asArguments) == 0:
+    print "Usage:";
+    print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
+    print "    Start the binary in the debugger with the provided arguments.";
+    print "";
+    print "  BugId.py [options] @application [additional arguments]";
+    print "    (Where \"application\" is a known application keyword, see below)";
+    print "    Start the application identified by the keyword in the debugger";
+    print "    using the application's default command-line and arguments followed";
+    print "    by the additional arguments provided and apply application specific";
+    print "    settings.";
+    print "";
+    print "  BugId.py [options] @application=\"path\\to\\binary.exe\" [arguments]";
+    print "    Start the application identified by the keyword in the debugger";
+    print "    using the provided binary and arguments and apply application specific";
+    print "    settings. (i.e. the application's default command-line is ignored in";
+    print "    favor of the provided binary and arguments).";
+    print "";
+    print "  BugId.py [options] --pids=[comma separated list of process ids]";
+    print "    Attach debugger to the process(es) provided in the list. The processes must";
+    print "    all have been suspended, as they will be resumed by the debugger.";
+    print "";
+    print "Options are of the form --[name]=[JSON value]. Note that you may need to do a";
+    print "bit of quote juggling because Windows likes to eat quotes from the JSON value";
+    print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
+    print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
+    print "  --bSaveReport=false";
+    print "    Do not save a HTML formatted crash report.";
+    print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
+    print "    Save report to the specified folder, in this case \"BugId\". The quotes";
+    print "    mess is needed because of the Windows quirck explained above.";
+    print "  --BugId.bSaveDump=true";
+    print "    Save a dump file when a crash is detected.";
+    print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true,";
+    print "      --BugId.bOutputStdErr=true";
+    print "    Show verbose cdb input / output during debugging.";
+    print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
+    print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
+    print "  --BugId.asSymbolCachePaths=[\"C:\\Symbols\"]";
+    print "    Use C:\\Symbols to cache symbol files.";
+    print "  See dxConfig.py and srv\dxBugIdConfig.py for a list of settings that you can";
+    print "  change. All values must be valid JSON of the appropriate type. No checks are";
+    print "  made to ensure this. Providing illegal values may result in exceptions at any";
+    print "  time during execution. You have been warned.";
+    print "";
+    print "Known application keywords:";
+    for sApplicationKeyword in asApplicationKeywords:
+      print "  @%s" % sApplicationKeyword;
+    print "Run BugId.py @application? for an overview of the application specific command";
+    print "line, arguments and settings.";
+    uExitCode = 0;
+  else:
+    uExitCode = fuMain(sys.argv[1:]);
   
   if dxConfig["bShowLicenseAndDonationInfo"]:
     print;
@@ -383,3 +395,5 @@ if __name__ == "__main__":
     print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
     print "use BugId commercially. Contact and licensing information can be found at";
     print "https://github.com/SkyLined/BugId#license.";
+
+  os._exit(uExitCode);
