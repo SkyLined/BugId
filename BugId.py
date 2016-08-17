@@ -255,15 +255,11 @@ if __name__ == "__main__":
       sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
       for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
     ];
-  asApplicationCommandLine += asAdditionalArguments;
   if asApplicationCommandLine:
     if auApplicationProcessIds:
       print "You cannot specify both an application command-line and its process ids";
       os._exit(1);
-    asApplicationCommandLine += [
-      sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-      for sArgument in asAdditionalArguments
-    ];
+    asApplicationCommandLine += asAdditionalArguments;
   elif not auApplicationProcessIds:
     print "You must specify an application command-line or its process ids";
     os._exit(1);
