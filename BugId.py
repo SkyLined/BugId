@@ -335,7 +335,7 @@ def fuMain(asArguments):
     return 0;
 
 if __name__ == "__main__":
-  if len(asArguments) == 0:
+  if len(sys.argv) == 1:
     print "Usage:";
     print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
     print "    Start the binary in the debugger with the provided arguments.";
