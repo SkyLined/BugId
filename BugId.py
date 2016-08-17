@@ -251,7 +251,10 @@ if __name__ == "__main__":
     # Translate known application keyword to its command line:
     asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
   if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and len(asAdditionalArguments) == 0:
-    asAdditionalArguments = gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword];
+    asAdditionalArguments = [
+      sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
+      for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
+    ];
   asApplicationCommandLine += asAdditionalArguments;
   if asApplicationCommandLine:
     if auApplicationProcessIds:
