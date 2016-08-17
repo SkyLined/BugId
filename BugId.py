@@ -7,6 +7,7 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["mo
   sys.path.insert(0, sPath);
 
 from dxConfig import dxConfig;
+from sVersion import sVersion;
 try:
   from cBugId import cBugId;
 except:
@@ -390,6 +391,7 @@ if __name__ == "__main__":
   
   if dxConfig["bShowLicenseAndDonationInfo"]:
     print;
+    print "BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
     print "This version of BugId is provided free of charge for non-commercial use only.";
     print "If you find it useful and would like to make a donation, you can send bitcoin";
     print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
