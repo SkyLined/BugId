@@ -4,7 +4,8 @@ sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
 # The CWD may not be this script's folder; make sure it looks there for modules first:
 sBaseFolderPath = os.path.dirname(__file__);
 for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["modules"]]:
-  sys.path.insert(0, sPath);
+  if sPath not in sys.path:
+    sys.path.insert(0, sPath);
 
 from dxConfig import dxConfig;
 from sVersion import sVersion;
