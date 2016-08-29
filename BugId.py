@@ -246,7 +246,9 @@ def fuMain(asArguments):
     print "* Applying application specific settings:";
     for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
       fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
-
+  else:
+    asApplicationCommandLine = asAdditionalArguments;
+    asAdditionalArguments = [];
   if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and len(asApplicationCommandLine) == 0:
     # Translate known application keyword to its command line:
     asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
