@@ -1,0 +1,22 @@
+2016-08-31:
+* Make @chrome OS ISA dependent and add @chrome_x86 and @chrome_x64 to select
+  different ISAs when you want to use a specific ISA.
+* Make @firefox OS ISA dependent and add @firefox_x86 and @firefox_x64 to
+  select different ISAs when you want to use a specific ISA.
+* Rename @msie32 and @msie64 to @msie_x86 and @msie_x64 for consistency.
+* Update version of cBugId, which has the following mayor changes:
+  * The BugId can now include the number of overwritten bytes, and a hash of
+    their values if you supply the --BugId.uHeapCorruptedBytesHashChars=uint
+    argument with a value of 1 or more. This can be useful when you want to
+    detect if two instances of heap corruption wrote the same data to corrupt
+    the heap. When enabled, a string with format "~L:H" is added to the BugId,
+    where "L" is the length of the corruption and "H" is the hash. Note that L
+    is not influenced by the --BugId.uArchitectureIndependentBugIdBits setting,
+    so BugId's created using this feature on x86 and x64 versions of an
+    application may differ.
+  * You can now specify which version of cdb (x86 or x64) you want BugId to
+    use. This can improve results when you use the x86 cdb to debug x86
+    applications: using the x64 cdb may prevent BugId from collecting page heap
+    information. The correct cdb version is automatically select for
+    applications run using an "@keyword". 
+  See the cBugId RELEASE NOTES.txt file for all details.
