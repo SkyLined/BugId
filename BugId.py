@@ -35,23 +35,47 @@ sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFile
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 gdApplication_asCommandLine_by_sKeyword = {
   "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
-  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome_x86": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome_x64": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x64, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox_x86": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox_x64": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x64, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
   "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86],
   "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath],
-  "msie64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64],
-  "msie86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86],
+  "msie_x86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86],
+  "msie_x64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64],
   "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
 };
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
 gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
   "chrome": [DEFAULT_BROWSER_TEST_URL],
+  "chrome_x86": [DEFAULT_BROWSER_TEST_URL],
+  "chrome_x64": [DEFAULT_BROWSER_TEST_URL],
   "firefox": [DEFAULT_BROWSER_TEST_URL],
-  "nightly": [DEFAULT_BROWSER_TEST_URL],
-  "msie": [DEFAULT_BROWSER_TEST_URL],
-  "msie64": [DEFAULT_BROWSER_TEST_URL],
-  "msie86": [DEFAULT_BROWSER_TEST_URL],
+  "firefox_x86": [DEFAULT_BROWSER_TEST_URL],
+  "firefox_x64": [DEFAULT_BROWSER_TEST_URL],
   "foxit": ["repro.pdf"],
+  "msie": [DEFAULT_BROWSER_TEST_URL],
+  "msie_x86": [DEFAULT_BROWSER_TEST_URL],
+  "msie_x64": [DEFAULT_BROWSER_TEST_URL],
+  "nightly": [DEFAULT_BROWSER_TEST_URL],
+};
+# ISA = Instruction Set Architecture
+sOSISA = sProgramFilesPath == sProgramFilesPath_x64 and "x64" or "x86";
+gdApplication_sISA_by_sKeyword = {
+  "aoo-writer": "x86",
+  "chrome": sOSISA,
+  "chrome_x86": "x86",
+  "chrome_x64": "x64",
+  "firefox": sOSISA,
+  "firefox_x86": "x86",
+  "firefox_x64": "x64",
+  "foxit": "x86",
+  "msie": sOSISA,
+  "msie_x86": "x86",
+  "msie_x64": "x64",
+  "nightly": "x86",
 };
 dxBrowserSettings = {
   # Settings used by all browsers (these should eventually be fine-tuned for each browser)
@@ -70,8 +94,13 @@ gdApplication_dxSettings_by_sKeyword = {
     "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "chrome": dxBrowserSettings,
+  "chrome_x86": dxBrowserSettings,
+  "chrome_x64": dxBrowserSettings,
+  "chrome": dxBrowserSettings,
   "edge": dxBrowserSettings,
   "firefox": dxBrowserSettings,
+  "firefox_x86": dxBrowserSettings,
+  "firefox_x64": dxBrowserSettings,
   "foxit": {
     "nApplicationMaxRunTime": 3.0, # Normally loads within 2 seconds, but give it one more to be sure.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
@@ -81,8 +110,8 @@ gdApplication_dxSettings_by_sKeyword = {
   },
   "nightly": dxBrowserSettings,
   "msie": dxBrowserSettings, 
-  "msie86": dxBrowserSettings,
-  "msie64": dxBrowserSettings,
+  "msie_x86": dxBrowserSettings,
+  "msie_x64": dxBrowserSettings,
 };
 
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
@@ -95,6 +124,8 @@ srMozillaCentralSourceURLMappings = "".join([
 ]);
 gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword = {
   "firefox": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
+  "firefox_x86": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
+  "firefox_x64": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
   "nightly": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
 };
 # Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
@@ -190,6 +221,7 @@ def fuMain(asArguments):
   # 3 = internal error
   auApplicationProcessIds = [];
   sApplicationKeyword = None;
+  sApplicationISA = None;
   asApplicationCommandLine = [];
   asAdditionalArguments = [];
   while asArguments:
@@ -232,6 +264,11 @@ def fuMain(asArguments):
       sSettingName, sValue = sArgument[2:].split("=", 1);
       if sSettingName in ["pid", "pids"]:
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+      elif sSettingName == "isa":
+        if sValue not in ["x86", "x64"]:
+          print "- Unknown ISA %s" % repr(sValue);
+          return 2;
+        sApplicationISA = sValue;
       else:
         try:
           xValue = json.loads(sValue);
@@ -277,6 +314,8 @@ def fuMain(asArguments):
   rImportantStdErrLines = None;
   if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
     rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword.get(sApplicationKeyword);
+  if not sApplicationISA:
+    sApplicationISA = gdApplication_sISA_by_sKeyword.get(sApplicationKeyword, sOSISA);
   
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
   if asApplicationCommandLine:
@@ -285,6 +324,7 @@ def fuMain(asArguments):
   else:
     print "+ The debugger is attaching to the application...";
   oBugId = cBugId(
+    sCdbISA = sApplicationISA,
     asApplicationCommandLine = asApplicationCommandLine or None,
     auApplicationProcessIds = auApplicationProcessIds or None,
     asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
@@ -369,6 +409,12 @@ if __name__ == "__main__":
     print "bit of quote juggling because Windows likes to eat quotes from the JSON value";
     print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
     print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
+    print "  --isa=x86|x64";
+    print "    Use the x86 or x64 version of cdb to debug the application. The default is";
+    print "    to use the ISA of the OS. Applications build to run on x86 systems can be";
+    print "    debugged using the x64 version of cdb, but symbol resolution may fail and";
+    print "    results may vary. You are strongly encouraged to use the same ISA for the";
+    print "    debugger as the application. (ISA = Instruction Set Architecture)";
     print "  --bSaveReport=false";
     print "    Do not save a HTML formatted crash report.";
     print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
