@@ -1,3 +1,6 @@
+2016-09-05:
+* Update cBugId to latest version, which includes bug fixes but no API changes.
+
 2016-08-31:
 * Make @chrome OS ISA dependent and add @chrome_x86 and @chrome_x64 to select
   different ISAs when you want to use a specific ISA.
