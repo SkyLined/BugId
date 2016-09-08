@@ -35,7 +35,7 @@ sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFile
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 gdApplication_asCommandLine_by_sKeyword = {
   "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
-  "acrobat": [r"%s\Adobe\Reader 11.0\AcroRd32.exe" % sProgramFilesPath_x86],
+  "acrobat": [r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
   "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
   "chrome_x86": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
   "chrome_x64": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x64, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
