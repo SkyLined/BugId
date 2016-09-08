@@ -36,6 +36,7 @@ sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 gdApplication_asCommandLine_by_sKeyword = {
   "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
   "acrobat": [r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
+  "acrobatdc": [r"%s\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
   "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
   "chrome_x86": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
   "chrome_x64": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x64, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
@@ -51,6 +52,7 @@ gdApplication_asCommandLine_by_sKeyword = {
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
 gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
   "acrobat": ["repro.pdf"],
+  "acrobatdc": ["repro.pdf"],
   "chrome": [DEFAULT_BROWSER_TEST_URL],
   "chrome_x86": [DEFAULT_BROWSER_TEST_URL],
   "chrome_x64": [DEFAULT_BROWSER_TEST_URL],
@@ -68,6 +70,7 @@ sOSISA = sProgramFilesPath == sProgramFilesPath_x64 and "x64" or "x86";
 gdApplication_sISA_by_sKeyword = {
   "aoo-writer": "x86",
   "acrobat": "x86",
+  "acrobatdc": "x86",
   "chrome": sOSISA,
   "chrome_x86": "x86",
   "chrome_x64": "x64",
@@ -97,6 +100,13 @@ gdApplication_dxSettings_by_sKeyword = {
     "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobat": {
+    "nApplicationMaxRunTime": 3.0, # Untested.
+    "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
+    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+  },
+  "acrobatdc": {
     "nApplicationMaxRunTime": 3.0, # Untested.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
     "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
