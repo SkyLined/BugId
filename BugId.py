@@ -279,6 +279,22 @@ def fuMain(asArguments):
       if sApplicationKeyword not in asApplicationKeywords:
         print "- Unknown application keyword";
         return 2;
+      # Apply all kinds of application specific settings
+      if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+        print "* Applying application specific settings:";
+        for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+          fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+      else:
+        asApplicationCommandLine = asAdditionalArguments;
+        asAdditionalArguments = [];
+      if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and len(asApplicationCommandLine) == 0:
+        # Translate known application keyword to its command line:
+        asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
+      if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and len(asAdditionalArguments) == 0:
+        asAdditionalArguments = [
+          sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
+          for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
+        ];
     elif sArgument.startswith("--"):
       asArguments.pop(0);
       sSettingName, sValue = sArgument[2:].split("=", 1);
@@ -299,21 +315,6 @@ def fuMain(asArguments):
     else:
       asAdditionalArguments = asArguments;
       break;
-  if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-    print "* Applying application specific settings:";
-    for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
-      fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
-  else:
-    asApplicationCommandLine = asAdditionalArguments;
-    asAdditionalArguments = [];
-  if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and len(asApplicationCommandLine) == 0:
-    # Translate known application keyword to its command line:
-    asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
-  if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and len(asAdditionalArguments) == 0:
-    asAdditionalArguments = [
-      sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-      for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
-    ];
   if asApplicationCommandLine:
     if auApplicationProcessIds:
       print "You cannot specify both an application command-line and its process ids";
