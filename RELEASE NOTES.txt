@@ -1,3 +1,11 @@
+2016-09-08
+==========
++ Add PageHeap-*.cmd scripts for Chrome, Firefox and Flash (though you won't
+  want to use the first two, as these browsers use their own heap allocation
+  engine and page heap will have little use).
++ Support for Adobe Reader through the @acrobat keyword.
++ Update cBugId to latest version, which includes bug fixes.
+
 2016-09-07
 ==========
 + Update cBugId to latest version, which includes bug fixes and modifies some
