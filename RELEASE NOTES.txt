@@ -1,3 +1,8 @@
+2016-09-09
+==========
++ Output binary version information for the process' binary and optionally the
+  binary in which the bug is located, if it's not the process' binary.
+
 2016-09-08
 ==========
 + Add PageHeap-*.cmd scripts for Chrome, Firefox and Flash (though you won't
