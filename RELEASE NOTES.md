@@ -5,11 +5,14 @@ Breaking changes
 + Remove "@" prefix from application keywords; as this doesn't always work with
   powershell: the argument appears to disappear. Now you can (again) simply use
   `chrome`, `foxit`, `msie`, etc...
++ New version of cBugId handles STATUS_HANDLE_NOT_CLOSABLE exceptions similar
+  to other handle related exceptions.
 
 New features
 ------------
 + Output binary version information for the process' binary and optionally the
   binary in which the bug is located, if it's not the process' binary.
++ New version of cBugId outputs application command-line in HTML report.
 + Add support for Adobe Reader DC through `acrobatdc` keyword.
 
 Bug fixes
