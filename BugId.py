@@ -168,6 +168,26 @@ asApplicationKeywords = sorted(list(set(
   gdApplication_rImportantStdErrLines_by_sKeyword.keys()
 )));
 
+def fuShowApplicationKeyWordHelp(sApplicationKeyword):
+  if sApplicationKeyword not in asApplicationKeywords:
+    print "- Unknown application keyword %s" % sApplicationKeyword;
+    return 2;
+  print "Known application settings for @%s" % sApplicationKeyword;
+  if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
+    print "  Base command-line:";
+    print "    %s" % " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]);
+  if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
+    print "  Default additional arguments:";
+    print "    %s" % " ".join([
+      sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
+      for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
+    ]);
+  if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+    print "  Application specific settings:";
+    for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+      print "    %s = %s" % (sSettingName, json.dumps(xValue));
+  return 0;
+
 def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
   asGroupNames = sSettingName.split("."); # last element is not a group name
   sFullName = ".".join(asGroupNames);
@@ -233,110 +253,112 @@ def fInternalExceptionCallback(oException):
   raise;
 
 def fuMain(asArguments):
-  global oBugId, bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
   # returns an exit code, values are:
   # 0 = executed successfully, no bugs found.
   # 1 = executed successfully, bug detected.
   # 2 = bad arguments
   # 3 = internal error
+  global oBugId, bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
+  # Parse all "--" arguments until we encounter a non-"--" argument.
   auApplicationProcessIds = [];
-  sApplicationKeyword = None;
   sApplicationISA = None;
-  asApplicationCommandLine = [];
-  asAdditionalArguments = [];
-  while asArguments:
-    sArgument = asArguments[0];
-    if sArgument.startswith("@"):
-      asArguments.pop(0);
-      if sApplicationKeyword is not None:
-        print "- Cannot provide more than one application keyword";
+  dxUserProvidedConfigSettings = {};
+  while asArguments and asArguments[0].startswith("--"):
+    sArgument = asArguments.pop(0);
+    sSettingName, sValue = sArgument[2:].split("=", 1);
+    if sSettingName in ["pid", "pids"]:
+      auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+    elif sSettingName == "isa":
+      if sValue not in ["x86", "x64"]:
+        print "- Unknown ISA %s" % repr(sValue);
         return 2;
-      if "=" in sArgument:
-        sApplicationKeyword, sApplicationBinary = sArgument[1:].split("=", 1);
-        asApplicationCommandLine = [sApplicationBinary];
-      else:
-        sApplicationKeyword = sArgument[1:];
-      if sApplicationKeyword.endswith("?"):
-        sApplicationKeyword = sApplicationKeyword[:-1];
-        if sApplicationKeyword not in asApplicationKeywords:
-          print "- Unknown application keyword";
+      sApplicationISA = sValue;
+    else:
+      try:
+        xValue = json.loads(sValue);
+      except ValueError:
+        print "- Cannot decode argument JSON value %s" % sValue;
+        return 2;
+      # User provided config settings must be applied after any keyword specific config settings:
+      dxUserProvidedConfigSettings[sSettingName] = xValue;
+  dsURLTemplate_by_srSourceFilePath = {};
+  rImportantStdOutLines = None;
+  rImportantStdErrLines = None;
+  # If there are any additional arguments, it must be an application keyword followed by additional arguments
+  # or an application command-line:
+  if not asArguments:
+    # No keyword or command line: process ids to attach to must be provided
+    asApplicationCommandLine = None;
+    if not auApplicationProcessIds:
+      print "You must specify an application command-line, keyword or process ids";
+      return 2;
+  else:
+    # First argument may be an application keyword
+    sApplicationKeyword = None;
+    sApplicationBinary = None;
+    if "=" in asArguments[0]:
+      # user provided an application keyword and binary
+      sApplicationKeyword, sApplicationBinary = asArguments.pop(0).split("=", 1);
+    elif asArguments[0] in asApplicationKeywords or asArguments[0][-1] == "?":
+      # user provided an application keyword, or requested information on something that may be one:
+      sApplicationKeyword = asArguments.pop(0);
+    asApplicationCommandLine = None;
+    if sApplicationKeyword:
+      if sApplicationKeyword[-1] == "?":
+        # User requested information about a possible keyword application
+        return fuShowApplicationKeyWordHelp(sApplicationKeyword[:-1]);
+      # Get application command line for keyword, if available:
+      if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
+        if auApplicationProcessIds:
+          print "You cannot specify process ids for application %s" % sApplicationKeyword;
           return 2;
-        print "Known application settings for @%s" % sApplicationKeyword;
-        if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
-          print "  Base command-line:";
-          print "    %s" % " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]);
-        if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
-          print "  Default additional arguments:";
-          print "    %s" % " ".join([
+        asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
+        if sApplicationBinary:
+          # Replace binary with user provided value
+          asApplicationCommandLine = [sApplicationBinary] + asApplicationCommandLine[1:];
+        if asArguments:
+          # Add user provided additional application arguments:
+          asApplicationCommandLine += asArguments;
+        elif sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
+          # Add default additional application arguments:
+          asApplicationCommandLine += [
             sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
             for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
-          ]);
-        if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-          print "  Application specific settings:";
-          for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
-            print "    %s = %s" % (sSettingName, json.dumps(xValue));
-        return 0;
-      if sApplicationKeyword not in asApplicationKeywords:
-        print "- Unknown application keyword";
+          ];
+      elif asArguments:
+        print "You cannot specify arguments for application keyword %s" % sApplicationKeyword;
         return 2;
-      # Apply all kinds of application specific settings
+      elif not auApplicationProcessIds:
+        print "You must specify process ids for application keyword %s" % sApplicationKeyword;
+        return 2;
+      # Apply application specific settings
       if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
         print "* Applying application specific settings:";
         for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
-          fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
-      else:
-        asApplicationCommandLine = asAdditionalArguments;
-        asAdditionalArguments = [];
-      if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword and len(asApplicationCommandLine) == 0:
-        # Translate known application keyword to its command line:
-        asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
-      if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword and len(asAdditionalArguments) == 0:
-        asAdditionalArguments = [
-          sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-          for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
-        ];
-    elif sArgument.startswith("--"):
-      asArguments.pop(0);
-      sSettingName, sValue = sArgument[2:].split("=", 1);
-      if sSettingName in ["pid", "pids"]:
-        auApplicationProcessIds += [long(x) for x in sValue.split(",")];
-      elif sSettingName == "isa":
-        if sValue not in ["x86", "x64"]:
-          print "- Unknown ISA %s" % repr(sValue);
-          return 2;
-        sApplicationISA = sValue;
-      else:
-        try:
-          xValue = json.loads(sValue);
-        except ValueError:
-          print "- Cannot decode argument JSON value %s" % sValue;
-          return 2;
-        fApplyConfigSetting(sSettingName, xValue); # Apply and show result
-    else:
-      asAdditionalArguments = asArguments;
-      break;
-  if asApplicationCommandLine:
-    if auApplicationProcessIds:
-      print "You cannot specify both an application command-line and its process ids";
+          if sSettingName not in dxUserProvidedConfigSettings:
+            fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+      # Apply application specific source settings
+      if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
+        dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sApplicationKeyword];
+      # Apply application specific stdio settings:
+      if sApplicationKeyword in gdApplication_rImportantStdOutLines_by_sKeyword:
+        rImportantStdOutLines = gdApplication_rImportantStdOutLines_by_sKeyword[sApplicationKeyword];
+      if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
+        rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword[sApplicationKeyword];
+      if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
+        # Apply application specific ISA
+        sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
+    elif auApplicationProcessIds:
+      # user provided an application command-line and process ids
+      print "You cannot specify both an application command-line and process ids";
       return 2;
-    asApplicationCommandLine += asAdditionalArguments;
-  elif not auApplicationProcessIds:
-    print "You must specify an application command-line or its process ids";
-    return 2;
-  elif asAdditionalArguments:
-    print "You cannot specify command-line arguments to an application that is already running";
-    return 2;
-  dsURLTemplate_by_srSourceFilePath = {};
-  if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
-    dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.get(sApplicationKeyword, {});
-  rImportantStdOutLines = None;
-  if sApplicationKeyword in gdApplication_rImportantStdOutLines_by_sKeyword:
-    rImportantStdOutLines = gdApplication_rImportantStdOutLines_by_sKeyword.get(sApplicationKeyword);
-  rImportantStdErrLines = None;
-  if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
-    rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword.get(sApplicationKeyword);
-  if not sApplicationISA:
-    sApplicationISA = gdApplication_sISA_by_sKeyword.get(sApplicationKeyword, sOSISA);
+    else:
+      # user provided an application command-line
+      asApplicationCommandLine = asArguments;
+  
+  # Apply user provided settings:
+  for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
+    fApplyConfigSetting(sSettingName, xValue); # Apply and show result
   
   bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
   if asApplicationCommandLine:
@@ -345,7 +367,7 @@ def fuMain(asArguments):
   else:
     print "+ The debugger is attaching to the application...";
   oBugId = cBugId(
-    sCdbISA = sApplicationISA,
+    sCdbISA = sApplicationISA or sOSISA,
     asApplicationCommandLine = asApplicationCommandLine or None,
     auApplicationProcessIds = auApplicationProcessIds or None,
     asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
