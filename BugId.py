@@ -396,8 +396,8 @@ def fuMain(asArguments):
     print;
     print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
     print "  Id:               %s" % oBugId.oBugReport.sId;
-    print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
     print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
+    print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
     print "  Version:          %s" % oBugId.oBugReport.asVersionInformation[0]; # There is always the process' binary.
     for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
       print "                    %s" % sVersionInformation;                # different binary (e.g. a .dll)

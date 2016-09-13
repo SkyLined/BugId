@@ -1,3 +1,9 @@
+2016-09-13
+==========
+Improvements
+------------
++ Make HTML report information similar to what BugId outputs on the console.
+
 2016-09-12
 ==========
 Breaking changes
