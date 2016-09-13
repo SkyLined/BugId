@@ -1,9 +1,17 @@
 2016-09-13
 ==========
+Breaking changes
+----------------
++ Default security impact is no longer None but "Denial of Service".
+
 Improvements
 ------------
 + Make HTML report information similar to what BugId outputs on the console.
-+ Default security impact is no longer None but "Denial of Service".
+
+Bug fixes
+---------
++ Fix bug where binary version information was not available when HTML report
+  was not generated.
 
 2016-09-12
 ==========
