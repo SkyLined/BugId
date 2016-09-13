@@ -33,20 +33,34 @@ except:
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
+# ISA = Instruction Set Architecture
+sOSISA = sProgramFilesPath == sProgramFilesPath_x64 and "x64" or "x86";
+sLocalAppData = os.getenv("LocalAppData");
+from ChromePath import sChromePath_x64, sChromePath_x86, sChromePath, \
+    sChromeSxSPath_x64, sChromeSxSPath_x86, sChromeSxSPath;
+from FirefoxPath import sFirefoxPath_x64, sFirefoxPath_x86, sFirefoxPath, \
+    sFirefoxDevPath_x64, sFirefoxDevPath_x86, sFirefoxDevPath;
+from MSIEPath import sMSIEPath_x64, sMSIEPath_x86, sMSIEPath;
 gdApplication_asCommandLine_by_sKeyword = {
   "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
   "acrobat": [r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
   "acrobatdc": [r"%s\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
-  "chrome": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-  "chrome_x86": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-  "chrome_x64": [r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x64, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
-  "firefox": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
-  "firefox_x86": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x86, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
-  "firefox_x64": [r"%s\Mozilla Firefox\firefox.exe" % sProgramFilesPath_x64, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "chrome": [sChromePath, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome_x86": [sChromePath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome_x64": [sChromePath_x64, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome-sxs": [sChromeSxSPath, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome-sxs_x86": [sChromeSxSPath_x86, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "chrome-sxs_x64": [sChromeSxSPath_x64, "--disable-default-apps", "--disable-extensions", "--disable-popup-blocking", "--disable-prompt-on-repost", "--force-renderer-accessibility", "--no-sandbox"],
+  "firefox": [sFirefoxPath, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox_x86": [sFirefoxPath_x86, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox_x64": [sFirefoxPath_x64, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox-dev": [sFirefoxDevPath, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox-dev_x86": [sFirefoxDevPath_x86, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
+  "firefox-dev_x64": [sFirefoxDevPath_x64, "--no-remote", "-profile", "%s\Firefox-profile" % os.getenv("TEMP")],
   "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86],
-  "msie": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath],
-  "msie_x86": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86],
-  "msie_x64": [r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64],
+  "msie": [sMSIEPath],
+  "msie_x86": [sMSIEPath_x86],
+  "msie_x64": [sMSIEPath_x64],
   "nightly": [r"%s\Mozilla Firefox Nightly\build\dist\bin\firefox.exe" % os.getenv("LocalAppData"), "--no-remote", "-profile", r"%s\Firefox-nightly-profile" % os.getenv("TEMP")], # has no default path; this is what I use.
 };
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
@@ -65,8 +79,6 @@ gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
   "msie_x64": [DEFAULT_BROWSER_TEST_URL],
   "nightly": [DEFAULT_BROWSER_TEST_URL],
 };
-# ISA = Instruction Set Architecture
-sOSISA = sProgramFilesPath == sProgramFilesPath_x64 and "x64" or "x86";
 gdApplication_sISA_by_sKeyword = {
   "aoo-writer": "x86",
   "acrobat": "x86",
@@ -174,8 +186,11 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
     return 2;
   print "Known application settings for @%s" % sApplicationKeyword;
   if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
-    print "  Base command-line:";
-    print "    %s" % " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]);
+    if gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword][0] is None:
+      print "  Not installed";
+    else:
+      print "  Base command-line:";
+      print "    %s" % " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]);
   if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
     print "  Default additional arguments:";
     print "    %s" % " ".join([
@@ -316,6 +331,10 @@ def fuMain(asArguments):
         if sApplicationBinary:
           # Replace binary with user provided value
           asApplicationCommandLine = [sApplicationBinary] + asApplicationCommandLine[1:];
+        else:
+          if asApplicationCommandLine[0] is None:
+            print "Application %s does not appear to be installed";
+            return 2;
         if asArguments:
           # Add user provided additional application arguments:
           asApplicationCommandLine += asArguments;
@@ -325,6 +344,7 @@ def fuMain(asArguments):
             sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
             for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
           ];
+      
       elif asArguments:
         print "You cannot specify arguments for application keyword %s" % sApplicationKeyword;
         return 2;
