@@ -4,6 +4,16 @@ Breaking changes
 ----------------
 + Default security impact is no longer None but "Denial of Service".
 
+New features
+------------
++ Add support for Chrome Canary through the `chrome-sxs`, `chrome-sxs_x86`,
+  and `chrome-sxs_x64` keywords.
++ Add support for Firefox Developer Edition through the `firefox-dev`,
+  `firefox-dev_x86` and `firefox-dev_x64` keywords.
++ Improve detection of x86/x64 versions of chrome, firefox and MSIE. i.e.
+  the `chrome` keyword will now run the x64 or x86 version of chrome, whichever
+  is installed (preferring x64 over x86 if both are installed).
+
 Improvements
 ------------
 + Make HTML report information similar to what BugId outputs on the console.
