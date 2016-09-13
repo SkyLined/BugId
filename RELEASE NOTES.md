@@ -3,6 +3,7 @@
 Improvements
 ------------
 + Make HTML report information similar to what BugId outputs on the console.
++ Default security impact is no longer None but "Denial of Service".
 
 2016-09-12
 ==========
