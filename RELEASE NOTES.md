@@ -1,3 +1,9 @@
+2016-09-29
+==========
++ PageHeap-Chrome.cmd now sets the CHROME_ALLOCATOR environment variable to the
+  right value both in the current process and in all processes through the
+  registry. The later requires logging off and on again to propagate.
+
 2016-09-13
 ==========
 Breaking changes
