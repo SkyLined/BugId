@@ -1,3 +1,7 @@
+2016-10-04
+==========
++ New version of cBugId fixes a few bugs and improves HTML reports.
+
 2016-09-29
 ==========
 + PageHeap-Chrome.cmd now sets the CHROME_ALLOCATOR environment variable to the
