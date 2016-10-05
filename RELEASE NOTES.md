@@ -1,3 +1,7 @@
+2016-10-05
+==========
++ New version of cBugId fixes two bugs.
+
 2016-10-04
 ==========
 + New version of cBugId fixes a few bugs and improves HTML reports.
