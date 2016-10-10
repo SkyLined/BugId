@@ -1,12 +1,14 @@
 2016-10-10
 ==========
-+ New version of cBugId includes improvements and bug fixes.
-+ Detect and report misaligned frees  as `MisalignedFree[size]+offset`. e.g if
++ Page heap settings are now applied by default to all processes. The BugId
+  settings can be used to disable this or modify which settings are applied.
++ Detect and report misaligned frees as `MisalignedFree[size]+offset`. e.g if
   the code attempts to free heap using a pointer that is at offset 0x8 of a
   0x20 byte block, you will get a BugId of `MisalignedFree[0x20]+8`
 + The `FailFast2:` prefix was removed from FailFast exceptions.
 + Both `LegacyGS` and `StackCookie` FailFast exceptions are now reported as
   `OOBW[Stack]` (as in: Out-Of-Bounds Write on the Stack).
++ New version of cBugId includes additional minor improvements and bug fixes.
 
 2016-10-05
 ==========
