@@ -1,3 +1,8 @@
+2016-10-11
+==========
++ cBugId bug fixes and reverse change that enables page heap automatically (it
+  was causing access violations).
+
 2016-10-10
 ==========
 + Page heap settings are now applied by default to all processes. The BugId
