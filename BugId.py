@@ -102,6 +102,9 @@ dxBrowserSettings = {
   "BugId.nExcessiveCPUUsagePercent": 95,      # Browser msust be very, very busy.
   "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
 };
+# Chrome doesn't work well when page heap is forced, so don't.
+dxForcedPageHeapBrowserSettings = dxBrowserSettings.copy();
+dxForcedPageHeapBrowserSettings["BugId.bForcePageHeap"] = True;
 
 gdApplication_dxSettings_by_sKeyword = {
   "aoo-writer": {
@@ -129,10 +132,10 @@ gdApplication_dxSettings_by_sKeyword = {
   "chrome_x86": dxBrowserSettings,
   "chrome_x64": dxBrowserSettings,
   "chrome": dxBrowserSettings,
-  "edge": dxBrowserSettings,
-  "firefox": dxBrowserSettings,
-  "firefox_x86": dxBrowserSettings,
-  "firefox_x64": dxBrowserSettings,
+  "edge": dxForcedPageHeapBrowserSettings,
+  "firefox": dxForcedPageHeapBrowserSettings,
+  "firefox_x86": dxForcedPageHeapBrowserSettings,
+  "firefox_x64": dxForcedPageHeapBrowserSettings,
   "foxit": {
     "nApplicationMaxRunTime": 3.0, # Normally loads within 2 seconds, but give it one more to be sure.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
@@ -140,7 +143,6 @@ gdApplication_dxSettings_by_sKeyword = {
     "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
-  "nightly": dxBrowserSettings,
   "msie": dxBrowserSettings, 
   "msie_x86": dxBrowserSettings,
   "msie_x64": dxBrowserSettings,
