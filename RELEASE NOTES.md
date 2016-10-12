@@ -1,3 +1,7 @@
+2016-10-12
+==========
++ cBugId now cleans up stack for VERIFIER STOP messages.
+
 2016-10-11
 ==========
 + cBugId bug fixes and reverse change that enables page heap automatically (it
