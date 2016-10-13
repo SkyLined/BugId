@@ -1,7 +1,7 @@
 2016-10-13
 ==========
-+ cBugId renamed sDetailsHTML to sReportHTML.
 + HTML report now has tabs replaced with spaces where appropriate.
++ A number of other minor cBugId changes and/or bug fixes.
 
 2016-10-12
 ==========
