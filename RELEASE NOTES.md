@@ -1,3 +1,7 @@
+2016-10-13
+==========
++ cBugId renamed sDetailsHTML to sReportHTML.
+
 2016-10-12
 ==========
 + cBugId now cleans up stack for VERIFIER STOP messages.

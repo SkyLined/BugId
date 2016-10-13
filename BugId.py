@@ -434,14 +434,14 @@ def fuMain(asArguments):
       else:
         sReportFilePath = FileSystem.fsPath(sValidReportFileName);
       eWriteDataToFileResult = FileSystem.feWriteDataToFile(
-        oBugId.oBugReport.sDetailsHTML,
+        oBugId.oBugReport.sReportHTML,
         sReportFilePath,
         fbRetryOnFailure = lambda: False,
       );
       if eWriteDataToFileResult:
         print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
       else:
-        print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sDetailsHTML));
+        print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sReportHTML));
     return 1;
   else:
     print "- The application has terminated without crashing.";
