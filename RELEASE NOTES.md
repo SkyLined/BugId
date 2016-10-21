@@ -1,3 +1,9 @@
+2016-10-20
+==========
++ cBugId no longer counts stack frames without a symbol towards the number of
+  hashed frames. They are added to the hash as a placeholder (`-`), so the hash
+  may get larger than what you might have previously expected.
+
 2016-10-13
 ==========
 + HTML report now has tabs replaced with spaces where appropriate.
