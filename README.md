@@ -109,6 +109,10 @@ different bug ids.
   attempted to access a heap block of the given size at the given offset
   before or after the heap block.
   
+* `OOBW[Stack] - (Out-Of-Bounds) The application has written outside of the
+  stack memory it is allowed to modify, overwriting a stack cookie. The change
+  in the stack cookie caused the application to detected and report this issue.
+  
   Both the sizes and the offsets used in the above BugIds can be made
   *architecture independent* by setting the `dxBugIdConfig` setting
   `uArchitectureIndependentBugIdBits` to the smallest number of bits for the
@@ -124,23 +128,23 @@ different bug ids.
   pointer (`OOBW[0x10]+6`; 4+2 and `OOBW[0x20]+0xA`; 8+2) would result in
   `OOBW[4*N]+2` for both.
 
-* `StackExhaustion` - A function has attempted to allocate too much stack memory.
-* `RecursiveCall` - A recursive function call loop has used too much stack memory.
-* `C++` - An unhandeled C++ exception 
-* `OOM` - Out Of Memory: the application attempted to allocate too much memory.
 * `Assert` - An assertion has failed.
-* `HeapCorrupt` - Application verifier has detected heap corruption.
-* `LegacyGS`, `StackCookie` - /GS detected that a stack cookie was modified.
-* `VTGuard` - VTGuard detected that a virtual function table cookie was modified.
-* `CorruptList` - Safe unlinking detect a corrupted LIST_ENTRY
-* `GuardICall` - Control Flow Guard (CFG) detect a call to an invalid address.
-* `RefCount` - A reference counter was incremented beyond its maximum value.
-* `PureCall` - A pure virtual function was called.
-* `InvalidHandle` - An operation was performed on an invalid handle.
 * `Breakpoint` - A debugger breakpoint was triggered.
-* `IllegalInstruction` - An illegal instruction was executed.
-* `FloatDivideByZero` and `IntegerDivideByZero` - A division by zero occured.
+* `C++` - An unhandeled C++ exception 
+* `CFG` - Control Flow Guard (CFG) detected an invalid function address.
+* `CorruptList` - Safe unlinking detect a corrupted LIST_ENTRY
 * `CPUUsage` - Excessive CPU usage was detected.
+* `FloatDivideByZero` and `IntegerDivideByZero` - A division by zero occured.
+* `HeapCorrupt` - Application verifier has detected heap corruption.
+* `IllegalInstruction` - An illegal instruction was executed.
+* `InvalidHandle` - An operation was performed on an invalid handle.
+* `LegacyGS`, `StackCookie` - /GS detected that a stack cookie was modified.
+* `RecursiveCall` - A recursive function call loop has used too much stack memory.
+* `RefCount` - A reference counter was incremented beyond its maximum value.
+* `StackExhaustion` - A function has attempted to allocate too much stack memory.
+* `OOM` - Out Of Memory: the application attempted to allocate too much memory.
+* `PureCall` - A pure virtual function was called.
+* `VTGuard` - VTGuard detected that a virtual function table cookie was modified.
 These are the values you are likely to see. For a full list, please refer to the
 source code. Every bug report includes a description of the bug, which explains
 the type of issue in more detail.
