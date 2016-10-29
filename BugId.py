@@ -282,6 +282,10 @@ def fuMain(asArguments):
     sSettingName, sValue = sArgument[2:].split("=", 1);
     if sSettingName in ["pid", "pids"]:
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+    elif sSettingName == "fast":
+      # Alias for these two settings:
+      dxConfig["bGenerateReportHTML"] = False;
+      dxConfig["BugId"]["bUseSymbols"] = False;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
         print "- Unknown ISA %s" % repr(sValue);
@@ -393,7 +397,7 @@ def fuMain(asArguments):
     dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
     rImportantStdOutLines = rImportantStdOutLines,
     rImportantStdErrLines = rImportantStdErrLines,
-    bGetDetailsHTML = dxConfig["bSaveReport"],
+    bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
     fApplicationRunningCallback = fApplicationRunningHandler,
     fExceptionDetectedCallback = fExceptionDetectedHandler,
     fApplicationExitCallback = fApplicationExitHandler,
@@ -424,7 +428,7 @@ def fuMain(asArguments):
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
     print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
-    if dxConfig["bSaveReport"]:
+    if dxConfig["bGenerateReportHTML"]:
       # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
       sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
@@ -472,7 +476,7 @@ if __name__ == "__main__":
     print "    all have been suspended, as they will be resumed by the debugger.";
     print "";
     print "Options are of the form --[name]=[JSON value]. Note that you may need to do a";
-    print "bit of quote juggling because Windows likes to eat quotes from the JSON value";
+    print "bit of quote-juggling because Windows likes to eat quotes from the JSON value";
     print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
     print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
     print "  --isa=x86|x64";
@@ -481,8 +485,20 @@ if __name__ == "__main__":
     print "    debugged using the x64 version of cdb, but symbol resolution may fail and";
     print "    results may vary. You are strongly encouraged to use the same ISA for the";
     print "    debugger as the application. (ISA = Instruction Set Architecture)";
-    print "  --bSaveReport=false";
-    print "    Do not save a HTML formatted crash report.";
+    print "  --bGenerateReportHTML=false";
+    print "    Do not save a HTML formatted crash report. This should make BugId run";
+    print "    faster, as it does not need to gather and process as much information as";
+    print "    needed when creating the HTML report.";
+    print "  --BugId.bUseSymbols=false";
+    print "    Do not load any symbols. This should make the debugger run a lot faster,";
+    print "    but makes it impossible for BugId to ignore certain non-fatal exceptions.";
+    print "    Also, the BugId for a specific crash will most likely differ from when";
+    print "    you run BugId with symbols enabled - especially the stack hashes.";
+    print "    Finally, the HTML report may be less helpfull without them.";
+    print "  --fast";
+    print "    An alias for --bGenerateReportHTML=false --BugId.bUseSymbols=false";
+    print "    If you only need to confirm a crash can be reproduced, you may want to use";
+    print "    this: it can make the process of analyzing a crash about 10 times faster.";
     print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
     print "    Save report to the specified folder, in this case \"BugId\". The quotes";
     print "    mess is needed because of the Windows quirck explained above.";

@@ -1,7 +1,7 @@
 import os;
 sBaseFolderPath = os.path.dirname(__file__);
 dxConfig = {
-  "bSaveReport": True,                            # Set to True to have BugId.py output a HTML formatted crash report.
+  "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "asSymbolServerURLs": [                         # List of symbol server URLs for use by cdb.
     "http://msdl.microsoft.com/download/symbols"
   ],
