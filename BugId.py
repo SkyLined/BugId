@@ -280,7 +280,12 @@ def fuMain(asArguments):
   dxUserProvidedConfigSettings = {};
   while asArguments and asArguments[0].startswith("--"):
     sArgument = asArguments.pop(0);
-    sSettingName, sValue = sArgument[2:].split("=", 1);
+    if "=" in sArgument:
+      sSettingName, sValue = sArgument[2:].split("=", 1);
+    else:
+      # "--bFlag" is an alias for "--bFlag=true"
+      sSettingName = sArgument[2:];
+      sValue = True;
     if sSettingName in ["pid", "pids"]:
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
     elif sSettingName == "fast":
