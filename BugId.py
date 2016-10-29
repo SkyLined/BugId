@@ -290,8 +290,8 @@ def fuMain(asArguments):
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
     elif sSettingName == "fast":
       # Alias for these two settings:
-      dxConfig["bGenerateReportHTML"] = False;
-      dxConfig["BugId"]["bUseSymbols"] = False;
+      dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
+      dxUserProvidedConfigSettings["BugId.bUseSymbols"] = False;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
         print "- Unknown ISA %s" % repr(sValue);
