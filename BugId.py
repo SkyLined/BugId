@@ -1,4 +1,4 @@
-import codecs, json, re, os, sys, threading;
+import codecs, json, re, os, sys, threading, time;
 # Prevent unicode strings from throwing exceptions when output to the console.
 sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
 # The CWD may not be this script's folder; make sure it looks there for modules first:
@@ -267,6 +267,7 @@ def fInternalExceptionCallback(oException):
   raise;
 
 def fuMain(asArguments):
+  nStartTime = time.clock();
   # returns an exit code, values are:
   # 0 = executed successfully, no bugs found.
   # 1 = executed successfully, bug detected.
@@ -427,7 +428,9 @@ def fuMain(asArguments):
     if oBugId.oBugReport.sBugSourceLocation:
       print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
     print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
-    print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+    print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+    nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+    print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
     if dxConfig["bGenerateReportHTML"]:
       # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
       sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
