@@ -1,3 +1,20 @@
+2016-11-08
+==========
++ Added a `--fast` switch, which disables HTML reports, symbol servers and
+  the use of `_NT_SYMBOL_PATH`. This speeds up analysis and can be very useful
+  if symbols are already cached and you do not need a report.
++ cBugId has had quite a few changes, some of these can result in different
+  BugIds for the same crash compared to previous versions. They also include
+  some changes that should speed up analysis significantly.
++ Symbol sources are now separated into local symbol paths, local symbol cache
+  paths, and symbol server URLs. See `dxConfig` for details.
++ Symbol loading is less aggressive than it used to be, as this improves the
+  analysis speed significantly. If you notice odd BugIds because symbol fail to
+  load, try setting `BugId.bMakeSureSymbolsAreLoaded` to `true` to switch back
+  to the older, slower behavior. Once Symbols have been cached, you should be
+  able to set it back to `false` and enjoy the speedup without further symbol
+  related issues.
+
 2016-10-20
 ==========
 + cBugId no longer counts stack frames without a symbol towards the number of
