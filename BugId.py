@@ -289,9 +289,10 @@ def fuMain(asArguments):
     if sSettingName in ["pid", "pids"]:
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
     elif sSettingName == "fast":
-      # Alias for these two settings:
+      # Alias for these three settings:
       dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
-      dxUserProvidedConfigSettings["BugId.bUseSymbols"] = False;
+      dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
+      dxUserProvidedConfigSettings["BugId.bUse_NT_SYMBOL_PATH"] = False;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
         print "- Unknown ISA %s" % repr(sValue);
@@ -399,6 +400,8 @@ def fuMain(asArguments):
     sCdbISA = sApplicationISA or sOSISA,
     asApplicationCommandLine = asApplicationCommandLine or None,
     auApplicationProcessIds = auApplicationProcessIds or None,
+    asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
+    asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
     asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
     dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
     rImportantStdOutLines = rImportantStdOutLines,
@@ -497,16 +500,14 @@ if __name__ == "__main__":
     print "    Do not save a HTML formatted crash report. This should make BugId run";
     print "    faster, as it does not need to gather and process as much information as";
     print "    needed when creating the HTML report.";
-    print "  --BugId.bUseSymbols=false";
-    print "    Do not load any symbols. This should make the debugger run a lot faster,";
-    print "    but makes it impossible for BugId to ignore certain non-fatal exceptions.";
-    print "    Also, the BugId for a specific crash will most likely differ from when";
-    print "    you run BugId with symbols enabled - especially the stack hashes.";
-    print "    Finally, the HTML report may be less helpfull without them.";
     print "  --fast";
-    print "    An alias for --bGenerateReportHTML=false --BugId.bUseSymbols=false";
+    print "    Fast: disable report and symbol servers. This is an alias for";
+    print "        --bGenerateReportHTML=false";
+    print "        --asSymbolServerURLs=[]";
+    print "        --Bugid.bUse_NT_SYMBOL_PATH=false";
     print "    If you only need to confirm a crash can be reproduced, you may want to use";
-    print "    this: it can make the process of analyzing a crash about 10 times faster.";
+    print "    this: it can make the process of analyzing a crash a lot faster. But if";
+    print "    no local or cached symbols are available, you'll get less information";
     print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
     print "    Save report to the specified folder, in this case \"BugId\". The quotes";
     print "    mess is needed because of the Windows quirck explained above.";

@@ -2,9 +2,12 @@ import os;
 sBaseFolderPath = os.path.dirname(__file__);
 dxConfig = {
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
-  "asSymbolServerURLs": [                         # List of symbol server URLs for use by cdb.
-    "http://msdl.microsoft.com/download/symbols"
-  ],
+  "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
+                                                  # downloaded with a remote build, None = use default).
+  "asSymbolCachePaths": None,                     # List of symbol cache paths (Where to download symbols from a remote
+                                                  # server, None = use default).
+  "asSymbolServerURLs": None,                     # List of symbol server URLs (where to try to download symbosl from 
+                                                  # if none are found locally, None = use default).
   "nExcessiveCPUUsageCheckInitialTimeout": 5,     # Start checking the application for excessive CPU usage after this
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.
