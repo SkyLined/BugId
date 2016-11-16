@@ -245,23 +245,19 @@ options on the command line. Each option takes this form:
 
     --[option name]=[JSON option value]
 
-The any option specified in `dxBugIdConfig.py` can be used as the `option name`;
-see the file for a complete list of options. The following options are probably
+Any option specified in `dxConfig.py` can be used as the `option name`; see the
+file for a complete list of options. The following options are probably
 the most interesting ones:
 
-    --bSaveReport=true
+    --bGenerateReportHTML=true
 
-Tell BugId to save a html formatted report for the crash it detects.
+Tell BugId to save a HTML formatted report for the crash it detects.
 
     --bSaveDump=true
     --bOverwriteDump=true
 
 Tell BugId to save a dump file, and to overwrite any existing dump file. The
 file name of the dump file is based on the crash id.
-
-    --sCdbBinaryPath_x86="path\to\cdb.exe"
-
-Tell BugId to use a cdb.exe binary from a specific location.
 
     --nApplicationMaxRunTime=[number of seconds]
 
@@ -270,6 +266,16 @@ seconds without crashing. For instance, if you want to give an application 3
 seconds to load and process a test case, use "--nApplicationMaxRunTime=3": if
 the application has not crashed after running 3 seconds, it will be terminated
 and no bug is reported.
+
+You can also modify the configuration options for `cBugId` itself, as specified
+in the `dxBugIdConfig.py` file for that project. These settings can also be
+used as the `option name` if they are prefixed with `cBugId.`; see that file
+for a complete list of options. For instance:
+
+    --cBugId.sCdbBinaryPath_x86="path\to\cdb.exe"
+
+Tell BugId to use a cdb.exe binary from a specific location.
+
 
 cBugId.py
 ---------

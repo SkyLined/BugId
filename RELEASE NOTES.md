@@ -1,3 +1,12 @@
+2016-11-16
+==========
++ Added a `--forever` switch, which runs the application repeatedly with the
+  given settings.
++ New cBugId version has various improvements, including better rendering of
+  HTML reports in MSIE and twitter card info in HTML reports. It also fixes a
+  few minor issues.
+
+  
 2016-11-08
 ==========
 + Added a `--fast` switch, which disables HTML reports, symbol servers and
