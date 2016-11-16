@@ -98,32 +98,32 @@ gdApplication_sISA_by_sKeyword = {
 dxBrowserSettings = {
   # Settings used by all browsers (these should eventually be fine-tuned for each browser)
   "nExcessiveCPUUsageCheckInitialTimeout": 30.0, # Give browser some time to load repro
-  "BugId.nExcessiveCPUUsageCheckInterval": 30.0, # Browser may be busy for a bit, but no longer than 30 seconds.
-  "BugId.nExcessiveCPUUsagePercent": 95,      # Browser msust be very, very busy.
-  "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+  "cBugId.nExcessiveCPUUsageCheckInterval": 30.0, # Browser may be busy for a bit, but no longer than 30 seconds.
+  "cBugId.nExcessiveCPUUsagePercent": 95,      # Browser msust be very, very busy.
+  "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
 };
 
 gdApplication_dxSettings_by_sKeyword = {
   "aoo-writer": {
     "nApplicationMaxRunTime": 10.0, # Writer can be a bit slow to load, so give it some time.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
-    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
-    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
-    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+    "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobat": {
     "nApplicationMaxRunTime": 3.0, # Untested.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
-    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
-    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
-    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+    "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobatdc": {
     "nApplicationMaxRunTime": 3.0, # Untested.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
-    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
-    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
-    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+    "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "chrome": dxBrowserSettings,
   "chrome_x86": dxBrowserSettings,
@@ -136,9 +136,9 @@ gdApplication_dxSettings_by_sKeyword = {
   "foxit": {
     "nApplicationMaxRunTime": 3.0, # Normally loads within 2 seconds, but give it one more to be sure.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
-    "BugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
-    "BugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
-    "BugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
+    "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
+    "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
+    "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "msie": dxBrowserSettings, 
   "msie_x86": dxBrowserSettings,
@@ -298,7 +298,7 @@ def fuMain(asArguments):
       # Alias for these three settings:
       dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
       dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
-      dxUserProvidedConfigSettings["BugId.bUse_NT_SYMBOL_PATH"] = False;
+      dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
     elif sSettingName == "forever":
       bForever = True;
     else:
