@@ -25,7 +25,9 @@ dxConfig = {
   "sReportFolderPath": None,                      # You can specify a folder in which you want to save reports. If you
                                                   # set this to None, reports will be stored in the current working
                                                   # directory.
-  "BugId": {
-    # The values from src\dxBugIdConfig.py get loaded here, but you can override them here.
+  "cBugId": {
+    # The values from module\cBugId\dxBugIdConfig.py get loaded here.
+    # Any value provided here will override the values loaded above.
+    # You can also modify these from the command line using --cBugId.<settings name>=<JSON value>
   },
 };
