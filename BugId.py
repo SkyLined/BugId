@@ -238,7 +238,7 @@ def fApplicationRunningHandler():
   else:
     # Running after being resumed.
     print "  * T+%.1f The application was resumed successfully and is running..." % oBugId.fnApplicationRunTime();
-  if not bCheckForExcessiveCPUUsageTimeoutSet:
+  if dxConfig["nExcessiveCPUUsageCheckInitialTimeout"] and not bCheckForExcessiveCPUUsageTimeoutSet:
     # Start checking for excessive CPU usage
     bCheckForExcessiveCPUUsageTimeoutSet = True;
     oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
@@ -277,6 +277,7 @@ def fuMain(asArguments):
   # Parse all "--" arguments until we encounter a non-"--" argument.
   auApplicationProcessIds = [];
   sApplicationISA = None;
+  bForever = False;
   dxUserProvidedConfigSettings = {};
   while asArguments and asArguments[0].startswith("--"):
     sArgument = asArguments.pop(0);
@@ -288,16 +289,18 @@ def fuMain(asArguments):
       sValue = True;
     if sSettingName in ["pid", "pids"]:
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
-    elif sSettingName == "fast":
-      # Alias for these three settings:
-      dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
-      dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
-      dxUserProvidedConfigSettings["BugId.bUse_NT_SYMBOL_PATH"] = False;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
         print "- Unknown ISA %s" % repr(sValue);
         return 2;
       sApplicationISA = sValue;
+    elif sSettingName == "fast":
+      # Alias for these three settings:
+      dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
+      dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
+      dxUserProvidedConfigSettings["BugId.bUse_NT_SYMBOL_PATH"] = False;
+    elif sSettingName == "forever":
+      bForever = True;
     else:
       try:
         xValue = json.loads(sValue);
@@ -390,78 +393,80 @@ def fuMain(asArguments):
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
     fApplyConfigSetting(sSettingName, xValue); # Apply and show result
   
-  bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
-  if asApplicationCommandLine:
-    print "+ The debugger is starting the application...";
-    print "  Command line: %s" % " ".join(asApplicationCommandLine);
-  else:
-    print "+ The debugger is attaching to the application...";
-  oBugId = cBugId(
-    sCdbISA = sApplicationISA or sOSISA,
-    asApplicationCommandLine = asApplicationCommandLine or None,
-    auApplicationProcessIds = auApplicationProcessIds or None,
-    asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
-    asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
-    asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
-    dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
-    rImportantStdOutLines = rImportantStdOutLines,
-    rImportantStdErrLines = rImportantStdErrLines,
-    bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
-    fApplicationRunningCallback = fApplicationRunningHandler,
-    fExceptionDetectedCallback = fExceptionDetectedHandler,
-    fApplicationExitCallback = fApplicationExitHandler,
-    fInternalExceptionCallback = fInternalExceptionCallback,
-  );
-  oBugId.fWait();
-  if not bApplicationIsStarted:
-    print "- BugId was unable to debug the application.";
-    return 3;
-  elif oInternalException is not None:
-    print "+ BugId run into an internal error:";
-    print "  %s" % repr(oInternalException);
-    print;
-    print "  Please report this issue at the below web-page so it can be addressed:";
-    print "  https://github.com/SkyLined/BugId/issues/new";
-    return 3;
-  elif oBugId.oBugReport is not None:
-    print "+ A bug was detected in the application.";
-    print;
-    print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
-    print "  Id:               %s" % oBugId.oBugReport.sId;
-    print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
-    print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
-    print "  Version:          %s" % oBugId.oBugReport.asVersionInformation[0]; # There is always the process' binary.
-    for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
-      print "                    %s" % sVersionInformation;                # different binary (e.g. a .dll)
-    if oBugId.oBugReport.sBugSourceLocation:
-      print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
-    print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
-    print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
-    nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-    print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
-    if dxConfig["bGenerateReportHTML"]:
-      # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
-      sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
-      # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
-      sValidReportFileName = FileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
-      if dxConfig["sReportFolderPath"] is not None:
-        sReportFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
-      else:
-        sReportFilePath = FileSystem.fsPath(sValidReportFileName);
-      eWriteDataToFileResult = FileSystem.feWriteDataToFile(
-        oBugId.oBugReport.sReportHTML,
-        sReportFilePath,
-        fbRetryOnFailure = lambda: False,
-      );
-      if eWriteDataToFileResult:
-        print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
-      else:
-        print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sReportHTML));
-    return 1;
-  else:
-    print "- The application has terminated without crashing.";
-    print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
-    return 0;
+  while 1: # Will only loop if bForever is True
+    bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
+    if asApplicationCommandLine:
+      print "+ The debugger is starting the application...";
+      print "  Command line: %s" % " ".join(asApplicationCommandLine);
+    else:
+      print "+ The debugger is attaching to the application...";
+    oBugId = cBugId(
+      sCdbISA = sApplicationISA or sOSISA,
+      asApplicationCommandLine = asApplicationCommandLine or None,
+      auApplicationProcessIds = auApplicationProcessIds or None,
+      asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
+      asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
+      asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
+      dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
+      rImportantStdOutLines = rImportantStdOutLines,
+      rImportantStdErrLines = rImportantStdErrLines,
+      bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
+      fApplicationRunningCallback = fApplicationRunningHandler,
+      fExceptionDetectedCallback = fExceptionDetectedHandler,
+      fApplicationExitCallback = fApplicationExitHandler,
+      fInternalExceptionCallback = fInternalExceptionCallback,
+    );
+    oBugId.fWait();
+    if not bApplicationIsStarted:
+      print "- BugId was unable to debug the application.";
+      return 3;
+    if oInternalException is not None:
+      print "+ BugId run into an internal error:";
+      print "  %s" % repr(oInternalException);
+      print;
+      print "  Please report this issue at the below web-page so it can be addressed:";
+      print "  https://github.com/SkyLined/BugId/issues/new";
+      return 3;
+    if oBugId.oBugReport is not None:
+      print "+ A bug was detected in the application.";
+      print;
+      print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
+      print "  Id:               %s" % oBugId.oBugReport.sId;
+      print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
+      print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
+      print "  Version:          %s" % oBugId.oBugReport.asVersionInformation[0]; # There is always the process' binary.
+      for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
+        print "                    %s" % sVersionInformation;                # different binary (e.g. a .dll)
+      if oBugId.oBugReport.sBugSourceLocation:
+        print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
+      print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
+      print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+      print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
+      if dxConfig["bGenerateReportHTML"]:
+        # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
+        sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+        # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
+        sValidReportFileName = FileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
+        if dxConfig["sReportFolderPath"] is not None:
+          sReportFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+        else:
+          sReportFilePath = FileSystem.fsPath(sValidReportFileName);
+        eWriteDataToFileResult = FileSystem.feWriteDataToFile(
+          oBugId.oBugReport.sReportHTML,
+          sReportFilePath,
+          fbRetryOnFailure = lambda: False,
+        );
+        if eWriteDataToFileResult:
+          print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
+        else:
+          print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sReportHTML));
+      if not bForever: return 1;
+    else:
+      print "- The application has terminated without crashing.";
+      print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+      if not bForever: return 0;
+    print; # and loop
 
 if __name__ == "__main__":
   if len(sys.argv) == 1:
