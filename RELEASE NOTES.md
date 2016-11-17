@@ -1,3 +1,7 @@
+2016-11-17
+==========
++ HTML reports now start with the Stack section opened.
+
 2016-11-16
 ==========
 + Added a `--forever` switch, which runs the application repeatedly with the
@@ -6,7 +10,6 @@
   HTML reports in MSIE and twitter card info in HTML reports. It also fixes a
   few minor issues.
 
-  
 2016-11-08
 ==========
 + Added a `--fast` switch, which disables HTML reports, symbol servers and
