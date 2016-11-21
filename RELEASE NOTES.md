@@ -1,3 +1,11 @@
+2016-11-21
+==========
++ Size of memory region dumps is now limited to prevent errors, long analysis
+  time and very large HTML reports.
++ HTML reports for access violations should now always contain the access
+  violation address in memory region dumps if applicable.
++ Fixed minor errors in cBugId engine.
+
 2016-11-17
 ==========
 + HTML reports now start with the Stack section opened.
