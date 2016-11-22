@@ -1,6 +1,6 @@
 2016-11-22
 ==========
-+ Fixed minor errors in cBugId engine.
++ Minor fixes and improvements in cBugId engine.
 
 2016-11-21
 ==========
