@@ -1,3 +1,7 @@
+2016-11-22
+==========
++ Fixed minor errors in cBugId engine.
+
 2016-11-21
 ==========
 + Size of memory region dumps is now limited to prevent errors, long analysis
