@@ -421,11 +421,21 @@ def fuMain(asArguments):
       print "- BugId was unable to debug the application.";
       return 3;
     if oInternalException is not None:
-      print "+ BugId run into an internal error:";
+      print "+ An internal error has occured, which cannot be handled:";
       print "  %s" % repr(oInternalException);
       print;
+      print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
+      print;
       print "  Please report this issue at the below web-page so it can be addressed:";
-      print "  https://github.com/SkyLined/BugId/issues/new";
+      print "      https://github.com/SkyLined/BugId/issues/new";
+      print "  If you do not have a github account, or you want to report this issue";
+      print "  privately, you can also send an email to:";
+      print "      BugId@skylined.nl";
+      print;
+      print "  In your report, please copy all the information about the error reported";
+      print "  above, as well as the version information. This makes it easier to determine";
+      print "  the cause of this issue. I will try to address the issues as soon as";
+      print "  possible. Thank you in advance for helping to improve BugId!";
       return 3;
     if oBugId.oBugReport is not None:
       print "+ A bug was detected in the application.";
