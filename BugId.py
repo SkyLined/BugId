@@ -224,7 +224,6 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
 
 bApplicationIsStarted = False;
 bCheckForExcessiveCPUUsageTimeoutSet = False;
-oInternalException = None;
 
 def fApplicationRunningHandler(oBugId):
   global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
@@ -256,11 +255,6 @@ def fHandleApplicationRunTimeout():
 def fApplicationExitHandler(oBugId):
   print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
   oBugId.fStop();
-
-def fInternalExceptionHandler(oBugId, oException):
-  global oInternalException;
-  oInternalException = oException;
-  raise;
 
 def fuMain(asArguments):
   nStartTime = time.clock();
@@ -396,28 +390,33 @@ def fuMain(asArguments):
       print "  Command line: %s" % " ".join(asApplicationCommandLine);
     else:
       print "+ The debugger is attaching to the application...";
-    oBugId = cBugId(
-      sCdbISA = sApplicationISA or sOSISA,
-      asApplicationCommandLine = asApplicationCommandLine or None,
-      auApplicationProcessIds = auApplicationProcessIds or None,
-      asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
-      asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
-      asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
-      dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
-      rImportantStdOutLines = rImportantStdOutLines,
-      rImportantStdErrLines = rImportantStdErrLines,
-      bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
-      fApplicationRunningCallback = fApplicationRunningHandler,
-      fExceptionDetectedCallback = fExceptionDetectedHandler,
-      fApplicationExitCallback = fApplicationExitHandler,
-      fInternalExceptionCallback = fInternalExceptionHandler,
-    );
-    oBugId.fStart();
-    oBugId.fWait();
+    try:
+      oBugId = cBugId(
+        sCdbISA = sApplicationISA or sOSISA,
+        asApplicationCommandLine = asApplicationCommandLine or None,
+        auApplicationProcessIds = auApplicationProcessIds or None,
+        asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
+        asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
+        asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
+        dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
+        rImportantStdOutLines = rImportantStdOutLines,
+        rImportantStdErrLines = rImportantStdErrLines,
+        bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
+        fApplicationRunningCallback = fApplicationRunningHandler,
+        fExceptionDetectedCallback = fExceptionDetectedHandler,
+        fApplicationExitCallback = fApplicationExitHandler,
+        fInternalExceptionCallback = fInternalExceptionHandler,
+      );
+      oBugId.fStart();
+      oBugId.fWait();
+    except Exception as oException:
+      oInternalException = oException;
+    else:
+      oInternalException = oBugId.oInternalException;
     if not bApplicationIsStarted:
       print "- BugId was unable to debug the application.";
       return 3;
-    if oInternalException is not None:
+    if oInternalException:
       print "+ An internal error has occured, which cannot be handled:";
       print "  %s" % repr(oInternalException);
       print;
