@@ -222,38 +222,22 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
     print "%s+ Changed config setting %s from %s to %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
     dxConfigGroup[sSettingName] = xValue;
 
-bApplicationIsStarted = False;
-bCheckForExcessiveCPUUsageTimeoutSet = False;
-
 def fApplicationRunningHandler(oBugId):
-  global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
-  if not bApplicationIsStarted:
-    # Running for the first time after being started.
-    bApplicationIsStarted = True;
-    print "+ The application was started successfully and is running...";
-    if dxConfig["nApplicationMaxRunTime"] is not None:
-      oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fHandleApplicationRunTimeout);
-  else:
-    # Running after being resumed.
-    print "  * T+%.1f The application was resumed successfully and is running..." % oBugId.fnApplicationRunTime();
-  if dxConfig["nExcessiveCPUUsageCheckInitialTimeout"] and not bCheckForExcessiveCPUUsageTimeoutSet:
-    # Start checking for excessive CPU usage
-    bCheckForExcessiveCPUUsageTimeoutSet = True;
-    oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
+  print "+ The application was started successfully and is running...";
 
-def fExceptionDetectedHandler(oBugId, uCode, sDescription):
-  if uCode:
-    print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
-  else:
-    print "  * T+%.1f A potential bug (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), sDescription);
+def fApplicationSuspendedHandler(oBugId):
+  print "  * T+%.1f The application is suspended..." % (oBugId.fnApplicationRunTime());
 
-def fHandleApplicationRunTimeout():
+def fApplicationResumedHandler(oBugId):
+  print "    * And resumed...";
+
+def fApplicationRunTimeoutHandler():
   print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
 
-def fApplicationExitHandler(oBugId):
-  print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
+def fMainProcessTerminatedHandler(oBugId):
+  print "  * T+%.1f One of the main processes has terminated, stopping..." % oBugId.fnApplicationRunTime();
   oBugId.fStop();
 
 def fuMain(asArguments):
@@ -263,7 +247,7 @@ def fuMain(asArguments):
   # 1 = executed successfully, bug detected.
   # 2 = bad arguments
   # 3 = internal error
-  global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
+  # 4 = failed to start process or attach to process(es).
   # Parse all "--" arguments until we encounter a non-"--" argument.
   auApplicationProcessIds = [];
   sApplicationISA = None;
@@ -384,43 +368,39 @@ def fuMain(asArguments):
     fApplyConfigSetting(sSettingName, xValue); # Apply and show result
   
   while 1: # Will only loop if bForever is True
-    bApplicationIsStarted = asApplicationCommandLine is None; # if we're attaching the application is already started.
     if asApplicationCommandLine:
       print "+ The debugger is starting the application...";
       print "  Command line: %s" % " ".join(asApplicationCommandLine);
     else:
       print "+ The debugger is attaching to the application...";
-    try:
-      oBugId = cBugId(
-        sCdbISA = sApplicationISA or sOSISA,
-        asApplicationCommandLine = asApplicationCommandLine or None,
-        auApplicationProcessIds = auApplicationProcessIds or None,
-        asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
-        asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
-        asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
-        dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
-        rImportantStdOutLines = rImportantStdOutLines,
-        rImportantStdErrLines = rImportantStdErrLines,
-        bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
-        fApplicationRunningCallback = fApplicationRunningHandler,
-        fExceptionDetectedCallback = fExceptionDetectedHandler,
-        fApplicationExitCallback = fApplicationExitHandler,
-        fInternalExceptionCallback = fInternalExceptionHandler,
-      );
-      oBugId.fStart();
-      oBugId.fWait();
-    except Exception as oException:
-      oInternalException = oException;
-    else:
-      oInternalException = oBugId.oInternalException;
-    if not bApplicationIsStarted:
-      print "- BugId was unable to debug the application.";
-      return 3;
-    if oInternalException:
-      print "+ An internal error has occured, which cannot be handled:";
-      print "  %s" % repr(oInternalException);
-      print;
+    oBugId = cBugId(
+      sCdbISA = sApplicationISA or sOSISA,
+      asApplicationCommandLine = asApplicationCommandLine or None,
+      auApplicationProcessIds = auApplicationProcessIds or None,
+      asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
+      asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
+      asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
+      dsURLTemplate_by_srSourceFilePath = dsURLTemplate_by_srSourceFilePath,
+      rImportantStdOutLines = rImportantStdOutLines,
+      rImportantStdErrLines = rImportantStdErrLines,
+      bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
+      fApplicationRunningCallback = fApplicationRunningHandler,
+      fApplicationSuspendedCallback = fApplicationSuspendedHandler,
+      fApplicationResumedCallback = fApplicationResumedHandler,
+      fMainProcessTerminatedCallback = fMainProcessTerminatedHandler,
+    );
+    if dxConfig["nApplicationMaxRunTime"] is not None:
+      oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler);
+    if dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
+      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
+    oBugId.fStart();
+    oBugId.fWait();
+    if oBugId.oInternalException:
+      print "-" * 80;
+      print "- An error has occured in cBugId, which cannot be handled:";
+      print "  %s" % repr(oBugId.oInternalException);
       print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
+      print "-" * 80;
       print;
       print "  Please report this issue at the below web-page so it can be addressed:";
       print "      https://github.com/SkyLined/BugId/issues/new";
@@ -433,8 +413,14 @@ def fuMain(asArguments):
       print "  the cause of this issue. I will try to address the issues as soon as";
       print "  possible. Thank you in advance for helping to improve BugId!";
       return 3;
+    if oBugId.sFailedToDebugApplicationErrorMessage is not None:
+      print "-" * 80;
+      print "- Failed to debug the application:"
+      for sLine in oBugId.sFailedToDebugApplicationErrorMessage.split("\n"):
+        print "  %s" % sLine.rstrip("\r");
+      print "-" * 80;
+      return 4;
     if oBugId.oBugReport is not None:
-      print "+ A bug was detected in the application.";
       print;
       print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
       print "  Id:               %s" % oBugId.oBugReport.sId;
@@ -469,89 +455,112 @@ def fuMain(asArguments):
           print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sReportHTML));
       if not bForever: return 1;
     else:
-      print "- The application has terminated without crashing.";
-      print "  Run time:         %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+      print;
+      print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
+      print "  Id:               None";
+      print "  Description:      The application terminated before a bug was detected.";
+      print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
+      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+      print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
       if not bForever: return 0;
     print; # and loop
 
 if __name__ == "__main__":
-  if len(sys.argv) == 1:
-    print "Usage:";
-    print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
-    print "    Start the binary in the debugger with the provided arguments.";
-    print "";
-    print "  BugId.py [options] @application [additional arguments]";
-    print "    (Where \"application\" is a known application keyword, see below)";
-    print "    Start the application identified by the keyword in the debugger";
-    print "    using the application's default command-line and arguments followed";
-    print "    by the additional arguments provided and apply application specific";
-    print "    settings.";
-    print "";
-    print "  BugId.py [options] @application=\"path\\to\\binary.exe\" [arguments]";
-    print "    Start the application identified by the keyword in the debugger";
-    print "    using the provided binary and arguments and apply application specific";
-    print "    settings. (i.e. the application's default command-line is ignored in";
-    print "    favor of the provided binary and arguments).";
-    print "";
-    print "  BugId.py [options] --pids=[comma separated list of process ids]";
-    print "    Attach debugger to the process(es) provided in the list. The processes must";
-    print "    all have been suspended, as they will be resumed by the debugger.";
-    print "";
-    print "Options are of the form --[name]=[JSON value]. Note that you may need to do a";
-    print "bit of quote-juggling because Windows likes to eat quotes from the JSON value";
-    print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
-    print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
-    print "  --isa=x86|x64";
-    print "    Use the x86 or x64 version of cdb to debug the application. The default is";
-    print "    to use the ISA of the OS. Applications build to run on x86 systems can be";
-    print "    debugged using the x64 version of cdb, but symbol resolution may fail and";
-    print "    results may vary. You are strongly encouraged to use the same ISA for the";
-    print "    debugger as the application. (ISA = Instruction Set Architecture)";
-    print "  --bGenerateReportHTML=false";
-    print "    Do not save a HTML formatted crash report. This should make BugId run";
-    print "    faster, as it does not need to gather and process as much information as";
-    print "    needed when creating the HTML report.";
-    print "  --fast";
-    print "    Fast: disable report and symbol servers. This is an alias for";
-    print "        --bGenerateReportHTML=false";
-    print "        --asSymbolServerURLs=[]";
-    print "        --Bugid.bUse_NT_SYMBOL_PATH=false";
-    print "    If you only need to confirm a crash can be reproduced, you may want to use";
-    print "    this: it can make the process of analyzing a crash a lot faster. But if";
-    print "    no local or cached symbols are available, you'll get less information";
-    print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
-    print "    Save report to the specified folder, in this case \"BugId\". The quotes";
-    print "    mess is needed because of the Windows quirck explained above.";
-    print "  --BugId.bSaveDump=true";
-    print "    Save a dump file when a crash is detected.";
-    print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true,";
-    print "      --BugId.bOutputStdErr=true";
-    print "    Show verbose cdb input / output during debugging.";
-    print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
-    print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
-    print "  --BugId.asSymbolCachePaths=[\"C:\\Symbols\"]";
-    print "    Use C:\\Symbols to cache symbol files.";
-    print "  See dxConfig.py and srv\dxBugIdConfig.py for a list of settings that you can";
-    print "  change. All values must be valid JSON of the appropriate type. No checks are";
-    print "  made to ensure this. Providing illegal values may result in exceptions at any";
-    print "  time during execution. You have been warned.";
-    print "";
-    print "Known application keywords:";
-    for sApplicationKeyword in asApplicationKeywords:
-      print "  @%s" % sApplicationKeyword;
-    print "Run BugId.py @application? for an overview of the application specific command";
-    print "line, arguments and settings.";
-    uExitCode = 0;
-  else:
-    uExitCode = fuMain(sys.argv[1:]);
-  
-  if dxConfig["bShowLicenseAndDonationInfo"]:
+  try:
+    if len(sys.argv) == 1:
+      print "Usage:";
+      print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
+      print "    Start the binary in the debugger with the provided arguments.";
+      print "";
+      print "  BugId.py [options] @application [additional arguments]";
+      print "    (Where \"application\" is a known application keyword, see below)";
+      print "    Start the application identified by the keyword in the debugger";
+      print "    using the application's default command-line and arguments followed";
+      print "    by the additional arguments provided and apply application specific";
+      print "    settings.";
+      print "";
+      print "  BugId.py [options] @application=\"path\\to\\binary.exe\" [arguments]";
+      print "    Start the application identified by the keyword in the debugger";
+      print "    using the provided binary and arguments and apply application specific";
+      print "    settings. (i.e. the application's default command-line is ignored in";
+      print "    favor of the provided binary and arguments).";
+      print "";
+      print "  BugId.py [options] --pids=[comma separated list of process ids]";
+      print "    Attach debugger to the process(es) provided in the list. The processes must";
+      print "    all have been suspended, as they will be resumed by the debugger.";
+      print "";
+      print "Options are of the form --[name]=[JSON value]. Note that you may need to do a";
+      print "bit of quote-juggling because Windows likes to eat quotes from the JSON value";
+      print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
+      print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
+      print "  --isa=x86|x64";
+      print "    Use the x86 or x64 version of cdb to debug the application. The default is";
+      print "    to use the ISA of the OS. Applications build to run on x86 systems can be";
+      print "    debugged using the x64 version of cdb, but symbol resolution may fail and";
+      print "    results may vary. You are strongly encouraged to use the same ISA for the";
+      print "    debugger as the application. (ISA = Instruction Set Architecture)";
+      print "  --bGenerateReportHTML=false";
+      print "    Do not save a HTML formatted crash report. This should make BugId run";
+      print "    faster, as it does not need to gather and process as much information as";
+      print "    needed when creating the HTML report.";
+      print "  --fast";
+      print "    Fast: disable report and symbol servers. This is an alias for";
+      print "        --bGenerateReportHTML=false";
+      print "        --asSymbolServerURLs=[]";
+      print "        --Bugid.bUse_NT_SYMBOL_PATH=false";
+      print "    If you only need to confirm a crash can be reproduced, you may want to use";
+      print "    this: it can make the process of analyzing a crash a lot faster. But if";
+      print "    no local or cached symbols are available, you'll get less information";
+      print "  \"--sReportFolderPath=\\\"BugId\\\"\"";
+      print "    Save report to the specified folder, in this case \"BugId\". The quotes";
+      print "    mess is needed because of the Windows quirck explained above.";
+      print "  --BugId.bSaveDump=true";
+      print "    Save a dump file when a crash is detected.";
+      print "  --BugId.bOutputStdIn=true, --BugId.bOutputStdOut=true,";
+      print "      --BugId.bOutputStdErr=true";
+      print "    Show verbose cdb input / output during debugging.";
+      print "  --BugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]";
+      print "    Use http://msdl.microsoft.com/download/symbols as a symbol server.";
+      print "  --BugId.asSymbolCachePaths=[\"C:\\Symbols\"]";
+      print "    Use C:\\Symbols to cache symbol files.";
+      print "  See dxConfig.py and srv\dxBugIdConfig.py for a list of settings that you can";
+      print "  change. All values must be valid JSON of the appropriate type. No checks are";
+      print "  made to ensure this. Providing illegal values may result in exceptions at any";
+      print "  time during execution. You have been warned.";
+      print "";
+      print "Known application keywords:";
+      for sApplicationKeyword in asApplicationKeywords:
+        print "  @%s" % sApplicationKeyword;
+      print "Run BugId.py @application? for an overview of the application specific command";
+      print "line, arguments and settings.";
+      uExitCode = 0;
+    else:
+      uExitCode = fuMain(sys.argv[1:]);
+    
+    if dxConfig["bShowLicenseAndDonationInfo"]:
+      print;
+      print "BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
+      print "This version of BugId is provided free of charge for non-commercial use only.";
+      print "If you find it useful and would like to make a donation, you can send bitcoin";
+      print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
+      print "use BugId commercially. Contact and licensing information can be found at";
+      print "https://github.com/SkyLined/BugId#license.";
+  except Exception as oException:
+    print "+ An error has occured in BugId, which cannot be handled:";
+    print "  %s" % repr(oException);
     print;
-    print "BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
-    print "This version of BugId is provided free of charge for non-commercial use only.";
-    print "If you find it useful and would like to make a donation, you can send bitcoin";
-    print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
-    print "use BugId commercially. Contact and licensing information can be found at";
-    print "https://github.com/SkyLined/BugId#license.";
-
-  os._exit(uExitCode);
+    print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
+    print;
+    print "  Please report this issue at the below web-page so it can be addressed:";
+    print "      https://github.com/SkyLined/BugId/issues/new";
+    print "  If you do not have a github account, or you want to report this issue";
+    print "  privately, you can also send an email to:";
+    print "      BugId@skylined.nl";
+    print;
+    print "  In your report, please copy all the information about the error reported";
+    print "  above, as well as the version information. This makes it easier to determine";
+    print "  the cause of this issue. I will try to address the issues as soon as";
+    print "  possible. Thank you in advance for helping to improve BugId!";
+    uExitCode = 3;
+  finally:
+    os._exit(uExitCode);
