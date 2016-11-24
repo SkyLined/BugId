@@ -460,7 +460,7 @@ License
 This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0
 International License](http://creativecommons.org/licenses/by-nc/4.0/). It is
 provided free of charge for non-commercial use only. If you would like to use
-it commercially, please contact the author at [berendjanwever@gmail.com][] to
+it commercially, please contact the author at [bugid@skylined.nl][] to
 discuss licensing options. If you find it useful and would like to make a
 donation, you can send bitcoin to [183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]. 
 
