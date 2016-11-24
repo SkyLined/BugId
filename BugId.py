@@ -412,6 +412,7 @@ def fuMain(asArguments):
       fApplicationExitCallback = fApplicationExitHandler,
       fInternalExceptionCallback = fInternalExceptionHandler,
     );
+    oBugId.fStart();
     oBugId.fWait();
     if not bApplicationIsStarted:
       print "- BugId was unable to debug the application.";
