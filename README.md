@@ -465,4 +465,4 @@ discuss licensing options. If you find it useful and would like to make a
 donation, you can send bitcoin to [183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]. 
 
 [183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]:bitcoin:183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX
-[berendjanwever@gmail.com]:mailto:berendjanwever@gmail.com
+[bugid@skylined.nl]:mailto:berendjanwever@gmail.com
