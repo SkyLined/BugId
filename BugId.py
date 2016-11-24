@@ -222,13 +222,12 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
     print "%s+ Changed config setting %s from %s to %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
     dxConfigGroup[sSettingName] = xValue;
 
-oBugId = None;
 bApplicationIsStarted = False;
 bCheckForExcessiveCPUUsageTimeoutSet = False;
 oInternalException = None;
 
-def fApplicationRunningHandler():
-  global oBugId, bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
+def fApplicationRunningHandler(oBugId):
+  global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
   if not bApplicationIsStarted:
     # Running for the first time after being started.
     bApplicationIsStarted = True;
@@ -243,25 +242,22 @@ def fApplicationRunningHandler():
     bCheckForExcessiveCPUUsageTimeoutSet = True;
     oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
 
-def fExceptionDetectedHandler(uCode, sDescription):
-  global oBugId;
+def fExceptionDetectedHandler(oBugId, uCode, sDescription):
   if uCode:
     print "  * T+%.1f Exception code 0x%X (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), uCode, sDescription);
   else:
     print "  * T+%.1f A potential bug (%s) was detected and is being analyzed..." % (oBugId.fnApplicationRunTime(), sDescription);
 
 def fHandleApplicationRunTimeout():
-  global oBugId;
   print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
 
-def fApplicationExitHandler():
-  global oBugId;
+def fApplicationExitHandler(oBugId):
   print "  * T+%.1f The application has exited..." % oBugId.fnApplicationRunTime();
   oBugId.fStop();
 
-def fInternalExceptionCallback(oException):
+def fInternalExceptionHandler(oBugId, oException):
   global oInternalException;
   oInternalException = oException;
   raise;
@@ -273,7 +269,7 @@ def fuMain(asArguments):
   # 1 = executed successfully, bug detected.
   # 2 = bad arguments
   # 3 = internal error
-  global oBugId, bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
+  global bApplicationIsStarted, bCheckForExcessiveCPUUsageTimeoutSet;
   # Parse all "--" arguments until we encounter a non-"--" argument.
   auApplicationProcessIds = [];
   sApplicationISA = None;
@@ -414,7 +410,7 @@ def fuMain(asArguments):
       fApplicationRunningCallback = fApplicationRunningHandler,
       fExceptionDetectedCallback = fExceptionDetectedHandler,
       fApplicationExitCallback = fApplicationExitHandler,
-      fInternalExceptionCallback = fInternalExceptionCallback,
+      fInternalExceptionCallback = fInternalExceptionHandler,
     );
     oBugId.fWait();
     if not bApplicationIsStarted:

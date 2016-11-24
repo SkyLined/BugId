@@ -1,3 +1,10 @@
+2016-11-24
+==========
++ Minor fixes and improvements in cBugId engine, which require some rewriting
+  of BugId. This should solve a timing issue where a callback could get called
+  before the cBugId constructor was finished, causing BugId to try to use the
+  oBugId global before it was set to a cBugId instance.
+
 2016-11-22
 ==========
 + Minor fixes and improvements in cBugId engine.
