@@ -231,7 +231,7 @@ def fApplicationSuspendedHandler(oBugId):
 def fApplicationResumedHandler(oBugId):
   print "    * And resumed...";
 
-def fApplicationRunTimeoutHandler():
+def fApplicationRunTimeoutHandler(oBugId):
   print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
@@ -390,7 +390,7 @@ def fuMain(asArguments):
       fMainProcessTerminatedCallback = fMainProcessTerminatedHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
-      oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler);
+      oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
     if dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
     oBugId.fStart();
