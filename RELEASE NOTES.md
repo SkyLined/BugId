@@ -1,3 +1,28 @@
+2016-11-30
+==========
+BugId changes
+-------------
++ The use-after-free BugId now contains the offset from the end of the memory
+  page in which the freed memory allocation was stored, at which the code
+  attempted to use the freed memory. For instance, if an application attempts
+  to read data at offset 4 in a freed 0x10 byte memory block, the BugId will
+  now be `UAFR[]~0xC`, as the end of the memory block aligns with the end of
+  the memory page and a read at offset 4 is 0xC bytes away from that end.
++ A use-after-free that is also out-of-bounds will now be reported as such
+  whenever possible. For instance, if an application attempts to read data at
+  offset 0x14 in a freed 0x10 byte memory block (i.e. beyond the end of the
+  freed memory block), the BugId will now be `OOBUAFR[]+0x4`, as the end of the
+  memory block aligns with the end of the memory page and a read at offset 0x14
+  is 0x4 bytes after that end.
+Note that because of alignment, a 0xC byte memory block will be stored 0x10
+bytes before the end of a page, just like a 0x10 byte memory block. The above
+two changes in the BugId do not provide any information about the memory block
+size, as this is currently not possible. The offset they provide is therefore
+only marginally useful. However, they are highly useful if you are
+investigating a vuln and manage to modify this offset by modifying the repro
+case, as this indicates your changes to the repro provide some level of control
+over the use-after-free vulnerability.
+
 2016-11-24
 ==========
 + Minor fixes and improvements in cBugId engine, which require some rewriting
