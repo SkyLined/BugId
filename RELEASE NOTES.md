@@ -1,3 +1,10 @@
+2016-12-05
+==========
++ `cBugId` now exposes the `sOSISA` property, which represents the Operating
+  System's Instruction Set Architecture. `BugId` will use this property to
+  determine which version of cdb to use. This should fix some cases where
+  `BugId` incorrectly assumed the OS architecture was `x86` rather than `x64`.
+
 2016-11-30
 ==========
 BugId changes

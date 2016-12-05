@@ -34,7 +34,6 @@ sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 # ISA = Instruction Set Architecture
-sOSISA = sProgramFilesPath == sProgramFilesPath_x64 and "x64" or "x86";
 sLocalAppData = os.getenv("LocalAppData");
 from ChromePath import sChromePath_x64, sChromePath_x86, sChromePath, \
     sChromeSxSPath_x64, sChromeSxSPath_x86, sChromeSxSPath;
@@ -80,17 +79,15 @@ gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
   "nightly": [DEFAULT_BROWSER_TEST_URL],
 };
 gdApplication_sISA_by_sKeyword = {
+  # Applications will default to cBugId.sOSISA. Applications need only be added here if they can differ from that.
   "aoo-writer": "x86",
   "acrobat": "x86",
   "acrobatdc": "x86",
-  "chrome": sOSISA,
   "chrome_x86": "x86",
   "chrome_x64": "x64",
-  "firefox": sOSISA,
   "firefox_x86": "x86",
   "firefox_x64": "x64",
   "foxit": "x86",
-  "msie": sOSISA,
   "msie_x86": "x86",
   "msie_x64": "x64",
   "nightly": "x86",
@@ -374,7 +371,7 @@ def fuMain(asArguments):
     else:
       print "+ The debugger is attaching to the application...";
     oBugId = cBugId(
-      sCdbISA = sApplicationISA or sOSISA,
+      sCdbISA = sApplicationISA or cBugId.sOSISA,
       asApplicationCommandLine = asApplicationCommandLine or None,
       auApplicationProcessIds = auApplicationProcessIds or None,
       asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
