@@ -2,7 +2,8 @@
 ==========
 + New cBugId version improves the way symbol loading errors are handled, and
   how VERIFIER STOP messages are handled. This should prevent some assertion
-  failures in edge cases.
+  failures in edge cases. There is also a fix for a bug in the HTML reports
+  where blocks where not non-collapsible.
 
 2016-12-05
 ==========
