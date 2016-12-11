@@ -1,3 +1,9 @@
+2016-12-11
+==========
++ New cBugId version improves the way symbol loading errors are handled, and
+  how VERIFIER STOP messages are handled. This should prevent some assertion
+  failures in edge cases.
+
 2016-12-05
 ==========
 + `cBugId` now exposes the `sOSISA` property, which represents the Operating
