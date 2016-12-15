@@ -1,3 +1,7 @@
+2016-12-15
+==========
++ New cBugId version fixes a number of bugs.
+
 2016-12-14
 ==========
 + New cBugId version fixes a number of bugs.
