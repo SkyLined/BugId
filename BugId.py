@@ -238,7 +238,6 @@ def fMainProcessTerminatedHandler(oBugId):
   oBugId.fStop();
 
 def fuMain(asArguments):
-  nStartTime = time.clock();
   # returns an exit code, values are:
   # 0 = executed successfully, no bugs found.
   # 1 = executed successfully, bug detected.
@@ -365,6 +364,7 @@ def fuMain(asArguments):
     fApplyConfigSetting(sSettingName, xValue); # Apply and show result
   
   while 1: # Will only loop if bForever is True
+    nStartTime = time.clock();
     if asApplicationCommandLine:
       print "+ The debugger is starting the application...";
       print "  Command line: %s" % " ".join(asApplicationCommandLine);
