@@ -180,7 +180,7 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
     print "- Unknown application keyword %s" % sApplicationKeyword;
     return 2;
-  print "Known application settings for @%s" % sApplicationKeyword;
+  print "Known application settings for %s" % sApplicationKeyword;
   if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
     if gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword][0] is None:
       print "  Not installed";
@@ -469,14 +469,14 @@ if __name__ == "__main__":
       print "  BugId.py [options] \"path\\to\\binary.exe\" [arguments]";
       print "    Start the binary in the debugger with the provided arguments.";
       print "";
-      print "  BugId.py [options] @application [additional arguments]";
+      print "  BugId.py [options] application [additional arguments]";
       print "    (Where \"application\" is a known application keyword, see below)";
       print "    Start the application identified by the keyword in the debugger";
       print "    using the application's default command-line and arguments followed";
       print "    by the additional arguments provided and apply application specific";
       print "    settings.";
       print "";
-      print "  BugId.py [options] @application=\"path\\to\\binary.exe\" [arguments]";
+      print "  BugId.py [options] application=\"path\\to\\binary.exe\" [arguments]";
       print "    Start the application identified by the keyword in the debugger";
       print "    using the provided binary and arguments and apply application specific";
       print "    settings. (i.e. the application's default command-line is ignored in";
@@ -490,6 +490,10 @@ if __name__ == "__main__":
       print "bit of quote-juggling because Windows likes to eat quotes from the JSON value";
       print "for no obvious reason. So, if you want to specify --a=\"b\", you will need to";
       print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
+      print "  --forever";
+      print "    Restart the application to run another test as soon as the application is";
+      print "    terminated. Useful when testing the reliability of a repro, or while making";
+      print "    modifications to the repro in order to test how they affect the crash.";
       print "  --isa=x86|x64";
       print "    Use the x86 or x64 version of cdb to debug the application. The default is";
       print "    to use the ISA of the OS. Applications build to run on x86 systems can be";
@@ -527,8 +531,8 @@ if __name__ == "__main__":
       print "";
       print "Known application keywords:";
       for sApplicationKeyword in asApplicationKeywords:
-        print "  @%s" % sApplicationKeyword;
-      print "Run BugId.py @application? for an overview of the application specific command";
+        print "  %s" % sApplicationKeyword;
+      print "Run BugId.py application? for an overview of the application specific command";
       print "line, arguments and settings.";
       uExitCode = 0;
     else:
