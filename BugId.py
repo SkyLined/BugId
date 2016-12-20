@@ -363,6 +363,9 @@ def fuMain(asArguments):
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
     fApplyConfigSetting(sSettingName, xValue); # Apply and show result
   
+  if bForever:
+    duNumberOfRepros_by_sBugIdAndLocation = {};
+    sValidStatisticsFileName = FileSystem.fsValidName("Reproduction statistics.txt");
   while 1: # Will only loop if bForever is True
     nStartTime = time.clock();
     if asApplicationCommandLine:
@@ -432,9 +435,10 @@ def fuMain(asArguments):
       print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
       nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
       print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
+      sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       if dxConfig["bGenerateReportHTML"]:
         # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
-        sDesiredReportFileName = "%s @ %s.html" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+        sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
         # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
         sValidReportFileName = FileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
         if dxConfig["sReportFolderPath"] is not None:
@@ -460,6 +464,29 @@ def fuMain(asArguments):
       nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
       print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
       if not bForever: return 0;
+      sBugIdAndLocation = "No crash";
+    duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
+    duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
+    sStatistics = "";
+    auOrderedNumberOfRepros = sorted(list(set(duNumberOfRepros_by_sBugIdAndLocation.values())));
+    auOrderedNumberOfRepros.reverse();
+    for uNumberOfRepros in auOrderedNumberOfRepros:
+      for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
+        if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
+          sStatistics += "%d x %s\r\n" % (uNumberOfRepros, sBugIdAndLocation);
+    if dxConfig["sReportFolderPath"] is not None:
+      sStatisticsFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
+    else:
+      sStatisticsFilePath = FileSystem.fsPath(sValidStatisticsFileName);
+    eWriteDataToFileResult = FileSystem.feWriteDataToFile(
+      sStatistics,
+      sStatisticsFilePath,
+      fbRetryOnFailure = lambda: False,
+    );
+    if eWriteDataToFileResult:
+      print "  Statistics:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
+    else:
+      print "  Statistics:       %s (%d bytes)" % (sStatisticsFilePath, len(sStatistics));
     print; # and loop
 
 if __name__ == "__main__":
