@@ -109,14 +109,14 @@ gdApplication_dxSettings_by_sKeyword = {
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobat": {
-    "nApplicationMaxRunTime": 3.0, # Untested.
+    "nApplicationMaxRunTime": 10.0, # Untested.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobatdc": {
-    "nApplicationMaxRunTime": 3.0, # Untested.
+    "nApplicationMaxRunTime": 10.0, # Untested.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
@@ -131,7 +131,7 @@ gdApplication_dxSettings_by_sKeyword = {
   "firefox_x86": dxBrowserSettings,
   "firefox_x64": dxBrowserSettings,
   "foxit": {
-    "nApplicationMaxRunTime": 3.0, # Normally loads within 2 seconds, but give it one more to be sure.
+    "nApplicationMaxRunTime": 10.0, # Normally loads within 2 seconds, but give it some more to be sure.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
