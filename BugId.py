@@ -366,8 +366,10 @@ def fuMain(asArguments):
   if bForever:
     duNumberOfRepros_by_sBugIdAndLocation = {};
     sValidStatisticsFileName = FileSystem.fsValidName("Reproduction statistics.txt");
+  uRunCounter = 0;
   while 1: # Will only loop if bForever is True
     nStartTime = time.clock();
+    uRunCounter += 1;
     if asApplicationCommandLine:
       print "+ The debugger is starting the application...";
       print "  Command line: %s" % " ".join(asApplicationCommandLine);
@@ -473,7 +475,7 @@ def fuMain(asArguments):
     for uNumberOfRepros in auOrderedNumberOfRepros:
       for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
         if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
-          sStatistics += "%d x %s\r\n" % (uNumberOfRepros, sBugIdAndLocation);
+          sStatistics += "%d x %s (%d%%)\r\n" % (uNumberOfRepros, sBugIdAndLocation, round(100.0 * uNumberOfRepros / uRunCounter));
     if dxConfig["sReportFolderPath"] is not None:
       sStatisticsFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
     else:
@@ -519,8 +521,11 @@ if __name__ == "__main__":
       print "use \"--a=\\\"b\\\"\", or BugId will see --a=b (b is not valid JSON). *sigh*";
       print "  --forever";
       print "    Restart the application to run another test as soon as the application is";
-      print "    terminated. Useful when testing the reliability of a repro, or while making";
+      print "    terminated. Useful when testing the reliability of a repro, detecting the";
+      print "    various crashes a non-deterministic repro can cause or while making ";
       print "    modifications to the repro in order to test how they affect the crash.";
+      print "    A statistics file is created or updated after each run that contains the";
+      print "    number of occurances of each Bug Id that was detected.";
       print "  --isa=x86|x64";
       print "    Use the x86 or x64 version of cdb to debug the application. The default is";
       print "    to use the ISA of the OS. Applications build to run on x86 systems can be";
