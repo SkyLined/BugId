@@ -1,3 +1,13 @@
+2016-12-22
+==========
++ Update help
++ Reset start-time used to calculate overhead right before application is
+  started, so it is not cumulative when running with "--forever".
++ Create statistics file when running with "--forever" that contains info about
+  the number of times each Bug Id was seen.
++ New cBugId version fixes a number of bugs and improves detection of recursive
+  function calls.
+
 2016-12-15
 ==========
 + New cBugId version fixes a number of bugs.
