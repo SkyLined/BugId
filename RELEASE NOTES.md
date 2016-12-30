@@ -1,3 +1,8 @@
+2016-12-30
+==========
++ New cBugId version fixes a number of bugs and improves detection of stack
+  related access violations.
+
 2016-12-22
 ==========
 + Update help
