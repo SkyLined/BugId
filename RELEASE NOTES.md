@@ -1,3 +1,7 @@
+2017-01-31
+==========
++ New cBugId version now detects double-frees correctly.
+
 2016-12-30
 ==========
 + New cBugId version fixes a number of bugs and improves detection of stack
