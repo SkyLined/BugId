@@ -43,7 +43,7 @@ available in HTML format, for use when manually analyzing bugs. The code
 attempts to determine the security risk of the bug it detected, so even novice
 users may be able to determine whether or not a particular bug is likely to be
 a security vulnerability. You can download a number of example reports [here]
-(https://github.com/SkyLined/BugId/tree/master/Sample%20reports).
+(https://github.com/SkyLined/cBugId/tree/master/Tests/Reports).
 
 You can tell BugId to save a debugger dump file when it detects a crash, for
 later off-line analysis by a developer.
