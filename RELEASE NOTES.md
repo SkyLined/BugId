@@ -1,3 +1,19 @@
+2017-03-24
+==========
++ new "bApplicationTerminatesWithMainProcess" config setting allows an
+  application to continue running after any one of the "main" processes
+  terminates. This is disabled by default, which is a change from the previous
+  behavior. To revert to previous behavior use this command-line arguments:
+  "--bApplicationTerminatesWithMainProcess=true".
+  The list of know applications config settings has this set to true where
+  applicable.
++ New cBugId version provides improved output in some cases.
++ Link to example reports now works again.
++ Timeouts for acrobat have been increased, as I found the application can be
+  slow to load.
++ Other cosmetic and internal changes were made that should not affect the
+  end-user.
+
 2017-01-31
 ==========
 + New cBugId version now detects double-frees correctly.
