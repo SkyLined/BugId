@@ -112,15 +112,15 @@ gdApplication_dxSettings_by_sKeyword = {
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobat": {
-    "nApplicationMaxRunTime": 10.0, # Untested.
-    "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
+    "nApplicationMaxRunTime": 60.0, # Really slow.
+    "nExcessiveCPUUsageCheckInitialTimeout": 30.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
   "acrobatdc": {
-    "nApplicationMaxRunTime": 10.0, # Untested.
-    "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
+    "nApplicationMaxRunTime": 60.0, # Really slow.
+    "nExcessiveCPUUsageCheckInitialTimeout": 30.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
