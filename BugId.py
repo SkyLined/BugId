@@ -95,6 +95,7 @@ gdApplication_sISA_by_sKeyword = {
 };
 dxBrowserSettings = {
   # Settings used by all browsers (these should eventually be fine-tuned for each browser)
+  "bApplicationTerminatesWithMainProcess": True,
   "nExcessiveCPUUsageCheckInitialTimeout": 30.0, # Give browser some time to load repro
   "cBugId.nExcessiveCPUUsageCheckInterval": 30.0, # Browser may be busy for a bit, but no longer than 30 seconds.
   "cBugId.nExcessiveCPUUsagePercent": 95,      # Browser msust be very, very busy.
@@ -103,6 +104,7 @@ dxBrowserSettings = {
 
 gdApplication_dxSettings_by_sKeyword = {
   "aoo-writer": {
+    "bApplicationTerminatesWithMainProcess": True,
     "nApplicationMaxRunTime": 10.0, # Writer can be a bit slow to load, so give it some time.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
@@ -132,6 +134,7 @@ gdApplication_dxSettings_by_sKeyword = {
   "firefox_x86": dxBrowserSettings,
   "firefox_x64": dxBrowserSettings,
   "foxit": {
+    "bApplicationTerminatesWithMainProcess": True,
     "nApplicationMaxRunTime": 10.0, # Normally loads within 2 seconds, but give it some more to be sure.
     "nExcessiveCPUUsageCheckInitialTimeout": 10.0, # Give application some time to load repro
     "cBugId.nExcessiveCPUUsageCheckInterval": 5.0, # Application should not be busy for more than 5 seconds.
@@ -235,8 +238,11 @@ def fApplicationRunTimeoutHandler(oBugId):
   oBugId.fStop();
 
 def fMainProcessTerminatedHandler(oBugId):
-  print "  * T+%.1f One of the main processes has terminated, stopping..." % oBugId.fnApplicationRunTime();
-  oBugId.fStop();
+  if dxConfig["bApplicationTerminatesWithMainProcess"]:
+    print "  * T+%.1f One of the main processes has terminated, stopping..." % oBugId.fnApplicationRunTime();
+    oBugId.fStop();
+  else:
+    print "  * T+%.1f One of the main processes has terminated." % oBugId.fnApplicationRunTime();
 
 def fuMain(asArguments):
   # returns an exit code, values are:

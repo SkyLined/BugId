@@ -16,6 +16,11 @@ dxConfig = {
   "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
+  "bApplicationTerminatesWithMainProcess": False, # Terminate BugId if one of the application's main processes is
+                                                  # terminated. This can be useful if the application uses background
+                                                  # processes (update checkers, brokers, etc.) which are also debugged,
+                                                  # and that do not terminate when the application does: enabling this
+                                                  # setting will ensure BugId does not run forever in such cases.
   "bShowLicenseAndDonationInfo": True,            # Set to False to disable the licensing and donations information
                                                   # shown at the end of each run. Feel free to act on it first :)
   "bUseUnicodeReportFileNames": False,            # Disable if you are experiencing "Invalid file name" errors
