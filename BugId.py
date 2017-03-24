@@ -224,7 +224,7 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
     dxConfigGroup[sSettingName] = xValue;
 
 def fApplicationRunningHandler(oBugId):
-  print "+ The application was started successfully and is running...";
+  print "+ The application was started successfully and is running.";
 
 def fApplicationSuspendedHandler(oBugId):
   print "  * T+%.1f The application is suspended..." % (oBugId.fnApplicationRunTime());
@@ -233,7 +233,7 @@ def fApplicationResumedHandler(oBugId):
   print "    * And resumed...";
 
 def fApplicationRunTimeoutHandler(oBugId):
-  print "  * T+%.1f Terminating the application because it has been running for %.1f seconds without crashing." % \
+  print "  * T+%.1f The application has been running for %.1f seconds without crashing and will be terminated..." % \
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
 
