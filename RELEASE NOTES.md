@@ -13,7 +13,6 @@
   an externally reported issue a lot easier. Don't forget to report any bugs
   you find in BugId itself!!
 
-
 2017-03-24
 ==========
 + new "bApplicationTerminatesWithMainProcess" config setting allows an
