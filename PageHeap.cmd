@@ -27,6 +27,21 @@ IF "%~2" == "OFF" (
   ECHO * Enabling page heap for %1...
   %GFlags% -i %1 -FFFFFFFF >nul
   IF ERRORLEVEL 1 GOTO :ERROR
+  :: 00000010 Enable heap tail checking
+  :: 00000020 Enable heap free checking
+  :: 00000040 Enable heap parameter checking
+  :: 00000800 Enable heap tagging
+  :: 00001000 Create user mode stack trace database
+  :: 00008000 Enable heap tagging by DLL
+  :: 00100000 Enable system critical breaks
+  :: 02000000 Enable page heap (full page heap)
+  :: ----------
+  :: 02109870
+  :: The following flags were considered but not enabled:
+  :: 00000080 Enable heap validation on call ## disabled because of overhead
+  :: 00000100 Enable application verifier ## disabled because of idunno
+  :: 00200000 Disable heap coalesce on free ## superfluous: page heap is enabled
+  :: 00400000 Enable close exception ## I don't think this is useful
   %GFlags% -i %1 +02109870 >nul
   IF ERRORLEVEL 1 GOTO :ERROR
 ) ELSE (
