@@ -1,4 +1,4 @@
-import codecs, json, re, os, sys, threading, time;
+import codecs, json, re, os, sys, threading, time, traceback;
 # Prevent unicode strings from throwing exceptions when output to the console.
 sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
 # The CWD may not be this script's folder; make sure it looks there for modules first:
@@ -228,6 +228,9 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
 def fApplicationRunningHandler(oBugId):
   print "+ The application was started successfully and is running.";
 
+def fInternalExceptionHandler(oBugId, oException, oTraceBack):
+  fDumpException(oException, oTraceBack);
+
 def fApplicationSuspendedHandler(oBugId):
   print "  * T+%.1f The application is suspended..." % (oBugId.fnApplicationRunTime());
 
@@ -254,6 +257,35 @@ def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
   else:
     print "  * T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
         (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName);
+
+def fDumpException(oException, oTraceBack):
+  print "@" * 80;
+  print "- An internal exception has occured:";
+  print "  %s" % repr(oException);
+  print "  Stack:";
+  txStack = traceback.extract_tb(oTraceBack);
+  uFrameIndex = len(txStack) - 1;
+  for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(txStack):
+    sSource = "%s/%d" % (sFileName, uLineNumber);
+    if sFunctionName != "<module>":
+      sSource = "%s (%s)" % (sFunctionName, sSource);
+    print "  %3d %s" % (uFrameIndex, sSource);
+    if sCode:
+      print "      > %s" % sCode.strip();
+    uFrameIndex -= 1;
+  print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
+  print "@" * 80;
+  print;
+  print "Please report the above details at the below web-page so it can be addressed:";
+  print "    https://github.com/SkyLined/BugId/issues/new";
+  print "If you do not have a github account, or you want to report this issue";
+  print "privately, you can also send an email to:";
+  print "    BugId@skylined.nl";
+  print;
+  print "In your report, please copy the information about the exception reported";
+  print "above, as well as the stack trace and BugId version information. This makes";
+  print "it easier to determine the cause of this issue and makes for faster fixes.";
+  print "Thank you in advance for helping to improve BugId!";
 
 def fuMain(asArguments):
   # returns an exit code, values are:
@@ -421,6 +453,7 @@ def fuMain(asArguments):
       fApplicationResumedCallback = fApplicationResumedHandler,
       fMainProcessTerminatedCallback = fMainProcessTerminatedHandler,
       fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
+      fInternalExceptionCallback = fInternalExceptionHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
@@ -428,23 +461,7 @@ def fuMain(asArguments):
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
     oBugId.fStart();
     oBugId.fWait();
-    if oBugId.oInternalException:
-      print "-" * 80;
-      print "- An error has occured in cBugId, which cannot be handled:";
-      print "  %s" % repr(oBugId.oInternalException);
-      print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
-      print "-" * 80;
-      print;
-      print "  Please report this issue at the below web-page so it can be addressed:";
-      print "      https://github.com/SkyLined/BugId/issues/new";
-      print "  If you do not have a github account, or you want to report this issue";
-      print "  privately, you can also send an email to:";
-      print "      BugId@skylined.nl";
-      print;
-      print "  In your report, please copy all the information about the error reported";
-      print "  above, as well as the version information. This makes it easier to determine";
-      print "  the cause of this issue. I will try to address the issues as soon as";
-      print "  possible. Thank you in advance for helping to improve BugId!";
+    if oBugId.bInternalExceptionOccured:
       return 3;
     if oBugId.sFailedToDebugApplicationErrorMessage is not None:
       print "-" * 80;
@@ -537,22 +554,9 @@ if __name__ == "__main__":
       print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
       print "use BugId commercially. Contact and licensing information can be found at";
       print "https://github.com/SkyLined/BugId#license.";
-  except Exception as oException:
-    print "+ An error has occured in BugId, which cannot be handled:";
-    print "  %s" % repr(oException);
-    print;
-    print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
-    print;
-    print "  Please report this issue at the below web-page so it can be addressed:";
-    print "      https://github.com/SkyLined/BugId/issues/new";
-    print "  If you do not have a github account, or you want to report this issue";
-    print "  privately, you can also send an email to:";
-    print "      BugId@skylined.nl";
-    print;
-    print "  In your report, please copy all the information about the error reported";
-    print "  above, as well as the version information. This makes it easier to determine";
-    print "  the cause of this issue. I will try to address the issues as soon as";
-    print "  possible. Thank you in advance for helping to improve BugId!";
-    uExitCode = 3;
-  finally:
+    
     os._exit(uExitCode);
+  except Exception as oException:
+    cException, oException, oTraceBack = sys.exc_info();
+    fDumpException(oException, oTraceBack);
+    os._exit(3);
