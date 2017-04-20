@@ -1,5 +1,5 @@
 import os;
-sBaseFolderPath = os.path.dirname(__file__);
+
 dxConfig = {
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
@@ -36,3 +36,13 @@ dxConfig = {
     # You can also modify these from the command line using --cBugId.<settings name>=<JSON value>
   },
 };
+
+# Load cBugId and apply its dxConfig:
+from cBugId import cBugId;
+# Apply desired changes in dxConfig["cBugId"] to cBugId.dxConfig.
+for (sName, xValue) in dxConfig["cBugId"].items():
+  # Note that this does not allow modifying individual properties of dictionaries in dxConfig for cBugId.
+  # But at this time, there are no dictionaries in dxConfig, so this is not required.
+  cBugId.dxConfig[sName] = xValue;
+# Replace dxConfig["cBugId"] with actual dxConfig for cBugId.
+dxConfig["cBugId"] = cBugId.dxConfig;
