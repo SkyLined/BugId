@@ -239,12 +239,14 @@ def fApplicationRunTimeoutHandler(oBugId):
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
 
-def fMainProcessTerminatedHandler(oBugId):
+def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
   if dxConfig["bApplicationTerminatesWithMainProcess"]:
-    print "  * T+%.1f One of the main processes has terminated, stopping..." % oBugId.fnApplicationRunTime();
+    print "  * T+%.1f One of the main processes (id %d/0x%X, %s) has terminated, stopping..." % \
+        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName);
     oBugId.fStop();
   else:
-    print "  * T+%.1f One of the main processes has terminated." % oBugId.fnApplicationRunTime();
+    print "  * T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
+        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName);
 
 def fuMain(asArguments):
   # returns an exit code, values are:
