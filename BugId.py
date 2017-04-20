@@ -266,6 +266,7 @@ def fuMain(asArguments):
   auApplicationProcessIds = [];
   sApplicationISA = None;
   bForever = False;
+  bCheckForUpdates = False;
   dxUserProvidedConfigSettings = {};
   while asArguments and asArguments[0].startswith("--"):
     sArgument = asArguments.pop(0);
@@ -277,6 +278,8 @@ def fuMain(asArguments):
       sValue = True;
     if sSettingName in ["pid", "pids"]:
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+    if sSettingName in ["version"]:
+      bCheckForUpdates = True;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
         print "- Unknown ISA %s" % repr(sValue);
@@ -297,17 +300,26 @@ def fuMain(asArguments):
         return 2;
       # User provided config settings must be applied after any keyword specific config settings:
       dxUserProvidedConfigSettings[sSettingName] = xValue;
+  if bCheckForUpdates:
+    print "+ Checking for updates...";
+    from fsVersionCheck import fsVersionCheck;
+    print "  * %s" % fsVersionCheck();
+    print "  * %s" % cBugId.fsVersionCheck();
+    print "  * %s" % FileSystem.fsVersionCheck();
+  
   dsURLTemplate_by_srSourceFilePath = {};
   rImportantStdOutLines = None;
   rImportantStdErrLines = None;
   # If there are any additional arguments, it must be an application keyword followed by additional arguments
   # or an application command-line:
   if not asArguments:
-    # No keyword or command line: process ids to attach to must be provided
-    asApplicationCommandLine = None;
+    # No keyword or command line: process ids to attach to must be provided, or a version check performed.
     if not auApplicationProcessIds:
+      if bCheckForUpdates:
+        return 0;
       print "You must specify an application command-line, keyword or process ids";
       return 2;
+    asApplicationCommandLine = None;
   else:
     # First argument may be an application keyword
     sApplicationKeyword = None;
@@ -520,7 +532,6 @@ if __name__ == "__main__":
     
     if dxConfig["bShowLicenseAndDonationInfo"]:
       print;
-      print "BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
       print "This version of BugId is provided free of charge for non-commercial use only.";
       print "If you find it useful and would like to make a donation, you can send bitcoin";
       print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
