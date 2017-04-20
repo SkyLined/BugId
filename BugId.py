@@ -7,9 +7,6 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["mo
   if sPath not in sys.path:
     sys.path.insert(0, sPath);
 
-from dxConfig import dxConfig;
-from sVersion import sVersion;
-from fPrintUsage import fPrintUsage;
 try:
   from cBugId import cBugId;
 except:
@@ -28,6 +25,9 @@ except:
   print "After downloading, please copy the files to the \"modules\\FileSystem\" folder.";
   print "*" * 80;
   raise;
+from dxConfig import dxConfig;
+from sVersion import sVersion;
+from fPrintUsage import fPrintUsage;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
