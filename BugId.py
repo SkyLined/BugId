@@ -239,6 +239,13 @@ def fApplicationRunTimeoutHandler(oBugId):
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
 
+def fPageHeapNotEnabledHandler(oBugId, sErrorDetails):
+  print "  - %s" % sErrorDetails;
+  # There is no reason to run without page heap, so terminated.
+  oBugId.fStop();
+  # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in `dxConfig.py`
+  # or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+
 def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
   if dxConfig["bApplicationTerminatesWithMainProcess"]:
     print "  * T+%.1f One of the main processes (id %d/0x%X, %s) has terminated, stopping..." % \
@@ -401,6 +408,7 @@ def fuMain(asArguments):
       fApplicationSuspendedCallback = fApplicationSuspendedHandler,
       fApplicationResumedCallback = fApplicationResumedHandler,
       fMainProcessTerminatedCallback = fMainProcessTerminatedHandler,
+      fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
