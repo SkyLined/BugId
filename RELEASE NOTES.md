@@ -1,3 +1,19 @@
+2017-04-20
+==========
++ New cBugId version has lots of improvements, including freed heap block size
+  and offset for use-after-frees where possible, and better call stack symbols.
++ Added `--version` switch, which checks for updates and displays version
+  information.
++ Adobe Reader is now terminated when the main process exits.
++ When a main process terminates, it's process id and binary name are shown.
++ When page heap is not enabled for a process, an error is shown and BugId
+  terminates. This can be disabled with the `--cBugId.bEnsurePageHeap=false`
+  switch, or by making the appropriate changed in `dxConfig.py`.
++ Internal exceptions now include a call stack. This should make tracking down
+  an externally reported issue a lot easier. Don't forget to report any bugs
+  you find in BugId itself!!
+
+
 2017-03-24
 ==========
 + new "bApplicationTerminatesWithMainProcess" config setting allows an
