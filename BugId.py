@@ -1,4 +1,21 @@
 import codecs, json, re, os, sys, threading, time, traceback;
+
+asBugIdLogo = [s for s in re.split("\s*\r?\n", """
+                          __                     _____________                  
+                    _,siSS**SSis,_        ,-.   /             |                 
+  ______________  ,SP*'`      `'*YS,  __ | __`-|  O    BugId  | ______________  
+                 dS'  _    |    _ 'Sb   ,'      \_____________|   ,,,           
+    ,,,         dP     \,-` `-<`    Yb _&/                       :O()           
+   :O()        ,S`  \,' \      \    `Sis|ssssssssssssssssss,      ```    ,,,    
+    ```  ,,,   (S   (   | --====)    SSS|SSSSSSSSSSSSSSSSSSD             ()O:   
+        :O()   'S,  /', /      /     S?*/******************'             ```    
+         ```    Yb    _/'-_ _-<._   dP `                                        
+  ______________ YS,       |      ,SP ________________________________________  
+                  `Sbs,_      _,sdS`                                            
+                    `'*YSSssSSY*'`                   https://bugid.skylined.nl  
+                          ``                                                    
+""")];
+
 # Prevent unicode strings from throwing exceptions when output to the console.
 sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
 # The CWD may not be this script's folder; make sure it looks there for modules first:
@@ -7,27 +24,27 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["mo
   if sPath not in sys.path:
     sys.path.insert(0, sPath);
 
-try:
-  from cBugId import cBugId;
-except:
-  print "*" * 80;
-  print "BugId.py depends on cBugId, which you can download at:";
-  print "    https://github.com/SkyLined/cBugId/";
-  print "After downloading, please copy the files to the \"modules\\cBugId\" folder.";
-  print "*" * 80;
-  raise;
-try:
-  import FileSystem;
-except:
-  print "*" * 80;
-  print "BugId.py depends on FileSystem, which you can download at:";
-  print "    https://github.com/SkyLined/FileSystem/";
-  print "After downloading, please copy the files to the \"modules\\FileSystem\" folder.";
-  print "*" * 80;
-  raise;
+for (sModule, sURL) in {
+  "cBugId": "https://github.com/SkyLined/cBugId/",
+  "FileSystem": "https://github.com/SkyLined/FileSystem/",
+}.items():
+  try:
+    __import__(sModule, globals(), locals(), [], -1);
+  except ImportError:
+    print "*" * 80;
+    print "BugId depends on %s, which you can download at:" % sModule;
+    print "    %s" % sURL;
+    print "After downloading, please save the code in the folder \"%s\"," % sModule;
+    print "\"modules\\%s\" or any other location where it can be imported." % sModule;
+    print "Once you have completed these steps, please try again.";
+    print "*" * 80;
+    raise;
+
+from cBugId import cBugId;
 from dxConfig import dxConfig;
 from sVersion import sVersion;
 from fPrintUsage import fPrintUsage;
+import FileSystem;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -172,7 +189,12 @@ gdApplication_rImportantStdErrLines_by_sKeyword = {
     r"\[Child \w+\] ###!!!ABORT: .*",
   ])),
 };
+gbAnErrorOccured = False;
 
+gasBinariesThatAreAllowedToRunWithoutPageHeap = [
+  "chrome.exe", # Asan build have a heap manager that detects memory corruption, so page heap would be redundant.
+  "firefox.exe", # Uses jemalloc, so page heap would be useless.
+];
 asApplicationKeywords = sorted(list(set(
   gdApplication_asCommandLine_by_sKeyword.keys() +
   gdApplication_asDefaultAdditionalArguments_by_sKeyword.keys() +
@@ -228,9 +250,6 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
 def fApplicationRunningHandler(oBugId):
   print "+ The application was started successfully and is running.";
 
-def fInternalExceptionHandler(oBugId, oException, oTraceBack):
-  fDumpException(oException, oTraceBack);
-
 def fApplicationSuspendedHandler(oBugId):
   print "  * T+%.1f The application is suspended..." % (oBugId.fnApplicationRunTime());
 
@@ -242,12 +261,42 @@ def fApplicationRunTimeoutHandler(oBugId):
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
   oBugId.fStop();
 
-def fPageHeapNotEnabledHandler(oBugId, sErrorDetails):
-  print "  - %s" % sErrorDetails;
-  # There is no reason to run without page heap, so terminated.
-  oBugId.fStop();
-  # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in `dxConfig.py`
-  # or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+def fInternalExceptionHandler(oBugId, oException, oTraceBack):
+  global gbAnErrorOccured;
+  gbAnErrorOccured = True;
+  fDumpException(oException, oTraceBack);
+
+gasReportedBinaryNameWithoutPageHeap = [];
+def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
+  global gbAnErrorOccured, gasBinariesThatAreAllowedToRunWithoutPageHeap, gasReportedBinaryNameWithoutPageHeap;
+  if sBinaryName in gasBinariesThatAreAllowedToRunWithoutPageHeap:
+    print "- Full page heap is not enabled for %s in process %x/0x%X." % (sBinaryName, uProcessId, uProcessId);
+    print "  BugId will continue, but detection and analysis of any bugs in this process";
+    print "  will be sub-optimal.";
+
+    return;
+  if bPreventable:
+    gbAnErrorOccured = True;
+    print "- Full page heap is not enabled for all binaries used by the application,";
+    print "  specifically it is not enabled for %s." % sBinaryName;
+    print "  You can enabled full page heap for %s by running:" % sBinaryName;
+    print;
+    print '      PageHeap.cmd "%s" ON' % sBinaryName;
+    print;
+    print "  Without page heap enabled, detection and anaylsis of any bugs will be sub-";
+    print "  optimal. Please enable page heap and try again.";
+    # There is no reason to run without page heap, so terminated.
+    oBugId.fStop();
+    # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in `dxConfig.py`
+    # or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+  else:
+    print "- Full page heap is not enabled for %s in process %x/0x%X." % (sBinaryName, uProcessId, uProcessId);
+    if sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
+      gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
+      print "  This appears to be due to a bug in page heap that prevents it from";
+      print "  determining the binary name correctly. Unfortunately, there is no known fix";
+      print "  or work-around for this. BugId will continue, but detection and analysis of";
+      print "  any bugs in this process will be sub-optimal.";
 
 def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
   if dxConfig["bApplicationTerminatesWithMainProcess"]:
@@ -310,7 +359,7 @@ def fuMain(asArguments):
       sValue = True;
     if sSettingName in ["pid", "pids"]:
       auApplicationProcessIds += [long(x) for x in sValue.split(",")];
-    if sSettingName in ["version"]:
+    elif sSettingName in ["version"]:
       bCheckForUpdates = True;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
@@ -333,7 +382,7 @@ def fuMain(asArguments):
       # User provided config settings must be applied after any keyword specific config settings:
       dxUserProvidedConfigSettings[sSettingName] = xValue;
   if bCheckForUpdates:
-    print "+ Checking for updates...";
+    print "* Checking for updates...";
     from fsVersionCheck import fsVersionCheck;
     print "  * %s" % fsVersionCheck();
     print "  * %s" % cBugId.fsVersionCheck();
@@ -378,7 +427,7 @@ def fuMain(asArguments):
           asApplicationCommandLine = [sApplicationBinary] + asApplicationCommandLine[1:];
         else:
           if asApplicationCommandLine[0] is None:
-            print "Application %s does not appear to be installed";
+            print "Application %s does not appear to be installed" % sApplicationKeyword;
             return 2;
         if asArguments:
           # Add user provided additional application arguments:
@@ -398,7 +447,7 @@ def fuMain(asArguments):
         return 2;
       # Apply application specific settings
       if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-        print "* Applying application specific settings:";
+        print "* Applying application specific configuration for %s:" % sApplicationKeyword;
         for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
           if sSettingName not in dxUserProvidedConfigSettings:
             fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
@@ -433,10 +482,10 @@ def fuMain(asArguments):
     nStartTime = time.clock();
     uRunCounter += 1;
     if asApplicationCommandLine:
-      print "+ The debugger is starting the application...";
+      print "* The debugger is starting the application...";
       print "  Command line: %s" % " ".join(asApplicationCommandLine);
     else:
-      print "+ The debugger is attaching to the application...";
+      print "* The debugger is attaching to the application...";
     oBugId = cBugId(
       sCdbISA = sApplicationISA or cBugId.sOSISA,
       asApplicationCommandLine = asApplicationCommandLine or None,
@@ -457,11 +506,11 @@ def fuMain(asArguments):
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
-    if dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
+    if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
     oBugId.fStart();
     oBugId.fWait();
-    if oBugId.bInternalExceptionOccured:
+    if gbAnErrorOccured:
       return 3;
     if oBugId.sFailedToDebugApplicationErrorMessage is not None:
       print "-" * 80;
@@ -470,9 +519,10 @@ def fuMain(asArguments):
         print "  %s" % sLine.rstrip("\r");
       print "-" * 80;
       return 4;
+    print;
+    print "=" * 80;
     if oBugId.oBugReport is not None:
-      print;
-      print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
+      print "A bug was detect in the application.";
       print "  Id:               %s" % oBugId.oBugReport.sId;
       print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
       print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
@@ -506,10 +556,7 @@ def fuMain(asArguments):
           print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sReportHTML));
       if not bForever: return 1;
     else:
-      print;
-      print "  === BugId report (https://github.com/SkyLined/BugId) ".ljust(80, "=");
-      print "  Id:               None";
-      print "  Description:      The application terminated before a bug was detected.";
+      print "The application terminated without a bug being detected.";
       print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
       nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
       print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
@@ -523,7 +570,7 @@ def fuMain(asArguments):
     for uNumberOfRepros in auOrderedNumberOfRepros:
       for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
         if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
-          sStatistics += "%d x %s (%d%%)\r\n" % (uNumberOfRepros, sBugIdAndLocation, round(100.0 * uNumberOfRepros / uRunCounter));
+          sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, sBugIdAndLocation, round(100.0 * uNumberOfRepros / uRunCounter));
     if dxConfig["sReportFolderPath"] is not None:
       sStatisticsFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
     else:
@@ -541,6 +588,8 @@ def fuMain(asArguments):
 
 if __name__ == "__main__":
   try:
+    for sLine in asBugIdLogo:
+      print sLine;
     if len(sys.argv) == 1:
       fPrintUsage(asApplicationKeywords);
       uExitCode = 0;

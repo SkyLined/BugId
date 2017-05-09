@@ -1,5 +1,10 @@
 import os;
 
+# Note that some of these settings may be overwritten by application specific settings found in BugId.py in the
+# `gdApplication_dxSettings_by_sKeyword` variable. These settings should probably be moved here, but I am not sure
+# yet how I might implement this. For now, if you want to change such settings, you can either modify BugId.py and
+# change values in `gdApplication_dxSettings_by_sKeyword`, or provide them on the command line.
+
 dxConfig = {
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
@@ -8,6 +13,9 @@ dxConfig = {
                                                   # server, None = use default).
   "asSymbolServerURLs": None,                     # List of symbol server URLs (where to try to download symbosl from 
                                                   # if none are found locally, None = use default).
+  "bExcessiveCPUUsageCheckEnabled": False,        # Set to True to enabled checking for excessive CPU usage in the
+                                                  # application. This used to be the default, but I've found most
+                                                  # people prefer not having this check.
   "nExcessiveCPUUsageCheckInitialTimeout": 5,     # Start checking the application for excessive CPU usage after this
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.

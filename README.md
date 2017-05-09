@@ -288,8 +288,8 @@ sub-folder (e.g. "BugId") of your project and importing the `cBugId` class:
     oBugId = cBugId(...);
     
     oBugId.fWait();
-    if oBugId.oErrorReport:
-      print "Error: %s" % oErrorReport.sId;
+    if oBugId.oBugReport:
+      print "Error: %s" % oBugReport.sId;
 
 (You can either wait for BugId to finish by calling `fWait`, or perform other
 functions until the `fFinishedCallback` is called. See below for more details

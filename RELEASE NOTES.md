@@ -1,7 +1,8 @@
-2017-04-20
+2017-05-09
 ==========
-+ New cBugId version has lots of improvements, including freed heap block size
-  and offset for use-after-frees where possible, and better call stack symbols.
++ BugId now has an ASCII art logo!
++ New cBugId version has lots of improvements. BugId code was changed to use
+  some of the new features and work with the changes in the API.
 + Added `--version` switch, which checks for updates and displays version
   information.
 + Adobe Reader is now terminated when the main process exits.
@@ -12,6 +13,11 @@
 + Internal exceptions now include a call stack. This should make tracking down
   an externally reported issue a lot easier. Don't forget to report any bugs
   you find in BugId itself!!
++ Added `bExcessiveCPUUsageCheckEnabled` (default `False`) which disables
+  excessive CPU usage checks by default. Set to `True` to re-enable this.
++ `PageHeap.cmd` now accepts an application keyword, which causes it to enable
+  page heap for all the relevant binaries for that application. This replaces
+  all the application specific `PageHeap-*.cmd` files.
 
 2017-03-24
 ==========
