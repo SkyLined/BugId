@@ -9,7 +9,10 @@
 + When a main process terminates, it's process id and binary name are shown.
 + When page heap is not enabled for a process, an error is shown and BugId
   terminates. This can be disabled with the `--cBugId.bEnsurePageHeap=false`
-  switch, or by making the appropriate changed in `dxConfig.py`.
+  switch, or by making the appropriate changed in `dxConfig.py`. A whitelist
+  of applications that are allowed to run without page heap is also available
+  (`gasBinariesThatAreAllowedToRunWithoutPageHeap` in `BugId.py`). Let me know
+  if you would like to see anything added to this whitelist.
 + Internal exceptions now include a call stack. This should make tracking down
   an externally reported issue a lot easier. Don't forget to report any bugs
   you find in BugId itself!!
