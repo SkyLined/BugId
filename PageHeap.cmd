@@ -34,6 +34,7 @@ IF "%~1" == "" (
 ) ELSE IF "%~1" == "acrobat" (
   CALL :SET_PAGE_HEAP AcroRd32.exe "%~2"
 ) ELSE IF "%~1" == "acrobatdc" (
+  CALL :SET_PAGE_HEAP AdobeARM.exe "%~2"
   CALL :SET_PAGE_HEAP AcroRd32.exe "%~2"
 ) ELSE IF "%~1" == "chrome" (
   IF "%~2" == "ON" (

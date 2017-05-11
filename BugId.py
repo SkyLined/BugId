@@ -1,6 +1,6 @@
 import codecs, json, re, os, sys, threading, time, traceback;
 
-asBugIdLogo = [s for s in re.split("\s*\r?\n", """
+"""
                           __                     _____________                  
                     _,siSS**SSis,_        ,-.   /             |                 
   ______________  ,SP*'`      `'*YS,  __ | __`-|  O    BugId  | ______________  
@@ -14,36 +14,45 @@ asBugIdLogo = [s for s in re.split("\s*\r?\n", """
                   `Sbs,_      _,sdS`                                            
                     `'*YSSssSSY*'`                   https://bugid.skylined.nl  
                           ``                                                    
-""")];
+""";
 
 # Prevent unicode strings from throwing exceptions when output to the console.
-sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
+#sys.stdout = codecs.getwriter("cp437")(sys.stdout, "replace");
+
 # The CWD may not be this script's folder; make sure it looks there for modules first:
 sBaseFolderPath = os.path.dirname(__file__);
 for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["modules"]]:
   if sPath not in sys.path:
     sys.path.insert(0, sPath);
 
-for (sModule, sURL) in {
-  "cBugId": "https://github.com/SkyLined/cBugId/",
-  "FileSystem": "https://github.com/SkyLined/FileSystem/",
-}.items():
+from fPrintUsage import fPrintUsage;
+from oConsole import oConsole;
+from sVersion import sVersion;
+
+NORMAL = -1;
+INFO = 10;
+HILITE = 15;
+ERROR = 12;
+
+for (sModule, sURL) in [
+  ("FileSystem", "https://github.com/SkyLined/FileSystem/"),
+  ("Kill", "https://github.com/SkyLined/Kill/"),
+  ("cBugId", "https://github.com/SkyLined/cBugId/"),
+]:
   try:
     __import__(sModule, globals(), locals(), [], -1);
   except ImportError:
-    print "*" * 80;
-    print "BugId depends on %s, which you can download at:" % sModule;
-    print "    %s" % sURL;
-    print "After downloading, please save the code in the folder \"%s\"," % sModule;
-    print "\"modules\\%s\" or any other location where it can be imported." % sModule;
-    print "Once you have completed these steps, please try again.";
-    print "*" * 80;
+    oConsole.fPrint(ERROR,"*" * 80);
+    oConsole.fPrint(ERROR, "BugId depends on ", HILITE, sModule, ERROR, " which you can download at:");
+    oConsole.fPrint(ERROR, "    ", sURL);
+    oConsole.fPrint(ERROR, "After downloading, please save the code in the folder \"", sMoulde, "\",");
+    oConsole.fPrint(ERROR, "\"modules\\", sModule, "\" or any other location where it can be imported.");
+    oConsole.fPrint(ERROR, "Once you have completed these steps, please try again.");
+    oConsole.fPrint(ERROR, "*" * 80);
     raise;
 
 from cBugId import cBugId;
 from dxConfig import dxConfig;
-from sVersion import sVersion;
-from fPrintUsage import fPrintUsage;
 import FileSystem;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
@@ -194,6 +203,7 @@ gbAnErrorOccured = False;
 gasBinariesThatAreAllowedToRunWithoutPageHeap = [
   "chrome.exe", # Asan build have a heap manager that detects memory corruption, so page heap would be redundant.
   "firefox.exe", # Uses jemalloc, so page heap would be useless.
+  "RdrCEF.exe", # Crashes immediately with a NULL pointer exception when you enable page heap.
 ];
 asApplicationKeywords = sorted(list(set(
   gdApplication_asCommandLine_by_sKeyword.keys() +
@@ -206,25 +216,25 @@ asApplicationKeywords = sorted(list(set(
 
 def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
-    print "- Unknown application keyword %s" % sApplicationKeyword;
+    oConsole.fPrint(ERROR,"- Unknown application keyword %s" % sApplicationKeyword);
     return 2;
-  print "Known application settings for %s" % sApplicationKeyword;
+  oConsole.fPrint("Known application settings for %s" % sApplicationKeyword);
   if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
     if gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword][0] is None:
-      print "  Not installed";
+      oConsole.fPrint(ERROR,"  The application cannot be found on your system.");
     else:
-      print "  Base command-line:";
-      print "    %s" % " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]);
+      oConsole.fPrint("  Base command-line:");
+      oConsole.fPrint("    ", INFO, " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]));
   if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
-    print "  Default additional arguments:";
-    print "    %s" % " ".join([
+    oConsole.fPrint("  Default additional arguments:");
+    oConsole.fPrint("    ", INFO, " ".join([
       sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
       for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
-    ]);
+    ]));
   if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-    print "  Application specific settings:";
+    oConsole.fPrint("  Application specific settings:");
     for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
-      print "    %s = %s" % (sSettingName, json.dumps(xValue));
+      oConsole.fPrint("    ", HILITE, sSettingName, NORMAL, " = ", INFO, json.dumps(xValue));
   return 0;
 
 def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
@@ -242,23 +252,27 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
       "Unknown setting name %s%s." % (sSettingName, \
           len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
   if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
-    print "%s* The default value for config setting %s is %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]));
+    oConsole.fPrint(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
+        " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
   else:
-    print "%s+ Changed config setting %s from %s to %s." % (sIndentation, sFullName, repr(dxConfigGroup[sSettingName]), repr(xValue));
+    oConsole.fPrint(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
+        " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
     dxConfigGroup[sSettingName] = xValue;
 
 def fApplicationRunningHandler(oBugId):
-  print "+ The application was started successfully and is running.";
+  oConsole.fStatus("* The application was started successfully and is running...");
 
-def fApplicationSuspendedHandler(oBugId):
-  print "  * T+%.1f The application is suspended..." % (oBugId.fnApplicationRunTime());
+def fApplicationSuspendedHandler(oBugId, sReason):
+  oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTime(), sReason));
 
 def fApplicationResumedHandler(oBugId):
-  print "    * And resumed...";
+  oConsole.fStatus("* The application is running...");
 
 def fApplicationRunTimeoutHandler(oBugId):
-  print "  * T+%.1f The application has been running for %.1f seconds without crashing and will be terminated..." % \
-      (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]);
+  oConsole.fPrint("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
+      (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]));
+  oConsole.fPrint();
+  oConsole.fStatus(INFO, "* BugId is stopping...");
   oBugId.fStop();
 
 def fInternalExceptionHandler(oBugId, oException, oTraceBack):
@@ -266,75 +280,91 @@ def fInternalExceptionHandler(oBugId, oException, oTraceBack):
   gbAnErrorOccured = True;
   fDumpException(oException, oTraceBack);
 
+def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
+  global gbAnErrorOccured;
+  gbAnErrorOccured = True;
+  oConsole.fPrint(ERROR, "-" * 80);
+  oConsole.fPrint(ERROR, "- Failed to debug the application:");
+  for sLine in sErrorMessage.split("\n"):
+    oConsole.fPrint(ERROR, "  ", sLine.rstrip("\r"));
+  oConsole.fPrint(ERROR, "-" * 80);
+  oConsole.fPrint();
+
 gasReportedBinaryNameWithoutPageHeap = [];
 def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
   global gbAnErrorOccured, gasBinariesThatAreAllowedToRunWithoutPageHeap, gasReportedBinaryNameWithoutPageHeap;
   if sBinaryName in gasBinariesThatAreAllowedToRunWithoutPageHeap:
-    print "- Full page heap is not enabled for %s in process %x/0x%X." % (sBinaryName, uProcessId, uProcessId);
-    print "  BugId will continue, but detection and analysis of any bugs in this process";
-    print "  will be sub-optimal.";
-
     return;
-  if bPreventable:
+  if not bPreventable:
+    if sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
+      gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
+      oConsole.fPrint(WARN,"- Full page heap is not enabled for ",15,sBinaryName,13,".");
+      oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
+      oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
+      oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
+      oConsole.fPrint("  any bugs in this process will be sub-optimal.");
+      oConsole.fPrint();
+  else:
     gbAnErrorOccured = True;
-    print "- Full page heap is not enabled for all binaries used by the application,";
-    print "  specifically it is not enabled for %s." % sBinaryName;
-    print "  You can enabled full page heap for %s by running:" % sBinaryName;
-    print;
-    print '      PageHeap.cmd "%s" ON' % sBinaryName;
-    print;
-    print "  Without page heap enabled, detection and anaylsis of any bugs will be sub-";
-    print "  optimal. Please enable page heap and try again.";
+    oConsole.fPrint(WARN, "- Full page heap is not enabled for all binaries used by the application.");
+    oConsole.fPrint(WARN, "  Specifically it is not enabled for ",15,sBinaryName,7,".");
+    oConsole.fPrint("  You can enabled full page heap for %s by running:" % sBinaryName);
+    oConsole.fPrint();
+    oConsole.fPrint("      ",15,'PageHeap.cmd "',sBinaryName,'" ON');
+    oConsole.fPrint();
+    oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
+    oConsole.fPrint("  optimal. Please enable page heap and try again.");
+    oConsole.fPrint();
+    oConsole.fStatus(INFO, "* BugId is stopping...");
     # There is no reason to run without page heap, so terminated.
     oBugId.fStop();
     # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in `dxConfig.py`
     # or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
-  else:
-    print "- Full page heap is not enabled for %s in process %x/0x%X." % (sBinaryName, uProcessId, uProcessId);
-    if sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
-      gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
-      print "  This appears to be due to a bug in page heap that prevents it from";
-      print "  determining the binary name correctly. Unfortunately, there is no known fix";
-      print "  or work-around for this. BugId will continue, but detection and analysis of";
-      print "  any bugs in this process will be sub-optimal.";
 
 def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
   if dxConfig["bApplicationTerminatesWithMainProcess"]:
-    print "  * T+%.1f One of the main processes (id %d/0x%X, %s) has terminated, stopping..." % \
-        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName);
+    oConsole.fPrint("+ T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
+        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName));
+    oConsole.fPrint();
+    oConsole.fStatus(INFO, "* BugId is stopping...");
     oBugId.fStop();
   else:
-    print "  * T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
-        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName);
+    oConsole.fPrint("+ T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
+        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName));
+    oConsole.fPrint();
+
+def fStdErrOutputHandler(oBugId, sOutput):
+  oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
 def fDumpException(oException, oTraceBack):
-  print "@" * 80;
-  print "- An internal exception has occured:";
-  print "  %s" % repr(oException);
-  print "  Stack:";
+  oConsole.fPrint(ERROR, "-" * 80);
+  oConsole.fPrint(ERROR, "- An internal exception has occured:");
+  oConsole.fPrint(ERROR, "  %s" % repr(oException));
+  oConsole.fPrint(ERROR,"  Stack:");
   txStack = traceback.extract_tb(oTraceBack);
   uFrameIndex = len(txStack) - 1;
   for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(txStack):
     sSource = "%s/%d" % (sFileName, uLineNumber);
     if sFunctionName != "<module>":
       sSource = "%s (%s)" % (sFunctionName, sSource);
-    print "  %3d %s" % (uFrameIndex, sSource);
+    oConsole.fPrint(ERROR,"  %3d %s" % (uFrameIndex, sSource));
     if sCode:
-      print "      > %s" % sCode.strip();
+      oConsole.fPrint(ERROR,"      > %s" % sCode.strip());
     uFrameIndex -= 1;
-  print "  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion);
-  print "@" * 80;
-  print;
-  print "Please report the above details at the below web-page so it can be addressed:";
-  print "    https://github.com/SkyLined/BugId/issues/new";
-  print "If you do not have a github account, or you want to report this issue";
-  print "privately, you can also send an email to:";
-  print "    BugId@skylined.nl";
-  print;
-  print "In your report, please copy the information about the exception reported";
-  print "above, as well as the stack trace and BugId version information. This makes";
-  print "it easier to determine the cause of this issue and makes for faster fixes.";
-  print "Thank you in advance for helping to improve BugId!";
+  oConsole.fPrint(ERROR,"  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion));
+  oConsole.fPrint(ERROR, "-" * 80);
+  oConsole.fPrint();
+  oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");
+  oConsole.fPrint(INFO, "    https://github.com/SkyLined/BugId/issues/new");
+  oConsole.fPrint("If you do not have a github account, or you want to report this issue");
+  oConsole.fPrint("privately, you can also send an email to:");
+  oConsole.fPrint(INFO, "    BugId@skylined.nl");
+  oConsole.fPrint();
+  oConsole.fPrint("In your report, please copy the information about the exception reported");
+  oConsole.fPrint("above, as well as the stack trace and BugId version information. This makes");
+  oConsole.fPrint("it easier to determine the cause of this issue and makes for faster fixes.");
+  oConsole.fPrint("Thank you in advance for helping to improve BugId!");
+  oConsole.fPrint();
 
 def fuMain(asArguments):
   # returns an exit code, values are:
@@ -363,7 +393,7 @@ def fuMain(asArguments):
       bCheckForUpdates = True;
     elif sSettingName == "isa":
       if sValue not in ["x86", "x64"]:
-        print "- Unknown ISA %s" % repr(sValue);
+        oConsole.fPrint(ERROR, "- Unknown ISA %s" % repr(sValue));
         return 2;
       sApplicationISA = sValue;
     elif sSettingName == "fast":
@@ -377,16 +407,23 @@ def fuMain(asArguments):
       try:
         xValue = json.loads(sValue);
       except ValueError:
-        print "- Cannot decode argument JSON value %s" % sValue;
+        oConsole.fPrint(ERROR, "- Cannot decode argument JSON value %s." % sValue);
         return 2;
       # User provided config settings must be applied after any keyword specific config settings:
       dxUserProvidedConfigSettings[sSettingName] = xValue;
   if bCheckForUpdates:
-    print "* Checking for updates...";
     from fsVersionCheck import fsVersionCheck;
-    print "  * %s" % fsVersionCheck();
-    print "  * %s" % cBugId.fsVersionCheck();
-    print "  * %s" % FileSystem.fsVersionCheck();
+    oConsole.fStatus(INFO, "* Checking for BugId updates...");
+    sBugIdVersion = fsVersionCheck();
+    oConsole.fStatus(INFO, "* Checking for cBugId updates...");
+    scBugIdVersion = cBugId.fsVersionCheck();
+    oConsole.fStatus(INFO, "* Checking for FileSystem updates...");
+    sFileSystemVersion = FileSystem.fsVersionCheck();
+    oConsole.fPrint("* Version information:");
+    oConsole.fPrint("  * ", INFO, sBugIdVersion);
+    oConsole.fPrint("  * ", INFO, scBugIdVersion);
+    oConsole.fPrint("  * ", INFO, sFileSystemVersion);
+    oConsole.fPrint();
   
   dsURLTemplate_by_srSourceFilePath = {};
   rImportantStdOutLines = None;
@@ -398,7 +435,7 @@ def fuMain(asArguments):
     if not auApplicationProcessIds:
       if bCheckForUpdates:
         return 0;
-      print "You must specify an application command-line, keyword or process ids";
+      oConsole.fPrint(ERROR, "You must specify an application command-line, keyword or process ids.");
       return 2;
     asApplicationCommandLine = None;
   else:
@@ -419,7 +456,7 @@ def fuMain(asArguments):
       # Get application command line for keyword, if available:
       if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
         if auApplicationProcessIds:
-          print "You cannot specify process ids for application %s" % sApplicationKeyword;
+          oConsole.fPrint(ERROR, "You cannot specify process ids for application %s." % sApplicationKeyword);
           return 2;
         asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
         if sApplicationBinary:
@@ -427,7 +464,7 @@ def fuMain(asArguments):
           asApplicationCommandLine = [sApplicationBinary] + asApplicationCommandLine[1:];
         else:
           if asApplicationCommandLine[0] is None:
-            print "Application %s does not appear to be installed" % sApplicationKeyword;
+            oConsole.fPrint(ERROR, "Application %s does not appear to be installed on your system." % sApplicationKeyword);
             return 2;
         if asArguments:
           # Add user provided additional application arguments:
@@ -440,17 +477,18 @@ def fuMain(asArguments):
           ];
       
       elif asArguments:
-        print "You cannot specify arguments for application keyword %s" % sApplicationKeyword;
+        oConsole.fPrint(ERROR, "You cannot specify arguments for application keyword %s." % sApplicationKeyword);
         return 2;
       elif not auApplicationProcessIds:
-        print "You must specify process ids for application keyword %s" % sApplicationKeyword;
+        oConsole.fPrint(ERROR, "You must specify process ids for application keyword %s." % sApplicationKeyword);
         return 2;
       # Apply application specific settings
       if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-        print "* Applying application specific configuration for %s:" % sApplicationKeyword;
+        oConsole.fPrint("* Applying application specific configuration for %s:" % sApplicationKeyword);
         for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
           if sSettingName not in dxUserProvidedConfigSettings:
             fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+        oConsole.fPrint();
       # Apply application specific source settings
       if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
         dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sApplicationKeyword];
@@ -464,7 +502,7 @@ def fuMain(asArguments):
         sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
     elif auApplicationProcessIds:
       # user provided an application command-line and process ids
-      print "You cannot specify both an application command-line and process ids";
+      oConsole.fPrint(ERROR, "You cannot specify both an application command-line and process ids.");
       return 2;
     else:
       # user provided an application command-line
@@ -482,10 +520,11 @@ def fuMain(asArguments):
     nStartTime = time.clock();
     uRunCounter += 1;
     if asApplicationCommandLine:
-      print "* The debugger is starting the application...";
-      print "  Command line: %s" % " ".join(asApplicationCommandLine);
+      oConsole.fPrint("* Command line: ",INFO, " ".join(asApplicationCommandLine));
+      oConsole.fPrint();
+      oConsole.fStatus("* The debugger is starting the application...");
     else:
-      print "* The debugger is attaching to the application...";
+      oConsole.fStatus("* The debugger is attaching to the application...");
     oBugId = cBugId(
       sCdbISA = sApplicationISA or cBugId.sOSISA,
       asApplicationCommandLine = asApplicationCommandLine or None,
@@ -497,12 +536,15 @@ def fuMain(asArguments):
       rImportantStdOutLines = rImportantStdOutLines,
       rImportantStdErrLines = rImportantStdErrLines,
       bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
+      fFailedToDebugApplicationCallback = fFailedToDebugApplicationHandler,
       fApplicationRunningCallback = fApplicationRunningHandler,
       fApplicationSuspendedCallback = fApplicationSuspendedHandler,
       fApplicationResumedCallback = fApplicationResumedHandler,
       fMainProcessTerminatedCallback = fMainProcessTerminatedHandler,
-      fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
       fInternalExceptionCallback = fInternalExceptionHandler,
+      fFinishedCallback = None,
+      fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
+      fStdErrOutputCallback = fStdErrOutputHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
@@ -512,29 +554,16 @@ def fuMain(asArguments):
     oBugId.fWait();
     if gbAnErrorOccured:
       return 3;
-    if oBugId.sFailedToDebugApplicationErrorMessage is not None:
-      print "-" * 80;
-      print "- Failed to debug the application:"
-      for sLine in oBugId.sFailedToDebugApplicationErrorMessage.split("\n"):
-        print "  %s" % sLine.rstrip("\r");
-      print "-" * 80;
-      return 4;
-    print;
-    print "=" * 80;
     if oBugId.oBugReport is not None:
-      print "A bug was detect in the application.";
-      print "  Id:               %s" % oBugId.oBugReport.sId;
-      print "  Location:         %s" % oBugId.oBugReport.sBugLocation;
-      print "  Description:      %s" % oBugId.oBugReport.sBugDescription;
-      print "  Version:          %s" % oBugId.oBugReport.asVersionInformation[0]; # There is always the process' binary.
-      for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
-        print "                    %s" % sVersionInformation;                # different binary (e.g. a .dll)
+      oConsole.fPrint(HILITE, "A bug was detect in the application:");
+      oConsole.fPrint("  Id @ Location:    ", INFO, oBugId.oBugReport.sId, NORMAL, " @ ", INFO, oBugId.oBugReport.sBugLocation);
       if oBugId.oBugReport.sBugSourceLocation:
-        print "  Source:           %s" % oBugId.oBugReport.sBugSourceLocation;
-      print "  Security impact:  %s" % oBugId.oBugReport.sSecurityImpact;
-      print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
-      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-      print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
+        oConsole.fPrint("  Source:           ", INFO, oBugId.oBugReport.sBugSourceLocation);
+      oConsole.fPrint("  Description:      ", INFO, oBugId.oBugReport.sBugDescription);
+      oConsole.fPrint("  Security impact:  ", INFO, oBugId.oBugReport.sSecurityImpact);
+      oConsole.fPrint("  Version:          ", HILITE, oBugId.oBugReport.asVersionInformation[0]); # There is always the process' binary.
+      for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
+        oConsole.fPrint("                    ", sVersionInformation);                # different binary (e.g. a .dll)
       sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       if dxConfig["bGenerateReportHTML"]:
         # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
@@ -551,17 +580,16 @@ def fuMain(asArguments):
           fbRetryOnFailure = lambda: False,
         );
         if eWriteDataToFileResult:
-          print "  Bug report:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
+          oConsole.fPrint("  Bug report:       ", ERROR, "Cannot be saved (%s)" % repr(eWriteDataToFileResult));
         else:
-          print "  Bug report:       %s (%d bytes)" % (sValidReportFileName, len(oBugId.oBugReport.sReportHTML));
-      if not bForever: return 1;
+          oConsole.fPrint("  Bug report:       ", HILITE, sValidReportFileName, NORMAL, " (%d bytes)" % len(oBugId.oBugReport.sReportHTML));
     else:
-      print "The application terminated without a bug being detected.";
-      print "  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0);
-      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-      print "  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0);
-      if not bForever: return 0;
+      oConsole.fPrint(10, "The application terminated without a bug being detected.");
       sBugIdAndLocation = "No crash";
+    oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
+    nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+    oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
+    if not bForever: return oBugId.oBugReport is not None and 1 or 0;
     duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
     duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
     sStatistics = "";
@@ -581,15 +609,27 @@ def fuMain(asArguments):
       fbRetryOnFailure = lambda: False,
     );
     if eWriteDataToFileResult:
-      print "  Statistics:       Cannot be saved (%s)" % repr(eWriteDataToFileResult);
+      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (%s)" % repr(eWriteDataToFileResult));
     else:
-      print "  Statistics:       %s (%d bytes)" % (sStatisticsFilePath, len(sStatistics));
-    print; # and loop
+      oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
+    oConsole.fPrint(); # and loop
 
 if __name__ == "__main__":
   try:
-    for sLine in asBugIdLogo:
-      print sLine;
+    oConsole.fPrint("                          ",8,"__",7,"                     ",9,"_____________",7,"                  ");
+    oConsole.fPrint("                    ",8,"_,siSS**SSis,_",7,"        ",9,",-.",7,"   ",9,"/             |",7,"                 ");
+    oConsole.fPrint("  ",8,"______________",7,"  ",8,",SP*'`",7,"      ",8,"`'*YS,",7,"  ",8,"__",7," ",9,"|",7," ",8,"__",9,"`-|  O    ",15,"BugId",9,"  |",7," ",8,"______________",7,"  ");
+    oConsole.fPrint("                 ",8,"dS'",7,"  ",4,"_    |    _",7," ",8,"'Sb",7,"   ",9,",'",7,"      ",9,"\\_____________|",7,"   ",4,",,,",7,"           ");
+    oConsole.fPrint("    ",4,",,,",7,"         ",8,"dP",7,"     ",4,"\\,-` `-<`",7,"    ",8,"Yb",7," ",9,"_&/",7,"                       ",4,":O()",7,"           ");
+    oConsole.fPrint("   ",4,":O()",7,"        ",8,",S`",7,"  ",4,"\\,' \\      \\",7,"    ",8,"`Sis",9,"|",8,"ssssssssssssssssss,",7,"      ",4,"```",7,"    ",4,",,,",7,"    ");
+    oConsole.fPrint("    ",4,"```",7,"  ",4,",,,",7,"   ",8,"(S",7,"   ",4,"(   | --====)",7,"    ",8,"SSS",9,"|",8,"SSSSSSSSSSSSSSSSSSD",7,"             ",4,"()O:",7,"   ");
+    oConsole.fPrint("        ",4,":O()",7,"   ",8,"'S,",7,"  ",4,"/', /      /",7,"    ",8,",S?*",9,"/",8,"******************'",7,"             ",4,"```",7,"    ");
+    oConsole.fPrint("         ",4,"```",7,"    ",8,"Yb",7,"    ",4,"_/'-_ _-<._",7,"   ",8,"dP",7," ",9,"`",7,"                                        ");
+    oConsole.fPrint("  ",8,"______________",7," ",8,"YS,",7,"       ",4,"|",7,"      ",8,",SP",7," ",8,"________________________________________",7,"  ");
+    oConsole.fPrint("                  ",8,"`Sbs,_",7,"      ",8,"_,sdS`",7,"                                            ");
+    oConsole.fPrint("                    ",8,"`'*YSSssSSY*'`",7,"                   ",15,"https://bugid.skylined.nl",7,"  ");
+    oConsole.fPrint("                          ",8,"``",7,"                                                    ");
+    oConsole.fPrint();
     if len(sys.argv) == 1:
       fPrintUsage(asApplicationKeywords);
       uExitCode = 0;
@@ -597,12 +637,13 @@ if __name__ == "__main__":
       uExitCode = fuMain(sys.argv[1:]);
     
     if dxConfig["bShowLicenseAndDonationInfo"]:
-      print;
-      print "This version of BugId is provided free of charge for non-commercial use only.";
-      print "If you find it useful and would like to make a donation, you can send bitcoin";
-      print "to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. Please contact the author if you wish to";
-      print "use BugId commercially. Contact and licensing information can be found at";
-      print "https://github.com/SkyLined/BugId#license.";
+      oConsole.fPrint();
+      oConsole.fPrint("This version of BugId is provided free of charge for non-commercial use only.");
+      oConsole.fPrint("If you find it useful and would like to make a donation, you can send bitcoin");
+      oConsole.fPrint("to ",INFO,"183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX",NORMAL,".");
+      oConsole.fPrint("If you wish to use BugId commercially, please contact the author to request a");
+      oConsole.fPrint("quote. Contact and licensing information can be found at:");
+      oConsole.fPrint("    ",INFO,"https://github.com/SkyLined/BugId#license",NORMAL,".");
     
     os._exit(uExitCode);
   except Exception as oException:

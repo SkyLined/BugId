@@ -1,11 +1,15 @@
-2017-05-09
+2017-05-11
 ==========
-+ BugId now has an ASCII art logo!
++ BugId now has an ASCII art logo and outputs text to the console in various
+  colors!
 + New cBugId version has lots of improvements. BugId code was changed to use
   some of the new features and work with the changes in the API.
 + Added `--version` switch, which checks for updates and displays version
   information.
 + Adobe Reader is now terminated when the main process exits.
++ The `AdobeARM.exe` binary was added to `pageheap.cmd` for `acrobatdc`.
+  I don't have a VM with the non-DC `acrobat` to test if it should be added
+  there as well. Let me know if you find that it does and I will add it!
 + When a main process terminates, it's process id and binary name are shown.
 + When page heap is not enabled for a process, an error is shown and BugId
   terminates. This can be disabled with the `--cBugId.bEnsurePageHeap=false`
