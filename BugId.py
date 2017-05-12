@@ -298,7 +298,7 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
   if not bPreventable:
     if sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
       gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
-      oConsole.fPrint(WARN,"- Full page heap is not enabled for ",15,sBinaryName,13,".");
+      oConsole.fPrint(ERROR,"- Full page heap is not enabled for ",15,sBinaryName,13,".");
       oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
       oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
       oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
@@ -306,8 +306,8 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
       oConsole.fPrint();
   else:
     gbAnErrorOccured = True;
-    oConsole.fPrint(WARN, "- Full page heap is not enabled for all binaries used by the application.");
-    oConsole.fPrint(WARN, "  Specifically it is not enabled for ",15,sBinaryName,7,".");
+    oConsole.fPrint(ERROR, "- Full page heap is not enabled for all binaries used by the application.");
+    oConsole.fPrint(ERROR, "  Specifically it is not enabled for ",15,sBinaryName,7,".");
     oConsole.fPrint("  You can enabled full page heap for %s by running:" % sBinaryName);
     oConsole.fPrint();
     oConsole.fPrint("      ",15,'PageHeap.cmd "',sBinaryName,'" ON');
