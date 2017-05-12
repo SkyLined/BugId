@@ -27,7 +27,7 @@ for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["mo
 
 from fPrintUsage import fPrintUsage;
 from oConsole import oConsole;
-from sVersion import sVersion;
+from oVersionInformation import oVersionInformation;
 
 NORMAL = -1;
 INFO = 10;
@@ -52,8 +52,8 @@ for (sModule, sURL) in [
     raise;
 
 from cBugId import cBugId;
+import FileSystem, Kill;
 from dxConfig import dxConfig;
-import FileSystem;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -351,7 +351,18 @@ def fDumpException(oException, oTraceBack):
     if sCode:
       oConsole.fPrint(ERROR,"      > %s" % sCode.strip());
     uFrameIndex -= 1;
-  oConsole.fPrint(ERROR,"  BugId version %s, cBugId version %s" % (sVersion, cBugId.sVersion));
+  oConsole.fPrint(ERROR,"  BugId version %s" % oVersionInformation.sCurrentVersion);
+  for (sModule, xModule) in [
+    ("cBugId", cBugId),
+    ("FileSystem", FileSystem),
+    ("Kill", Kill),
+  ]:
+    if hasattr(xModule, "oVersionInformation"):
+      oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.oVersionInformation.sCurrentVersion));
+    elif hasattr(xModule, "sVersion"):
+      oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.sVersion));
+    else:
+      oConsole.fPrint(ERROR,"  %s version unknown" % sModule);
   oConsole.fPrint(ERROR, "-" * 80);
   oConsole.fPrint();
   oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");
@@ -412,17 +423,27 @@ def fuMain(asArguments):
       # User provided config settings must be applied after any keyword specific config settings:
       dxUserProvidedConfigSettings[sSettingName] = xValue;
   if bCheckForUpdates:
-    from fsVersionCheck import fsVersionCheck;
-    oConsole.fStatus(INFO, "* Checking for BugId updates...");
-    sBugIdVersion = fsVersionCheck();
-    oConsole.fStatus(INFO, "* Checking for cBugId updates...");
-    scBugIdVersion = cBugId.fsVersionCheck();
-    oConsole.fStatus(INFO, "* Checking for FileSystem updates...");
-    sFileSystemVersion = FileSystem.fsVersionCheck();
-    oConsole.fPrint("* Version information:");
-    oConsole.fPrint("  * ", INFO, sBugIdVersion);
-    oConsole.fPrint("  * ", INFO, scBugIdVersion);
-    oConsole.fPrint("  * ", INFO, sFileSystemVersion);
+    for (sModuleName, oModuleVersionInformation, fsVersionCheck) in [
+      ("BugId",       oVersionInformation,                              None),
+      ("cBugId",      getattr(cBugId, "oVersionInformation", None),     getattr(cBugId, "fsVersionCheck", None)),
+      ("FileSystem",  getattr(FileSystem, "oVersionInformation", None), getattr(FileSystem, "fsVersionCheck", None)),
+      ("Kill",        getattr(Kill, "oVersionInformation", None),       getattr(Kill, "fsVersionCheck", None)),
+    ]:
+      if oModuleVersionInformation:
+        assert sModuleName == oModuleVersionInformation.sProjectName, \
+            "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
+        oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
+        oConsole.fStatus("* Checking ", INFO, oModuleVersionInformation.sProjectName, NORMAL, " for updates...");
+        if oModuleVersionInformation.bPreRelease:
+          oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
+              "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
+        elif not oModuleVersionInformation.bUpToDate:
+          oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
+              " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
+      elif fsVersionCheck:
+        oConsole.fPrint("* ", INFO, sModuleName, NORMAL, " version check reports: ", INFO, fsVersionCheck(), ".");
+      else:
+        oConsole.fPrint("- You are running an ", ERROR, "outdated", NORMAL, " version of ", INFO, sModuleName, NORMAL, ".");
     oConsole.fPrint();
   
   dsURLTemplate_by_srSourceFilePath = {};
