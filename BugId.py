@@ -681,20 +681,8 @@ def fuMain(asArguments):
 
 if __name__ == "__main__":
   try:
-    oConsole.fPrint("                          ",8,"__",7,"                     ",9,"_____________",7,"                  ");
-    oConsole.fPrint("                    ",8,"_,siSS**SSis,_",7,"        ",9,",-.",7,"   ",9,"/             |",7,"                 ");
-    oConsole.fPrint("  ",8,"______________",7,"  ",8,",SP*'`",7,"      ",8,"`'*YS,",7,"  ",8,"__",7," ",9,"|",7," ",8,"__",9,"`-|  O    ",15,"BugId",9,"  |",7," ",8,"______________",7,"  ");
-    oConsole.fPrint("                 ",8,"dS'",7,"  ",4,"_    |    _",7," ",8,"'Sb",7,"   ",9,",'",7,"      ",9,"\\_____________|",7,"   ",4,",,,",7,"           ");
-    oConsole.fPrint("    ",4,",,,",7,"         ",8,"dP",7,"     ",4,"\\,-` `-<`",7,"    ",8,"Yb",7," ",9,"_&/",7,"                       ",4,":O()",7,"           ");
-    oConsole.fPrint("   ",4,":O()",7,"        ",8,",S`",7,"  ",4,"\\,' \\      \\",7,"    ",8,"`Sis",9,"|",8,"ssssssssssssssssss,",7,"      ",4,"```",7,"    ",4,",,,",7,"    ");
-    oConsole.fPrint("    ",4,"```",7,"  ",4,",,,",7,"   ",8,"(S",7,"   ",4,"(   | --====)",7,"    ",8,"SSS",9,"|",8,"SSSSSSSSSSSSSSSSSSD",7,"             ",4,"()O:",7,"   ");
-    oConsole.fPrint("        ",4,":O()",7,"   ",8,"'S,",7,"  ",4,"/', /      /",7,"    ",8,",S?*",9,"/",8,"******************'",7,"             ",4,"```",7,"    ");
-    oConsole.fPrint("         ",4,"```",7,"    ",8,"Yb",7,"    ",4,"_/'-_ _-<._",7,"   ",8,"dP",7," ",9,"`",7,"                                        ");
-    oConsole.fPrint("  ",8,"______________",7," ",8,"YS,",7,"       ",4,"|",7,"      ",8,",SP",7," ",8,"________________________________________",7,"  ");
-    oConsole.fPrint("                  ",8,"`Sbs,_",7,"      ",8,"_,sdS`",7,"                                            ");
-    oConsole.fPrint("                    ",8,"`'*YSSssSSY*'`",7,"                   ",15,"https://bugid.skylined.nl",7,"  ");
-    oConsole.fPrint("                          ",8,"``",7,"                                                    ");
-    oConsole.fPrint();
+    for asBugIdLogoPrintArguments in aasBugIdLogoPrintArguments:
+      oConsole.fPrint(*asBugIdLogoPrintArguments);
     if len(sys.argv) == 1:
       fPrintUsage(asApplicationKeywords);
       uExitCode = 0;
