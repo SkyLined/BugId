@@ -109,6 +109,26 @@ from ChromePath import sChromePath_x64, sChromePath_x86, sChromePath, \
 from FirefoxPath import sFirefoxPath_x64, sFirefoxPath_x86, sFirefoxPath, \
     sFirefoxDevPath_x64, sFirefoxDevPath_x86, sFirefoxDevPath;
 from MSIEPath import sMSIEPath_x64, sMSIEPath_x86, sMSIEPath;
+asChromeDefaultArguments = [
+  "--enable-experimental-accessibility-features",
+  "--enable-experimental-canvas-features",
+  "--enable-experimental-input-view-features",
+  "--enable-experimental-web-platform-features",
+  "--enable-usermedia-screen-capturing",
+  "--enable-viewport",
+  "--enable-webgl-draft-extensions",
+  "--enable-webvr",
+  "--expose-internals-for-testing",
+  "--disable-popup-blocking",
+  "--disable-prompt-on-repost",
+  "--force-renderer-accessibility",
+  "--javascript-harmony",
+  "--no-sandbox",
+];
+asFirefoxDefaultArguments = [
+  "--no-remote",
+  "-profile", "%s\Firefox-profile" % os.getenv("TEMP"),
+];
 gdApplication_asCommandLine_by_sKeyword = {
   "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
   "acrobat": [r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
