@@ -66,6 +66,9 @@ for uLineIndex in xrange(len(asBugIdLogo)):
     sChar = sCharsLine[uColumnIndex];
     asBugIdLogoPrintArgument[-1] += sChar;
 
+# Load external dependecies to make sure they are available and shown an error
+# if any one fails to load. This error explains where the missing component
+# can be downloaded to fix the error.
 for (sModule, sURL) in [
   ("FileSystem", "https://github.com/SkyLined/FileSystem/"),
   ("Kill", "https://github.com/SkyLined/Kill/"),
