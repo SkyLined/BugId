@@ -224,9 +224,9 @@ srMozillaCentralSourceURLMappings = "".join([
   r"(?P<lineno>\d+)",  # line number
 ]);
 gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword = {
-  "firefox": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
-  "firefox_x86": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
-  "firefox_x64": {srMozillaCentralSourceURLMappings: "https://mxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
+  "firefox": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
+  "firefox_x86": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
+  "firefox_x64": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
   "nightly": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
 };
 # Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
