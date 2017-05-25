@@ -69,6 +69,7 @@ IF "%~1" == "" (
 ) ELSE IF "%~1" == "firefox" (
   CALL :SET_PAGE_HEAP firefox.exe "%~2"
   CALL :SET_PAGE_HEAP helper.exe "%~2"
+  CALL :SET_PAGE_HEAP updater.exe "%~2"
   CALL :SET_PAGE_HEAP plugin-container.exe "%~2"
   IF "%~1" == "ON" (
     ECHO NOTE: Firefox has its own heap manager, so heap corruption detection is not as
