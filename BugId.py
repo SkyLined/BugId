@@ -242,9 +242,12 @@ gdApplication_rImportantStdErrLines_by_sKeyword = {
 gbAnErrorOccured = False;
 
 gasBinariesThatAreAllowedToRunWithoutPageHeap = [
-  "chrome.exe", # Asan build have a heap manager that detects memory corruption, so page heap would be redundant.
-  "firefox.exe", # Uses jemalloc, so page heap would be useless.
-  "RdrCEF.exe", # Crashes immediately with a NULL pointer exception when you enable page heap.
+  # Chrome provides ASan builds, so page heap is redundant. You can and should still run it with page heap though.
+  "chrome.exe",
+  # Firefox uses jemalloc, so page heap is not very useful. You can and should still run it with page heap though.
+  "firefox.exe",
+  # Adobe Reader has a component that crashes immediately with a NULL pointer exception when you enable page heap.
+  "RdrCEF.exe",
 ];
 asApplicationKeywords = sorted(list(set(
   gdApplication_asCommandLine_by_sKeyword.keys() +
