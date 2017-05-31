@@ -47,6 +47,12 @@ asBugIdLogoColors = [s.rstrip() for s in """
 """.split("""
 """)];
 
+# Colors used in output for various types of information:
+NORMAL = -1;  # Console default color
+INFO = 10;    # Light green
+HILITE = 15;  # White
+ERROR = 12;   # Light red
+
 # We can create a list of arguments that can be passed to oConsole.fPrint in
 # order to output the logo in color, which we'll use later when we want to show
 # the logo:
@@ -85,13 +91,6 @@ for (sModule, sURL) in [
     oConsole.fPrint(ERROR, "Once you have completed these steps, please try again.");
     oConsole.fPrint(ERROR, "*" * 80);
     raise;
-
-# Colors used in output for various types of information:
-NORMAL = -1;  # Console default color
-INFO = 10;    # Light green
-HILITE = 15;  # White
-ERROR = 12;   # Light red
-
 
 from cBugId import cBugId;
 import FileSystem, Kill;
