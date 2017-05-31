@@ -1,4 +1,4 @@
-2017-05-11
+2017-05-31
 ==========
 + BugId now has an ASCII art logo and outputs text to the console in various
   colors!
@@ -6,6 +6,9 @@
   some of the new features and work with the changes in the API.
 + Added `--version` switch, which checks for updates and displays version
   information.
++ New processes are shown as they are created.
++ Google Chrome default arguments have been updated.
++ Page heap is now enabled for Firefox updater.exe as well.
 + Adobe Reader is now terminated when the main process exits.
 + The `AdobeARM.exe` binary was added to `pageheap.cmd` for `acrobatdc`.
   I don't have a VM with the non-DC `acrobat` to test if it should be added
