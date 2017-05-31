@@ -100,13 +100,16 @@ class cConsole(object):
       uNewLineLength = 0;
       try:
         for xCharsOrColor in axCharsAndColors:
-          if isinstance(xCharsOrColor, str) or isinstance(xCharsOrColor, unicode):
+          if isinstance(xCharsOrColor, int) or isinstance(xCharsOrColor, long):
+            if oConsole.bStdOutIsConsole: # If output is redirected, colors will not be set, so don't try
+              if xCharsOrColor == -1: xCharsOrColor = NORMAL_COLOR;
+              oConsole.__fSetColor(xCharsOrColor);
+              bColorWasSet = True;
+          else:
+            assert isinstance(xCharsOrColor, str) or isinstance(xCharsOrColor, unicode), \
+                "You cannot print %s (type = %s) directly; it must be converted to a string" % (repr(xCharsOrColor), xCharsOrColor.__class__.__name__);
             uNewLineLength += len(xCharsOrColor);
             oConsole.__fWriteOutput(xCharsOrColor);
-          elif oConsole.bStdOutIsConsole: # If output is redirected, colors will not be set, so don't try
-            if xCharsOrColor == -1: xCharsOrColor = NORMAL_COLOR;
-            oConsole.__fSetColor(xCharsOrColor);
-            bColorWasSet = True;
       finally:
         if bColorWasSet:
           oConsole.__fSetColor(NORMAL_COLOR);
