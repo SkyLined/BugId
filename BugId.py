@@ -399,6 +399,12 @@ def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
 def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
+def fNewProcessHandler(oBugId, oProcess):
+  if oProcess.sCommandLine:
+    oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sCommandLine);
+  else:
+    oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName, NORMAL, " (command line unknown)");
+
 def fDumpException(oException, oTraceBack):
   oConsole.fPrint(ERROR, "-" * 80);
   oConsole.fPrint(ERROR, "- An internal exception has occured:");
@@ -629,6 +635,7 @@ def fuMain(asArguments):
       fFinishedCallback = None,
       fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
       fStdErrOutputCallback = fStdErrOutputHandler,
+      fNewProcessCallback = fNewProcessHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
