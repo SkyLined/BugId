@@ -400,10 +400,7 @@ def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
 def fNewProcessHandler(oBugId, oProcess):
-  if oProcess.sCommandLine:
-    oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sCommandLine);
-  else:
-    oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName, NORMAL, " (command line unknown)");
+  oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName);
 
 def fDumpException(oException, oTraceBack):
   oConsole.fPrint(ERROR, "-" * 80);
