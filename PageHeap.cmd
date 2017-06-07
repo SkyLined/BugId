@@ -60,17 +60,28 @@ IF "%~1" == "" (
   ECHO applied to all processes.
   CALL :SET_PAGE_HEAP chrome.exe "%~2"
   IF ERRORLEVEL 1 EXIT /B 1
+  CALL :SET_PAGE_HEAP software_reporter_tool.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE IF "%~1" == "edge" (
   CALL :SET_PAGE_HEAP ApplicationFrameHost.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP browser_broker.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP MicrosoftEdge.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP MicrosoftEdgeCP.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP RuntimeBroker.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE IF "%~1" == "firefox" (
   CALL :SET_PAGE_HEAP firefox.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP helper.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP updater.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP plugin-container.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   IF "%~1" == "ON" (
     ECHO NOTE: Firefox has its own heap manager, so heap corruption detection is not as
     ECHO good as it could be.
@@ -82,11 +93,15 @@ IF "%~1" == "" (
   )
 ) ELSE IF "%~1" == "foxit" (
   CALL :SET_PAGE_HEAP FoxitReader.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP FoxitReader_Lib_Full.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE IF "%~1" == "msie" (
   CALL :SET_PAGE_HEAP iexplore.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE (
   CALL :SET_PAGE_HEAP "%~1" "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 )
 EXIT /B 0
 
