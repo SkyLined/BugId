@@ -67,6 +67,8 @@ class cConsole(object):
   def __fSetColor(oConsole, uColor):
     assert oConsole.bStdOutIsConsole, \
         "Cannot set colors when output is redirected";
+    assert uColor in xrange(0, 0x100), \
+        "You cannot use color 0x%X; maybe you are trying to print a number without converting it to a string?" % uColor;
     assert ctypes.windll.kernel32.SetConsoleTextAttribute(oConsole.hStdOut, uColor), \
         "SetConsoleTextAttribute(%d, %d) => Error %08X" % \
         (oConsole.hStdOut, uColor, ctypes.windll.kernel32.GetLastError());

@@ -1,51 +1,32 @@
 import codecs, json, re, os, sys, threading, time, traceback;
 
-# The CWD may not be this script's folder; make sure it looks there for modules first:
-sBaseFolderPath = os.path.dirname(__file__);
-for sPath in [sBaseFolderPath] + [os.path.join(sBaseFolderPath, x) for x in ["modules"]]:
-  if sPath not in sys.path:
-    sys.path.insert(0, sPath);
+"""
+                          __                     _____________                  
+            ,,,     _,siSS**SSis,_        ,-.   /             |                 
+           :O()   ,SP*'`      `'*YS,     |   `-|  O    BugId  |                 
+            ```  dS'  _    |    _ 'Sb   ,'      \_____________|                 
+      ,,,       dP     \,-` `-<`    Yb _&/                                      
+     :O()      ,S`  \,' \      \    `Sis|ssssssssssssssssss,        ,,,         
+      ```      (S   (   | --====)    SSS|SSSSSSSSSSSSSSSSSSD        ()O:        
+               'S,  /', /      /    ,S?*/******************'        ```         
+                Yb    _/'-_ _-<._   dP `                                        
+  _______________YS,       |      ,SP_________________________________________  
+                  `Sbs,_      _,sdS`                                            
+                    `'*YSSssSSY*'`                   https://bugid.skylined.nl  
+                          ``                                                    
+                                                                                
+""";
 
+# Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
+sMainFolderPath = os.path.dirname(__file__);
+asAbsoluteLoweredSysPaths = [os.path.abspath(sPath.lower()) for sPath in sys.path];
+asAbsoluteSearchPaths = [os.path.abspath(os.path.join(sMainFolderPath, *asPath).lower()) for asPath in [[], [".."], ["modules"]]];
+sys.path = [sPath for sPath in asAbsoluteSearchPaths if sPath.lower() not in asAbsoluteLoweredSysPaths] + sys.path;
+
+from fPrintLogo import fPrintLogo;
 from fPrintUsage import fPrintUsage;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
-
-asBugIdLogo = [s.rstrip() for s in """
-                          __                     _____________                  
-                    _,siSP**YSis,_        ,-~-._/             |                 
-  _______________ ,SP*'`    . `'*YS,  ___|____ |`-O    BugId  | ______________  
-                 dS'  _    |    _ 'Sb   ,'      \_____________|   ,,,           
-    ,,,         dP     \,-` `-<` `  Y; _&/                       :O()           
-   :O()        ,S`  \+' \      \    `Sis|ssssssssssssssssss,      ```    ,,,    
-    ```  ,,,   (S   (   | --====)    SSS|SSSSSSSSSSSSSSSSSSD             ()O:   
-        :O()   'S,  /+, /      /    ,S?*/******************'             ```    
-         ```    Yb    _/'-_ _-<._.  dP `                                        
-  ______________ YS,       |      ,SP ________________________________________  
-                  `Sbs,_    ' _,sdS`                                            
-                    `'*YSissiSY*'`                   https://bugid.skylined.nl  
-                          ``                                                    
-""".split("""
-""")];
-
-# We can now add color to console output, so let's create a second version of
-# the above logo, but with color information (" " = default terminal color, hex
-# digit = color number.
-asBugIdLogoColors = [s.rstrip() for s in """
-                          77                     AAAAAAAAAAAAA                  
-                    77777777777777        AAAAAAA             A                 
-  877777777777778 777888    8 888877  878A8778 AAAA    AAAAA  A 87777777777778  
-                 788  8    8    8 887   AA      AAAAAAAAAAAAAAA   888           
-    888         78     8CCC CCC8 8  87 AAA                       7CCC           
-   7CCC        788  87C 4      C    8877A7777777777777777777      888    888    
-    888  888   78   C   4 444444C    888A8888888888888888888             CCC7   
-        7CCC   888  87C 4      C    8888A8888888888888888888             888    
-         888    88    88CCC CCC888  88 A                                        
-  87777777777778 887       8      788 8777777777777777777777777777777777777778  
-                  887777    8 777788                                            
-                    88877777777888                   AAAAAAAAAAAAAAAAAAAAAAAAA  
-                          88                                                    
-""".split("""
-""")];
 
 # Colors used in output for various types of information:
 NORMAL = -1;  # Console default color
@@ -53,43 +34,25 @@ INFO = 10;    # Light green
 HILITE = 15;  # White
 ERROR = 12;   # Light red
 
-# We can create a list of arguments that can be passed to oConsole.fPrint in
-# order to output the logo in color, which we'll use later when we want to show
-# the logo:
-aasBugIdLogoPrintArguments = [];
-iLastColor = -1;
-for uLineIndex in xrange(len(asBugIdLogo)):
-  asBugIdLogoPrintArgument = [""];
-  aasBugIdLogoPrintArguments.append(asBugIdLogoPrintArgument);
-  sCharsLine = asBugIdLogo[uLineIndex];
-  sColorsLine = asBugIdLogoColors[uLineIndex];
-  for uColumnIndex in xrange(len(sCharsLine)):
-    sColor = sColorsLine[uColumnIndex];
-    iColor = sColor == " " and -1 or int(sColor, 16);
-    if iColor != iLastColor:
-      asBugIdLogoPrintArgument.extend([iColor, ""]);
-      iColor = iLastColor;
-    sChar = sCharsLine[uColumnIndex];
-    asBugIdLogoPrintArgument[-1] += sChar;
-
 # Load external dependecies to make sure they are available and shown an error
 # if any one fails to load. This error explains where the missing component
 # can be downloaded to fix the error.
-for (sModule, sURL) in [
+for (sModuleName, sDownloadURL) in [
   ("FileSystem", "https://github.com/SkyLined/FileSystem/"),
   ("Kill", "https://github.com/SkyLined/Kill/"),
   ("cBugId", "https://github.com/SkyLined/cBugId/"),
 ]:
   try:
-    __import__(sModule, globals(), locals(), [], -1);
-  except ImportError:
-    oConsole.fPrint(ERROR,"*" * 80);
-    oConsole.fPrint(ERROR, "BugId depends on ", HILITE, sModule, ERROR, " which you can download at:");
-    oConsole.fPrint(ERROR, "    ", sURL);
-    oConsole.fPrint(ERROR, "After downloading, please save the code in the folder \"", sMoulde, "\",");
-    oConsole.fPrint(ERROR, "\"modules\\", sModule, "\" or any other location where it can be imported.");
-    oConsole.fPrint(ERROR, "Once you have completed these steps, please try again.");
-    oConsole.fPrint(ERROR, "*" * 80);
+    __import__(sModuleName, globals(), locals(), [], -1);
+  except ImportError, oError:
+    if oError.message == "No module named %s" % sModuleName:
+      oConsole.fPrint(ERROR, "*" * 80);
+      oConsole.fPrint(ERROR, "BugId depends on ", HILITE, sModuleName, ERROR, " which you can download at:");
+      oConsole.fPrint(ERROR, "    ", sDownloadURL);
+      oConsole.fPrint(ERROR, "After downloading, please save the code in the folder \"", sModuleName, "\",");
+      oConsole.fPrint(ERROR, "\"modules\\", sModuleName, "\" or any other location where it can be imported.");
+      oConsole.fPrint(ERROR, "Once you have completed these steps, please try again.");
+      oConsole.fPrint(ERROR, "*" * 80);
     raise;
 
 from cBugId import cBugId;
@@ -128,29 +91,49 @@ asFirefoxDefaultArguments = [
   "--no-remote",
   "-profile", "%s\Firefox-profile" % os.getenv("TEMP"),
 ];
-gdApplication_asCommandLine_by_sKeyword = {
-  "aoo-writer": [r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86, "-norestore", "-view", "-nologo", "-nolockcheck"],
-  "acrobat": [r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
-  "acrobatdc": [r"%s\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe" % sProgramFilesPath_x86],
-  "chrome": [sChromePath] + asChromeDefaultArguments,
-  "chrome_x86": [sChromePath_x86] + asChromeDefaultArguments,
-  "chrome_x64": [sChromePath_x64] + asChromeDefaultArguments,
-  "chrome-sxs": [sChromeSxSPath] + asChromeDefaultArguments,
-  "chrome-sxs_x86": [sChromeSxSPath_x86] + asChromeDefaultArguments,
-  "chrome-sxs_x64": [sChromeSxSPath_x64] + asChromeDefaultArguments,
-  "firefox": [sFirefoxPath] + asFirefoxDefaultArguments,
-  "firefox_x86": [sFirefoxPath_x86] + asFirefoxDefaultArguments,
-  "firefox_x64": [sFirefoxPath_x64] + asFirefoxDefaultArguments,
-  "firefox-dev": [sFirefoxDevPath] + asFirefoxDefaultArguments,
-  "firefox-dev_x86": [sFirefoxDevPath_x86] + asFirefoxDefaultArguments,
-  "firefox-dev_x64": [sFirefoxDevPath_x64] + asFirefoxDefaultArguments,
-  "foxit": [r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86],
-  "msie": [sMSIEPath],
-  "msie_x86": [sMSIEPath_x86],
-  "msie_x64": [sMSIEPath_x64],
+gdApplication_sBinaryPath_by_sKeyword = {
+  "aoo-writer": r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86,
+  "acrobat": r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86,
+  "acrobatdc": r"%s\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe" % sProgramFilesPath_x86,
+  "chrome": sChromePath,
+  "chrome_x86": sChromePath_x86,
+  "chrome_x64": sChromePath_x64,
+  "chrome-sxs": sChromeSxSPath,
+  "chrome-sxs_x86": sChromeSxSPath_x86,
+  "chrome-sxs_x64": sChromeSxSPath_x64,
+  "firefox": sFirefoxPath,
+  "firefox_x86": sFirefoxPath_x86,
+  "firefox_x64": sFirefoxPath_x64,
+  "firefox-dev": sFirefoxDevPath,
+  "firefox-dev_x86": sFirefoxDevPath_x86,
+  "firefox-dev_x64": sFirefoxDevPath_x64,
+  "foxit": r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86,
+  "msie": sMSIEPath,
+  "msie_x86": sMSIEPath_x86,
+  "msie_x64": sMSIEPath_x64,
 };
+gsApplicationPackageName_by_sKeyword = {
+  "edge": "Microsoft.MicrosoftEdge",
+};
+# These arguments are always added
+gdApplication_asStaticArguments_by_sKeyword = {
+  "aoo-writer": ["-norestore", "-view", "-nologo", "-nolockcheck"],
+  "chrome": asChromeDefaultArguments,
+  "chrome_x86": asChromeDefaultArguments,
+  "chrome_x64": asChromeDefaultArguments,
+  "chrome-sxs": asChromeDefaultArguments,
+  "chrome-sxs_x86": asChromeDefaultArguments,
+  "chrome-sxs_x64": asChromeDefaultArguments,
+  "firefox": asFirefoxDefaultArguments,
+  "firefox_x86": asFirefoxDefaultArguments,
+  "firefox_x64": asFirefoxDefaultArguments,
+  "firefox-dev": asFirefoxDefaultArguments,
+  "firefox-dev_x86": asFirefoxDefaultArguments,
+  "firefox-dev_x64": asFirefoxDefaultArguments,
+};
+# These arguments are added if the 
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
-gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
+gdApplication_asDefaultOptionalArguments_by_sKeyword = {
   "acrobat": ["repro.pdf"],
   "acrobatdc": ["repro.pdf"],
   "chrome": [DEFAULT_BROWSER_TEST_URL],
@@ -159,6 +142,9 @@ gdApplication_asDefaultAdditionalArguments_by_sKeyword = {
   "firefox": [DEFAULT_BROWSER_TEST_URL],
   "firefox_x86": [DEFAULT_BROWSER_TEST_URL],
   "firefox_x64": [DEFAULT_BROWSER_TEST_URL],
+  "firefox-dev": [DEFAULT_BROWSER_TEST_URL],
+  "firefox-dev_x86": [DEFAULT_BROWSER_TEST_URL],
+  "firefox-dev_x64": [DEFAULT_BROWSER_TEST_URL],
   "foxit": ["repro.pdf"],
   "msie": [DEFAULT_BROWSER_TEST_URL],
   "msie_x86": [DEFAULT_BROWSER_TEST_URL],
@@ -218,6 +204,7 @@ gdApplication_dxSettings_by_sKeyword = {
   "chrome_x64": dxBrowserSettings,
   "chrome": dxBrowserSettings,
   "edge": dxBrowserSettings,
+  "edgedbg": dxBrowserSettings,
   "firefox": dxBrowserSettings,
   "firefox_x86": dxBrowserSettings,
   "firefox_x64": dxBrowserSettings,
@@ -269,30 +256,38 @@ gasBinariesThatAreAllowedToRunWithoutPageHeap = [
   "RdrCEF.exe",
 ];
 asApplicationKeywords = sorted(list(set(
-  gdApplication_asCommandLine_by_sKeyword.keys() +
-  gdApplication_asDefaultAdditionalArguments_by_sKeyword.keys() +
+  gdApplication_sBinaryPath_by_sKeyword.keys() +
+  gsApplicationPackageName_by_sKeyword.keys() +
+  gdApplication_asStaticArguments_by_sKeyword.keys() +
+  gdApplication_asDefaultOptionalArguments_by_sKeyword.keys() +
   gdApplication_dxSettings_by_sKeyword.keys() +
   gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.keys() + 
   gdApplication_rImportantStdOutLines_by_sKeyword.keys() +
   gdApplication_rImportantStdErrLines_by_sKeyword.keys()
 )));
+gbQuiet = False;
 
 def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
     oConsole.fPrint(ERROR,"- Unknown application keyword %s" % sApplicationKeyword);
     return 2;
   oConsole.fPrint("Known application settings for %s" % sApplicationKeyword);
-  if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
-    if gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword][0] is None:
+  if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
+    if gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword] is None:
       oConsole.fPrint(ERROR,"  The application cannot be found on your system.");
     else:
-      oConsole.fPrint("  Base command-line:");
-      oConsole.fPrint("    ", INFO, " ".join(gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword]));
-  if sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
-    oConsole.fPrint("  Default additional arguments:");
-    oConsole.fPrint("    ", INFO, " ".join([
+      oConsole.fPrint("  Binary path:  ", INFO, " ".join(gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]));
+  elif sApplicationKeyword in gsApplicationPackageName_by_sKeyword:
+      oConsole.fPrint("  Application package name:");
+      oConsole.fPrint("    ", INFO, gsApplicationPackageName_by_sKeyword[sApplicationKeyword]);
+  if sApplicationKeyword in gdApplication_asStaticArguments_by_sKeyword:
+      oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
+        gdApplication_asStaticArguments_by_sKeyword[sApplicationKeyword])
+      );
+  if sApplicationKeyword in gdApplication_asDefaultOptionalArguments_by_sKeyword:
+    oConsole.fPrint("  Default optional arguments: ", INFO, " ".join([
       sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-      for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
+      for sArgument in gdApplication_asDefaultOptionalArguments_by_sKeyword[sApplicationKeyword]
     ]));
   if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
     oConsole.fPrint("  Application specific settings:");
@@ -300,7 +295,7 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
       oConsole.fPrint("    ", HILITE, sSettingName, NORMAL, " = ", INFO, json.dumps(xValue));
   return 0;
 
-def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
+def fApplyConfigSetting(sSettingName, xValue, sIndentation):
   asGroupNames = sSettingName.split("."); # last element is not a group name
   sFullName = ".".join(asGroupNames);
   sSettingName = asGroupNames.pop();          # so pop it.
@@ -315,11 +310,13 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation  = ""):
       "Unknown setting name %s%s." % (sSettingName, \
           len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
   if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
-    oConsole.fPrint(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
-        " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
+    if not gbQuiet:
+      oConsole.fPrint(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
+          " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
   else:
-    oConsole.fPrint(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
-        " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
+    if not gbQuiet:
+      oConsole.fPrint(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
+          " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
     dxConfigGroup[sSettingName] = xValue;
 
 def fApplicationRunningHandler(oBugId):
@@ -359,7 +356,7 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
   if sBinaryName in gasBinariesThatAreAllowedToRunWithoutPageHeap:
     return;
   if not bPreventable:
-    if sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
+    if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
       gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
       oConsole.fPrint(ERROR,"- Full page heap is not enabled for ",15,sBinaryName,13,".");
       oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
@@ -391,7 +388,7 @@ def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
     oConsole.fPrint();
     oConsole.fStatus(INFO, "* BugId is stopping...");
     oBugId.fStop();
-  else:
+  elif not gbQuiet:
     oConsole.fPrint("+ T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
         (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName));
     oConsole.fPrint();
@@ -400,7 +397,8 @@ def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
 def fNewProcessHandler(oBugId, oProcess):
-  oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName);
+  if not gbQuiet:
+    oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName);
 
 def fDumpException(oException, oTraceBack):
   oConsole.fPrint(ERROR, "-" * 80);
@@ -443,7 +441,38 @@ def fDumpException(oException, oTraceBack):
   oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   oConsole.fPrint();
 
+def fuVersionCheck():
+  for (sModuleName, oModule, oModuleVersionInformation, fsVersionCheck) in [
+    ("BugId",       sys.modules["__main__"],        oVersionInformation,                              None),
+    ("cBugId",      sys.modules[cBugId.__module__], getattr(cBugId, "oVersionInformation", None),     getattr(cBugId, "fsVersionCheck", None)),
+    ("FileSystem",  FileSystem,                     getattr(FileSystem, "oVersionInformation", None), getattr(FileSystem, "fsVersionCheck", None)),
+    ("Kill",        Kill,                           getattr(Kill, "oVersionInformation", None),       getattr(Kill, "fsVersionCheck", None)),
+  ]:    
+    if oModuleVersionInformation:
+      assert sModuleName == oModuleVersionInformation.sProjectName, \
+          "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
+      oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
+      oConsole.fStatus("* Checking ", INFO, oModuleVersionInformation.sProjectName, NORMAL, " for updates...");
+      if oModuleVersionInformation.bPreRelease:
+        oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
+            "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
+      elif not oModuleVersionInformation.bUpToDate:
+        oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
+            " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
+    elif fsVersionCheck:
+      oConsole.fPrint("* ", INFO, sModuleName, NORMAL, " version check reports: ", INFO, fsVersionCheck(), ".");
+    else:
+      oConsole.fPrint("- You are running an ", ERROR, "outdated", NORMAL, " version of ", INFO, sModuleName, NORMAL, ".");
+    oConsole.fPrint("  + Installation path: %s" % os.path.dirname(oModule.__file__));
+  oConsole.fPrint();
+  return 0;
+
 def fuMain(asArguments):
+  global gbQuiet;
+  if len(asArguments) == 0:
+    fPrintLogo();
+    fPrintUsage(asApplicationKeywords);
+    return 0;
   # returns an exit code, values are:
   # 0 = executed successfully, no bugs found.
   # 1 = executed successfully, bug detected.
@@ -451,171 +480,214 @@ def fuMain(asArguments):
   # 3 = internal error
   # 4 = failed to start process or attach to process(es).
   # Parse all "--" arguments until we encounter a non-"--" argument.
+  sApplicationKeyword = None;
+  sApplicationBinaryPath = None;
   auApplicationProcessIds = [];
+  sApplicationPackageName = None;
+  asApplicationOptionalArguments = None;
   sApplicationISA = None;
-  bForever = False;
+  bRepeat = False;
   bCheckForUpdates = False;
   dxUserProvidedConfigSettings = {};
-  while asArguments and asArguments[0].startswith("--"):
+  bFast = False;
+  while asArguments:
     sArgument = asArguments.pop(0);
-    if "=" in sArgument:
-      sSettingName, sValue = sArgument[2:].split("=", 1);
-    else:
-      # "--bFlag" is an alias for "--bFlag=true"
-      sSettingName = sArgument[2:];
-      sValue = True;
-    if sSettingName in ["pid", "pids"]:
-      auApplicationProcessIds += [long(x) for x in sValue.split(",")];
-    elif sSettingName in ["version"]:
-      bCheckForUpdates = True;
-    elif sSettingName == "isa":
-      if sValue not in ["x86", "x64"]:
-        oConsole.fPrint(ERROR, "- Unknown ISA %s" % repr(sValue));
+    if sArgument == "--":
+      if len(auApplicationProcessIds) > 0:
+      # The rest of the arguments are to be passed to the application
+        oConsole.fPrint(ERROR, "- You cannot supply process ids and application arguments.");
         return 2;
-      sApplicationISA = sValue;
-    elif sSettingName == "fast":
-      # Alias for these three settings:
-      dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
-      dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
-      dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
-    elif sSettingName == "forever":
-      bForever = True;
-    else:
-      try:
-        xValue = json.loads(sValue);
-      except ValueError:
-        oConsole.fPrint(ERROR, "- Cannot decode argument JSON value %s." % sValue);
-        return 2;
-      # User provided config settings must be applied after any keyword specific config settings:
-      dxUserProvidedConfigSettings[sSettingName] = xValue;
-  if bCheckForUpdates:
-    for (sModuleName, oModuleVersionInformation, fsVersionCheck) in [
-      ("BugId",       oVersionInformation,                              None),
-      ("cBugId",      getattr(cBugId, "oVersionInformation", None),     getattr(cBugId, "fsVersionCheck", None)),
-      ("FileSystem",  getattr(FileSystem, "oVersionInformation", None), getattr(FileSystem, "fsVersionCheck", None)),
-      ("Kill",        getattr(Kill, "oVersionInformation", None),       getattr(Kill, "fsVersionCheck", None)),
-    ]:
-      if oModuleVersionInformation:
-        assert sModuleName == oModuleVersionInformation.sProjectName, \
-            "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
-        oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
-        oConsole.fStatus("* Checking ", INFO, oModuleVersionInformation.sProjectName, NORMAL, " for updates...");
-        if oModuleVersionInformation.bPreRelease:
-          oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
-              "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
-        elif not oModuleVersionInformation.bUpToDate:
-          oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
-              " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
-      elif fsVersionCheck:
-        oConsole.fPrint("* ", INFO, sModuleName, NORMAL, " version check reports: ", INFO, fsVersionCheck(), ".");
+      asApplicationOptionalArguments = asArguments;
+      break;
+    elif sArgument in ["-q", "/q"]:
+      gbQuiet = True;
+    elif sArgument in ["-f", "/f"]:
+      bFast = True;
+    elif sArgument in ["-r", "/r"]:
+      bRepeat = True;
+    elif sArgument in ["-?", "/?", "-h", "/h"]:
+      fPrintLogo();
+      fPrintUsage(asApplicationKeywords);
+      return 0;
+    elif sArgument.startswith("--"):
+      if "=" in sArgument:
+        sSettingName, sValue = sArgument[2:].split("=", 1);
       else:
-        oConsole.fPrint("- You are running an ", ERROR, "outdated", NORMAL, " version of ", INFO, sModuleName, NORMAL, ".");
-    oConsole.fPrint();
+        # "--bFlag" is an alias for "--bFlag=true"
+        sSettingName = sArgument[2:];
+        sValue = "true";
+      
+      if sSettingName in ["pid", "pids"]:
+        if sApplicationBinaryPath is not None:
+          oConsole.fPrint(ERROR, "- You cannot supply an application binary and process ids.");
+          return 2;
+        if sApplicationPackageName is not None:
+          oConsole.fPrint(ERROR, "- You cannot supply an application package name and process ids.");
+          return 2;
+        auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+      elif sSettingName in ["package", "package-name"]:
+        if sApplicationPackageName is not None:
+          oConsole.fPrint(ERROR, "- You cannot supply two or more application package names.");
+          return 2;
+        if sApplicationBinaryPath is not None:
+          oConsole.fPrint(ERROR, "- You cannot supply an application binary and package name.");
+          return 2;
+        if len(auApplicationProcessIds) > 0:
+          oConsole.fPrint(ERROR, "- You cannot supply process ids and an application package name.");
+          return 2;
+        sApplicationPackageName = sValue;
+      elif sSettingName in ["version", "check-for-updates"]:
+        return fuVersionCheck();
+      elif sSettingName in ["isa", "cpu"]:
+        if sValue not in ["x86", "x64"]:
+          oConsole.fPrint(ERROR, "- Unknown ISA %s" % repr(sValue));
+          return 2;
+        sApplicationISA = sValue;
+      elif sSettingName in ["quiet", "silent"]:
+        gbQuiet = sValue.lower() == "true";
+      elif sSettingName in ["fast", "quick"]:
+        bFast = True;
+      elif sSettingName in ["repeat", "forever"]:
+        bRepeat = True;
+      else:
+        try:
+          xValue = json.loads(sValue);
+        except ValueError:
+          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value %s." % sValue);
+          return 2;
+        # User provided config settings must be applied after any keyword specific config settings:
+        dxUserProvidedConfigSettings[sSettingName] = xValue;
+    elif sArgument in asApplicationKeywords:
+      if sApplicationKeyword is not None:
+        oConsole.fPrint(ERROR, "- You cannot supply two or more application keywords.");
+        return 2;
+      sApplicationKeyword = sArgument;
+    elif sArgument[-1] == "?" and sArgument[:-1] in asApplicationKeywords:
+      return fuShowApplicationKeyWordHelp(sApplicationKeyword[:-1]);
+    else:
+      if sApplicationBinaryPath is not None:
+        oConsole.fPrint(ERROR, "- You cannot supply two or more application binaries.");
+        return 2;
+      if len(auApplicationProcessIds) > 0:
+        oConsole.fPrint(ERROR, "- You cannot supply process ids and an application binary.");
+        return 2;
+      if sApplicationPackageName is not None:
+        oConsole.fPrint(ERROR, "- You cannot supply an application package name and a binary.");
+        return 2;
+      sApplicationBinaryPath = sArgument;
+  
+  if bFast:
+    gbQuiet = True;
+    dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
+    dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
+    dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
   
   dsURLTemplate_by_srSourceFilePath = {};
   rImportantStdOutLines = None;
   rImportantStdErrLines = None;
-  # If there are any additional arguments, it must be an application keyword followed by additional arguments
-  # or an application command-line:
-  if not asArguments:
-    # No keyword or command line: process ids to attach to must be provided, or a version check performed.
-    if not auApplicationProcessIds:
-      if bCheckForUpdates:
-        return 0;
-      oConsole.fPrint(ERROR, "You must specify an application command-line, keyword or process ids.");
+  
+  if sApplicationKeyword:
+    # Get application binary/package name/process ids as needed:
+    if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
+      # This application is started from the command-line.
+      if auApplicationProcessIds:
+        oConsole.fPrint(ERROR, "- You cannot specify process ids for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+        return 2;
+      if sApplicationPackageName:
+        oConsole.fPrint(ERROR, "- You cannot specify an application package name for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+        return 2;
+      if sApplicationBinaryPath is None:
+        sApplicationBinaryPath = gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword];
+    elif sApplicationKeyword in gsApplicationPackageName_by_sKeyword:
+      # This application is started as an application package.
+      if sApplicationBinaryPath:
+        oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+        return 2;
+      sApplicationPackageName = gsApplicationPackageName_by_sKeyword[sApplicationKeyword];
+    elif not auApplicationProcessIds:
+      # This application is attached to.
+      oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
       return 2;
-    asApplicationCommandLine = None;
-  else:
-    # First argument may be an application keyword
-    sApplicationKeyword = None;
-    sApplicationBinary = None;
-    if "=" in asArguments[0]:
-      # user provided an application keyword and binary
-      sApplicationKeyword, sApplicationBinary = asArguments.pop(0).split("=", 1);
-    elif asArguments[0] in asApplicationKeywords or asArguments[0][-1] == "?":
-      # user provided an application keyword, or requested information on something that may be one:
-      sApplicationKeyword = asArguments.pop(0);
-    asApplicationCommandLine = None;
-    if sApplicationKeyword:
-      if sApplicationKeyword[-1] == "?":
-        # User requested information about a possible keyword application
-        return fuShowApplicationKeyWordHelp(sApplicationKeyword[:-1]);
-      # Get application command line for keyword, if available:
-      if sApplicationKeyword in gdApplication_asCommandLine_by_sKeyword:
-        if auApplicationProcessIds:
-          oConsole.fPrint(ERROR, "You cannot specify process ids for application %s." % sApplicationKeyword);
-          return 2;
-        asApplicationCommandLine = gdApplication_asCommandLine_by_sKeyword[sApplicationKeyword];
-        if sApplicationBinary:
-          # Replace binary with user provided value
-          asApplicationCommandLine = [sApplicationBinary] + asApplicationCommandLine[1:];
-        else:
-          if asApplicationCommandLine[0] is None:
-            oConsole.fPrint(ERROR, "Application %s does not appear to be installed on your system." % sApplicationKeyword);
-            return 2;
-        if asArguments:
-          # Add user provided additional application arguments:
-          asApplicationCommandLine += asArguments;
-        elif sApplicationKeyword in gdApplication_asDefaultAdditionalArguments_by_sKeyword:
-          # Add default additional application arguments:
-          asApplicationCommandLine += [
-            sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-            for sArgument in gdApplication_asDefaultAdditionalArguments_by_sKeyword[sApplicationKeyword]
-          ];
-      
-      elif asArguments:
-        oConsole.fPrint(ERROR, "You cannot specify arguments for application keyword %s." % sApplicationKeyword);
-        return 2;
-      elif not auApplicationProcessIds:
-        oConsole.fPrint(ERROR, "You must specify process ids for application keyword %s." % sApplicationKeyword);
-        return 2;
-      # Apply application specific settings
-      if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+    elif asApplicationOptionalArguments:
+      # Cannot supply arguments if we're attaching to processes
+      oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+      return 2;
+    # Get application arguments;
+    asApplicationStaticArguments = gdApplication_asStaticArguments_by_sKeyword.get(sApplicationKeyword, []);
+    if asApplicationOptionalArguments is None:
+      asApplicationOptionalArguments = [
+        sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
+        for sArgument in gdApplication_asDefaultOptionalArguments_by_sKeyword.get(sApplicationKeyword, [])
+      ];
+    asApplicationArguments = asApplicationStaticArguments + asApplicationOptionalArguments;
+    # Apply application specific settings
+    if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+      if not gbQuiet:
         oConsole.fPrint("* Applying application specific configuration for %s:" % sApplicationKeyword);
-        for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
-          if sSettingName not in dxUserProvidedConfigSettings:
-            fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+      for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+        if sSettingName not in dxUserProvidedConfigSettings:
+          fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+      if not gbQuiet:
         oConsole.fPrint();
-      # Apply application specific source settings
-      if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
-        dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sApplicationKeyword];
-      # Apply application specific stdio settings:
-      if sApplicationKeyword in gdApplication_rImportantStdOutLines_by_sKeyword:
-        rImportantStdOutLines = gdApplication_rImportantStdOutLines_by_sKeyword[sApplicationKeyword];
-      if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
-        rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword[sApplicationKeyword];
-      if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
-        # Apply application specific ISA
-        sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
-    elif auApplicationProcessIds:
-      # user provided an application command-line and process ids
-      oConsole.fPrint(ERROR, "You cannot specify both an application command-line and process ids.");
-      return 2;
-    else:
-      # user provided an application command-line
-      asApplicationCommandLine = asArguments;
+    # Apply application specific source settings
+    if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
+      dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sApplicationKeyword];
+    # Apply application specific stdio settings:
+    if sApplicationKeyword in gdApplication_rImportantStdOutLines_by_sKeyword:
+      rImportantStdOutLines = gdApplication_rImportantStdOutLines_by_sKeyword[sApplicationKeyword];
+    if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
+      rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword[sApplicationKeyword];
+    if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
+      # Apply application specific ISA
+      sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
+  else:
+    # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
+    # are used if they are supplied:
+    asApplicationArguments = asApplicationOptionalArguments or [];
   
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
-    fApplyConfigSetting(sSettingName, xValue); # Apply and show result
+    fApplyConfigSetting(sSettingName, xValue, ""); # Apply and show result
   
-  if bForever:
+  if bRepeat:
     duNumberOfRepros_by_sBugIdAndLocation = {};
     sValidStatisticsFileName = FileSystem.fsValidName("Reproduction statistics.txt");
   uRunCounter = 0;
-  while 1: # Will only loop if bForever is True
+  while 1: # Will only loop if bRepeat is True
     nStartTime = time.clock();
     uRunCounter += 1;
-    if asApplicationCommandLine:
-      oConsole.fPrint("* Command line: ",INFO, " ".join(asApplicationCommandLine));
-      oConsole.fPrint();
+    if sApplicationBinaryPath:
+      if not gbQuiet:
+        asCommandLine = [sApplicationBinaryPath] + asApplicationArguments;
+        oConsole.fPrint("* Command line: ", INFO, " ".join(asCommandLine));
+        oConsole.fPrint();
       oConsole.fStatus("* The debugger is starting the application...");
     else:
-      oConsole.fStatus("* The debugger is attaching to the application...");
+      if auApplicationProcessIds:
+        asProcessIdsOutput = [];
+        for uApplicationProcessId in auApplicationProcessIds:
+          if asProcessIdsOutput: asProcessIdsOutput.append(", ");
+          asProcessIdsOutput.extend([INFO, str(uApplicationProcessId), NORMAL]);
+        oConsole.fPrint("* Running process ids: ", INFO, *asProcessIdsOutput);
+      if sApplicationPackageName:
+        if not gbQuiet:
+          if asApplicationArguments:
+            oConsole.fPrint("* Package name: ", INFO, sApplicationPackageName, NORMAL, ", Arguments: ", INFO, " ".join(asApplicationArguments));
+          else:
+            oConsole.fPrint("* Package name: ", INFO, sApplicationPackageName);
+          oConsole.fPrint();
+      if not sApplicationPackageName:
+        oConsole.fStatus("* The debugger is attaching to running processes of the application...");
+      elif auApplicationProcessIds:
+        oConsole.fStatus("* The debugger is attaching to running processes and starting the application...");
+      else:
+        oConsole.fStatus("* The debugger is starting the application...");
     oBugId = cBugId(
       sCdbISA = sApplicationISA or cBugId.sOSISA,
-      asApplicationCommandLine = asApplicationCommandLine or None,
+      sApplicationBinaryPath = sApplicationBinaryPath or None,
       auApplicationProcessIds = auApplicationProcessIds or None,
+      sApplicationPackageName = sApplicationPackageName or None,
+      asApplicationArguments = asApplicationArguments,
       asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
       asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
       asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
@@ -677,7 +749,7 @@ def fuMain(asArguments):
     oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
     nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
     oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
-    if not bForever: return oBugId.oBugReport is not None and 1 or 0;
+    if not bRepeat: return oBugId.oBugReport is not None and 1 or 0;
     duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
     duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
     sStatistics = "";
@@ -704,15 +776,9 @@ def fuMain(asArguments):
 
 if __name__ == "__main__":
   try:
-    for asBugIdLogoPrintArguments in aasBugIdLogoPrintArguments:
-      oConsole.fPrint(*asBugIdLogoPrintArguments);
-    if len(sys.argv) == 1:
-      fPrintUsage(asApplicationKeywords);
-      uExitCode = 0;
-    else:
-      uExitCode = fuMain(sys.argv[1:]);
+    uExitCode = fuMain(sys.argv[1:]);
     
-    if dxConfig["bShowLicenseAndDonationInfo"]:
+    if not gbQuiet and dxConfig["bShowLicenseAndDonationInfo"]:
       oConsole.fPrint();
       oConsole.fPrint("This version of BugId is provided free of charge for non-commercial use only.");
       oConsole.fPrint("If you find it useful and would like to make a donation, you can send bitcoin");
