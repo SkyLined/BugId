@@ -461,6 +461,7 @@ def fDumpException(oException, oTraceBack):
   oConsole.fPrint("it easier to determine the cause of this issue and makes for faster fixes.");
   oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   oConsole.fPrint();
+  os._exit(0);
 
 def fuVersionCheck():
   for (sModuleName, oModule, oModuleVersionInformation, fsVersionCheck) in [
@@ -548,6 +549,7 @@ def fuMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot supply an application package name and process ids.");
           return 2;
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+      elif sSettingName in ["uwp", "uwp-app"]:
         if sApplicationPackageName is not None:
           oConsole.fPrint(ERROR, "- You cannot supply two or more application package names.");
           return 2;
