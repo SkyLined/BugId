@@ -590,7 +590,7 @@ def fuMain(asArguments):
         return 2;
       sApplicationKeyword = sArgument;
     elif sArgument[-1] == "?" and sArgument[:-1] in asApplicationKeywords:
-      return fuShowApplicationKeyWordHelp(sApplicationKeyword[:-1]);
+      return fuShowApplicationKeyWordHelp(sArgument[:-1]);
     else:
       if sApplicationBinaryPath is not None:
         oConsole.fPrint(ERROR, "- You cannot supply two or more application binaries.");
