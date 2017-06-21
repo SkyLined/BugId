@@ -42,7 +42,6 @@ dxConfig = {
     # The values from module\cBugId\dxBugIdConfig.py get loaded here.
     # Any value provided here will override the values loaded above.
     # You can also modify these from the command line using --cBugId.<settings name>=<JSON value>
-    "bOutputStdErr": False,                       # Do not let cBugId print stderr output, we'll do this ourselves.
   },
 };
 
