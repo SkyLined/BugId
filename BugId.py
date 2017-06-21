@@ -115,6 +115,12 @@ gdApplication_sBinaryPath_by_sKeyword = {
 gsApplicationPackageName_by_sKeyword = {
   "edge": "Microsoft.MicrosoftEdge",
 };
+gsApplicationId_by_sKeyword = {
+  "edge": "MicrosoftEdge",
+};
+gasApplicationAttachToProcessesForBinaryNames_by_sKeyword = {
+  "edge": ["browser_broker.exe", "RuntimeBroker.exe"],
+};
 # These arguments are always added
 gdApplication_asStaticArguments_by_sKeyword = {
   "aoo-writer": ["-norestore", "-view", "-nologo", "-nolockcheck"],
@@ -258,6 +264,8 @@ gasBinariesThatAreAllowedToRunWithoutPageHeap = [
 asApplicationKeywords = sorted(list(set(
   gdApplication_sBinaryPath_by_sKeyword.keys() +
   gsApplicationPackageName_by_sKeyword.keys() +
+  gsApplicationId_by_sKeyword.keys() + # should be the same as above!
+  gasApplicationAttachToProcessesForBinaryNames_by_sKeyword.keys() +
   gdApplication_asStaticArguments_by_sKeyword.keys() +
   gdApplication_asDefaultOptionalArguments_by_sKeyword.keys() +
   gdApplication_dxSettings_by_sKeyword.keys() +
@@ -276,14 +284,19 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
     if gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword] is None:
       oConsole.fPrint(ERROR,"  The application cannot be found on your system.");
     else:
-      oConsole.fPrint("  Binary path:  ", INFO, " ".join(gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]));
+      oConsole.fPrint("  Binary path: ", INFO, " ".join(gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]));
   elif sApplicationKeyword in gsApplicationPackageName_by_sKeyword:
-      oConsole.fPrint("  Application package name:");
-      oConsole.fPrint("    ", INFO, gsApplicationPackageName_by_sKeyword[sApplicationKeyword]);
+    oConsole.fPrint("  UWP Application information:");
+    oConsole.fPrint("    Package name: ", INFO, gsApplicationPackageName_by_sKeyword[sApplicationKeyword]);
+    oConsole.fPrint("    Id: ", INFO, gsApplicationId_by_sKeyword[sApplicationKeyword]);
+    if sApplicationKeyword in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword:
+      oConsole.fPrint("    Attach to additional processes running any of the following binaries:");
+      for sBinaryName in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword[sApplicationKeyword]:
+        oConsole.fPrint("      ", INFO, sBinaryName);
   if sApplicationKeyword in gdApplication_asStaticArguments_by_sKeyword:
-      oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
-        gdApplication_asStaticArguments_by_sKeyword[sApplicationKeyword])
-      );
+    oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
+      gdApplication_asStaticArguments_by_sKeyword[sApplicationKeyword])
+    );
   if sApplicationKeyword in gdApplication_asDefaultOptionalArguments_by_sKeyword:
     oConsole.fPrint("  Default optional arguments: ", INFO, " ".join([
       sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
@@ -351,8 +364,12 @@ def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
   oConsole.fPrint();
 
 gasReportedBinaryNameWithoutPageHeap = [];
+gasAttachToProcessesForBinaryNames = [];
 def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
-  global gbAnErrorOccured, gasBinariesThatAreAllowedToRunWithoutPageHeap, gasReportedBinaryNameWithoutPageHeap;
+  global gbAnErrorOccured, \
+         gasBinariesThatAreAllowedToRunWithoutPageHeap, \
+         gasReportedBinaryNameWithoutPageHeap, \
+         gasAttachToProcessesForBinaryNames;
   if sBinaryName in gasBinariesThatAreAllowedToRunWithoutPageHeap:
     return;
   if not bPreventable:
@@ -397,8 +414,12 @@ def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
 def fNewProcessHandler(oBugId, oProcess):
+  global gasAttachToProcessesForBinaryNames;
   if not gbQuiet:
     oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName);
+  # Now is a good time to look for additional binaries that may need to be debugged as well.
+  if gasAttachToProcessesForBinaryNames:
+    oBugId.fAttachToProcessesForBinaryNames(gasAttachToProcessesForBinaryNames);
 
 def fDumpException(oException, oTraceBack):
   oConsole.fPrint(ERROR, "-" * 80);
@@ -468,7 +489,8 @@ def fuVersionCheck():
   return 0;
 
 def fuMain(asArguments):
-  global gbQuiet;
+  global gbQuiet, \
+         gasAttachToProcessesForBinaryNames;
   if len(asArguments) == 0:
     fPrintLogo();
     fPrintUsage(asApplicationKeywords);
@@ -484,6 +506,7 @@ def fuMain(asArguments):
   sApplicationBinaryPath = None;
   auApplicationProcessIds = [];
   sApplicationPackageName = None;
+  sApplicationId = None;
   asApplicationOptionalArguments = None;
   sApplicationISA = None;
   bRepeat = False;
@@ -525,7 +548,6 @@ def fuMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot supply an application package name and process ids.");
           return 2;
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
-      elif sSettingName in ["package", "package-name"]:
         if sApplicationPackageName is not None:
           oConsole.fPrint(ERROR, "- You cannot supply two or more application package names.");
           return 2;
@@ -535,7 +557,10 @@ def fuMain(asArguments):
         if len(auApplicationProcessIds) > 0:
           oConsole.fPrint(ERROR, "- You cannot supply process ids and an application package name.");
           return 2;
-        sApplicationPackageName = sValue;
+        if "!" not in sValue:
+          oConsole.fPrint(ERROR, "- Please provide a string of the form %s=<package name>!<application id>.", sSettingName);
+          return 2;
+        sApplicationPackageName, sApplicationId = sValue.split("!", 1);
       elif sSettingName in ["version", "check-for-updates"]:
         return fuVersionCheck();
       elif sSettingName in ["isa", "cpu"]:
@@ -604,6 +629,7 @@ def fuMain(asArguments):
         oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
         return 2;
       sApplicationPackageName = gsApplicationPackageName_by_sKeyword[sApplicationKeyword];
+      sApplicationId = gsApplicationId_by_sKeyword[sApplicationKeyword];
     elif not auApplicationProcessIds:
       # This application is attached to.
       oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
@@ -612,6 +638,8 @@ def fuMain(asArguments):
       # Cannot supply arguments if we're attaching to processes
       oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
       return 2;
+    if sApplicationKeyword in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword:
+      gasAttachToProcessesForBinaryNames = gasApplicationAttachToProcessesForBinaryNames_by_sKeyword[sApplicationKeyword];
     # Get application arguments;
     asApplicationStaticArguments = gdApplication_asStaticArguments_by_sKeyword.get(sApplicationKeyword, []);
     if asApplicationOptionalArguments is None:
@@ -687,6 +715,7 @@ def fuMain(asArguments):
       sApplicationBinaryPath = sApplicationBinaryPath or None,
       auApplicationProcessIds = auApplicationProcessIds or None,
       sApplicationPackageName = sApplicationPackageName or None,
+      sApplicationId = sApplicationId or None,
       asApplicationArguments = asApplicationArguments,
       asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
       asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
