@@ -42,16 +42,16 @@ def fPrintLogo():
   # that can be passed to oConsole.fPrint in order to output the logo in color:
   for uLineIndex in xrange(len(asBugIdLogo)):
     iLastColor = -1;
-    asBugIdLogoPrintArgument = [""];
+    asBugIdLogoPrintArguments = [""];
     sCharsLine = asBugIdLogo[uLineIndex];
     sColorsLine = asBugIdLogoColors[uLineIndex];
     for uColumnIndex in xrange(len(sCharsLine)):
       sColor = sColorsLine[uColumnIndex];
       iColor = sColor == " " and -1 or int(sColor, 16);
       if iColor != iLastColor:
-        asBugIdLogoPrintArgument.extend([iColor, ""]);
+        asBugIdLogoPrintArguments.extend([iColor, ""]);
         iColor = iLastColor;
       sChar = sCharsLine[uColumnIndex];
-      asBugIdLogoPrintArgument[-1] += sChar;
+      asBugIdLogoPrintArguments[-1] += sChar;
     oConsole.fPrint(*asBugIdLogoPrintArguments);
 
