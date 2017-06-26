@@ -1,3 +1,8 @@
+2017-06-26
+==========
++ New cBugId has updates, improvements and bug fixes.
++ Fixed bug in fPrintLogo.
+
 2017-05-31
 ==========
 + BugId now has an ASCII art logo and outputs text to the console in various
