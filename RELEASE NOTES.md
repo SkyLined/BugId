@@ -2,6 +2,7 @@
 ==========
 + Updated oConsole to allow conservation of fore- and background colors, and
   changed BugId to not modify the background color.
++ New cBugId version.
 
 2017-06-27
 ==========
