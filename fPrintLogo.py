@@ -47,7 +47,7 @@ def fPrintLogo():
     sColorsLine = asBugIdLogoColors[uLineIndex];
     for uColumnIndex in xrange(len(sCharsLine)):
       sColor = sColorsLine[uColumnIndex];
-      iColor = sColor == " " and -1 or int(sColor, 16);
+      iColor = sColor == " " and -1 or int("F0" + sColor, 16);
       if iColor != iLastColor:
         asBugIdLogoPrintArguments.extend([iColor, ""]);
         iColor = iLastColor;

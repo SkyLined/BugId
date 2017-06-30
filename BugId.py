@@ -29,10 +29,11 @@ from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
 
 # Colors used in output for various types of information:
-NORMAL = -1;  # Console default color
-INFO = 10;    # Light green
-HILITE = 15;  # White
-ERROR = 12;   # Light red
+NORMAL =  0x0F07;  # Console default color
+INFO =    0x0F0A;  # Light green (foreground only)
+HILITE =  0x0F0F;  # White (foreground only)
+ERROR =   0x0F0C;  # Light red (foreground only)
+oConsole.uDefaultColor = NORMAL;
 
 # Load external dependecies to make sure they are available and shown an error
 # if any one fails to load. This error explains where the missing component

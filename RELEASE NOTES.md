@@ -1,3 +1,8 @@
+2017-06-30
+==========
++ Updated oConsole to allow conservation of fore- and background colors, and
+  changed BugId to not modify the background color.
+
 2017-06-27
 ==========
 + I did not actually change any code, but I forgot to mentioned that the format
@@ -6,7 +11,7 @@
   application with `--` to separate BugId arguments from application arguments,
   as in:
   ```
-  > BugId <bug id arguments> -- <application arguments>`
+  > BugId <bug id arguments> -- <application arguments>
   ```
   Run `BugId -?` for a more complete description of the new arguments format.
 
