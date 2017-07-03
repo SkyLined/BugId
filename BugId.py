@@ -16,6 +16,13 @@ import codecs, json, re, os, sys, threading, time, traceback;
                           ``                                                    
                                                                                 
 """;
+# Running this script will return an exit code, which translates as such:
+# 0 = executed successfully, no bugs found.
+# 1 = executed successfully, bug detected.
+# 2 = bad arguments
+# 3 = internal error
+# 4 = failed to start process or attach to process(es).
+
 
 # Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
 sMainFolderPath = os.path.dirname(__file__);
@@ -352,7 +359,7 @@ def fApplicationRunTimeoutHandler(oBugId):
 def fInternalExceptionHandler(oBugId, oException, oTraceBack):
   global gbAnErrorOccured;
   gbAnErrorOccured = True;
-  fDumpException(oException, oTraceBack);
+  fDumpExceptionAndExit(oException, oTraceBack);
 
 def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
   global gbAnErrorOccured;
@@ -422,7 +429,7 @@ def fNewProcessHandler(oBugId, oProcess):
   if gasAttachToProcessesForBinaryNames:
     oBugId.fAttachToProcessesForBinaryNames(gasAttachToProcessesForBinaryNames);
 
-def fDumpException(oException, oTraceBack):
+def fDumpExceptionAndExit(oException, oTraceBack):
   oConsole.fPrint(ERROR, "-" * 80);
   oConsole.fPrint(ERROR, "- An internal exception has occured:");
   oConsole.fPrint(ERROR, "  %s" % repr(oException));
@@ -462,7 +469,7 @@ def fDumpException(oException, oTraceBack):
   oConsole.fPrint("it easier to determine the cause of this issue and makes for faster fixes.");
   oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   oConsole.fPrint();
-  os._exit(0);
+  os._exit(3);
 
 def fuVersionCheck():
   for (sModuleName, oModule, oModuleVersionInformation, fsVersionCheck) in [
@@ -497,13 +504,7 @@ def fuMain(asArguments):
     fPrintLogo();
     fPrintUsage(asApplicationKeywords);
     return 0;
-  # returns an exit code, values are:
-  # 0 = executed successfully, no bugs found.
-  # 1 = executed successfully, bug detected.
-  # 2 = bad arguments
-  # 3 = internal error
-  # 4 = failed to start process or attach to process(es).
-  # Parse all "--" arguments until we encounter a non-"--" argument.
+  # Parse all arguments until we encounter "--".
   sApplicationKeyword = None;
   sApplicationBinaryPath = None;
   auApplicationProcessIds = [];
@@ -822,5 +823,4 @@ if __name__ == "__main__":
     os._exit(uExitCode);
   except Exception as oException:
     cException, oException, oTraceBack = sys.exc_info();
-    fDumpException(oException, oTraceBack);
-    os._exit(3);
+    fDumpExceptionAndExit(oException, oTraceBack);
