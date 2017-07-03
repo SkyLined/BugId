@@ -1,3 +1,12 @@
+2017-07-03
+==========
++ Fixed bug in previous oConsole update so it now handles redirected output
+  correctly again.
++ Fixed bug where errorlevel/exit code was not set to 3 for some internal
+  errors.
++ New cBugId version has some minor bug fixes.
++ Add errorlevel/exit code to usage information.
+
 2017-06-30
 ==========
 + Updated oConsole to allow conservation of fore- and background colors, and
