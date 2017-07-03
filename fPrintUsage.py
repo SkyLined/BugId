@@ -105,3 +105,10 @@ def fPrintUsage(asApplicationKeywords):
   oConsole.fPrint();
   oConsole.fPrint("Run ", HILITE, "BugId.py application?", NORMAL, " for an overview of the application specific command");
   oConsole.fPrint("line arguments and settings.");
+  oConsole.fPrint();
+  oConsole.fPrint("BugId will set it errorlevel/exit code to one of the following values:");
+  oConsole.fPrint("  ", INFO, "0", NORMAL," = BugId successfully ran the application ", HILITE, "without detecting a bug", NORMAL, ".");
+  oConsole.fPrint("  ", INFO, "1", NORMAL," = BugId successfully ran the application and ", HILITE, "detected a bug", NORMAL, ".");
+  oConsole.fPrint("  ", INFO, "2", NORMAL," = BugId was unable to parse the command-line arguments provided.");
+  oConsole.fPrint("  ", INFO, "3", NORMAL," = BugId ran into an internal error: pleace report the details!");
+  oConsole.fPrint("  ", INFO, "4", NORMAL," = BugId was unable to start or attach to the application.");
