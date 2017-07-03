@@ -92,9 +92,8 @@ class cConsole(object):
   
   @property
   def uCurrentColor(oConsole):
-    return oConsole.__fuGetCurrentColor();
-  
-  def __fuGetCurrentColor(oConsole):
+    assert oConsole.bStdOutIsConsole, \
+        "Cannot set colors when output is redirected";
     oConsoleScreenBufferInfo = CONSOLE_SCREEN_BUFFER_INFO()
     assert ctypes.windll.kernel32.GetConsoleScreenBufferInfo(oConsole.hStdOut, ctypes.byref(oConsoleScreenBufferInfo)), \
         "GetConsoleScreenBufferInfo(%d, ...) => Error %08X" % \
@@ -138,14 +137,16 @@ class cConsole(object):
     global goLock, guLastLineLength;
     oConsole.oLock.acquire();
     try:
-      uOriginalColor = oConsole.uCurrentColor;
       # Go to the start of the current line if needed
       if oConsole.uLastLineLength:
         oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r" or "\r");
+      # setup colors if outputting to a console.
       bColorWasSet = False;
-      if oConsole.uDefaultColor != -1:
-        oConsole.__fSetColor(oConsole.uDefaultColor);
-        bColorWasSet = True;
+      if oConsole.bStdOutIsConsole:
+        uOriginalColor = oConsole.uCurrentColor;
+        if oConsole.uDefaultColor != -1:
+          oConsole.__fSetColor(oConsole.uDefaultColor);
+          bColorWasSet = True;
       uNewLineLength = 0;
       try:
         for xCharsOrColor in axCharsAndColors:
