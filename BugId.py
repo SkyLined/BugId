@@ -472,17 +472,19 @@ def fDumpExceptionAndExit(oException, oTraceBack):
   os._exit(3);
 
 def fuVersionCheck():
-  for (sModuleName, oModule, oModuleVersionInformation, fsVersionCheck) in [
+  axModules = [
     ("BugId",       sys.modules["__main__"],        oVersionInformation,                              None),
     ("cBugId",      sys.modules[cBugId.__module__], getattr(cBugId, "oVersionInformation", None),     getattr(cBugId, "fsVersionCheck", None)),
     ("FileSystem",  FileSystem,                     getattr(FileSystem, "oVersionInformation", None), getattr(FileSystem, "fsVersionCheck", None)),
     ("Kill",        Kill,                           getattr(Kill, "oVersionInformation", None),       getattr(Kill, "fsVersionCheck", None)),
-  ]:    
+  ];
+  uCounter = 0;
+  for (sModuleName, oModule, oModuleVersionInformation, fsVersionCheck) in axModules:
     if oModuleVersionInformation:
       assert sModuleName == oModuleVersionInformation.sProjectName, \
           "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
       oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
-      oConsole.fStatus("* Checking ", INFO, oModuleVersionInformation.sProjectName, NORMAL, " for updates...");
+      oConsole.fProgressBar(uCounter * 1.0 / len(axModules), "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
       if oModuleVersionInformation.bPreRelease:
         oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
             "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
@@ -494,6 +496,7 @@ def fuVersionCheck():
     else:
       oConsole.fPrint("- You are running an ", ERROR, "outdated", NORMAL, " version of ", INFO, sModuleName, NORMAL, ".");
     oConsole.fPrint("  + Installation path: %s" % os.path.dirname(oModule.__file__));
+    uCounter += 1;
   oConsole.fPrint();
   return 0;
 

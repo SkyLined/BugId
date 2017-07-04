@@ -90,15 +90,29 @@ class cConsole(object):
     oConsole.bByteOrderMarkWritten = False;
     oConsole.uDefaultColor = -1;
   
-  @property
-  def uCurrentColor(oConsole):
+  def __foGetConsoleScreenBufferInfo(oConsole):
     assert oConsole.bStdOutIsConsole, \
         "Cannot set colors when output is redirected";
     oConsoleScreenBufferInfo = CONSOLE_SCREEN_BUFFER_INFO()
     assert ctypes.windll.kernel32.GetConsoleScreenBufferInfo(oConsole.hStdOut, ctypes.byref(oConsoleScreenBufferInfo)), \
         "GetConsoleScreenBufferInfo(%d, ...) => Error %08X" % \
         (oConsole.hStdOut, ctypes.windll.kernel32.GetLastError());
+    return oConsoleScreenBufferInfo;
+  
+  @property
+  def uCurrentColor(oConsole):
+    oConsoleScreenBufferInfo = oConsole.__foGetConsoleScreenBufferInfo();
     return oConsoleScreenBufferInfo.wAttributes & 0xFF;
+
+  @property
+  def uWindowWidth(oConsole):
+    oConsoleScreenBufferInfo = oConsole.__foGetConsoleScreenBufferInfo();
+    return oConsoleScreenBufferInfo.srWindow.Right - oConsoleScreenBufferInfo.srWindow.Left;
+  
+  @property
+  def uWidth(oConsole):
+    oConsoleScreenBufferInfo = oConsole.__foGetConsoleScreenBufferInfo();
+    return oConsoleScreenBufferInfo.dwSize.X;
   
   def __fSetColor(oConsole, uColor):
     assert oConsole.bStdOutIsConsole, \
@@ -133,13 +147,15 @@ class cConsole(object):
           (sWriteFunctionName, oConsole.hStdOut, uCharsToWrite, ctypes.windll.kernel32.GetLastError());
       sMessage = sMessage[dwCharsWritten.value:];
 
-  def __fOutputHelper(oConsole, axCharsAndColors, bNewLine):
+  def __fOutputHelper(oConsole, axCharsAndColors, bIsStatusMessage):
     global goLock, guLastLineLength;
     oConsole.oLock.acquire();
     try:
       # Go to the start of the current line if needed
       if oConsole.uLastLineLength:
         oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r" or "\r");
+      uCharsOutput = 0;
+      uColumns = oConsole.uWidth;
       # setup colors if outputting to a console.
       bColorWasSet = False;
       if oConsole.bStdOutIsConsole:
@@ -147,7 +163,6 @@ class cConsole(object):
         if oConsole.uDefaultColor != -1:
           oConsole.__fSetColor(oConsole.uDefaultColor);
           bColorWasSet = True;
-      uNewLineLength = 0;
       try:
         for xCharsOrColor in axCharsAndColors:
           if isinstance(xCharsOrColor, int) or isinstance(xCharsOrColor, long):
@@ -158,28 +173,44 @@ class cConsole(object):
           else:
             assert isinstance(xCharsOrColor, str) or isinstance(xCharsOrColor, unicode), \
                 "You cannot print %s (type = %s) directly; it must be converted to a string" % (repr(xCharsOrColor), xCharsOrColor.__class__.__name__);
-            uNewLineLength += len(xCharsOrColor);
+            if bIsStatusMessage and uCharsOutput + len(xCharsOrColor) >= uColumns:
+              # Do not let a status message span multiple lines.
+              xCharsOrColor = xCharsOrColor[:uColumns - uCharsOutput - 1];
             oConsole.__fWriteOutput(xCharsOrColor);
+            uCharsOutput += len(xCharsOrColor);
+            if bIsStatusMessage and uCharsOutput == uColumns - 1:
+              # We've reached the end of the line and the remained of the arguments will not be output.
+              break;
       finally:
         if bColorWasSet:
           oConsole.__fSetColor(uOriginalColor);
-      if uNewLineLength < oConsole.uLastLineLength:
-        oConsole.__fWriteOutput(u" " * (oConsole.uLastLineLength - uNewLineLength));
-      if bNewLine:
+      uCurrentLineLength = uCharsOutput % uColumns;
+      if uCurrentLineLength < oConsole.uLastLineLength:
+        oConsole.__fWriteOutput(u" " * (oConsole.uLastLineLength - uCurrentLineLength));
+      if bIsStatusMessage:
+        oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r" or "\r");
+        oConsole.uLastLineLength = uCurrentLineLength;
+      else:
         oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r\n" or "\r\n");
         oConsole.uLastLineLength = 0;
-      else:
-        oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r" or "\r");
-        oConsole.uLastLineLength = uNewLineLength;
     finally:
       oConsole.oLock.release();
 
   def fPrint(oConsole, *axCharsAndColors):
-    oConsole.__fOutputHelper(axCharsAndColors, True);
+    oConsole.__fOutputHelper(axCharsAndColors, False);
 
   def fStatus(oConsole, *axCharsAndColors):
     # If output is redirected, do not output status messages
     if oConsole.bStdOutIsConsole:
-      oConsole.__fOutputHelper(axCharsAndColors, False);
+      oConsole.__fOutputHelper(axCharsAndColors, True);
+  
+  def fProgressBar(oConsole, nProgress, sMessage = "", uProgressColor = 0xA0, uBarColor = 0x2A):
+    assert nProgress >=0 and nProgress <= 1, \
+        "Progress must be [0, 1], not %s" % nProgress;
+    if oConsole.bStdOutIsConsole:
+      uBarWidth = oConsole.uWindowWidth - 1;
+      sBar = sMessage.center(uBarWidth);
+      uProgress = long(oConsole.uWindowWidth * nProgress);
+      oConsole.__fOutputHelper([uProgressColor, sBar[:uProgress], uBarColor, sBar[uProgress:]], True);
 
 oConsole = cConsole();
