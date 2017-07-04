@@ -148,17 +148,18 @@ class cConsole(object):
       sMessage = sMessage[dwCharsWritten.value:];
 
   def __fOutputHelper(oConsole, axCharsAndColors, bIsStatusMessage):
-    global goLock, guLastLineLength;
+    assert not oConsole.bStdOutIsConsole or not bIsStatusMessage, \
+        "Status messages should not be output when output is redirected.";
     oConsole.oLock.acquire();
     try:
       # Go to the start of the current line if needed
       if oConsole.uLastLineLength:
         oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r" or "\r");
       uCharsOutput = 0;
-      uColumns = oConsole.uWidth;
       # setup colors if outputting to a console.
       bColorWasSet = False;
       if oConsole.bStdOutIsConsole:
+        uColumns = oConsole.uWidth;
         uOriginalColor = oConsole.uCurrentColor;
         if oConsole.uDefaultColor != -1:
           oConsole.__fSetColor(oConsole.uDefaultColor);
@@ -184,14 +185,16 @@ class cConsole(object):
       finally:
         if bColorWasSet:
           oConsole.__fSetColor(uOriginalColor);
-      uCurrentLineLength = uCharsOutput % uColumns;
-      if uCurrentLineLength < oConsole.uLastLineLength:
-        oConsole.__fWriteOutput(u" " * (oConsole.uLastLineLength - uCurrentLineLength));
-      if bIsStatusMessage:
-        oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r" or "\r");
-        oConsole.uLastLineLength = uCurrentLineLength;
+      if oConsole.bStdOutIsConsole:
+        # Optionally output some padding if this is a status message that is smaller than the previous status message.
+        # Then go back to the start of the line and move to the next line if this is not a status message.
+        oConsole.__fWriteOutput("".join([
+          uCharsOutput < oConsole.uLastLineLength and u" " * (oConsole.uLastLineLength - uCharsOutput) or "",
+          bIsStatusMessage and u"\r" or u"\r\n",
+        ]));
+        oConsole.uLastLineLength = bIsStatusMessage and uCharsOutput or 0;
       else:
-        oConsole.__fWriteOutput(oConsole.bStdOutIsConsole and u"\r\n" or "\r\n");
+        oConsole.__fWriteOutput("\n");
         oConsole.uLastLineLength = 0;
     finally:
       oConsole.oLock.release();
