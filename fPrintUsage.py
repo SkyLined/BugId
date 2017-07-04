@@ -100,7 +100,7 @@ def fPrintUsage(asApplicationKeywords):
         uLineLength += 2;
     asLine += [INFO, sApplicationKeyword];
     uLineLength += len(sApplicationKeyword);
-  asLine += [7, "."];
+  asLine += [NORMAL, "."];
   oConsole.fPrint(*asLine);
   oConsole.fPrint();
   oConsole.fPrint("Run ", HILITE, "BugId.py application?", NORMAL, " for an overview of the application specific command");
