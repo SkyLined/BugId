@@ -1,3 +1,10 @@
+2017-07-10
+==========
++ Fixed a bug in the previous release that prevented BugId from working
+  altogether.
++ New cBugId version has some minor bug fixes and improved bug ids and HTML
+  report.
+
 2017-07-03
 ==========
 + Fixed bug in previous oConsole update so it now handles redirected output
