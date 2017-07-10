@@ -148,7 +148,7 @@ class cConsole(object):
       sMessage = sMessage[dwCharsWritten.value:];
 
   def __fOutputHelper(oConsole, axCharsAndColors, bIsStatusMessage):
-    assert not oConsole.bStdOutIsConsole or not bIsStatusMessage, \
+    assert oConsole.bStdOutIsConsole or not bIsStatusMessage, \
         "Status messages should not be output when output is redirected.";
     oConsole.oLock.acquire();
     try:
