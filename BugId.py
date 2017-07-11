@@ -281,7 +281,9 @@ asApplicationKeywords = sorted(list(set(
   gdApplication_rImportantStdOutLines_by_sKeyword.keys() +
   gdApplication_rImportantStdErrLines_by_sKeyword.keys()
 )));
+# These are mutually exclusive
 gbQuiet = False;
+gbVerbose = False;
 
 def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
@@ -418,6 +420,10 @@ def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
         (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName));
     oConsole.fPrint();
 
+def fStdInInputHandler(oBugId, sInput):
+  oConsole.fPrint(HILITE,"<stdin<", NORMAL, sInput);
+def fStdOutOutputHandler(oBugId, sOutput):
+  oConsole.fPrint(INFO,"stdout>", NORMAL, sOutput);
 def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
@@ -467,8 +473,13 @@ def fDumpExceptionAndExit(oException, oTraceBack):
   oConsole.fPrint("In your report, please copy the information about the exception reported");
   oConsole.fPrint("above, as well as the stack trace and BugId version information. This makes");
   oConsole.fPrint("it easier to determine the cause of this issue and makes for faster fixes.");
-  oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   oConsole.fPrint();
+  if "-v" not in sys.argv[1:] and "/v" not in sys.argv[1:] and "--verbose=true" not in sys.argv[1:]:
+    oConsole.fPrint("If you can reproduce the issue, it would help a lot if you can run BugId in");
+    oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
+    oConsole.fPrint("as in:", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
+    oConsole.fPrint();
+  oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   os._exit(3);
 
 def fuVersionCheck():
@@ -502,6 +513,7 @@ def fuVersionCheck():
 
 def fuMain(asArguments):
   global gbQuiet, \
+         gbVerbose, \
          gasAttachToProcessesForBinaryNames;
   if len(asArguments) == 0:
     fPrintLogo();
@@ -530,6 +542,8 @@ def fuMain(asArguments):
       break;
     elif sArgument in ["-q", "/q"]:
       gbQuiet = True;
+    elif sArgument in ["-v", "/v"]:
+      gbVerbose = True;
     elif sArgument in ["-f", "/f"]:
       bFast = True;
     elif sArgument in ["-r", "/r"]:
@@ -577,6 +591,8 @@ def fuMain(asArguments):
         sApplicationISA = sValue;
       elif sSettingName in ["quiet", "silent"]:
         gbQuiet = sValue.lower() == "true";
+      elif sSettingName in ["verbose", "debug"]:
+        gbVerbose = sValue.lower() == "true";
       elif sSettingName in ["fast", "quick"]:
         bFast = True;
       elif sSettingName in ["repeat", "forever"]:
@@ -675,10 +691,16 @@ def fuMain(asArguments):
     if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
       # Apply application specific ISA
       sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
+  elif not (auApplicationProcessIds or sApplicationPackageName or sApplicationBinaryPath):
+    oConsole.fPrint(ERROR, "- You must specify something to debug. This can be either one or more process");
+    oConsole.fPrint(ERROR, "  ids, an application command-line or an UWP app package name.");
+    oConsole.fPrint("Run \"BugId -h\" for help on command-line arguments.");
+    return 2;
   else:
     # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
     # are used if they are supplied:
     asApplicationArguments = asApplicationOptionalArguments or [];
+      
   
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
@@ -739,6 +761,8 @@ def fuMain(asArguments):
       fInternalExceptionCallback = fInternalExceptionHandler,
       fFinishedCallback = None,
       fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
+      fStdInInputCallback = fStdInInputHandler,
+      fStdOutOutputCallback = fStdOutOutputHandler,
       fStdErrOutputCallback = fStdErrOutputHandler,
       fNewProcessCallback = fNewProcessHandler,
     );
@@ -780,7 +804,7 @@ def fuMain(asArguments):
         else:
           oConsole.fPrint("  Bug report:       ", HILITE, sValidReportFileName, NORMAL, " (%d bytes)" % len(oBugId.oBugReport.sReportHTML));
     else:
-      oConsole.fPrint(10, "The application terminated without a bug being detected.");
+      oConsole.fPrint(INFO, "The application terminated without a bug being detected.");
       sBugIdAndLocation = "No crash";
     oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
     nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
