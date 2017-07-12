@@ -761,8 +761,8 @@ def fuMain(asArguments):
       fInternalExceptionCallback = fInternalExceptionHandler,
       fFinishedCallback = None,
       fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
-      fStdInInputCallback = fStdInInputHandler,
-      fStdOutOutputCallback = fStdOutOutputHandler,
+      fStdInInputCallback = gbVerbose and fStdInInputHandler or None,
+      fStdOutOutputCallback = gbVerbose and fStdOutOutputHandler or None,
       fStdErrOutputCallback = fStdErrOutputHandler,
       fNewProcessCallback = fNewProcessHandler,
     );
