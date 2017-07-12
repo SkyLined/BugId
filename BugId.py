@@ -153,6 +153,7 @@ gdApplication_asDefaultOptionalArguments_by_sKeyword = {
   "chrome": [DEFAULT_BROWSER_TEST_URL],
   "chrome_x86": [DEFAULT_BROWSER_TEST_URL],
   "chrome_x64": [DEFAULT_BROWSER_TEST_URL],
+  "edge": [DEFAULT_BROWSER_TEST_URL],
   "firefox": [DEFAULT_BROWSER_TEST_URL],
   "firefox_x86": [DEFAULT_BROWSER_TEST_URL],
   "firefox_x64": [DEFAULT_BROWSER_TEST_URL],
