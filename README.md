@@ -61,7 +61,7 @@ The bug id follows the format `BugType xxx.xxx`, where:
   first hash is for the top-most *relevant* function on the call stack, the
   second hash is for the next *relevant* function on the call stack, etc.
   The number of hashes can be set using the `uStackHashFramesCount` setting in
-  `dxBugIdConfig.py` and the number of digits can be set using
+  `dxConfig.py` and the number of digits can be set using
   `uMaxStackFrameHashChars`. The default settings are 2 and 3 respectively,
   meaning the stack hash represents the function in which the bug is considered
   to be located and its caller. However, for recursive function calls involving

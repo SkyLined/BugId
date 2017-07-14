@@ -6,6 +6,7 @@ import os;
 # change values in `gdApplication_dxSettings_by_sKeyword`, or provide them on the command line.
 
 dxConfig = {
+  "bDebugIO":False,                               # Option to enable/disable stdout/stdin message
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
                                                   # downloaded with a remote build, None = use default).
