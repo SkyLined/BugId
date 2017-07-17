@@ -161,7 +161,7 @@ where:
   be located.
 
 Note that the first *relevant* function (in which the bug is considered to be
-located) may not be the same as the top function on the stacl (the one in which
+located) may not be the same as the top function on the stack (the one in which
 the detected exception occurred). For instance, if a function `A` calls
 `KERNELBASE.dll!RaiseException` to raise an exception,
 `KERNELBASE.dll!RaiseException` is not considered relevant to the bug. In this
