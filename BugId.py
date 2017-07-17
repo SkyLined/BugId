@@ -282,9 +282,7 @@ asApplicationKeywords = sorted(list(set(
   gdApplication_rImportantStdOutLines_by_sKeyword.keys() +
   gdApplication_rImportantStdErrLines_by_sKeyword.keys()
 )));
-# These are mutually exclusive
 gbQuiet = False;
-gbVerbose = False;
 
 def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
@@ -514,7 +512,6 @@ def fuVersionCheck():
 
 def fuMain(asArguments):
   global gbQuiet, \
-         gbVerbose, \
          gasAttachToProcessesForBinaryNames;
   if len(asArguments) == 0:
     fPrintLogo();
@@ -544,7 +541,7 @@ def fuMain(asArguments):
     elif sArgument in ["-q", "/q"]:
       gbQuiet = True;
     elif sArgument in ["-v", "/v"]:
-      gbVerbose = True;
+      dxConfig["bOutputCdbIO"] = True;
     elif sArgument in ["-f", "/f"]:
       bFast = True;
     elif sArgument in ["-r", "/r"]:
@@ -592,8 +589,8 @@ def fuMain(asArguments):
         sApplicationISA = sValue;
       elif sSettingName in ["quiet", "silent"]:
         gbQuiet = sValue.lower() == "true";
-      elif sSettingName in ["verbose", "debug"]:
-        gbVerbose = sValue.lower() == "true";
+      elif sSettingName in ["verbose", "debug", "cdb-io"]:
+        dxConfig["bOutputCdbIO"] = sValue.lower() == "true";
       elif sSettingName in ["fast", "quick"]:
         bFast = True;
       elif sSettingName in ["repeat", "forever"]:
@@ -762,8 +759,8 @@ def fuMain(asArguments):
       fInternalExceptionCallback = fInternalExceptionHandler,
       fFinishedCallback = None,
       fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
-      fStdInInputCallback = gbVerbose and fStdInInputHandler or None,
-      fStdOutOutputCallback = gbVerbose and fStdOutOutputHandler or None,
+      fStdInInputCallback = dxConfig["bOutputCdbIO"] and fStdInInputHandler or None,
+      fStdOutOutputCallback = dxConfig["bOutputCdbIO"] and fStdOutOutputHandler or None,
       fStdErrOutputCallback = fStdErrOutputHandler,
       fNewProcessCallback = fNewProcessHandler,
     );

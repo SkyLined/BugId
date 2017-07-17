@@ -1,3 +1,19 @@
+2017-07-17
+==========
++ New cBugId version fixes a bug where the wrong symbol for a function could
+  be used in the BugId and HTML report in same cases. In these cases the
+  function symbol would have an offset, which no function symbol used by BugId
+  should ever have. This new version fixes this issue, and may result in
+  different BugIds for the same issue for that reason.
+  This new version also has improved bug translations, and gathers up to 100
+  stack frames for analysis (up from 40). These to changes may also result in
+  different, but improved BugIds for the same bugs.
++ Default Edge argument has been re-introduced; it got removed by accident in
+  the recent code changes to be able to debug UWP apps.
++ New `-v`/`--verbose` switch allows you to see cdb.exe I/O. You no longer
+  need to modify `cBugId`'s `dxConfig` settings to do this. But you can make
+  this the default by setting `bOutputCdbIO` to True in `dxConfig.py`.
+
 2017-07-10
 ==========
 + Fixed a bug in the previous release that prevented BugId from working

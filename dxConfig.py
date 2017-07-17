@@ -6,6 +6,9 @@ import os;
 # change values in `gdApplication_dxSettings_by_sKeyword`, or provide them on the command line.
 
 dxConfig = {
+  "bOutputCdbIO": False,                          # Set to True to have BugId.py output every command send to cdb.exe
+                                                  # and everything cdb outputs in return, or use the `--verbose`
+                                                  # command-line flag to do this.
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
                                                   # downloaded with a remote build, None = use default).
@@ -39,7 +42,7 @@ dxConfig = {
                                                   # set this to None, reports will be stored in the current working
                                                   # directory.
   "cBugId": {
-    # The values from module\cBugId\dxBugIdConfig.py get loaded here.
+    # The values from cBugId\dxConfig.py get loaded here.
     # Any value provided here will override the values loaded above.
     # You can also modify these from the command line using --cBugId.<settings name>=<JSON value>
   },

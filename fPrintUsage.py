@@ -34,6 +34,9 @@ def fPrintUsage(asApplicationKeywords):
   oConsole.fPrint("    This cruft.");
   oConsole.fPrint(INFO, "  -q, --quiet");
   oConsole.fPrint("    Output only essential information.");
+  oConsole.fPrint(INFO, "  -v, --verbose");
+  oConsole.fPrint("    Output all commands send to cdb.exe and everything it outputs in return.");
+  oConsole.fPrint("    Note that -q and -v are not mutually exclusive.");
   oConsole.fPrint(INFO, "  -f, --fast");
   oConsole.fPrint("    Create no HTML report, do not use symbols. This is an alias for:");
   oConsole.fPrint("        --bGenerateReportHTML=false");
