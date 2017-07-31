@@ -84,6 +84,7 @@ asChromeDefaultArguments = [
   "--enable-experimental-canvas-features",
   "--enable-experimental-input-view-features",
   "--enable-experimental-web-platform-features",
+  "--enable-logging=stderr",
   "--enable-usermedia-screen-capturing",
   "--enable-viewport",
   "--enable-webgl-draft-extensions",
@@ -93,6 +94,7 @@ asChromeDefaultArguments = [
   "--disable-prompt-on-repost",
   "--force-renderer-accessibility",
   "--javascript-harmony",
+  "--js-flags=\"--expose-gc\"",
   "--no-sandbox",
 ];
 asFirefoxDefaultArguments = [
