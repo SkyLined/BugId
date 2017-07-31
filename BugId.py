@@ -579,7 +579,7 @@ def fuMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot supply process ids and an application package name.");
           return 2;
         if "!" not in sValue:
-          oConsole.fPrint(ERROR, "- Please provide a string of the form %s=<package name>!<application id>.", sSettingName);
+          oConsole.fPrint(ERROR, "- Please provide a string of the form ", HILITE, sSettingName, "=<package name>!<application id>.");
           return 2;
         sApplicationPackageName, sApplicationId = sValue.split("!", 1);
       elif sSettingName in ["version", "check-for-updates"]:
@@ -601,7 +601,7 @@ def fuMain(asArguments):
         try:
           xValue = json.loads(sValue);
         except ValueError:
-          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value %s." % sValue);
+          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", HILITE, sValue, ERROR, ".");
           return 2;
         # User provided config settings must be applied after any keyword specific config settings:
         dxUserProvidedConfigSettings[sSettingName] = xValue;
@@ -639,27 +639,31 @@ def fuMain(asArguments):
     if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
       # This application is started from the command-line.
       if auApplicationProcessIds:
-        oConsole.fPrint(ERROR, "- You cannot specify process ids for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+        oConsole.fPrint(ERROR, "- You cannot specify process ids for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
         return 2;
       if sApplicationPackageName:
-        oConsole.fPrint(ERROR, "- You cannot specify an application package name for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+        oConsole.fPrint(ERROR, "- You cannot specify an application package name for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
         return 2;
       if sApplicationBinaryPath is None:
         sApplicationBinaryPath = gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword];
+        if sApplicationBinaryPath is None:
+          oConsole.fPrint(ERROR, "- The main application binary for ", HILITE, sApplicationKeyword, ERROR, " could not be detected on your system.");
+          oConsole.fPrint(ERROR, "  Please provide the path to this binary in the arguments.");
+          return 4;
     elif sApplicationKeyword in gsApplicationPackageName_by_sKeyword:
       # This application is started as an application package.
       if sApplicationBinaryPath:
-        oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+        oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
         return 2;
       sApplicationPackageName = gsApplicationPackageName_by_sKeyword[sApplicationKeyword];
       sApplicationId = gsApplicationId_by_sKeyword[sApplicationKeyword];
     elif not auApplicationProcessIds:
       # This application is attached to.
-      oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+      oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
       return 2;
     elif asApplicationOptionalArguments:
       # Cannot supply arguments if we're attaching to processes
-      oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", INFO, sApplicationKeyword, NORMAL, ".");
+      oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
       return 2;
     if sApplicationKeyword in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword:
       gasAttachToProcessesForBinaryNames = gasApplicationAttachToProcessesForBinaryNames_by_sKeyword[sApplicationKeyword];
