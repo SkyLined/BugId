@@ -771,7 +771,7 @@ def fuMain(asArguments):
       fNewProcessCallback = fNewProcessHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
-      oBugId.fxSetTimeout(dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
+      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler, oBugId);
     if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
     oBugId.fStart();
