@@ -129,7 +129,7 @@ gsApplicationId_by_sKeyword = {
   "edge": "MicrosoftEdge",
 };
 gasApplicationAttachToProcessesForBinaryNames_by_sKeyword = {
-  "edge": ["browser_broker.exe", "RuntimeBroker.exe"],
+  "edge": ["browser_broker.exe"],
 };
 # These arguments are always added
 gdApplication_asStaticArguments_by_sKeyword = {
