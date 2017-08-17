@@ -1,3 +1,13 @@
+2017-08-17
+==========
++ New cBugId version fixes a number of bugs and has a few improvements. BugId
+  has been modified to accommodate some these changes.
++ Prevent exception when bug location is unknown.
++ conhost.exe is allowed to run without page heap
++ RuntimeBroker.exe is no longer considered part of Edge.
++ Chrome is now run with the `--jsflags"--expose-gc"` and
+  `--enable-logging=stderr` command-line arguments.
+
 2017-07-17
 ==========
 + New cBugId version fixes a bug where the wrong symbol for a function could
