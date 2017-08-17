@@ -271,6 +271,9 @@ gasBinariesThatAreAllowedToRunWithoutPageHeap = [
   "firefox.exe",
   # Adobe Reader has a component that crashes immediately with a NULL pointer exception when you enable page heap.
   "RdrCEF.exe",
+  # Applications may spawn additional console applications, which require conhost.exe. This executable is part of the
+  # windows OS and not part of the application, so you may want to keep page heap disabled for it.
+  "conhost.exe",
 ];
 asApplicationKeywords = sorted(list(set(
   gdApplication_sBinaryPath_by_sKeyword.keys() +
