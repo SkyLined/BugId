@@ -783,7 +783,12 @@ def fuMain(asArguments):
       return 3;
     if oBugId.oBugReport is not None:
       oConsole.fPrint(HILITE, "A bug was detect in the application:");
-      oConsole.fPrint("  Id @ Location:    ", INFO, oBugId.oBugReport.sId, NORMAL, " @ ", INFO, oBugId.oBugReport.sBugLocation);
+      if oBugId.oBugReport.sBugLocation:
+        oConsole.fPrint("  Id @ Location:    ", INFO, oBugId.oBugReport.sId, NORMAL, " @ ", INFO, oBugId.oBugReport.sBugLocation);
+        sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+      else:
+        oConsole.fPrint("  Id:               ", INFO, oBugId.oBugReport.sId);
+        sBugIdAndLocation = oBugId.oBugReport.sId;
       if oBugId.oBugReport.sBugSourceLocation:
         oConsole.fPrint("  Source:           ", INFO, oBugId.oBugReport.sBugSourceLocation);
       oConsole.fPrint("  Description:      ", INFO, oBugId.oBugReport.sBugDescription);
@@ -791,7 +796,6 @@ def fuMain(asArguments):
       oConsole.fPrint("  Version:          ", HILITE, oBugId.oBugReport.asVersionInformation[0]); # There is always the process' binary.
       for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
         oConsole.fPrint("                    ", sVersionInformation);                # different binary (e.g. a .dll)
-      sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
       if dxConfig["bGenerateReportHTML"]:
         # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
         sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
