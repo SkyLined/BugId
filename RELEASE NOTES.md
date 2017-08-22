@@ -1,3 +1,8 @@
+2017-08-22
+==========
++ New cBugId version fixes a number of bugs and has a few improvements. BugId
+  itself did not need to be modified to accommodate some these changes.
+
 2017-08-17
 ==========
 + New cBugId version fixes a number of bugs and has a few improvements. BugId
