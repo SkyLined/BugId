@@ -1,6 +1,12 @@
 2017-08-25
 ==========
 + New cBugId version fixes bugs #38 & #39.
++ You can now specify the path where you want the dumps to be saved by setting
+  `dxConfig["cBugId"]["sDumpPath"]` in `dxConfig.py` or by using the
+  `--cBugId.sDumpPath="path"` command-line argument. You can also request a
+  full memory dump (as opposed to the default mini dump) by setting
+  `dxConfig["cBugId"]["bFullDump"]` in `dxConfig.py` to `True` or by using the
+  `--cBugId.bFullDump=true` command-line argument.
 
 2017-08-22
 ==========

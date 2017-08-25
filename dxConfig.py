@@ -40,7 +40,8 @@ dxConfig = {
                                                   # characters to similarly looking Unicode characters.
   "sReportFolderPath": None,                      # You can specify a folder in which you want to save reports. If you
                                                   # set this to None, reports will be stored in the current working
-                                                  # directory.
+                                                  # directory. Note that the path where memory dumps are stored can be
+                                                  # set using dxConfig["cBugId"]["sDumpPath"].
   "cBugId": {
     # The values from cBugId\dxConfig.py get loaded here.
     # Any value provided here will override the values loaded above.
