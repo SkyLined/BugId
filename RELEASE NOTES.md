@@ -1,6 +1,6 @@
 2017-08-25
 ==========
-+ New cBugId version fixes bug #38.
++ New cBugId version fixes bugs #38 & #39.
 
 2017-08-22
 ==========
