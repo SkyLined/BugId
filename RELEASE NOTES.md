@@ -1,8 +1,9 @@
 2017-08-30
 ==========
-+ New cBugId version defaults to not checking if page heap has been enabled in
-  all processes in order to speed things up significantly. A few minor bugs
-  where also fixed.
++ New cBugId version checks if page heap has been enabled a lot faster in order
+  to speed things up significantly. A few minor bugs where also fixed and if
+  symbols cannot be loaded, they will be downloaded again from the server if
+  possible, overwriting local cached copies.
 + Application keywords `chrome_x86` and `chrome_x64` will no longer select
   `chrome-sxs_*` if it is installed. `chrome_x64` will select Chrome installed
   in `Program Files (x86)`, as x64 versions of Chrome can be installed there.
