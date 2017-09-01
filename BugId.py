@@ -264,17 +264,17 @@ gdApplication_rImportantStdErrLines_by_sKeyword = {
 };
 gbAnErrorOccured = False;
 
-gasBinariesThatAreAllowedToRunWithoutPageHeap = [
+gasBinariesThatAreAllowedToRunWithoutPageHeap = [s.lower() for s in [
   # Chrome provides ASan builds, so page heap is redundant. You can and should still run it with page heap though.
   "chrome.exe",
   # Firefox uses jemalloc, so page heap is not very useful. You can and should still run it with page heap though.
   "firefox.exe",
   # Adobe Reader has a component that crashes immediately with a NULL pointer exception when you enable page heap.
-  "RdrCEF.exe",
+  "rdrcef.exe",
   # Applications may spawn additional console applications, which require conhost.exe. This executable is part of the
   # windows OS and not part of the application, so you may want to keep page heap disabled for it.
   "conhost.exe",
-];
+]];
 asApplicationKeywords = sorted(list(set(
   gdApplication_sBinaryPath_by_sKeyword.keys() +
   gsApplicationPackageName_by_sKeyword.keys() +
@@ -384,7 +384,7 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
          gasBinariesThatAreAllowedToRunWithoutPageHeap, \
          gasReportedBinaryNameWithoutPageHeap, \
          gasAttachToProcessesForBinaryNames;
-  if sBinaryName in gasBinariesThatAreAllowedToRunWithoutPageHeap:
+  if sBinaryName.lower() in gasBinariesThatAreAllowedToRunWithoutPageHeap:
     return;
   if not bPreventable:
     if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
