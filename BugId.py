@@ -444,9 +444,9 @@ def fDumpExceptionAndExit(oException, oTraceBack):
   oConsole.fPrint(ERROR, "- An internal exception has occured:");
   oConsole.fPrint(ERROR, "  %s" % repr(oException));
   oConsole.fPrint(ERROR,"  Stack:");
-  txStack = traceback.extract_tb(oTraceBack);
-  uFrameIndex = len(txStack) - 1;
-  for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(txStack):
+  atxStack = traceback.extract_tb(oTraceBack);
+  uFrameIndex = len(atxStack) - 1;
+  for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(atxStack):
     sSource = "%s/%d" % (sFileName, uLineNumber);
     if sFunctionName != "<module>":
       sSource = "%s (%s)" % (sFunctionName, sSource);
