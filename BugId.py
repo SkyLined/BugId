@@ -194,8 +194,8 @@ dxBrowserSettings = {
 dxMicrosoftBrowserSettings = dxBrowserSettings.copy();
 # The MSHTML and EdgeHTML engines throw these a *lot* but I have never seen them thrown as part of a real bug.
 dxMicrosoftBrowserSettings.update({
-  "bIgnoreCPPExceptions": True,
-  "bIgnoreWinRTExceptions": True,
+  "cBugId.bIgnoreCPPExceptions": True,
+  "cBugId.bIgnoreWinRTExceptions": True,
 });
 
 gdApplication_dxSettings_by_sKeyword = {
