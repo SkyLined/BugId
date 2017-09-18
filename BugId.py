@@ -191,6 +191,13 @@ dxBrowserSettings = {
   "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
 };
 
+dxMicrosoftBrowserSettings = dxBrowserSettings.copy();
+# The MSHTML and EdgeHTML engines throw these a *lot* but I have never seen them thrown as part of a real bug.
+dxMicrosoftBrowserSettings.update({
+  "bIgnoreCPPExceptions": True,
+  "bIgnoreWinRTExceptions": True,
+});
+
 gdApplication_dxSettings_by_sKeyword = {
   "aoo-writer": {
     "bApplicationTerminatesWithMainProcess": True,
@@ -220,8 +227,8 @@ gdApplication_dxSettings_by_sKeyword = {
   "chrome_x86": dxBrowserSettings,
   "chrome_x64": dxBrowserSettings,
   "chrome": dxBrowserSettings,
-  "edge": dxBrowserSettings,
-  "edgedbg": dxBrowserSettings,
+  "edge": dxMicrosoftBrowserSettings,
+  "edgedbg": dxMicrosoftBrowserSettings,
   "firefox": dxBrowserSettings,
   "firefox_x86": dxBrowserSettings,
   "firefox_x64": dxBrowserSettings,
@@ -233,9 +240,9 @@ gdApplication_dxSettings_by_sKeyword = {
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
-  "msie": dxBrowserSettings, 
-  "msie_x86": dxBrowserSettings,
-  "msie_x64": dxBrowserSettings,
+  "msie": dxMicrosoftBrowserSettings, 
+  "msie_x86": dxMicrosoftBrowserSettings,
+  "msie_x64": dxMicrosoftBrowserSettings,
 };
 
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
