@@ -362,7 +362,7 @@ def fApplicationSuspendedHandler(oBugId, sReason):
 def fApplicationResumedHandler(oBugId):
   oConsole.fStatus("* The application is running...");
 
-def fApplicationRunTimeoutHandler(oBugId):
+def fApplicationRunTimeHandler(oBugId):
   oConsole.fPrint("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]));
   oConsole.fPrint();
@@ -781,7 +781,7 @@ def fuMain(asArguments):
       fNewProcessCallback = fNewProcessHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
-      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeoutHandler);
+      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeHandler);
     if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
     oBugId.fStart();
