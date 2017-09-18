@@ -1,3 +1,13 @@
+2017-09-18
+==========
++ New cBugId version has a few improvements, but nothing mayor for the end
+  user of BugId.
++ C++ and WinRT exceptions are now disabled in `edge` and `msie`, as they have
+  never been associated with a bug in my experience and disabling them speeds
+  up BugId and reduces memory usage significantly.
++ Check for binaries that are allowed to run without pageheap is now case-
+  insensitive, as file names in Windows are case-insensitive.
+
 2017-08-30
 ==========
 + New cBugId version checks if page heap has been enabled a lot faster in order
