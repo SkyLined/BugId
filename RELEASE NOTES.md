@@ -1,3 +1,8 @@
+2017-09-22
+==========
++ New cBugId version has a few improvements, but nothing mayor for the end
+  user of BugId.
+
 2017-09-18
 ==========
 + New cBugId version has a few improvements, but nothing mayor for the end
