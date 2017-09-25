@@ -1,3 +1,8 @@
+2017-09-25
+==========
++ Invalid JSON encoded arguments will now result in error messages that include
+  the JSON decode error, which should help resolve these issues faster.
+
 2017-09-22
 ==========
 + New cBugId version has a few improvements, but nothing mayor for the end
