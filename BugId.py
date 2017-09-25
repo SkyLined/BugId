@@ -610,8 +610,8 @@ def fuMain(asArguments):
       else:
         try:
           xValue = json.loads(sValue);
-        except ValueError:
-          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", HILITE, sValue, ERROR, ".");
+        except ValueError as oError:
+          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", HILITE, sValue, ERROR, ": ", HILITE, " ".join(oError.args), ERROR, ".");
           return 2;
         # User provided config settings must be applied after any keyword specific config settings:
         dxUserProvidedConfigSettings[sSettingName] = xValue;
