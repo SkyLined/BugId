@@ -461,6 +461,8 @@ def fDumpExceptionAndExit(oException, oTraceBack):
     if sCode:
       oConsole.fPrint(ERROR,"      > %s" % sCode.strip());
     uFrameIndex -= 1;
+  import platform;
+  oConsole.fPrint(ERROR,"  Windows version %s" % platform.version());
   oConsole.fPrint(ERROR,"  BugId version %s" % oVersionInformation.sCurrentVersion);
   for (sModule, xModule) in [
     ("cBugId", cBugId),
