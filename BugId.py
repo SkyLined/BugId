@@ -607,6 +607,8 @@ def fuMain(asArguments):
         bFast = True;
       elif sSettingName in ["repeat", "forever"]:
         bRepeat = True;
+      elif sSettingName in ["test-internal-error"]:
+        raise Exception("Testing internal error");
       else:
         try:
           xValue = json.loads(sValue);
