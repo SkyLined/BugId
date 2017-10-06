@@ -1,4 +1,5 @@
 from oConsole import oConsole;
+from dxConfig import dxConfig;
 NORMAL =  0x0F07;  # Console default color
 INFO =    0x0F0A;  # Light green (foreground only)
 HILITE =  0x0F0F;  # White (foreground only)
@@ -39,9 +40,9 @@ def fPrintUsage(asApplicationKeywords):
   oConsole.fPrint("    Note that -q and -v are not mutually exclusive.");
   oConsole.fPrint(INFO, "  -f, --fast");
   oConsole.fPrint("    Create no HTML report, do not use symbols. This is an alias for:");
-  oConsole.fPrint("        --bGenerateReportHTML=false");
-  oConsole.fPrint("        --cBugId.asSymbolServerURLs=[]");
-  oConsole.fPrint("        --cBugId.bUse_NT_SYMBOL_PATH=false");
+  oConsole.fPrint("        ", HILITE, "--bGenerateReportHTML=false");
+  oConsole.fPrint("        ", HILITE, "--cBugId.asSymbolServerURLs=[]");
+  oConsole.fPrint("        ", HILITE, "--cBugId.bUse_NT_SYMBOL_PATH=false");
   oConsole.fPrint(INFO, "  -r, --repeat");
   oConsole.fPrint("    Restart the application to run another test as soon as the application is");
   oConsole.fPrint("    terminated. Useful when testing the reliability of a repro, detecting the");
@@ -70,6 +71,13 @@ def fPrintUsage(asApplicationKeywords):
   oConsole.fPrint(INFO,"  \"--sReportFolderPath=\\\"BugId\\\"\"");
   oConsole.fPrint("    Save report to the specified folder, in this case \"BugId\". The quotes");
   oConsole.fPrint("    mess is needed because of the Windows quirck explained below.");
+  oConsole.fPrint("The remaining dxConfig settings are:");
+  for sSettingName in sorted(dxConfig.keys()):
+    if sSettingName not in ["bGenerateReportHTML", "sReportFolderPath", "cBugId", "Kill"]:
+      xSettingValue = dxConfig[sSettingName];
+      oConsole.fPrint("  ", INFO, "--", sSettingName, NORMAL, " (default value: ", HILITE, str(xSettingValue), NORMAL, ")");
+  oConsole.fPrint("See ", HILITE, "dxConfig.py", NORMAL, " for details on each setting.");
+  oConsole.fPrint();
   oConsole.fPrint("You can also adjust cBugId specific settings, such as:");
   oConsole.fPrint(INFO,"  --cBugId.bSaveDump=true");
   oConsole.fPrint("    Save a debug dump file when a crash is detected.");
@@ -78,10 +86,10 @@ def fPrintUsage(asApplicationKeywords):
   oConsole.fPrint(INFO,"  --cBugId.asSymbolCachePaths=[\"C:\\Symbols\"]");
   oConsole.fPrint("    Use C:\\Symbols to cache symbol files.");
   oConsole.fPrint();
-  oConsole.fPrint("See ", HILITE, "dxConfig.py", NORMAL, " and ", HILITE, "cBugId\\dxConfig.py", NORMAL, " for a list of settings that you can");
-  oConsole.fPrint("change. All values must be valid JSON of the appropriate type. No checks are");
-  oConsole.fPrint("made to ensure this. Providing illegal values may result in exceptions at any");
-  oConsole.fPrint("time during execution. You have been warned.");
+  oConsole.fPrint("See ", HILITE, "cBugId\\dxConfig.py", NORMAL, " for details on all available settings.");
+  oConsole.fPrint("All values must be valid JSON of the appropriate type. No checks are made to");
+  oConsole.fPrint("ensure this! Providing illegal values may result in exceptions at any time");
+  oConsole.fPrint("during execution. You have been warned!");
   oConsole.fPrint();
   oConsole.fPrint("Note that you may need to do a bit of \"quote-juggling\" because Windows likes");
   oConsole.fPrint("to eat quotes for no obvious reason. So, if you want to specify --a=\"b\", you");
