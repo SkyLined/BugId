@@ -1,4 +1,4 @@
-import codecs, json, re, os, sys, threading, time, traceback;
+import codecs, json, re, os, shutil, sys, threading, time, traceback;
 
 """
                           __                     _____________                  
@@ -97,10 +97,24 @@ asChromeDefaultArguments = [
   "--js-flags=\"--expose-gc\"",
   "--no-sandbox",
 ];
+sFirefoxProfilePath = r"%s\Firefox-profile" % os.getenv("TEMP");
 asFirefoxDefaultArguments = [
   "--no-remote",
-  "-profile", "%s\Firefox-profile" % os.getenv("TEMP"),
+  "-profile", sFirefoxProfilePath,
 ];
+
+def fFirefoxCleanup():
+  if os.path.isdir(sFirefoxProfilePath):
+    shutil.rmtree(sFirefoxProfilePath);
+
+gdfCleanup_by_sKeyword = {
+  "firefox": fFirefoxCleanup,
+  "firefox_x86": fFirefoxCleanup,
+  "firefox_x64": fFirefoxCleanup,
+  "firefox-dev": fFirefoxCleanup,
+  "firefox-dev_x86": fFirefoxCleanup,
+  "firefox-dev_x64": fFirefoxCleanup,
+};
 gdApplication_sBinaryPath_by_sKeyword = {
   "aoo-writer": r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86,
   "acrobat": r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86,
@@ -649,6 +663,7 @@ def fuMain(asArguments):
   rImportantStdErrLines = None;
   
   if sApplicationKeyword:
+    fCleanup = dxConfig["bCleanup"] and gdfCleanup_by_sKeyword.get(sApplicationKeyword) or None;
     # Get application binary/package name/process ids as needed:
     if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
       # This application is started from the command-line.
@@ -709,16 +724,16 @@ def fuMain(asArguments):
     if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
       # Apply application specific ISA
       sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
-  elif not (auApplicationProcessIds or sApplicationPackageName or sApplicationBinaryPath):
+  elif (auApplicationProcessIds or sApplicationPackageName or sApplicationBinaryPath):
+    fCleanup = None;
+    # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
+    # are used if they are supplied:
+    asApplicationArguments = asApplicationOptionalArguments or [];
+  else:
     oConsole.fPrint(ERROR, "- You must specify something to debug. This can be either one or more process");
     oConsole.fPrint(ERROR, "  ids, an application command-line or an UWP app package name.");
     oConsole.fPrint("Run \"BugId -h\" for help on command-line arguments.");
     return 2;
-  else:
-    # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
-    # are used if they are supplied:
-    asApplicationArguments = asApplicationOptionalArguments or [];
-      
   
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
@@ -730,6 +745,9 @@ def fuMain(asArguments):
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
     nStartTime = time.clock();
+    if fCleanup is not None:
+      oConsole.fStatus("* Cleaning up application state...");
+      fCleanup();
     uRunCounter += 1;
     if sApplicationBinaryPath:
       if not gbQuiet:
