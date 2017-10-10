@@ -59,21 +59,16 @@ for (sModuleName, sDownloadURL) in [
       print "*" * 80;
     raise;
 
-import mFileSystem, mWindowsAPI;
 from cBugId import cBugId;
 from dxConfig import dxConfig;
+from fDumpExceptionAndExit import fDumpExceptionAndExit;
 from fPrintLogo import fPrintLogo;
 from fPrintUsage import fPrintUsage;
+from fVersionCheck import fVersionCheck;
+from mColors import *;
+import mFileSystem;
+import mWindowsAPI;
 from oConsole import oConsole;
-from oVersionInformation import oVersionInformation;
-
-
-# Colors used in output for various types of information:
-NORMAL =  0x0F07;  # Console default color
-INFO =    0x0F0A;  # Light green (foreground only)
-HILITE =  0x0F0F;  # White (foreground only)
-ERROR =   0x0F0C;  # Light red (foreground only)
-oConsole.uDefaultColor = NORMAL;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -478,80 +473,6 @@ def fNewProcessHandler(oBugId, oProcess):
   if gasAttachToProcessesForBinaryNames:
     oBugId.fAttachToProcessesForBinaryNames(gasAttachToProcessesForBinaryNames);
 
-def fDumpExceptionAndExit(oException, oTraceBack):
-  oConsole.fPrint(ERROR, "-" * 80);
-  oConsole.fPrint(ERROR, "- An internal exception has occured:");
-  oConsole.fPrint(ERROR, "  %s" % repr(oException));
-  oConsole.fPrint(ERROR,"  Stack:");
-  atxStack = traceback.extract_tb(oTraceBack);
-  uFrameIndex = len(atxStack) - 1;
-  for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(atxStack):
-    sSource = "%s/%d" % (sFileName, uLineNumber);
-    if sFunctionName != "<module>":
-      sSource = "%s (%s)" % (sFunctionName, sSource);
-    oConsole.fPrint(ERROR,"  %3d %s" % (uFrameIndex, sSource));
-    if sCode:
-      oConsole.fPrint(ERROR,"      > %s" % sCode.strip());
-    uFrameIndex -= 1;
-  import platform;
-  oConsole.fPrint(ERROR,"  Windows version %s" % platform.version());
-  oConsole.fPrint(ERROR,"  BugId version %s" % oVersionInformation.sCurrentVersion);
-  for (sModule, xModule) in [
-    ("mWindowsAPI", mWindowsAPI),
-    ("mFileSystem", mFileSystem),
-    ("oConsole", oConsole),
-    ("cBugId", cBugId),
-  ]:
-    if hasattr(xModule, "oVersionInformation"):
-      oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.oVersionInformation.sCurrentVersion));
-    elif hasattr(xModule, "sVersion"):
-      oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.sVersion));
-    else:
-      oConsole.fPrint(ERROR,"  %s version unknown" % sModule);
-  oConsole.fPrint(ERROR, "-" * 80);
-  oConsole.fPrint();
-  oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");
-  oConsole.fPrint(INFO, "    https://github.com/SkyLined/BugId/issues/new");
-  oConsole.fPrint("If you do not have a github account, or you want to report this issue");
-  oConsole.fPrint("privately, you can also send an email to:");
-  oConsole.fPrint(INFO, "    BugId@skylined.nl");
-  oConsole.fPrint();
-  oConsole.fPrint("In your report, please copy the information about the exception reported");
-  oConsole.fPrint("above, as well as the stack trace and BugId version information. This makes");
-  oConsole.fPrint("it easier to determine the cause of this issue and makes for faster fixes.");
-  oConsole.fPrint();
-  if "-v" not in sys.argv[1:] and "/v" not in sys.argv[1:] and "--verbose=true" not in sys.argv[1:]:
-    oConsole.fPrint("If you can reproduce the issue, it would help a lot if you can run BugId in");
-    oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
-    oConsole.fPrint("as in:", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
-    oConsole.fPrint();
-  oConsole.fPrint("Thank you in advance for helping to improve BugId!");
-  os._exit(3);
-
-def fuVersionCheck():
-  axModules = [
-    ("BugId",       sys.modules["__main__"],        oVersionInformation),
-    ("cBugId",      sys.modules[cBugId.__module__], cBugId.oVersionInformation),
-    ("mFileSystem", mFileSystem,                    mFileSystem.oVersionInformation),
-    ("mWindowsAPI", mWindowsAPI,                    mWindowsAPI.oVersionInformation),
-  ];
-  uCounter = 0;
-  for (sModuleName, oModule, oModuleVersionInformation) in axModules:
-    assert sModuleName == oModuleVersionInformation.sProjectName, \
-        "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
-    oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
-    oConsole.fProgressBar(uCounter * 1.0 / len(axModules), "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
-    if oModuleVersionInformation.bPreRelease:
-      oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
-          "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
-    elif not oModuleVersionInformation.bUpToDate:
-      oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
-          " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
-    oConsole.fPrint("  + Installation path: %s" % os.path.dirname(oModule.__file__));
-    uCounter += 1;
-  oConsole.fPrint();
-  return 0;
-
 def fuMain(asArguments):
   global gbQuiet, \
          gasAttachToProcessesForBinaryNames;
@@ -623,7 +544,8 @@ def fuMain(asArguments):
           return 2;
         sApplicationPackageName, sApplicationId = sValue.split("!", 1);
       elif sSettingName in ["version", "check-for-updates"]:
-        return fuVersionCheck();
+        fVersionCheck();
+        return 0;
       elif sSettingName in ["isa", "cpu"]:
         if sValue not in ["x86", "x64"]:
           oConsole.fPrint(ERROR, "- Unknown ISA %s" % repr(sValue));
