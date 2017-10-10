@@ -2,14 +2,14 @@
 ==========
 Improvements
 ------------
-+ Sub-modules have been overhauled. This is an internal change and should not
-  affect normal usage.
-+ Version checks have been simplified to only handle recent versions of various
-  sub-modules. This means very old versions will throw exceptions, rather than
-  be handled correctly as such.
 + "Cleanup" code is now available for Firefox and Edge; it allows removing of
   stored state before starting the application to prevent previous crashes from
   affecting the outcome of the next run.
++ Version checks have been simplified to only handle recent versions of various
+  sub-modules. This means very old versions will throw exceptions, rather than
+  be handled correctly as such.
++ Sub-modules have been overhauled and code has been moved around. These are
+  internal changes that should not affect normal usage.
 
 2017-09-25
 ==========
