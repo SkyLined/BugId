@@ -116,7 +116,7 @@ def fFirefoxCleanup():
 
 asFirefoxDefaultArguments = [
   "--no-remote",
-  "-profile", sFirefoxProfilePath,
+  "-profile", mFileSystem.fs83Path(sFirefoxProfilePath),
 ];
 
 gdfCleanup_by_sKeyword = {
