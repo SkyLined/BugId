@@ -1,3 +1,16 @@
+2017-10-10
+==========
+Improvements
+------------
++ Sub-modules have been overhauled. This is an internal change and should not
+  affect normal usage.
++ Version checks have been simplified to only handle recent versions of various
+  sub-modules. This means very old versions will throw exceptions, rather than
+  be handled correctly as such.
++ "Cleanup" code is now available for Firefox and Edge; it allows removing of
+  stored state before starting the application to prevent previous crashes from
+  affecting the outcome of the next run.
+
 2017-09-25
 ==========
 + Invalid JSON encoded arguments will now result in error messages that include

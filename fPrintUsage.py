@@ -73,7 +73,7 @@ def fPrintUsage(asApplicationKeywords):
   oConsole.fPrint("    mess is needed because of the Windows quirck explained below.");
   oConsole.fPrint("The remaining dxConfig settings are:");
   for sSettingName in sorted(dxConfig.keys()):
-    if sSettingName not in ["bGenerateReportHTML", "sReportFolderPath", "cBugId", "Kill"]:
+    if sSettingName not in ["bGenerateReportHTML", "sReportFolderPath", "cBugId"]:
       xSettingValue = dxConfig[sSettingName];
       oConsole.fPrint("  ", INFO, "--", sSettingName, NORMAL, " (default value: ", HILITE, str(xSettingValue), NORMAL, ")");
   oConsole.fPrint("See ", HILITE, "dxConfig.py", NORMAL, " for details on each setting.");

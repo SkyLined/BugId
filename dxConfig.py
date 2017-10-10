@@ -42,6 +42,14 @@ dxConfig = {
                                                   # set this to None, reports will be stored in the current working
                                                   # directory. Note that the path where memory dumps are stored can be
                                                   # set using dxConfig["cBugId"]["sDumpPath"].
+  "bCleanup": False,                              # Run application specific cleanup code (if available) before starting
+                                                  # the application. This can be used to clean up corrupted state saved
+                                                  # to disk. This is most useful when repeatedly running an application
+                                                  # using the `-r` switch, when that application saves state to disk,
+                                                  # and this state can get corrupted in a way that interferes with the
+                                                  # proper functioning of the application. The cleanup function can be
+                                                  # used to reset this state. Examples include web-browsers caching
+                                                  # sites to disk, or restoring previously open tabs after a crash.
   "cBugId": {
     # The values from cBugId\dxConfig.py get loaded here.
     # Any value provided here will override the values loaded above.

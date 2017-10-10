@@ -25,15 +25,48 @@ import codecs, json, re, os, shutil, sys, threading, time, traceback;
 
 
 # Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
-sMainFolderPath = os.path.dirname(__file__);
-asAbsoluteLoweredSysPaths = [os.path.abspath(sPath.lower()) for sPath in sys.path];
-asAbsoluteSearchPaths = [os.path.abspath(os.path.join(sMainFolderPath, *asPath).lower()) for asPath in [[], [".."], ["modules"]]];
-sys.path = [sPath for sPath in asAbsoluteSearchPaths if sPath.lower() not in asAbsoluteLoweredSysPaths] + sys.path;
+sMainFolderPath = os.path.abspath(os.path.dirname(__file__));
+sParentFolderPath = os.path.normpath(os.path.join(sMainFolderPath, ".."));
+sModuleFolderPath = os.path.join(sMainFolderPath, "modules");
+asAbsoluteLoweredSysPaths = [os.path.abspath(sPath).lower() for sPath in sys.path];
+sys.path += [sPath for sPath in [
+  sMainFolderPath,
+  sParentFolderPath,
+  sModuleFolderPath,
+] if sPath.lower() not in asAbsoluteLoweredSysPaths];
 
+# Load external dependecies to make sure they are available and shown an error
+# if any one fails to load. This error explains where the missing component
+# can be downloaded to fix the error.
+for (sModuleName, sDownloadURL) in [
+  ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
+  ("mFileSystem", "https://github.com/SkyLined/mFileSystem/"),
+  ("oConsole", "https://github.com/SkyLined/oConsole/"),
+  ("cBugId", "https://github.com/SkyLined/cBugId/"),
+]:
+  try:
+    __import__(sModuleName, globals(), locals(), [], -1);
+  except ImportError, oError:
+    if oError.message == "No module named %s" % sModuleName:
+      print "*" * 80;
+      print "BugId depends on %s which you can download at:" % sModuleName;
+      print "    %s" % sDownloadURL;
+      print "After downloading, please save the code in this folder:";
+      print "    %s" % os.path.join(sModuleFolderPath, sModuleName);
+      print " - or -";
+      print "    %s" % os.path.join(sParentFolderPath, sModuleName);
+      print "Once you have completed these steps, please try again.";
+      print "*" * 80;
+    raise;
+
+import mFileSystem, mWindowsAPI;
+from cBugId import cBugId;
+from dxConfig import dxConfig;
 from fPrintLogo import fPrintLogo;
 from fPrintUsage import fPrintUsage;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
+
 
 # Colors used in output for various types of information:
 NORMAL =  0x0F07;  # Console default color
@@ -41,31 +74,6 @@ INFO =    0x0F0A;  # Light green (foreground only)
 HILITE =  0x0F0F;  # White (foreground only)
 ERROR =   0x0F0C;  # Light red (foreground only)
 oConsole.uDefaultColor = NORMAL;
-
-# Load external dependecies to make sure they are available and shown an error
-# if any one fails to load. This error explains where the missing component
-# can be downloaded to fix the error.
-for (sModuleName, sDownloadURL) in [
-  ("FileSystem", "https://github.com/SkyLined/FileSystem/"),
-  ("Kill", "https://github.com/SkyLined/Kill/"),
-  ("cBugId", "https://github.com/SkyLined/cBugId/"),
-]:
-  try:
-    __import__(sModuleName, globals(), locals(), [], -1);
-  except ImportError, oError:
-    if oError.message == "No module named %s" % sModuleName:
-      oConsole.fPrint(ERROR, "*" * 80);
-      oConsole.fPrint(ERROR, "BugId depends on ", HILITE, sModuleName, ERROR, " which you can download at:");
-      oConsole.fPrint(ERROR, "    ", sDownloadURL);
-      oConsole.fPrint(ERROR, "After downloading, please save the code in the folder \"", sModuleName, "\",");
-      oConsole.fPrint(ERROR, "\"modules\\", sModuleName, "\" or any other location where it can be imported.");
-      oConsole.fPrint(ERROR, "Once you have completed these steps, please try again.");
-      oConsole.fPrint(ERROR, "*" * 80);
-    raise;
-
-from cBugId import cBugId;
-import FileSystem, Kill;
-from dxConfig import dxConfig;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -97,17 +105,27 @@ asChromeDefaultArguments = [
   "--js-flags=\"--expose-gc\"",
   "--no-sandbox",
 ];
-sFirefoxProfilePath = r"%s\Firefox-profile" % os.getenv("TEMP");
+
+sEdgeRecoveryPath = mFileSystem.fsPath(os.getenv("LocalAppData"), \
+    "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active");
+
+def fEdgeCleanup():
+  if os.path.isdir(sEdgeRecoveryPath):
+    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath);
+
+sFirefoxProfilePath = mFileSystem.fsPath(os.getenv("TEMP"), "Firefox-profile");
+
+def fFirefoxCleanup():
+  if os.path.isdir(sFirefoxProfilePath):
+    mFileSystem.fbDeleteChildrenFromFolder(sFirefoxProfilePath);
+
 asFirefoxDefaultArguments = [
   "--no-remote",
   "-profile", sFirefoxProfilePath,
 ];
 
-def fFirefoxCleanup():
-  if os.path.isdir(sFirefoxProfilePath):
-    shutil.rmtree(sFirefoxProfilePath);
-
 gdfCleanup_by_sKeyword = {
+  "edge": fEdgeCleanup,
   "firefox": fFirefoxCleanup,
   "firefox_x86": fFirefoxCleanup,
   "firefox_x64": fFirefoxCleanup,
@@ -479,9 +497,10 @@ def fDumpExceptionAndExit(oException, oTraceBack):
   oConsole.fPrint(ERROR,"  Windows version %s" % platform.version());
   oConsole.fPrint(ERROR,"  BugId version %s" % oVersionInformation.sCurrentVersion);
   for (sModule, xModule) in [
+    ("mWindowsAPI", mWindowsAPI),
+    ("mFileSystem", mFileSystem),
+    ("oConsole", oConsole),
     ("cBugId", cBugId),
-    ("FileSystem", FileSystem),
-    ("Kill", Kill),
   ]:
     if hasattr(xModule, "oVersionInformation"):
       oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.oVersionInformation.sCurrentVersion));
@@ -511,28 +530,23 @@ def fDumpExceptionAndExit(oException, oTraceBack):
 
 def fuVersionCheck():
   axModules = [
-    ("BugId",       sys.modules["__main__"],        oVersionInformation,                              None),
-    ("cBugId",      sys.modules[cBugId.__module__], getattr(cBugId, "oVersionInformation", None),     getattr(cBugId, "fsVersionCheck", None)),
-    ("FileSystem",  FileSystem,                     getattr(FileSystem, "oVersionInformation", None), getattr(FileSystem, "fsVersionCheck", None)),
-    ("Kill",        Kill,                           getattr(Kill, "oVersionInformation", None),       getattr(Kill, "fsVersionCheck", None)),
+    ("BugId",       sys.modules["__main__"],        oVersionInformation),
+    ("cBugId",      sys.modules[cBugId.__module__], cBugId.oVersionInformation),
+    ("mFileSystem", mFileSystem,                    mFileSystem.oVersionInformation),
+    ("mWindowsAPI", mWindowsAPI,                    mWindowsAPI.oVersionInformation),
   ];
   uCounter = 0;
-  for (sModuleName, oModule, oModuleVersionInformation, fsVersionCheck) in axModules:
-    if oModuleVersionInformation:
-      assert sModuleName == oModuleVersionInformation.sProjectName, \
-          "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
-      oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
-      oConsole.fProgressBar(uCounter * 1.0 / len(axModules), "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
-      if oModuleVersionInformation.bPreRelease:
-        oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
-            "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
-      elif not oModuleVersionInformation.bUpToDate:
-        oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
-            " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
-    elif fsVersionCheck:
-      oConsole.fPrint("* ", INFO, sModuleName, NORMAL, " version check reports: ", INFO, fsVersionCheck(), ".");
-    else:
-      oConsole.fPrint("- You are running an ", ERROR, "outdated", NORMAL, " version of ", INFO, sModuleName, NORMAL, ".");
+  for (sModuleName, oModule, oModuleVersionInformation) in axModules:
+    assert sModuleName == oModuleVersionInformation.sProjectName, \
+        "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
+    oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
+    oConsole.fProgressBar(uCounter * 1.0 / len(axModules), "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
+    if oModuleVersionInformation.bPreRelease:
+      oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
+          "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
+    elif not oModuleVersionInformation.bUpToDate:
+      oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
+          " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
     oConsole.fPrint("  + Installation path: %s" % os.path.dirname(oModule.__file__));
     uCounter += 1;
   oConsole.fPrint();
@@ -741,7 +755,7 @@ def fuMain(asArguments):
   
   if bRepeat:
     duNumberOfRepros_by_sBugIdAndLocation = {};
-    sValidStatisticsFileName = FileSystem.fsValidName("Reproduction statistics.txt");
+    sValidStatisticsFileName = mFileSystem.fsValidName("Reproduction statistics.txt");
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
     nStartTime = time.clock();
@@ -829,12 +843,12 @@ def fuMain(asArguments):
         # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
         sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
         # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
-        sValidReportFileName = FileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
+        sValidReportFileName = mFileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
         if dxConfig["sReportFolderPath"] is not None:
-          sReportFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+          sReportFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
         else:
-          sReportFilePath = FileSystem.fsPath(sValidReportFileName);
-        eWriteDataToFileResult = FileSystem.feWriteDataToFile(
+          sReportFilePath = mFileSystem.fsPath(sValidReportFileName);
+        eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
           oBugId.oBugReport.sReportHTML,
           sReportFilePath,
           fbRetryOnFailure = lambda: False,
@@ -860,10 +874,10 @@ def fuMain(asArguments):
         if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
           sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, sBugIdAndLocation, round(100.0 * uNumberOfRepros / uRunCounter));
     if dxConfig["sReportFolderPath"] is not None:
-      sStatisticsFilePath = FileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
+      sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
     else:
-      sStatisticsFilePath = FileSystem.fsPath(sValidStatisticsFileName);
-    eWriteDataToFileResult = FileSystem.feWriteDataToFile(
+      sStatisticsFilePath = mFileSystem.fsPath(sValidStatisticsFileName);
+    eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
       sStatistics,
       sStatisticsFilePath,
       fbRetryOnFailure = lambda: False,

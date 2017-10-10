@@ -1,12 +1,12 @@
-[submodule "modules/FileSystem"]
-	path = modules/FileSystem
-	url = https://github.com/SkyLined/FileSystem
-[submodule "modules/cBugId"]
-	path = modules/cBugId
-	url = https://github.com/SkyLined/cBugId/
 [submodule "modules/mWindowsAPI"]
 	path = modules/mWindowsAPI
 	url = https://github.com/SkyLined/mWindowsAPI
+[submodule "modules/mFileSystem"]
+	path = modules/mFileSystem
+	url = https://github.com/SkyLined/mFileSystem
 [submodule "modules/oConsole"]
 	path = modules/oConsole
 	url = https://github.com/SkyLined/oConsole
+[submodule "modules/cBugId"]
+	path = modules/cBugId
+	url = https://github.com/SkyLined/cBugId/
