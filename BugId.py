@@ -794,7 +794,7 @@ def fuMain(asArguments):
     for uNumberOfRepros in auOrderedNumberOfRepros:
       for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
         if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
-          sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, sBugIdAndLocation, round(100.0 * uNumberOfRepros / uRunCounter));
+          sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), round(100.0 * uNumberOfRepros / uRunCounter));
     if dxConfig["sReportFolderPath"] is not None:
       sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
     else:
