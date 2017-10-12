@@ -1,7 +1,14 @@
+2017-10-12
+==========
++ Update sub-modules and modify code to use these new versions where needed.
++ Use 8.3 path for Firefox profile to make sure Firefox can use it.
++ Use mFileSystem everywhere.
++ Fix issue where statistics written to file for repeated runs would cause an
+  exception because a string was converted to Unicode when it should not be.
++ Fixed highlighting of relevant binary versions.
+
 2017-10-10
 ==========
-Improvements
-------------
 + "Cleanup" code is now available for Firefox and Edge; it allows removing of
   stored state before starting the application to prevent previous crashes from
   affecting the outcome of the next run.
