@@ -105,13 +105,13 @@ sEdgeRecoveryPath = mFileSystem.fsPath(os.getenv("LocalAppData"), \
     "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active");
 
 def fEdgeCleanup():
-  if os.path.isdir(sEdgeRecoveryPath):
+  if mFileSystem.fbIsFolder(sEdgeRecoveryPath):
     mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath);
 
 sFirefoxProfilePath = mFileSystem.fsPath(os.getenv("TEMP"), "Firefox-profile");
 
 def fFirefoxCleanup():
-  if os.path.isdir(sFirefoxProfilePath):
+  if mFileSystem.fbIsFolder(sFirefoxProfilePath):
     mFileSystem.fbDeleteChildrenFromFolder(sFirefoxProfilePath);
 
 asFirefoxDefaultArguments = [
