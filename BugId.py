@@ -155,7 +155,7 @@ gsApplicationPackageName_by_sKeyword = {
 gsApplicationId_by_sKeyword = {
   "edge": "MicrosoftEdge",
 };
-gasApplicationAttachToProcessesForBinaryNames_by_sKeyword = {
+gasApplicationAttachToProcessesForExecutableNames_by_sKeyword = {
   "edge": ["browser_broker.exe"],
 };
 # These arguments are always added
@@ -313,7 +313,7 @@ asApplicationKeywords = sorted(list(set(
   gdApplication_sBinaryPath_by_sKeyword.keys() +
   gsApplicationPackageName_by_sKeyword.keys() +
   gsApplicationId_by_sKeyword.keys() + # should be the same as above!
-  gasApplicationAttachToProcessesForBinaryNames_by_sKeyword.keys() +
+  gasApplicationAttachToProcessesForExecutableNames_by_sKeyword.keys() +
   gdApplication_asStaticArguments_by_sKeyword.keys() +
   gdApplication_asDefaultOptionalArguments_by_sKeyword.keys() +
   gdApplication_dxSettings_by_sKeyword.keys() +
@@ -337,9 +337,9 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
     oConsole.fPrint("  UWP Application information:");
     oConsole.fPrint("    Package name: ", INFO, gsApplicationPackageName_by_sKeyword[sApplicationKeyword]);
     oConsole.fPrint("    Id: ", INFO, gsApplicationId_by_sKeyword[sApplicationKeyword]);
-    if sApplicationKeyword in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword:
+    if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
       oConsole.fPrint("    Attach to additional processes running any of the following binaries:");
-      for sBinaryName in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword[sApplicationKeyword]:
+      for sBinaryName in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword]:
         oConsole.fPrint("      ", INFO, sBinaryName);
   if sApplicationKeyword in gdApplication_asStaticArguments_by_sKeyword:
     oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
@@ -412,12 +412,12 @@ def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
   oConsole.fPrint();
 
 gasReportedBinaryNameWithoutPageHeap = [];
-gasAttachToProcessesForBinaryNames = [];
+gasAttachToProcessesForExecutableNames = [];
 def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
   global gbAnErrorOccured, \
          gasBinariesThatAreAllowedToRunWithoutPageHeap, \
          gasReportedBinaryNameWithoutPageHeap, \
-         gasAttachToProcessesForBinaryNames;
+         gasAttachToProcessesForExecutableNames;
   if sBinaryName.lower() in gasBinariesThatAreAllowedToRunWithoutPageHeap:
     return;
   if not bPreventable:
@@ -466,16 +466,16 @@ def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
 
 def fNewProcessHandler(oBugId, oProcess):
-  global gasAttachToProcessesForBinaryNames;
+  global gasAttachToProcessesForExecutableNames;
   if not gbQuiet:
     oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName);
   # Now is a good time to look for additional binaries that may need to be debugged as well.
-  if gasAttachToProcessesForBinaryNames:
-    oBugId.fAttachToProcessesForBinaryNames(gasAttachToProcessesForBinaryNames);
+  if gasAttachToProcessesForExecutableNames:
+    oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
 
 def fuMain(asArguments):
   global gbQuiet, \
-         gasAttachToProcessesForBinaryNames;
+         gasAttachToProcessesForExecutableNames;
   if len(asArguments) == 0:
     fPrintLogo();
     fPrintUsage(asApplicationKeywords);
@@ -630,8 +630,8 @@ def fuMain(asArguments):
       # Cannot supply arguments if we're attaching to processes
       oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
       return 2;
-    if sApplicationKeyword in gasApplicationAttachToProcessesForBinaryNames_by_sKeyword:
-      gasAttachToProcessesForBinaryNames = gasApplicationAttachToProcessesForBinaryNames_by_sKeyword[sApplicationKeyword];
+    if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
+      gasAttachToProcessesForExecutableNames = gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword];
     # Get application arguments;
     asApplicationStaticArguments = gdApplication_asStaticArguments_by_sKeyword.get(sApplicationKeyword, []);
     if asApplicationOptionalArguments is None:
