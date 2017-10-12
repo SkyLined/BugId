@@ -760,7 +760,7 @@ def fuMain(asArguments):
       oConsole.fPrint("  Security impact:  ", INFO, oBugId.oBugReport.sSecurityImpact);
       oConsole.fPrint("  Version:          ", HILITE, oBugId.oBugReport.asVersionInformation[0]); # There is always the process' binary.
       for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
-        oConsole.fPrint("                    ", sVersionInformation);                # different binary (e.g. a .dll)
+        oConsole.fPrint("                    ", HILITE, sVersionInformation); # different binary (e.g. a .dll)
       if dxConfig["bGenerateReportHTML"]:
         # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
         sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
