@@ -82,24 +82,25 @@ from ChromePath import sChromePath_x64, sChromePath_x86, sChromePath, \
 from FirefoxPath import sFirefoxPath_x64, sFirefoxPath_x86, sFirefoxPath, \
     sFirefoxDevPath_x64, sFirefoxDevPath_x86, sFirefoxDevPath;
 from MSIEPath import sMSIEPath_x64, sMSIEPath_x86, sMSIEPath;
-asChromeDefaultArguments = [
-  "--enable-experimental-accessibility-features",
-  "--enable-experimental-canvas-features",
-  "--enable-experimental-input-view-features",
-  "--enable-experimental-web-platform-features",
-  "--enable-logging=stderr",
-  "--enable-usermedia-screen-capturing",
-  "--enable-viewport",
-  "--enable-webgl-draft-extensions",
-  "--enable-webvr",
-  "--expose-internals-for-testing",
-  "--disable-popup-blocking",
-  "--disable-prompt-on-repost",
-  "--force-renderer-accessibility",
-  "--javascript-harmony",
-  "--js-flags=\"--expose-gc\"",
-  "--no-sandbox",
-];
+def fasGetChromeDefaultArguments(bForHelp):
+  return [
+    "--enable-experimental-accessibility-features",
+    "--enable-experimental-canvas-features",
+    "--enable-experimental-input-view-features",
+    "--enable-experimental-web-platform-features",
+    "--enable-logging=stderr",
+    "--enable-usermedia-screen-capturing",
+    "--enable-viewport",
+    "--enable-webgl-draft-extensions",
+    "--enable-webvr",
+    "--expose-internals-for-testing",
+    "--disable-popup-blocking",
+    "--disable-prompt-on-repost",
+    "--force-renderer-accessibility",
+    "--javascript-harmony",
+    "--js-flags=\"--expose-gc\"",
+    "--no-sandbox",
+  ];
 
 sEdgeRecoveryPath = mFileSystem.fsPath(os.getenv("LocalAppData"), \
     "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active");
@@ -113,11 +114,30 @@ sFirefoxProfilePath = mFileSystem.fsPath(os.getenv("TEMP"), "Firefox-profile");
 def fFirefoxCleanup():
   if mFileSystem.fbIsFolder(sFirefoxProfilePath):
     mFileSystem.fbDeleteChildrenFromFolder(sFirefoxProfilePath);
+  else:
+    assert mFileSystem.fbCreateFolder(sFirefoxProfilePath), \
+        "Cannot create Firefox profile folder %s" % sFirefoxProfilePath;
 
-asFirefoxDefaultArguments = [
-  "--no-remote",
-  "-profile", mFileSystem.fs83Path(sFirefoxProfilePath),
-];
+def fasGetFirefoxDefaultArguments(bForHelp):
+  if bForHelp:
+    # The folder may not exist at this point, so we cannot guarantee a 8.3 path
+    # exists. Also, the 8.3 path may not be easily readable. Therefore, we'll
+    # always use the long path in the help.
+    sUsedFirefoxProfilePath = sFirefoxProfilePath;
+  else:
+    # Firefox cannot handle long paths (starting with "\\?\") so we'll use the
+    # 8.3 path to make sure it will work. To get an 8.3 path, there should be a
+    # file or folder for that path. In this case, we want a folder, so we'll
+    # make sure it's created if it does not exist yet.
+    if not mFileSystem.fbIsFolder(sFirefoxProfilePath):
+      assert mFileSystem.fbCreateFolder(sFirefoxProfilePath), \
+          "Cannot create Firefox profile folder %s" % sFirefoxProfilePath;
+    sUsedFirefoxProfilePath = mFileSystem.fs83Path(sFirefoxProfilePath)
+  return [
+    "--no-remote",
+    "-profile",
+        sUsedFirefoxProfilePath,
+  ];
 
 gdfCleanup_by_sKeyword = {
   "edge": fEdgeCleanup,
@@ -159,20 +179,20 @@ gasApplicationAttachToProcessesForExecutableNames_by_sKeyword = {
   "edge": ["browser_broker.exe"],
 };
 # These arguments are always added
-gdApplication_asStaticArguments_by_sKeyword = {
-  "aoo-writer": ["-norestore", "-view", "-nologo", "-nolockcheck"],
-  "chrome": asChromeDefaultArguments,
-  "chrome_x86": asChromeDefaultArguments,
-  "chrome_x64": asChromeDefaultArguments,
-  "chrome-sxs": asChromeDefaultArguments,
-  "chrome-sxs_x86": asChromeDefaultArguments,
-  "chrome-sxs_x64": asChromeDefaultArguments,
-  "firefox": asFirefoxDefaultArguments,
-  "firefox_x86": asFirefoxDefaultArguments,
-  "firefox_x64": asFirefoxDefaultArguments,
-  "firefox-dev": asFirefoxDefaultArguments,
-  "firefox-dev_x86": asFirefoxDefaultArguments,
-  "firefox-dev_x64": asFirefoxDefaultArguments,
+gdApplication_fasGetStaticArguments_by_sKeyword = {
+  "aoo-writer": lambda bForHelp: ["-norestore", "-view", "-nologo", "-nolockcheck"],
+  "chrome": fasGetChromeDefaultArguments,
+  "chrome_x86": fasGetChromeDefaultArguments,
+  "chrome_x64": fasGetChromeDefaultArguments,
+  "chrome-sxs": fasGetChromeDefaultArguments,
+  "chrome-sxs_x86": fasGetChromeDefaultArguments,
+  "chrome-sxs_x64": fasGetChromeDefaultArguments,
+  "firefox": fasGetFirefoxDefaultArguments,
+  "firefox_x86": fasGetFirefoxDefaultArguments,
+  "firefox_x64": fasGetFirefoxDefaultArguments,
+  "firefox-dev": fasGetFirefoxDefaultArguments,
+  "firefox-dev_x86": fasGetFirefoxDefaultArguments,
+  "firefox-dev_x64": fasGetFirefoxDefaultArguments,
 };
 # These arguments are added if the 
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
@@ -314,7 +334,7 @@ asApplicationKeywords = sorted(list(set(
   gsApplicationPackageName_by_sKeyword.keys() +
   gsApplicationId_by_sKeyword.keys() + # should be the same as above!
   gasApplicationAttachToProcessesForExecutableNames_by_sKeyword.keys() +
-  gdApplication_asStaticArguments_by_sKeyword.keys() +
+  gdApplication_fasGetStaticArguments_by_sKeyword.keys() +
   gdApplication_asDefaultOptionalArguments_by_sKeyword.keys() +
   gdApplication_dxSettings_by_sKeyword.keys() +
   gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.keys() + 
@@ -341,9 +361,10 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
       oConsole.fPrint("    Attach to additional processes running any of the following binaries:");
       for sBinaryName in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword]:
         oConsole.fPrint("      ", INFO, sBinaryName);
-  if sApplicationKeyword in gdApplication_asStaticArguments_by_sKeyword:
+  if sApplicationKeyword in gdApplication_fasGetStaticArguments_by_sKeyword:
+    fasGetStaticArguments = gdApplication_fasGetStaticArguments_by_sKeyword[sApplicationKeyword];
     oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
-      gdApplication_asStaticArguments_by_sKeyword[sApplicationKeyword])
+      fasGetStaticArguments(bForHelp = True))
     );
   if sApplicationKeyword in gdApplication_asDefaultOptionalArguments_by_sKeyword:
     oConsole.fPrint("  Default optional arguments: ", INFO, " ".join([
@@ -633,7 +654,8 @@ def fuMain(asArguments):
     if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
       gasAttachToProcessesForExecutableNames = gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword];
     # Get application arguments;
-    asApplicationStaticArguments = gdApplication_asStaticArguments_by_sKeyword.get(sApplicationKeyword, []);
+    fasGetApplicationStaticArguments = gdApplication_fasGetStaticArguments_by_sKeyword.get(sApplicationKeyword, None);
+    asApplicationStaticArguments = fasGetApplicationStaticArguments and fasGetApplicationStaticArguments(bForHelp = False) or [];
     if asApplicationOptionalArguments is None:
       asApplicationOptionalArguments = [
         sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
