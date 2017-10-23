@@ -11,7 +11,7 @@ CALL "BugId.cmd" >nul
 IF ERRORLEVEL 1 GOTO :ERROR
 
 ECHO   * Test if version checks work...
-CALL "BugId.cmd" --version | more
+CALL "BugId.cmd" --version >nul
 IF ERRORLEVEL 1 GOTO :ERROR
 
 ECHO   * Test if internal error reporting works...
