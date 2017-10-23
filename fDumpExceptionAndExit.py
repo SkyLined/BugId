@@ -2,14 +2,16 @@ from cBugId import cBugId;
 from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
+import mWindowsRegistry;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
+from oWindowsVersion import oWindowsVersion;
 
 def fDumpExceptionAndExit(oException, oTraceBack):
-  import platform, os, sys, traceback;
+  import os, sys, traceback;
   oConsole.fPrint(ERROR, "-" * 80);
   oConsole.fPrint(ERROR, "- An internal exception has occured:");
-  oConsole.fPrint(ERROR, "  %s" % repr(oException));
+  oConsole.fPrint(ERROR, "  ", repr(oException));
   oConsole.fPrint(ERROR,"  Stack:");
   atxStack = traceback.extract_tb(oTraceBack);
   uFrameIndex = len(atxStack) - 1;
@@ -17,24 +19,20 @@ def fDumpExceptionAndExit(oException, oTraceBack):
     sSource = "%s/%d" % (sFileName, uLineNumber);
     if sFunctionName != "<module>":
       sSource = "%s (%s)" % (sFunctionName, sSource);
-    oConsole.fPrint(ERROR,"  %3d %s" % (uFrameIndex, sSource));
+    oConsole.fPrint(ERROR,"  %3d " % uFrameIndex, sSource);
     if sCode:
-      oConsole.fPrint(ERROR,"      > %s" % sCode.strip());
+      oConsole.fPrint(ERROR,"      > ", sCode.strip());
     uFrameIndex -= 1;
-  oConsole.fPrint(ERROR,"  Windows version %s" % platform.version());
-  oConsole.fPrint(ERROR,"  BugId version %s" % oVersionInformation.sCurrentVersion);
+  oConsole.fPrint();
+  oConsole.fPrint(ERROR,"  Windows version: ", str(oWindowsVersion));
+  oConsole.fPrint(ERROR,"  BugId version: ", oVersionInformation.sCurrentVersion);
   for (sModule, xModule) in [
     ("mWindowsAPI", mWindowsAPI),
     ("mFileSystem", mFileSystem),
     ("oConsole", oConsole),
     ("cBugId", cBugId),
   ]:
-    if hasattr(xModule, "oVersionInformation"):
-      oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.oVersionInformation.sCurrentVersion));
-    elif hasattr(xModule, "sVersion"):
-      oConsole.fPrint(ERROR,"  %s version %s" % (sModule, xModule.sVersion));
-    else:
-      oConsole.fPrint(ERROR,"  %s version unknown" % sModule);
+    oConsole.fPrint(ERROR,"  ", sModule, " version: ", xModule.oVersionInformation.sCurrentVersion);
   oConsole.fPrint(ERROR, "-" * 80);
   oConsole.fPrint();
   oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");

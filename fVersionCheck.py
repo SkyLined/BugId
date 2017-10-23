@@ -4,6 +4,7 @@ import mFileSystem;
 import mWindowsAPI;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
+from oWindowsVersion import oWindowsVersion;
 
 def fVersionCheck():
   import os, sys;
@@ -15,10 +16,11 @@ def fVersionCheck():
     ("oConsole",    "oConsole",     oConsole.oVersionInformation),
   ];
   uCounter = 0;
+  oConsole.fPrint("+ Windows version: ", str(oWindowsVersion), ".");
   for (sModuleName, sSysModuleName, oModuleVersionInformation) in axModules:
     assert sModuleName == oModuleVersionInformation.sProjectName, \
         "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
-    oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version ", oModuleVersionInformation.sCurrentVersion, ".");
+    oConsole.fPrint("+ ", oModuleVersionInformation.sProjectName, " version: ", oModuleVersionInformation.sCurrentVersion, ".");
     oConsole.fProgressBar(uCounter * 1.0 / len(axModules), "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
     if oModuleVersionInformation.bPreRelease:
       oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",

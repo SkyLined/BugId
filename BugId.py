@@ -41,6 +41,7 @@ sys.path += [sPath for sPath in [
 for (sModuleName, sDownloadURL) in [
   ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
   ("mFileSystem", "https://github.com/SkyLined/mFileSystem/"),
+  ("mWindowsRegistry", "https://github.com/SkyLined/mWindowsRegistry/"),
   ("oConsole", "https://github.com/SkyLined/oConsole/"),
   ("cBugId", "https://github.com/SkyLined/cBugId/"),
 ]:
@@ -68,7 +69,9 @@ from fVersionCheck import fVersionCheck;
 from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
+import mWindowsRegistry;
 from oConsole import oConsole;
+from oWindowsVersion import oWindowsVersion;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -117,6 +120,20 @@ def fFirefoxCleanup():
   else:
     assert mFileSystem.fbCreateFolder(sFirefoxProfilePath), \
         "Cannot create Firefox profile folder %s" % sFirefoxProfilePath;
+
+def fasGetEdgeDefaultArguments(bForHelp):
+  if not bForHelp:
+    # We don't really return any arguments, but we do check that we can run this
+    # version of Edge...
+    if oWindowsVersion.uCurrentBuild < 15063:
+      oConsole.fPrint(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
+      oConsole.fPrint(ERROR, "builds ", HILITE, "15063", ERROR, " and higher, and you are running build ", HILITE, oWindowsVersion.sCurrentBuild, ERROR, ".");
+      oConsole.fPrint();
+      oConsole.fPrint("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
+      oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
+      oConsole.fPrint("It can be used to debug Edge in BugId on Windows versions before 10.0.15063.");
+      os._exit(4);
+  return [];
 
 def fasGetFirefoxDefaultArguments(bForHelp):
   if bForHelp:
@@ -187,6 +204,7 @@ gdApplication_fasGetStaticArguments_by_sKeyword = {
   "chrome-sxs": fasGetChromeDefaultArguments,
   "chrome-sxs_x86": fasGetChromeDefaultArguments,
   "chrome-sxs_x64": fasGetChromeDefaultArguments,
+  "edge": fasGetEdgeDefaultArguments,
   "firefox": fasGetFirefoxDefaultArguments,
   "firefox_x86": fasGetFirefoxDefaultArguments,
   "firefox_x64": fasGetFirefoxDefaultArguments,
