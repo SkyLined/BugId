@@ -28,15 +28,15 @@ IF "%~1" == "" (
 ) ELSE IF "%~1" == "chrome" (
   IF "%~2" == "ON" (
     SET CHROME_ALLOCATOR=winheap
-    REG ADD "HKCU\Environment" /v "CHROME_ALLOCATOR" /t REG_SZ /d "winheap" /f
+    "%WinDir%\System32\reg.exe" ADD "HKCU\Environment" /v "CHROME_ALLOCATOR" /t REG_SZ /d "winheap" /f
     IF ERRORLEVEL 1 (
       ECHO - Cannot set CHROME_ALLOCATOR enironment variable in the registry.
     )
   ) ELSE (
     SET CHROME_ALLOCATOR=
-    REG QUERY "HKCU\Environment" /v "CHROME_ALLOCATOR" >nul 2>&1
+    "%WinDir%\System32\reg.exe" QUERY "HKCU\Environment" /v "CHROME_ALLOCATOR" >nul 2>&1
     IF NOT ERRORLEVEL 1 (
-      REG DELETE "HKCU\Environment" /v "CHROME_ALLOCATOR" /f >nul
+      "%WinDir%\System32\reg.exe" DELETE "HKCU\Environment" /v "CHROME_ALLOCATOR" /f >nul
       IF ERRORLEVEL 1 (
         ECHO - Cannot remove CHROME_ALLOCATOR enironment variable from the registry.
       )
@@ -132,15 +132,15 @@ EXIT /B 0
   REM 00400000 Enable close exception ## I don't think this is useful
   IF "%~2" == "OFF" (
     ECHO * Disabling page heap for binary %~1...
-    REG ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" /t REG_SZ /d "0x00000000" /f >nul
+    "%WinDir%\System32\reg.exe" ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" /t REG_SZ /d "0x00000000" /f >nul
     IF ERRORLEVEL 1 GOTO :ERROR
   ) ELSE IF "%~2" == "ON" (
     ECHO * Enabling page heap for binary %~1...
-    REG ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" /t REG_SZ /d "0x02109870" /f >nul
+    "%WinDir%\System32\reg.exe" ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" /t REG_SZ /d "0x02109870" /f >nul
     IF ERRORLEVEL 1 GOTO :ERROR
   ) ELSE IF "%~2" == "" (
     ECHO * Querying current page heap flags for binary %~1...
-    REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" 2>nul | find "GlobalFlag"
+    "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" 2>nul | "%WinDir%\System32\find.exe" "GlobalFlag"
     IF ERRORLEVEL 1 (
       ECHO   - No page heap settings are defined for this binary.
     )
@@ -153,23 +153,23 @@ EXIT /B 0
   EXIT /B 0
 
 :SHOW_PAGE_HEAP
-  REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" 2>nul >nul
+  "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" 2>nul >nul
   IF ERRORLEVEL 1 (
     ECHO - Page heap is disabled for binary %~1.
     EXIT /B 0
   )
-  REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" | find "0x02109870" > nul
+  "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" | "%WinDir%\System32\find.exe" "0x02109870" > nul
   IF %ERRORLEVEL% == 0 (
     ECHO + Page heap is enabled for binary %~1.
     EXIT /B 0
   )
-  REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" | find "0x00000000" > nul
+  "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" | "%WinDir%\System32\find.exe" "0x00000000" > nul
   IF %ERRORLEVEL% == 0 (
     ECHO - Page heap is disabled for binary %~1.
     EXIT /B 0
   )
   ECHO * Custom page heap settings are enabled for binary %~1:
-  REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" | find "GlobalFlag"
+  "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" | "%WinDir%\System32\find.exe" "GlobalFlag"
   EXIT /B 1
 
 :ERROR
