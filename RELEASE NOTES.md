@@ -1,3 +1,19 @@
+2017-10-23
+==========
++ Fix mFileSystem module (it was static and is now linked to latest).
++ Delayed path creation for Firefox profile: the profile folder will now be
+  created right before Firefox is started through the `firefox` keyword and
+  only then. This is required to be able to generate an 8.3 path to the folder,
+  which is passed to Firefox in the command-line arguments.
++ Added `pingsender.exe` to the list of page-heap enabled executable for
+  Firefox.
++ The Windows version and build number are now read from the Registry and shown
+  when an internal exception happens and when the `--version` command-line
+  argument is used.
++ BugId will no longer attempt to debug Edge on Windows versions before build
+  number 15063. This will not work, so an error message is shown instead and
+  the user is told to use EdgeDbg in this case.
+
 2017-10-12
 ==========
 + Update sub-modules and modify code to use these new versions where needed.
