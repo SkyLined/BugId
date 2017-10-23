@@ -82,6 +82,8 @@ IF "%~1" == "" (
   IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_PAGE_HEAP plugin-container.exe "%~2"
   IF ERRORLEVEL 1 EXIT /B 1
+  CALL :SET_PAGE_HEAP pingsender.exe "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
   IF "%~1" == "ON" (
     ECHO NOTE: Firefox has its own heap manager, so heap corruption detection is not as
     ECHO good as it could be.
