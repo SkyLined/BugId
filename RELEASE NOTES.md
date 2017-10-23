@@ -1,5 +1,18 @@
 2017-10-23
 ==========
++ `MemGC.cmd ?` can now be used to query MemGC state. Administrator privileges
+  are no longer needed to query or set MemGC status.
++ `PageHeap.cmd` accesses the Registry directly to get or set page heap flags.
+  This means the user no longer needs to have `pageheap.exe` installed in a
+  predictable location for it to work. `PageHeap.cmd [binary|application] ?`
+  can now be used to determine if page heap is enabled or not; it provides
+  simpler output (enabled or disabled) when possible. You can still run
+  `PageHeap.cmd [binary|application]` to show the exact flags that are enabled.
+  Administrator privileges are no longer needed to query page heap status.
++ `MemGC.cmd` and `PageHeap.cmd` use the full path to `reg.exe` and `find.exe`
+  in the Windows System32 folder. They should now function in all environments,
+  including ones where the `PATH` environment variable causes either the `reg`
+  and/or `find` command to execute another binary (e.g. PowerShell).
 + Fix mFileSystem module (it was static and is now linked to latest).
 + Delayed path creation for Firefox profile: the profile folder will now be
   created right before Firefox is started through the `firefox` keyword and
@@ -13,6 +26,9 @@
 + BugId will no longer attempt to debug Edge on Windows versions before build
   number 15063. This will not work, so an error message is shown instead and
   the user is told to use EdgeDbg in this case.
++ Added unit-tests.
++ New oConsole module has a bug fix that allows `BugId.py --version` to have
+  its output redirected (this woule previously cause an exception).
 
 2017-10-12
 ==========
