@@ -27,10 +27,11 @@ def fDumpExceptionAndExit(oException, oTraceBack):
   oConsole.fPrint(ERROR,"  Windows version: ", str(oWindowsVersion));
   oConsole.fPrint(ERROR,"  BugId version: ", oVersionInformation.sCurrentVersion);
   for (sModule, xModule) in [
-    ("mWindowsAPI", mWindowsAPI),
-    ("mFileSystem", mFileSystem),
-    ("oConsole", oConsole),
     ("cBugId", cBugId),
+    ("mFileSystem", mFileSystem),
+    ("mWindowsAPI", mWindowsAPI),
+    ("mWindowsRegistry", mWindowsRegistry),
+    ("oConsole", oConsole),
   ]:
     oConsole.fPrint(ERROR,"  ", sModule, " version: ", xModule.oVersionInformation.sCurrentVersion);
   oConsole.fPrint(ERROR, "-" * 80);

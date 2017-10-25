@@ -2,6 +2,7 @@ from cBugId import cBugId;
 from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
+import mWindowsRegistry;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
 from oWindowsVersion import oWindowsVersion;
@@ -9,11 +10,12 @@ from oWindowsVersion import oWindowsVersion;
 def fVersionCheck():
   import os, sys;
   axModules = [
-    ("BugId",       "__main__",     oVersionInformation),
-    ("cBugId",      "cBugId",       cBugId.oVersionInformation),
-    ("mFileSystem", "mFileSystem",  mFileSystem.oVersionInformation),
-    ("mWindowsAPI", "mWindowsAPI",  mWindowsAPI.oVersionInformation),
-    ("oConsole",    "oConsole",     oConsole.oVersionInformation),
+    ("BugId",             "__main__",           oVersionInformation),
+    ("cBugId",            "cBugId",             cBugId.oVersionInformation),
+    ("mFileSystem",       "mFileSystem",        mFileSystem.oVersionInformation),
+    ("mWindowsAPI",       "mWindowsAPI",        mWindowsAPI.oVersionInformation),
+    ("mWindowsRegistry",  "mWindowsRegistry",   mWindowsRegistry.oVersionInformation),
+    ("oConsole",          "oConsole",           oConsole.oVersionInformation),
   ];
   uCounter = 0;
   oConsole.fPrint("+ Windows version: ", str(oWindowsVersion), ".");
