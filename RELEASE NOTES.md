@@ -1,3 +1,13 @@
+2017-10-25
+==========
++ boolean arguments must have no value (defaults to true) or either of "true"
+  or "false". Other values are no longer accepted.
++ Other arguments that require a value must now have one; they will no longer
+  default to "true" if no value is provided.
++ exception and version information now show the version info on all relevant
+  modules (a few new ones were added, but the code was not updated to include
+  them in this output before).
+
 2017-10-23
 ==========
 + `MemGC.cmd ?` can now be used to query MemGC state. Administrator privileges
