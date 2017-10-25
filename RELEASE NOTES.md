@@ -1,5 +1,9 @@
 2017-10-25
 ==========
++ Process binary name is now lower-cased again. It was accidentally changed to
+  use whatever casing the file-system used recently. This made it harder to
+  match the the bug location id to previous location ids without having to
+  do a case-insensitive match. You can now do a case-sensitive match again.
 + boolean arguments must have no value (defaults to true) or either of "true"
   or "false". Other values are no longer accepted.
 + Other arguments that require a value must now have one; they will no longer
