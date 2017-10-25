@@ -23,7 +23,6 @@ import codecs, json, re, os, shutil, sys, threading, time, traceback;
 # 3 = internal error
 # 4 = failed to start process or attach to process(es).
 
-
 # Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
 sMainFolderPath = os.path.abspath(os.path.dirname(__file__));
 sParentFolderPath = os.path.normpath(os.path.join(sMainFolderPath, ".."));
@@ -50,7 +49,7 @@ for (sModuleName, sDownloadURL) in [
   except ImportError, oError:
     if oError.message == "No module named %s" % sModuleName:
       print "*" * 80;
-      print "BugId depends on %s which you can download at:" % sModuleName;
+      print "%s depends on %s which you can download at:" % (os.path.basename(__file__), sModuleName);
       print "    %s" % sDownloadURL;
       print "After downloading, please save the code in this folder:";
       print "    %s" % os.path.join(sModuleFolderPath, sModuleName);
@@ -558,9 +557,12 @@ def fuMain(asArguments):
       else:
         # "--bFlag" is an alias for "--bFlag=true"
         sSettingName = sArgument[2:];
-        sValue = "true";
+        sValue = None;
       
       if sSettingName in ["pid", "pids"]:
+        if not sValue:
+          oConsole.fPrint(ERROR, "- You must specify at least one process id.");
+          return 2;
         if sApplicationBinaryPath is not None:
           oConsole.fPrint(ERROR, "- You cannot supply an application binary and process ids.");
           return 2;
@@ -569,8 +571,11 @@ def fuMain(asArguments):
           return 2;
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
       elif sSettingName in ["uwp", "uwp-app"]:
+        if not sValue:
+          oConsole.fPrint(ERROR, "- You must specify an application package name.");
+          return 2;
         if sApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply two or more application package names.");
+          oConsole.fPrint(ERROR, "- You cannot supply multiple application package names.");
           return 2;
         if sApplicationBinaryPath is not None:
           oConsole.fPrint(ERROR, "- You cannot supply an application binary and package name.");
@@ -586,19 +591,42 @@ def fuMain(asArguments):
         fVersionCheck();
         return 0;
       elif sSettingName in ["isa", "cpu"]:
+        if not sValue:
+          oConsole.fPrint(ERROR, "- You must specify an Instruction Set Architecture.");
+          return 2;
         if sValue not in ["x86", "x64"]:
-          oConsole.fPrint(ERROR, "- Unknown ISA %s" % repr(sValue));
+          oConsole.fPrint(ERROR, "- Unknown Instruction Set Architecture %s" % repr(sValue));
           return 2;
         sApplicationISA = sValue;
       elif sSettingName in ["quiet", "silent"]:
-        gbQuiet = sValue.lower() == "true";
+        if sValue is None or sValue.lower() == "true":
+          gbQuiet = True;
+        elif sValue.lower() == "false":
+          gbQuiet = False;
+        else:
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
       elif sSettingName in ["verbose", "debug", "cdb-io"]:
-        dxConfig["bOutputCdbIO"] = sValue.lower() == "true";
+        if sValue is None or sValue.lower() == "true":
+          dxConfig["bOutputCdbIO"] = True;
+        elif sValue.lower() == "false":
+          dxConfig["bOutputCdbIO"] = False;
+        else:
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
       elif sSettingName in ["fast", "quick"]:
-        bFast = True;
+        if sValue is None or sValue.lower() == "true":
+          bFast = True;
+        elif sValue.lower() == "false":
+          bFast = False;
+        else:
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
       elif sSettingName in ["repeat", "forever"]:
-        bRepeat = True;
-      elif sSettingName in ["test-internal-error"]:
+        if sValue is None or sValue.lower() == "true":
+          bRepeat = True;
+        elif sValue.lower() == "false":
+          bRepeat = False;
+        else:
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
+      elif sSettingName in ["test-internal-error", "internal-error-test"]:
         raise Exception("Testing internal error");
       else:
         try:
@@ -610,14 +638,14 @@ def fuMain(asArguments):
         dxUserProvidedConfigSettings[sSettingName] = xValue;
     elif sArgument in asApplicationKeywords:
       if sApplicationKeyword is not None:
-        oConsole.fPrint(ERROR, "- You cannot supply two or more application keywords.");
+        oConsole.fPrint(ERROR, "- You cannot supply multiple application keywords.");
         return 2;
       sApplicationKeyword = sArgument;
     elif sArgument[-1] == "?" and sArgument[:-1] in asApplicationKeywords:
       return fuShowApplicationKeyWordHelp(sArgument[:-1]);
     else:
       if sApplicationBinaryPath is not None:
-        oConsole.fPrint(ERROR, "- You cannot supply two or more application binaries.");
+        oConsole.fPrint(ERROR, "- You cannot supply multiple application binaries.");
         return 2;
       if len(auApplicationProcessIds) > 0:
         oConsole.fPrint(ERROR, "- You cannot supply process ids and an application binary.");
