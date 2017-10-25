@@ -5,7 +5,6 @@ import mWindowsAPI;
 import mWindowsRegistry;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
-from oWindowsVersion import oWindowsVersion;
 
 def fDumpExceptionAndExit(oException, oTraceBack):
   import os, sys, traceback;
@@ -24,7 +23,7 @@ def fDumpExceptionAndExit(oException, oTraceBack):
       oConsole.fPrint(ERROR,"      > ", sCode.strip());
     uFrameIndex -= 1;
   oConsole.fPrint();
-  oConsole.fPrint(ERROR,"  Windows version: ", str(oWindowsVersion));
+  oConsole.fPrint(ERROR,"  Windows version: ", str(mWindowsRegistry.oWindowsVersion));
   oConsole.fPrint(ERROR,"  BugId version: ", oVersionInformation.sCurrentVersion);
   for (sModule, xModule) in [
     ("cBugId", cBugId),

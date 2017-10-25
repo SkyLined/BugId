@@ -5,7 +5,6 @@ import mWindowsAPI;
 import mWindowsRegistry;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
-from oWindowsVersion import oWindowsVersion;
 
 def fVersionCheck():
   import os, sys;
@@ -18,7 +17,7 @@ def fVersionCheck():
     ("oConsole",          "oConsole",           oConsole.oVersionInformation),
   ];
   uCounter = 0;
-  oConsole.fPrint("+ Windows version: ", str(oWindowsVersion), ".");
+  oConsole.fPrint("+ Windows version: ", str(mWindowsRegistry.oWindowsVersion), ".");
   for (sModuleName, sSysModuleName, oModuleVersionInformation) in axModules:
     assert sModuleName == oModuleVersionInformation.sProjectName, \
         "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);

@@ -70,7 +70,6 @@ import mFileSystem;
 import mWindowsAPI;
 import mWindowsRegistry;
 from oConsole import oConsole;
-from oWindowsVersion import oWindowsVersion;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
 # be used if the keyword is provided as the command line by the user:
@@ -124,9 +123,9 @@ def fasGetEdgeDefaultArguments(bForHelp):
   if not bForHelp:
     # We don't really return any arguments, but we do check that we can run this
     # version of Edge...
-    if oWindowsVersion.uCurrentBuild < 15063:
+    if mWindowsRegistry.oWindowsVersion.uCurrentBuild < 15063:
       oConsole.fPrint(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
-      oConsole.fPrint(ERROR, "builds ", HILITE, "15063", ERROR, " and higher, and you are running build ", HILITE, oWindowsVersion.sCurrentBuild, ERROR, ".");
+      oConsole.fPrint(ERROR, "builds ", HILITE, "15063", ERROR, " and higher, and you are running build ", HILITE, mWindowsRegistry.oWindowsVersion.sCurrentBuild, ERROR, ".");
       oConsole.fPrint();
       oConsole.fPrint("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
       oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
