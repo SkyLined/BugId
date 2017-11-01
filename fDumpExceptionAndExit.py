@@ -2,7 +2,6 @@ from cBugId import cBugId;
 from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
-import mWindowsRegistry;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
 
@@ -23,13 +22,12 @@ def fDumpExceptionAndExit(oException, oTraceBack):
       oConsole.fPrint(ERROR,"      > ", sCode.strip());
     uFrameIndex -= 1;
   oConsole.fPrint();
-  oConsole.fPrint(ERROR,"  Windows version: ", str(mWindowsRegistry.oWindowsVersion));
+  oConsole.fPrint(ERROR,"  Windows version: ", str(mWindowsAPI.oWindowsVersion));
   oConsole.fPrint(ERROR,"  BugId version: ", oVersionInformation.sCurrentVersion);
   for (sModule, xModule) in [
     ("cBugId", cBugId),
     ("mFileSystem", mFileSystem),
     ("mWindowsAPI", mWindowsAPI),
-    ("mWindowsRegistry", mWindowsRegistry),
     ("oConsole", oConsole),
   ]:
     oConsole.fPrint(ERROR,"  ", sModule, " version: ", xModule.oVersionInformation.sCurrentVersion);

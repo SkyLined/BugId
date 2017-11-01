@@ -38,9 +38,8 @@ sys.path += [sPath for sPath in [
 # if any one fails to load. This error explains where the missing component
 # can be downloaded to fix the error.
 for (sModuleName, sDownloadURL) in [
-  ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
   ("mFileSystem", "https://github.com/SkyLined/mFileSystem/"),
-  ("mWindowsRegistry", "https://github.com/SkyLined/mWindowsRegistry/"),
+  ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
   ("oConsole", "https://github.com/SkyLined/oConsole/"),
   ("cBugId", "https://github.com/SkyLined/cBugId/"),
 ]:
@@ -68,7 +67,6 @@ from fVersionCheck import fVersionCheck;
 from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
-import mWindowsRegistry;
 from oConsole import oConsole;
 
 # Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
@@ -123,9 +121,10 @@ def fasGetEdgeDefaultArguments(bForHelp):
   if not bForHelp:
     # We don't really return any arguments, but we do check that we can run this
     # version of Edge...
-    if mWindowsRegistry.oWindowsVersion.uCurrentBuild < 15063:
+    if mWindowsAPI.oWindowsVersion.uCurrentBuild < 15063:
       oConsole.fPrint(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
-      oConsole.fPrint(ERROR, "builds ", HILITE, "15063", ERROR, " and higher, and you are running build ", HILITE, mWindowsRegistry.oWindowsVersion.sCurrentBuild, ERROR, ".");
+      oConsole.fPrint(ERROR, "builds ", HILITE, "15063", ERROR, " and higher, and you are running build ", HILITE, \
+          mWindowsAPI.oWindowsVersion.sCurrentBuild, ERROR, ".");
       oConsole.fPrint();
       oConsole.fPrint("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
       oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
