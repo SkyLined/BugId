@@ -57,7 +57,7 @@ class cVersionInformation(object):
     if sRemoteProjectDetailsJSON:
       try:
         dsRemoteProjectDetails = json.loads(sRemoteProjectDetailsJSON);
-      except oException:
+      except Exception, oException:
         oVersionInformation.sError = "Cannot check for updates: %s did not return valid JSON data" % sProjectDetailsJSONURL;
         return;
       oVersionInformation.__sLatestVersion = dsRemoteProjectDetails["sVersion"];
