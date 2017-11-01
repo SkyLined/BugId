@@ -10,6 +10,3 @@
 [submodule "modules/mFileSystem"]
 	path = modules/mFileSystem
 	url = https://github.com/SkyLined/mFileSystem
-[submodule "modules/mWindowsRegistry"]
-	path = modules/mWindowsRegistry
-	url = https://github.com/SkyLined/mWindowsRegistry/
