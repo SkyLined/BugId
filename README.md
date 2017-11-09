@@ -3,13 +3,17 @@ BugId
 
 Python module to detect, analyze and id application bugs
 
-<a href="https://www.codewake.com/p/bugid">
-  <img style="vertical-align: middle; float: left;" src="https://www.codewake.com/badges/codewake2.svg"/>
-</a>
 *This project is under very active development and I appreciate any feedback
 you can give me; if you are having any problems running it, or have any
 questions, please do let me know (e.g. by opening a bug). I will try to help
 you and get the issue resolved as soon as possible.*
+
+*Note that the below documentation is way behind on code development. Some
+or all of it may not describe the way BugId currently functions; you may
+have to experiment a bit to figure things out, for which I appologize. If
+you need any help, please do contact me. If you find any parts that really
+need updating as soon as possible, let me know and I will try to prioritize
+them.*
 
 TL;DR
 -----
@@ -42,8 +46,7 @@ A human-readable report containing information collected about the bug is
 available in HTML format, for use when manually analyzing bugs. The code
 attempts to determine the security risk of the bug it detected, so even novice
 users may be able to determine whether or not a particular bug is likely to be
-a security vulnerability. You can download a number of example reports [here]
-(https://github.com/SkyLined/cBugId/tree/master/Tests/Reports).
+a security vulnerability. You can download a number of example reports [here](https://github.com/SkyLined/cBugId/tree/master/Tests/Reports).
 
 You can tell BugId to save a debugger dump file when it detects a crash, for
 later off-line analysis by a developer.
@@ -338,7 +341,7 @@ cBugId takes the following optional named arguments:
       fInternalExceptionCallback is called when there is a bug in BugId itself.
       If you want to make sure BugId is working as expected, you may want to
       use this callback. If it gets called, you can file a bug at
-      (here)[https://github.com/SkyLined/BugId/issues]. Please add as many
+      [here](https://github.com/SkyLined/BugId/issues). Please add as many
       details from the exception object passed in the argument as you can.
 
 Please note that either `asApplicationCommandLine` or `auApplicationProcessIds`
@@ -437,8 +440,7 @@ The exact same thing, done using the "msie" known application keyword:
 
 EdgeDbg
 -------
-To facilitate usage of BugId with Microsoft Edge, the [EdgeDbg]
-(https://github.com/SkyLined/EdgeDbg) project includes the `EdgeBugId.cmd`
+To facilitate usage of BugId with Microsoft Edge, the [EdgeDbg](https://github.com/SkyLined/EdgeDbg) project includes the `EdgeBugId.cmd`
 script, which can be used to run Edge in BugId. More information is available
 in the [README](https://github.com/SkyLined/EdgeDbg/blob/master/README.md) file
 for that project.
@@ -449,7 +451,7 @@ This project comes with executables that can be used trigger a range of bugs,
 which makes it possible to test if BugId is functioning correctly. If you are
 making modification to the source, you are strongly advised to run these tests
 to make sure these changes did not break BugId in some way. The executables
-and their source are found in the `Tests\` folder. The python script `Tests.py`
+and their source are found in the `Tests\\` folder. The python script `Tests.py`
 runs a large number of tests and returns an error code of zero if all succeeded
 and a non-zero error code if any failed.
 
@@ -458,12 +460,8 @@ License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
   <img alt="Creative Commons License" style="vertical-align: middle; float: left;" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
 </a>
-This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0
-International License](http://creativecommons.org/licenses/by-nc/4.0/). It is
+This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 International License](http://creativecommons.org/licenses/by-nc/4.0/). It is
 provided free of charge for non-commercial use only. If you would like to use
-it commercially, please contact the author at [bugid@skylined.nl][] to
+it commercially, please contact the author at bugid@skylined.nl to
 discuss licensing options. If you find it useful and would like to make a
-donation, you can send bitcoin to [183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]. 
-
-[183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX]:bitcoin:183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX
-[bugid@skylined.nl]:mailto:bugid@skylined.nl
+donation, you can send bitcoin to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. 
