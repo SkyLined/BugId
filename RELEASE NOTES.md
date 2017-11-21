@@ -1,3 +1,17 @@
+2017-11-21
+==========
++ Added `uProcessMaxMemoryUse` and `uTotalMaxMemoryUse` setings in
+  `dxConfig.py` that allow you to limit the amount of memory a single process
+  or all process in the application combined can allocate.
++ Some output will no longer be shown unless you specify the `-v` command-
+  line switch. This switch still also enables cdb output. This should make the
+  normal output of BugId cleaner.
++ Changed some output formatting.
++ Added Windows ISA and Python version and ISA to version information.
++ `PageHeap.cmd` will now say "ON" or "OFF" when querying the state of page
+  heap for a specific binary, assuming the default flags are set. If non-
+  default flags are set, the flags value is shown.
+
 2017-10-25
 ==========
 + Process binary name is now lower-cased again. It was accidentally changed to

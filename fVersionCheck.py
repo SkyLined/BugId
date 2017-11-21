@@ -6,7 +6,9 @@ from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
 
 def fVersionCheck():
-  import os, sys;
+  import os, platform, sys;
+  oConsole.fPrint("+ ", INFO, "Windows", NORMAL, " version: ", INFO, str(mWindowsAPI.oWindowsVersion), NORMAL, " (", INFO, mWindowsAPI.fsGetOSISA(), NORMAL, ").");
+  oConsole.fPrint("+ ", INFO, "Python", NORMAL, " version: ", INFO, str(platform.python_version()), NORMAL, " (", INFO, mWindowsAPI.fsGetPythonISA(), NORMAL, ").");
   axModules = [
     ("BugId",             "__main__",           oVersionInformation),
     ("cBugId",            "cBugId",             cBugId.oVersionInformation),
@@ -24,12 +26,11 @@ def fVersionCheck():
     oConsole.fProgressBar(uCounter * 1.0 / len(axModules), \
         "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
     if oModuleVersionInformation.bPreRelease:
-      oConsole.fPrint("  + You are running a ", HILITE, "pre-release", NORMAL, " version. ",
-          "The latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
+      oConsole.fPrint("  You are running a ", HILITE, "pre-release", NORMAL, " version: ",
+          "the latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
     elif not oModuleVersionInformation.bUpToDate:
-      oConsole.fPrint("  + Version ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL,
-          " is available at ", INFO, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
+      oConsole.fPrint("  Version ", HILITE, oModuleVersionInformation.sLatestVersion, NORMAL,
+          " is available at ", HILITE, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
     uCounter += 1;
-  oConsole.fPrint("+ Windows version: ", INFO, str(mWindowsAPI.oWindowsVersion), NORMAL, ".");
   oConsole.fPrint();
 

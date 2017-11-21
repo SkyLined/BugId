@@ -1,14 +1,16 @@
 import os;
 
+uKiloByte = 10 ** 3;
+uMegaByte = 10 ** 6;
+uGigaByte = 10 ** 9;
+uTeraByte = 10 ** 12;
+
 # Note that some of these settings may be overwritten by application specific settings found in BugId.py in the
 # `gdApplication_dxSettings_by_sKeyword` variable. These settings should probably be moved here, but I am not sure
 # yet how I might implement this. For now, if you want to change such settings, you can either modify BugId.py and
 # change values in `gdApplication_dxSettings_by_sKeyword`, or provide them on the command line.
 
 dxConfig = {
-  "bOutputCdbIO": False,                          # Set to True to have BugId.py output every command send to cdb.exe
-                                                  # and everything cdb outputs in return, or use the `--verbose`
-                                                  # command-line flag to do this.
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
                                                   # downloaded with a remote build, None = use default).
@@ -27,6 +29,37 @@ dxConfig = {
   "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
+  "uProcessMaxMemoryUse": 2 * uGigaByte,          # Limit the total amount of memory a single process can allocate. If
+                                                  # a process attempts to allocate memory that would cause it to have
+                                                  # more than this maximum allocated, the allocation will fail.
+                                                  # Use this to detect excessive allocations in a single process before
+                                                  # they cause a system-wide low memory situation that may prevent
+                                                  # BugId and/or other applications from working correctly. Set to None
+                                                  # to not apply this limit.
+                                                  # This limit is enforced using Job objects or by reserving part of
+                                                  # the process' address space. Some applications assign their
+                                                  # processes to Job objects themselves and since processes cannot be
+                                                  # assigned to more than one Job object, it may not be possible to
+                                                  # apply this limit in that way. In such cases, BugId will reserve
+                                                  # part of the process' address space to limit the ammount of memory
+                                                  # the process can allocate. Unfortunately, this fallback method
+                                                  # limits the amount of shared AND private memory the process can
+                                                  # allocate AND reserve and may fragment the address space to the
+                                                  # point where the process may not be able to allocate or reserve
+                                                  # large blocks of memory even if this would not cause it to more than
+                                                  # the maximum amount of memory allocated.
+  "uTotalMaxMemoryUse": 2 * uGigaByte,            # Limit the total amount of memory the application can allocate in
+                                                  # all its processes. If a process attempts to allocate additional
+                                                  # memory that would cause it to have more than this maximum allocated,
+                                                  # the allocation will fail.
+                                                  # Use this to detect excessive allocations by the application as a
+                                                  # whole before they cause a system-wide low memory situation that may
+                                                  # prevent BugId and/or other applications from working correctly. Set
+                                                  # to None to not apply this limit.
+                                                  # This limit is enforced using Job objects. Some applications assign
+                                                  # their processes to Job objects themselves and since processes
+                                                  # cannot be assigned to more than one Job object, it may not be
+                                                  # possible to apply this limit.
   "bApplicationTerminatesWithMainProcess": False, # Terminate BugId if one of the application's main processes is
                                                   # terminated. This can be useful if the application uses background
                                                   # processes (update checkers, brokers, etc.) which are also debugged,

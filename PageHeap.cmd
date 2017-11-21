@@ -90,6 +90,9 @@ IF "%~1" == "" (
 ) ELSE IF "%~1" == "msie" (
   CALL :SET_OR_SHOW_PAGE_HEAP "iexplore.exe" "%~2"
   IF ERRORLEVEL 1 EXIT /B 1
+  REM I saw iexplore.exe spawn rundll32.exe once, so I'm adding it:
+  CALL :SET_OR_SHOW_PAGE_HEAP "rundll32.exe" "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE (
   CALL :SET_OR_SHOW_PAGE_HEAP "%~1" "%~2"
   IF ERRORLEVEL 1 EXIT /B 1
@@ -140,9 +143,21 @@ EXIT /B 0
     IF ERRORLEVEL 1 GOTO :ERROR
   ) ELSE IF "%~2" == "" (
     ECHO * Querying current page heap flags for binary %~1...
-    "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" 2>nul | "%WinDir%\System32\find.exe" "GlobalFlag"
+    "%WinDir%\System32\reg.exe" QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" >nul 2>nul
     IF ERRORLEVEL 1 (
-      ECHO   - No page heap settings are defined for this binary.
+      ECHO   - Page heap is OFF.
+    ) ELSE (
+      REM For some obscure reason I cannot put quotes around the reg.exe path because it causes an error:
+      REM "The system cannot find the path specified."
+      FOR /F "usebackq tokens=3" %%I IN (`%WinDir%\System32\reg.exe QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" ^| "%WinDir%\System32\find.exe" "GlobalFlag"`) DO (
+        IF "%%~I" == "0x02109870" (
+          ECHO   + Page heap is ON.
+        ) ELSE IF "%%~I" == "0x00000000" (
+          ECHO   - Page heap is OFF.
+        ) ELSE (
+          ECHO   * Page heap flags are %%~I.
+        )
+      )
     )
   ) ELSE IF "%~2" == "?" (
     CALL :SHOW_PAGE_HEAP "%~1"

@@ -123,8 +123,8 @@ def fasGetEdgeDefaultArguments(bForHelp):
     # version of Edge...
     if mWindowsAPI.oWindowsVersion.uCurrentBuild < 15063:
       oConsole.fPrint(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
-      oConsole.fPrint(ERROR, "builds ", HILITE, "15063", ERROR, " and higher, and you are running build ", HILITE, \
-          mWindowsAPI.oWindowsVersion.sCurrentBuild, ERROR, ".");
+      oConsole.fPrint(ERROR, "builds ", ERROR_INFO, "15063", ERROR, " and higher, and you are running build ", \
+          ERROR_INFO, mWindowsAPI.oWindowsVersion.sCurrentBuild, ERROR, ".");
       oConsole.fPrint();
       oConsole.fPrint("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
       oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
@@ -183,10 +183,10 @@ gdApplication_sBinaryPath_by_sKeyword = {
   "msie_x86": sMSIEPath_x86,
   "msie_x64": sMSIEPath_x64,
 };
-gsApplicationPackageName_by_sKeyword = {
+gsUWPApplicationPackageName_by_sKeyword = {
   "edge": "Microsoft.MicrosoftEdge",
 };
-gsApplicationId_by_sKeyword = {
+gsUWPApplicationId_by_sKeyword = {
   "edge": "MicrosoftEdge",
 };
 gasApplicationAttachToProcessesForExecutableNames_by_sKeyword = {
@@ -346,8 +346,8 @@ gasBinariesThatAreAllowedToRunWithoutPageHeap = [s.lower() for s in [
 ]];
 asApplicationKeywords = sorted(list(set(
   gdApplication_sBinaryPath_by_sKeyword.keys() +
-  gsApplicationPackageName_by_sKeyword.keys() +
-  gsApplicationId_by_sKeyword.keys() + # should be the same as above!
+  gsUWPApplicationPackageName_by_sKeyword.keys() +
+  gsUWPApplicationId_by_sKeyword.keys() + # should be the same as above!
   gasApplicationAttachToProcessesForExecutableNames_by_sKeyword.keys() +
   gdApplication_fasGetStaticArguments_by_sKeyword.keys() +
   gdApplication_asDefaultOptionalArguments_by_sKeyword.keys() +
@@ -357,21 +357,22 @@ asApplicationKeywords = sorted(list(set(
   gdApplication_rImportantStdErrLines_by_sKeyword.keys()
 )));
 gbQuiet = False;
+gbVerbose = False;
 
 def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
-    oConsole.fPrint(ERROR,"- Unknown application keyword %s" % sApplicationKeyword);
+    oConsole.fPrint(ERROR, "- Unknown application keyword ", ERROR_INFO, sApplicationKeyword, ERROR, ".");
     return 2;
-  oConsole.fPrint("Known application settings for %s" % sApplicationKeyword);
+  oConsole.fPrint("Known application settings for ", sApplicationKeyword);
   if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
     if gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword] is None:
-      oConsole.fPrint(ERROR,"  The application cannot be found on your system.");
+      oConsole.fPrint(ERROR, "  The application cannot be found on your system.");
     else:
       oConsole.fPrint("  Binary path: ", INFO, " ".join(gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]));
-  elif sApplicationKeyword in gsApplicationPackageName_by_sKeyword:
+  elif sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
     oConsole.fPrint("  UWP Application information:");
-    oConsole.fPrint("    Package name: ", INFO, gsApplicationPackageName_by_sKeyword[sApplicationKeyword]);
-    oConsole.fPrint("    Id: ", INFO, gsApplicationId_by_sKeyword[sApplicationKeyword]);
+    oConsole.fPrint("    Package name: ", INFO, gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword]);
+    oConsole.fPrint("    Id: ", INFO, gsUWPApplicationId_by_sKeyword[sApplicationKeyword]);
     if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
       oConsole.fPrint("    Attach to additional processes running any of the following binaries:");
       for sBinaryName in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword]:
@@ -407,11 +408,11 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation):
       "Unknown setting name %s%s." % (sSettingName, \
           len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
   if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
-    if not gbQuiet:
+    if gbVerbose:
       oConsole.fPrint(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
           " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
   else:
-    if not gbQuiet:
+    if gbVerbose:
       oConsole.fPrint(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
           " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
     dxConfigGroup[sSettingName] = xValue;
@@ -447,9 +448,18 @@ def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
   oConsole.fPrint(ERROR, "-" * 80);
   oConsole.fPrint();
 
+def fFailedToApplyMemoryLimitsHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
+  if not gbQuiet:
+    oConsole.fPrint(ERROR, "- Cannot apply memory limits to process ", ERROR_INFO, "%d" % uProcessId, \
+        ERROR, "/", ERROR_INFO, "0x%X" % uProcessId, ERROR, " (", ERROR_INFO, sBinaryName, ERROR, "): ", \
+        ERROR_INFO, sCommandLine or "<command line unknown>");
+  # This does not stop us from debugging the application, so we'll let it run.
+  # However, results may be sub-optimal if the application ends up using all
+  # available memory, as this may prevent BugId from functioning correctly.
+
 gasReportedBinaryNameWithoutPageHeap = [];
 gasAttachToProcessesForExecutableNames = [];
-def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
+def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bPreventable):
   global gbAnErrorOccured, \
          gasBinariesThatAreAllowedToRunWithoutPageHeap, \
          gasReportedBinaryNameWithoutPageHeap, \
@@ -459,7 +469,7 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
   if not bPreventable:
     if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
       gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
-      oConsole.fPrint(ERROR,"- Full page heap is not enabled for ",15,sBinaryName,13,".");
+      oConsole.fPrint(ERROR,"- Full page heap is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
       oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
       oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
       oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
@@ -468,10 +478,10 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
   else:
     gbAnErrorOccured = True;
     oConsole.fPrint(ERROR, "- Full page heap is not enabled for all binaries used by the application.");
-    oConsole.fPrint(ERROR, "  Specifically it is not enabled for ",15,sBinaryName,7,".");
-    oConsole.fPrint("  You can enabled full page heap for %s by running:" % sBinaryName);
+    oConsole.fPrint(ERROR, "  Specifically it is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
+    oConsole.fPrint("  You can enabled full page heap for ", sBinaryName, " by running:");
     oConsole.fPrint();
-    oConsole.fPrint("      ",15,'PageHeap.cmd "',sBinaryName,'" ON');
+    oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', sBinaryName, '" ON');
     oConsole.fPrint();
     oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
     oConsole.fPrint("  optimal. Please enable page heap and try again.");
@@ -482,36 +492,32 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, bPreventable):
     # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in `dxConfig.py`
     # or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
 
-def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName):
+def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
+  if not gbQuiet:
+    oConsole.fPrint("* Terminated main processes ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, \
+        NORMAL, " (", INFO, sBinaryName, NORMAL, ").");
   if dxConfig["bApplicationTerminatesWithMainProcess"]:
-    oConsole.fPrint("+ T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
-        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName));
-    oConsole.fPrint();
     oConsole.fStatus(INFO, "* BugId is stopping...");
     oBugId.fStop();
-  elif not gbQuiet:
-    oConsole.fPrint("+ T+%.1f One of the main processes (id %d/0x%X, %s) has terminated." % \
-        (oBugId.fnApplicationRunTime(), uProcessId, uProcessId, sBinaryName));
-    oConsole.fPrint();
 
 def fStdInInputHandler(oBugId, sInput):
-  oConsole.fPrint(HILITE,"<stdin<", NORMAL, sInput);
+  oConsole.fPrint(HILITE, "<stdin<", NORMAL, sInput);
 def fStdOutOutputHandler(oBugId, sOutput):
-  oConsole.fPrint(INFO,"stdout>", NORMAL, sOutput);
+  oConsole.fPrint(INFO, "stdout>", NORMAL, sOutput);
 def fStdErrOutputHandler(oBugId, sOutput):
-  oConsole.fPrint(ERROR,"stderr>", NORMAL, sOutput);
+  oConsole.fPrint(ERROR, "stderr>", NORMAL, sOutput);
 
-def fNewProcessHandler(oBugId, oProcess):
+def fNewProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
   global gasAttachToProcessesForExecutableNames;
   if not gbQuiet:
-    oConsole.fPrint("* New process ", INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL, ": ", INFO, oProcess.sBinaryName);
+    oConsole.fPrint("* New process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
+        " (", INFO, sBinaryName, NORMAL, "): ", INFO, sCommandLine or "<command line unknown>");
   # Now is a good time to look for additional binaries that may need to be debugged as well.
   if gasAttachToProcessesForExecutableNames:
     oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
 
 def fuMain(asArguments):
-  global gbQuiet, \
-         gasAttachToProcessesForExecutableNames;
+  global gbVerbose, gbQuiet, gasAttachToProcessesForExecutableNames;
   if len(asArguments) == 0:
     fPrintLogo();
     fPrintUsage(asApplicationKeywords);
@@ -520,8 +526,8 @@ def fuMain(asArguments):
   sApplicationKeyword = None;
   sApplicationBinaryPath = None;
   auApplicationProcessIds = [];
-  sApplicationPackageName = None;
-  sApplicationId = None;
+  sUWPApplicationPackageName = None;
+  sUWPApplicationId = None;
   asApplicationOptionalArguments = None;
   sApplicationISA = None;
   bRepeat = False;
@@ -540,7 +546,7 @@ def fuMain(asArguments):
     elif sArgument in ["-q", "/q"]:
       gbQuiet = True;
     elif sArgument in ["-v", "/v"]:
-      dxConfig["bOutputCdbIO"] = True;
+      gbVerbose = True;
     elif sArgument in ["-f", "/f"]:
       bFast = True;
     elif sArgument in ["-r", "/r"]:
@@ -564,27 +570,27 @@ def fuMain(asArguments):
         if sApplicationBinaryPath is not None:
           oConsole.fPrint(ERROR, "- You cannot supply an application binary and process ids.");
           return 2;
-        if sApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply an application package name and process ids.");
+        if sUWPApplicationPackageName is not None:
+          oConsole.fPrint(ERROR, "- You cannot supply an UWP application package name and process ids.");
           return 2;
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
-          oConsole.fPrint(ERROR, "- You must specify an application package name.");
+          oConsole.fPrint(ERROR, "- You must specify an UWP application package name.");
           return 2;
-        if sApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply multiple application package names.");
+        if sUWPApplicationPackageName is not None:
+          oConsole.fPrint(ERROR, "- You cannot supply multiple UWP application package names.");
           return 2;
         if sApplicationBinaryPath is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply an application binary and package name.");
+          oConsole.fPrint(ERROR, "- You cannot supply an application binary and UWP package name.");
           return 2;
         if len(auApplicationProcessIds) > 0:
-          oConsole.fPrint(ERROR, "- You cannot supply process ids and an application package name.");
+          oConsole.fPrint(ERROR, "- You cannot supply process ids and an UWP application package name.");
           return 2;
         if "!" not in sValue:
-          oConsole.fPrint(ERROR, "- Please provide a string of the form ", HILITE, sSettingName, "=<package name>!<application id>.");
+          oConsole.fPrint(ERROR, "- Please provide a string of the form ", ERROR_INFO, sSettingName, "=<package name>!<application id>.");
           return 2;
-        sApplicationPackageName, sApplicationId = sValue.split("!", 1);
+        sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
       elif sSettingName in ["version", "check-for-updates"]:
         fVersionCheck();
         return 0;
@@ -593,7 +599,7 @@ def fuMain(asArguments):
           oConsole.fPrint(ERROR, "- You must specify an Instruction Set Architecture.");
           return 2;
         if sValue not in ["x86", "x64"]:
-          oConsole.fPrint(ERROR, "- Unknown Instruction Set Architecture %s" % repr(sValue));
+          oConsole.fPrint(ERROR, "- Unknown Instruction Set Architecture ", repr(sValue));
           return 2;
         sApplicationISA = sValue;
       elif sSettingName in ["quiet", "silent"]:
@@ -602,35 +608,36 @@ def fuMain(asArguments):
         elif sValue.lower() == "false":
           gbQuiet = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
-      elif sSettingName in ["verbose", "debug", "cdb-io"]:
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
+      elif sSettingName in ["verbose", "debug"]:
         if sValue is None or sValue.lower() == "true":
-          dxConfig["bOutputCdbIO"] = True;
+          gbVerbose = True;
         elif sValue.lower() == "false":
-          dxConfig["bOutputCdbIO"] = False;
+          gbVerbose = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
       elif sSettingName in ["fast", "quick"]:
         if sValue is None or sValue.lower() == "true":
           bFast = True;
         elif sValue.lower() == "false":
           bFast = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
       elif sSettingName in ["repeat", "forever"]:
         if sValue is None or sValue.lower() == "true":
           bRepeat = True;
         elif sValue.lower() == "false":
           bRepeat = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for --%s." % sSettingName);
+          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
       elif sSettingName in ["test-internal-error", "internal-error-test"]:
         raise Exception("Testing internal error");
       else:
         try:
           xValue = json.loads(sValue);
         except ValueError as oError:
-          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", HILITE, sValue, ERROR, ": ", HILITE, " ".join(oError.args), ERROR, ".");
+          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", ERROR_INFO, sValue, ERROR, ": ", \
+              ERROR_INFO, " ".join(oError.args), ERROR, ".");
           return 2;
         # User provided config settings must be applied after any keyword specific config settings:
         dxUserProvidedConfigSettings[sSettingName] = xValue;
@@ -648,8 +655,8 @@ def fuMain(asArguments):
       if len(auApplicationProcessIds) > 0:
         oConsole.fPrint(ERROR, "- You cannot supply process ids and an application binary.");
         return 2;
-      if sApplicationPackageName is not None:
-        oConsole.fPrint(ERROR, "- You cannot supply an application package name and a binary.");
+      if sUWPApplicationPackageName is not None:
+        oConsole.fPrint(ERROR, "- You cannot supply an application UWP package name and a binary.");
         return 2;
       sApplicationBinaryPath = sArgument;
   
@@ -665,35 +672,41 @@ def fuMain(asArguments):
   
   if sApplicationKeyword:
     fCleanup = dxConfig["bCleanup"] and gdfCleanup_by_sKeyword.get(sApplicationKeyword) or None;
-    # Get application binary/package name/process ids as needed:
+    # Get application binary/UWP package name/process ids as needed:
     if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
       # This application is started from the command-line.
       if auApplicationProcessIds:
-        oConsole.fPrint(ERROR, "- You cannot specify process ids for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
+        oConsole.fPrint(ERROR, "- You cannot specify process ids for application keyword ", \
+            ERROR_INFO, sApplicationKeyword, ERROR, ".");
         return 2;
-      if sApplicationPackageName:
-        oConsole.fPrint(ERROR, "- You cannot specify an application package name for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
+      if sUWPApplicationPackageName:
+        oConsole.fPrint(ERROR, "- You cannot specify an application UWP package name for application keyword ", \
+            ERROR_INFO, sApplicationKeyword, ERROR, ".");
         return 2;
       if sApplicationBinaryPath is None:
         sApplicationBinaryPath = gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword];
         if sApplicationBinaryPath is None:
-          oConsole.fPrint(ERROR, "- The main application binary for ", HILITE, sApplicationKeyword, ERROR, " could not be detected on your system.");
+          oConsole.fPrint(ERROR, "- The main application binary for ", ERROR_INFO, sApplicationKeyword, \
+              ERROR, " could not be detected on your system.");
           oConsole.fPrint(ERROR, "  Please provide the path to this binary in the arguments.");
           return 4;
-    elif sApplicationKeyword in gsApplicationPackageName_by_sKeyword:
+    elif sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
       # This application is started as an application package.
       if sApplicationBinaryPath:
-        oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
+        oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", \
+            ERROR_INFO, sApplicationKeyword, ERROR, ".");
         return 2;
-      sApplicationPackageName = gsApplicationPackageName_by_sKeyword[sApplicationKeyword];
-      sApplicationId = gsApplicationId_by_sKeyword[sApplicationKeyword];
+      sUWPApplicationPackageName = gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword];
+      sUWPApplicationId = gsUWPApplicationId_by_sKeyword[sApplicationKeyword];
     elif not auApplicationProcessIds:
       # This application is attached to.
-      oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
+      oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", \
+          ERROR_INFO, sApplicationKeyword, ERROR, ".");
       return 2;
     elif asApplicationOptionalArguments:
       # Cannot supply arguments if we're attaching to processes
-      oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", HILITE, sApplicationKeyword, ERROR, ".");
+      oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", \
+          ERROR_INFO, sApplicationKeyword, ERROR, ".");
       return 2;
     if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
       gasAttachToProcessesForExecutableNames = gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword];
@@ -708,12 +721,12 @@ def fuMain(asArguments):
     asApplicationArguments = asApplicationStaticArguments + asApplicationOptionalArguments;
     # Apply application specific settings
     if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-      if not gbQuiet:
+      if gbVerbose:
         oConsole.fPrint("* Applying application specific configuration for %s:" % sApplicationKeyword);
       for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
         if sSettingName not in dxUserProvidedConfigSettings:
           fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
-      if not gbQuiet:
+      if gbVerbose:
         oConsole.fPrint();
     # Apply application specific source settings
     if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
@@ -726,15 +739,15 @@ def fuMain(asArguments):
     if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
       # Apply application specific ISA
       sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
-  elif (auApplicationProcessIds or sApplicationPackageName or sApplicationBinaryPath):
+  elif (auApplicationProcessIds or sUWPApplicationPackageName or sApplicationBinaryPath):
     fCleanup = None;
     # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
     # are used if they are supplied:
     asApplicationArguments = asApplicationOptionalArguments or [];
   else:
     oConsole.fPrint(ERROR, "- You must specify something to debug. This can be either one or more process");
-    oConsole.fPrint(ERROR, "  ids, an application command-line or an UWP app package name.");
-    oConsole.fPrint("Run \"BugId -h\" for help on command-line arguments.");
+    oConsole.fPrint(ERROR, "  ids, an application command-line or an UWP application package name.");
+    oConsole.fPrint("Run \"", INFO, "BugId -h", NORMAL, "\" for help on command-line arguments.");
     return 2;
   
   # Apply user provided settings:
@@ -755,7 +768,6 @@ def fuMain(asArguments):
       if not gbQuiet:
         asCommandLine = [sApplicationBinaryPath] + asApplicationArguments;
         oConsole.fPrint("* Command line: ", INFO, " ".join(asCommandLine));
-        oConsole.fPrint();
       oConsole.fStatus("* The debugger is starting the application...");
     else:
       if auApplicationProcessIds:
@@ -764,14 +776,15 @@ def fuMain(asArguments):
           if asProcessIdsOutput: asProcessIdsOutput.append(", ");
           asProcessIdsOutput.extend([INFO, str(uApplicationProcessId), NORMAL]);
         oConsole.fPrint("* Running process ids: ", INFO, *asProcessIdsOutput);
-      if sApplicationPackageName:
+      if sUWPApplicationPackageName:
         if not gbQuiet:
           if asApplicationArguments:
-            oConsole.fPrint("* Package name: ", INFO, sApplicationPackageName, NORMAL, ", Arguments: ", INFO, " ".join(asApplicationArguments));
+            oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
+                sUWPApplicationPackageName, NORMAL, ", Arguments: ", INFO, " ".join(asApplicationArguments));
           else:
-            oConsole.fPrint("* Package name: ", INFO, sApplicationPackageName);
-          oConsole.fPrint();
-      if not sApplicationPackageName:
+            oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
+                sUWPApplicationPackageName);
+      if not sUWPApplicationPackageName:
         oConsole.fStatus("* The debugger is attaching to running processes of the application...");
       elif auApplicationProcessIds:
         oConsole.fStatus("* The debugger is attaching to running processes and starting the application...");
@@ -781,8 +794,8 @@ def fuMain(asArguments):
       sCdbISA = sApplicationISA or cBugId.sOSISA,
       sApplicationBinaryPath = sApplicationBinaryPath or None,
       auApplicationProcessIds = auApplicationProcessIds or None,
-      sApplicationPackageName = sApplicationPackageName or None,
-      sApplicationId = sApplicationId or None,
+      sUWPApplicationPackageName = sUWPApplicationPackageName or None,
+      sUWPApplicationId = sUWPApplicationId or None,
       asApplicationArguments = asApplicationArguments,
       asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
       asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
@@ -791,7 +804,10 @@ def fuMain(asArguments):
       rImportantStdOutLines = rImportantStdOutLines,
       rImportantStdErrLines = rImportantStdErrLines,
       bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
+      uProcessMaxMemoryUse = dxConfig["uProcessMaxMemoryUse"],
+      uTotalMaxMemoryUse = dxConfig["uTotalMaxMemoryUse"],
       fFailedToDebugApplicationCallback = fFailedToDebugApplicationHandler,
+      fFailedToApplyMemoryLimitsCallback = fFailedToApplyMemoryLimitsHandler,
       fApplicationRunningCallback = fApplicationRunningHandler,
       fApplicationSuspendedCallback = fApplicationSuspendedHandler,
       fApplicationResumedCallback = fApplicationResumedHandler,
@@ -799,8 +815,8 @@ def fuMain(asArguments):
       fInternalExceptionCallback = fInternalExceptionHandler,
       fFinishedCallback = None,
       fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
-      fStdInInputCallback = dxConfig["bOutputCdbIO"] and fStdInInputHandler or None,
-      fStdOutOutputCallback = dxConfig["bOutputCdbIO"] and fStdOutOutputHandler or None,
+      fStdInInputCallback = gbVerbose and fStdInInputHandler or None,
+      fStdOutOutputCallback = gbVerbose and fStdOutOutputHandler or None,
       fStdErrOutputCallback = fStdErrOutputHandler,
       fNewProcessCallback = fNewProcessHandler,
     );
@@ -842,15 +858,17 @@ def fuMain(asArguments):
           fbRetryOnFailure = lambda: False,
         );
         if eWriteDataToFileResult:
-          oConsole.fPrint("  Bug report:       ", ERROR, "Cannot be saved (%s)" % repr(eWriteDataToFileResult));
+          oConsole.fPrint("  Bug report:       ", ERROR, "Cannot be saved (", \
+              ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
         else:
           oConsole.fPrint("  Bug report:       ", HILITE, sValidReportFileName, NORMAL, " (%d bytes)" % len(oBugId.oBugReport.sReportHTML));
     else:
       oConsole.fPrint(INFO, "The application terminated without a bug being detected.");
       sBugIdAndLocation = "No crash";
-    oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
-    nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-    oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
+    if gbVerbose:
+      oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
+      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+      oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
     if not bRepeat: return oBugId.oBugReport is not None and 1 or 0;
     duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
     duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
@@ -871,7 +889,7 @@ def fuMain(asArguments):
       fbRetryOnFailure = lambda: False,
     );
     if eWriteDataToFileResult:
-      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (%s)" % repr(eWriteDataToFileResult));
+      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
     else:
       oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
     oConsole.fPrint(); # and loop
