@@ -368,7 +368,7 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
     if gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword] is None:
       oConsole.fPrint(ERROR, "  The application cannot be found on your system.");
     else:
-      oConsole.fPrint("  Binary path: ", INFO, " ".join(gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]));
+      oConsole.fPrint("  Binary path: ", INFO, gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]);
   elif sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
     oConsole.fPrint("  UWP Application information:");
     oConsole.fPrint("    Package name: ", INFO, gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword]);
