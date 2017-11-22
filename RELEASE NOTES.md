@@ -1,12 +1,14 @@
 2017-11-21
 ==========
-+ Added `uProcessMaxMemoryUse` and `uTotalMaxMemoryUse` setings in
++ Added `uProcessMaxMemoryUse` and `uTotalMaxMemoryUse` settings in
   `dxConfig.py` that allow you to limit the amount of memory a single process
   or all process in the application combined can allocate.
 + Some output will no longer be shown unless you specify the `-v` command-
   line switch. This switch still also enables cdb output. This should make the
   normal output of BugId cleaner.
 + Changed some output formatting.
++ Fix a bug where application keyword binary paths had spaces insert between
+  each character when a `keyword?` argument is provided.
 + Added Windows ISA and Python version and ISA to version information.
 + `PageHeap.cmd` will now say "ON" or "OFF" when querying the state of page
   heap for a specific binary, assuming the default flags are set. If non-
