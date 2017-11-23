@@ -78,8 +78,7 @@ sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 sLocalAppData = os.getenv("LocalAppData");
 from ChromePath import sChromePath_x64, sChromePath_x86, sChromePath, \
     sChromeSxSPath_x64, sChromeSxSPath_x86, sChromeSxSPath;
-from FirefoxPath import sFirefoxPath_x64, sFirefoxPath_x86, sFirefoxPath, \
-    sFirefoxDevPath_x64, sFirefoxDevPath_x86, sFirefoxDevPath;
+from FirefoxPath import sFirefoxPath_x64, sFirefoxPath_x86, sFirefoxPath;
 from MSIEPath import sMSIEPath_x64, sMSIEPath_x86, sMSIEPath;
 def fasGetChromeDefaultArguments(bForHelp):
   return [
@@ -158,9 +157,6 @@ gdfCleanup_by_sKeyword = {
   "firefox": fFirefoxCleanup,
   "firefox_x86": fFirefoxCleanup,
   "firefox_x64": fFirefoxCleanup,
-  "firefox-dev": fFirefoxCleanup,
-  "firefox-dev_x86": fFirefoxCleanup,
-  "firefox-dev_x64": fFirefoxCleanup,
 };
 gdApplication_sBinaryPath_by_sKeyword = {
   "aoo-writer": r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86,
@@ -175,9 +171,6 @@ gdApplication_sBinaryPath_by_sKeyword = {
   "firefox": sFirefoxPath,
   "firefox_x86": sFirefoxPath_x86,
   "firefox_x64": sFirefoxPath_x64,
-  "firefox-dev": sFirefoxDevPath,
-  "firefox-dev_x86": sFirefoxDevPath_x86,
-  "firefox-dev_x64": sFirefoxDevPath_x64,
   "foxit": r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86,
   "msie": sMSIEPath,
   "msie_x86": sMSIEPath_x86,
@@ -205,9 +198,6 @@ gdApplication_fasGetStaticArguments_by_sKeyword = {
   "firefox": fasGetFirefoxDefaultArguments,
   "firefox_x86": fasGetFirefoxDefaultArguments,
   "firefox_x64": fasGetFirefoxDefaultArguments,
-  "firefox-dev": fasGetFirefoxDefaultArguments,
-  "firefox-dev_x86": fasGetFirefoxDefaultArguments,
-  "firefox-dev_x64": fasGetFirefoxDefaultArguments,
 };
 # These arguments are added if the 
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
@@ -221,14 +211,10 @@ gdApplication_asDefaultOptionalArguments_by_sKeyword = {
   "firefox": [DEFAULT_BROWSER_TEST_URL],
   "firefox_x86": [DEFAULT_BROWSER_TEST_URL],
   "firefox_x64": [DEFAULT_BROWSER_TEST_URL],
-  "firefox-dev": [DEFAULT_BROWSER_TEST_URL],
-  "firefox-dev_x86": [DEFAULT_BROWSER_TEST_URL],
-  "firefox-dev_x64": [DEFAULT_BROWSER_TEST_URL],
   "foxit": ["repro.pdf"],
   "msie": [DEFAULT_BROWSER_TEST_URL],
   "msie_x86": [DEFAULT_BROWSER_TEST_URL],
   "msie_x64": [DEFAULT_BROWSER_TEST_URL],
-  "nightly": [DEFAULT_BROWSER_TEST_URL],
 };
 gdApplication_sISA_by_sKeyword = {
   # Applications will default to cBugId.sOSISA. Applications need only be added here if they can differ from that.
@@ -242,7 +228,6 @@ gdApplication_sISA_by_sKeyword = {
   "foxit": "x86",
   "msie_x86": "x86",
   "msie_x64": "x64",
-  "nightly": "x86",
 };
 dxBrowserSettings = {
   # Settings used by all browsers (these should eventually be fine-tuned for each browser)
@@ -319,18 +304,11 @@ gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword = {
   "firefox": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
   "firefox_x86": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
   "firefox_x64": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
-  "nightly": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
 };
 # Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
 # HTML for any detected bug.
 gdApplication_rImportantStdOutLines_by_sKeyword = {};
-gdApplication_rImportantStdErrLines_by_sKeyword = {
-  "nightly": re.compile("^((\?h)+: C)*(%s)$" % "|".join([
-    r"Assertion failure: .*",
-    r"Hit MOZ_CRASH: .*",
-    r"\[Child \w+\] ###!!!ABORT: .*",
-  ])),
-};
+gdApplication_rImportantStdErrLines_by_sKeyword = {};
 gbAnErrorOccured = False;
 
 gasBinariesThatAreAllowedToRunWithoutPageHeap = [s.lower() for s in [
