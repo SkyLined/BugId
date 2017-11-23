@@ -199,47 +199,34 @@ used in the following ways:
 
 Start the binary in the debugger with the provided arguments.
 
-    BugId.py [options] @application [additional arguments]
+    BugId.py [options] <application keyword> [additional arguments]
 
-(Where `application` is a known application keyword, see below for details)
+See below for details on application keywords.
 Start the application identified by the keyword in the debugger using the
 application's default binary path and arguments followed by the default
 additional arguments or the additional arguments provided and apply application
 specific BugId settings.
 
-    BugId.py [options] @application="path\to\binary.exe" [arguments]
-
-Start the application identified by the keyword in the debugger using the
-provided binary and arguments (instead of the default binary path and
-arguments) followed by the default additional arguments or the additional
-arguments provided and apply application specific settings. This allows you to
-run a known application with custom binary path and arguments, but default
-application specific BugId settings.
-
-    BugId.py [options] [@application] --pids=[process id, process id, ...]
-
-Attach debugger to the process(es) provided in the list. The processes *must
-all have been suspended*, as they will be resumed by the debugger. If you
-specify the option application keyword, the default application specific
-BugId settings will be applied.
-
 ### Known application keywords
 A few application are known to BugId and can be run without having to specify
 their full command-line and/or with application specific settings by using one
 of these application specific keywords:
-  @aoo-writer: Apache OpenOffice Writer
-  @firefox: Mozilla Firefox
-  @foxit: Foxit Software Reader
-  @chrome: Google Chrome 
-  @msie: Microsoft Internet Explorer (32-/64-bit depending on OS)
-  @msie86: Microsoft Internet Explorer, 32-bit application
-  @msie64: Microsoft Internet Explorer, 64-bit application
-  @nightly: Mozilla Firefox Nightly builds
+  acrobat: Adobe Acrobat Reader
+  acrobatdc: Adobe Acrobat Reader DC
+  aoo-writer: Apache OpenOffice Writer
+  chrome: Google Chrome 
+  firefox: Mozilla Firefox
+  foxit: Foxit Software Reader
+  edge: Microsoft Edge
+  msie: Microsoft Internet Explorer (32-/64-bit depending on OS)
+  nightly: Mozilla Firefox Nightly builds
 
-You can find out what these build-in application specific settings are by asking
-BugId using the following command line:
+The above list is not complete. Run BugId without any arguments to get a
+complete and up-to-date list of the supported application keywords near the end
+of the help output. You can find out what application specific settings are
+applied using the following command line:
 
-    BugId.py @application?
+    BugId.py <application keyword>?
 
 ### Options
 The file `dxBugIdConfig.py` contains a number of configuration options that
