@@ -1,3 +1,9 @@
+2017-11-24
+==========
++ Update version of cBugId should resolve all open issues, provide more
+  stability, add new features and generally make it more awesome.
++ Cleaned up output
+
 2017-11-21
 ==========
 + Added `uProcessMaxMemoryUse` and `uTotalMaxMemoryUse` settings in
