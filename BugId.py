@@ -45,7 +45,7 @@ for (sModuleName, sDownloadURL) in [
 ]:
   try:
     __import__(sModuleName, globals(), locals(), [], -1);
-  except ImportError, oError:
+  except ImportError as oError:
     if oError.message == "No module named %s" % sModuleName:
       print "*" * 80;
       print "%s depends on %s which you can download at:" % (os.path.basename(__file__), sModuleName);
@@ -348,13 +348,17 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
     else:
       oConsole.fPrint("  Binary path: ", INFO, gdApplication_sBinaryPath_by_sKeyword[sApplicationKeyword]);
   elif sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
-    oConsole.fPrint("  UWP Application information:");
-    oConsole.fPrint("    Package name: ", INFO, gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword]);
-    oConsole.fPrint("    Id: ", INFO, gsUWPApplicationId_by_sKeyword[sApplicationKeyword]);
-    if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
-      oConsole.fPrint("    Attach to additional processes running any of the following binaries:");
-      for sBinaryName in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword]:
-        oConsole.fPrint("      ", INFO, sBinaryName);
+    oConsole.fLock();
+    try:
+      oConsole.fPrint("  UWP Application information:");
+      oConsole.fPrint("    Package name: ", INFO, gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword]);
+      oConsole.fPrint("    Id: ", INFO, gsUWPApplicationId_by_sKeyword[sApplicationKeyword]);
+      if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
+        oConsole.fPrint("    Attach to additional processes running any of the following binaries:");
+        for sBinaryName in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword]:
+          oConsole.fPrint("      ", INFO, sBinaryName);
+    finally:
+      oConsole.fUnlock();
   if sApplicationKeyword in gdApplication_fasGetStaticArguments_by_sKeyword:
     fasGetStaticArguments = gdApplication_fasGetStaticArguments_by_sKeyword[sApplicationKeyword];
     oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
@@ -366,9 +370,13 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
       for sArgument in gdApplication_asDefaultOptionalArguments_by_sKeyword[sApplicationKeyword]
     ]));
   if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
-    oConsole.fPrint("  Application specific settings:");
-    for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
-      oConsole.fPrint("    ", HILITE, sSettingName, NORMAL, " = ", INFO, json.dumps(xValue));
+    oConsole.fLock();
+    try:
+      oConsole.fPrint("  Application specific settings:");
+      for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+        oConsole.fPrint("    ", HILITE, sSettingName, NORMAL, " = ", INFO, json.dumps(xValue));
+    finally:
+      oConsole.fUnlock();
   return 0;
 
 def fApplyConfigSetting(sSettingName, xValue, sIndentation):
@@ -419,12 +427,16 @@ def fInternalExceptionHandler(oBugId, oException, oTraceBack):
 def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
   global gbAnErrorOccured;
   gbAnErrorOccured = True;
-  oConsole.fPrint(ERROR, "-" * 80);
-  oConsole.fPrint(ERROR, "- Failed to debug the application:");
-  for sLine in sErrorMessage.split("\n"):
-    oConsole.fPrint(ERROR, "  ", sLine.rstrip("\r"));
-  oConsole.fPrint(ERROR, "-" * 80);
-  oConsole.fPrint();
+  oConsole.fLock();
+  try:
+    oConsole.fPrint(ERROR, "-" * 80);
+    oConsole.fPrint(ERROR, "- Failed to debug the application:");
+    for sLine in sErrorMessage.split("\n"):
+      oConsole.fPrint(ERROR, "  ", sLine.rstrip("\r"));
+    oConsole.fPrint(ERROR, "-" * 80);
+    oConsole.fPrint();
+  finally:
+    oConsole.fUnlock();
 
 def fFailedToApplyMemoryLimitsHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
   if not gbQuiet:
@@ -447,33 +459,41 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bP
   if not bPreventable:
     if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
       gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
-      oConsole.fPrint(ERROR,"- Full page heap is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
-      oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
-      oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
-      oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
-      oConsole.fPrint("  any bugs in this process will be sub-optimal.");
-      oConsole.fPrint();
+      oConsole.fLock();
+      try:
+        oConsole.fPrint(ERROR,"- Full page heap is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
+        oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
+        oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
+        oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
+        oConsole.fPrint("  any bugs in this process will be sub-optimal.");
+        oConsole.fPrint();
+      finally:
+        oConsole.fUnlock();
   else:
     gbAnErrorOccured = True;
-    oConsole.fPrint(ERROR, "- Full page heap is not enabled for all binaries used by the application.");
-    oConsole.fPrint(ERROR, "  Specifically it is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
-    oConsole.fPrint("  You can enabled full page heap for ", sBinaryName, " by running:");
-    oConsole.fPrint();
-    oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', sBinaryName, '" ON');
-    oConsole.fPrint();
-    oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
-    oConsole.fPrint("  optimal. Please enable page heap and try again.");
-    oConsole.fPrint();
-    oConsole.fStatus(INFO, "* BugId is stopping...");
+    oConsole.fLock();
+    try:
+      oConsole.fPrint(ERROR, "- Full page heap is not enabled for all binaries used by the application.");
+      oConsole.fPrint(ERROR, "  Specifically it is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
+      oConsole.fPrint("  You can enabled full page heap for ", sBinaryName, " by running:");
+      oConsole.fPrint();
+      oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', sBinaryName, '" ON');
+      oConsole.fPrint();
+      oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
+      oConsole.fPrint("  optimal. Please enable page heap and try again.");
+      oConsole.fPrint();
+      oConsole.fStatus(INFO, "* BugId is stopping...");
+    finally:
+      oConsole.fUnlock();
     # There is no reason to run without page heap, so terminated.
     oBugId.fStop();
-    # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in `dxConfig.py`
-    # or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+    # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in
+    # `dxConfig.py`or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
 
 def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
   if not gbQuiet:
-    oConsole.fPrint("* Terminated main processes ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, \
-        NORMAL, " (", INFO, sBinaryName, NORMAL, ").");
+    oConsole.fPrint("* Process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
+        " (", INFO, sBinaryName, NORMAL, "): Terminated ", INFO, sCommandLine or "<command line unknown>");
   if dxConfig["bApplicationTerminatesWithMainProcess"]:
     oConsole.fStatus(INFO, "* BugId is stopping...");
     oBugId.fStop();
@@ -485,11 +505,15 @@ def fStdOutOutputHandler(oBugId, sOutput):
 def fStdErrOutputHandler(oBugId, sOutput):
   oConsole.fPrint(ERROR, "stderr>", NORMAL, sOutput);
 
+def fApplicationStdOutOrErrOutputHandler(oBugId, uProcessId, sBinaryName, sCommandLine, sStdOutOrErr, sMessage):
+  oConsole.fPrint("* Process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
+      " (", INFO, sBinaryName, NORMAL, "): ", INFO, sStdOutOrErr, NORMAL, ">", HILITE, sMessage);
+
 def fNewProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
   global gasAttachToProcessesForExecutableNames;
   if not gbQuiet:
-    oConsole.fPrint("* New process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
-        " (", INFO, sBinaryName, NORMAL, "): ", INFO, sCommandLine or "<command line unknown>");
+    oConsole.fPrint("* Process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
+        " (", INFO, sBinaryName, NORMAL, "): Started ", INFO, sCommandLine or "<command line unknown>");
   # Now is a good time to look for additional binaries that may need to be debugged as well.
   if gasAttachToProcessesForExecutableNames:
     oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
@@ -517,7 +541,7 @@ def fuMain(asArguments):
     if sArgument == "--":
       if len(auApplicationProcessIds) > 0:
       # The rest of the arguments are to be passed to the application
-        oConsole.fPrint(ERROR, "- You cannot supply process ids and application arguments.");
+        oConsole.fPrint(ERROR, "- You cannot provide process ids and application arguments.");
         return 2;
       asApplicationOptionalArguments = asArguments;
       break;
@@ -543,27 +567,27 @@ def fuMain(asArguments):
       
       if sSettingName in ["pid", "pids"]:
         if not sValue:
-          oConsole.fPrint(ERROR, "- You must specify at least one process id.");
+          oConsole.fPrint(ERROR, "- You must provide at least one process id.");
           return 2;
         if sApplicationBinaryPath is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply an application binary and process ids.");
+          oConsole.fPrint(ERROR, "- You cannot provide an application binary and process ids.");
           return 2;
         if sUWPApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply an UWP application package name and process ids.");
+          oConsole.fPrint(ERROR, "- You cannot provide an UWP application package name and process ids.");
           return 2;
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
-          oConsole.fPrint(ERROR, "- You must specify an UWP application package name.");
+          oConsole.fPrint(ERROR, "- You must provide an UWP application package name.");
           return 2;
         if sUWPApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply multiple UWP application package names.");
+          oConsole.fPrint(ERROR, "- You cannot provide multiple UWP application package names.");
           return 2;
         if sApplicationBinaryPath is not None:
-          oConsole.fPrint(ERROR, "- You cannot supply an application binary and UWP package name.");
+          oConsole.fPrint(ERROR, "- You cannot provide an application binary and UWP package name.");
           return 2;
         if len(auApplicationProcessIds) > 0:
-          oConsole.fPrint(ERROR, "- You cannot supply process ids and an UWP application package name.");
+          oConsole.fPrint(ERROR, "- You cannot provide process ids and an UWP application package name.");
           return 2;
         if "!" not in sValue:
           oConsole.fPrint(ERROR, "- Please provide a string of the form ", ERROR_INFO, sSettingName, "=<package name>!<application id>.");
@@ -574,7 +598,7 @@ def fuMain(asArguments):
         return 0;
       elif sSettingName in ["isa", "cpu"]:
         if not sValue:
-          oConsole.fPrint(ERROR, "- You must specify an Instruction Set Architecture.");
+          oConsole.fPrint(ERROR, "- You must provide an Instruction Set Architecture.");
           return 2;
         if sValue not in ["x86", "x64"]:
           oConsole.fPrint(ERROR, "- Unknown Instruction Set Architecture ", repr(sValue));
@@ -586,28 +610,28 @@ def fuMain(asArguments):
         elif sValue.lower() == "false":
           gbQuiet = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
       elif sSettingName in ["verbose", "debug"]:
         if sValue is None or sValue.lower() == "true":
           gbVerbose = True;
         elif sValue.lower() == "false":
           gbVerbose = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
       elif sSettingName in ["fast", "quick"]:
         if sValue is None or sValue.lower() == "true":
           bFast = True;
         elif sValue.lower() == "false":
           bFast = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
       elif sSettingName in ["repeat", "forever"]:
         if sValue is None or sValue.lower() == "true":
           bRepeat = True;
         elif sValue.lower() == "false":
           bRepeat = False;
         else:
-          oConsole.fPrint(ERROR, "- You must specify \"true\" or \"false\" for ", ERROR_INFO, "--", sSettingName);
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
       elif sSettingName in ["test-internal-error", "internal-error-test"]:
         raise Exception("Testing internal error");
       else:
@@ -621,20 +645,25 @@ def fuMain(asArguments):
         dxUserProvidedConfigSettings[sSettingName] = xValue;
     elif sArgument in asApplicationKeywords:
       if sApplicationKeyword is not None:
-        oConsole.fPrint(ERROR, "- You cannot supply multiple application keywords.");
+        oConsole.fPrint(ERROR, "- You cannot provide multiple application keywords.");
         return 2;
       sApplicationKeyword = sArgument;
     elif sArgument[-1] == "?" and sArgument[:-1] in asApplicationKeywords:
       return fuShowApplicationKeyWordHelp(sArgument[:-1]);
     else:
       if sApplicationBinaryPath is not None:
-        oConsole.fPrint(ERROR, "- You cannot supply multiple application binaries.");
+        oConsole.fLock();
+        try:
+          oConsole.fPrint(ERROR, "- You cannot provide multiple application binaries.");
+          oConsole.fPrint(ERROR, "  (Did you perhaps forget to put ", ERROR_INFO, "--", ERROR, " before the start of the application arguments?)");
+        finally:
+          oConsole.fUnlock();
         return 2;
       if len(auApplicationProcessIds) > 0:
-        oConsole.fPrint(ERROR, "- You cannot supply process ids and an application binary.");
+        oConsole.fPrint(ERROR, "- You cannot provide process ids and an application binary.");
         return 2;
       if sUWPApplicationPackageName is not None:
-        oConsole.fPrint(ERROR, "- You cannot supply an application UWP package name and a binary.");
+        oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name and a binary.");
         return 2;
       sApplicationBinaryPath = sArgument;
   
@@ -654,11 +683,11 @@ def fuMain(asArguments):
     if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
       # This application is started from the command-line.
       if auApplicationProcessIds:
-        oConsole.fPrint(ERROR, "- You cannot specify process ids for application keyword ", \
-            ERROR_INFO, sApplicationKeyword, ERROR, ".");
+        oConsole.fPrint(ERROR, "- You cannot provide process ids for application keyword ", ERROR_INFO, \
+            sApplicationKeyword, ERROR, ".");
         return 2;
       if sUWPApplicationPackageName:
-        oConsole.fPrint(ERROR, "- You cannot specify an application UWP package name for application keyword ", \
+        oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name for application keyword ", \
             ERROR_INFO, sApplicationKeyword, ERROR, ".");
         return 2;
       if sApplicationBinaryPath is None:
@@ -671,19 +700,19 @@ def fuMain(asArguments):
     elif sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
       # This application is started as an application package.
       if sApplicationBinaryPath:
-        oConsole.fPrint(ERROR, "- You cannot specify an application binary for application keyword ", \
+        oConsole.fPrint(ERROR, "- You cannot provide an application binary for application keyword ", \
             ERROR_INFO, sApplicationKeyword, ERROR, ".");
         return 2;
       sUWPApplicationPackageName = gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword];
       sUWPApplicationId = gsUWPApplicationId_by_sKeyword[sApplicationKeyword];
     elif not auApplicationProcessIds:
       # This application is attached to.
-      oConsole.fPrint(ERROR, "- You must specify process ids for application keyword ", \
+      oConsole.fPrint(ERROR, "- You must provide process ids for application keyword ", \
           ERROR_INFO, sApplicationKeyword, ERROR, ".");
       return 2;
     elif asApplicationOptionalArguments:
-      # Cannot supply arguments if we're attaching to processes
-      oConsole.fPrint(ERROR, "- You cannot specify arguments for application keyword ", \
+      # Cannot provide arguments if we're attaching to processes
+      oConsole.fPrint(ERROR, "- You cannot provide arguments for application keyword ", \
           ERROR_INFO, sApplicationKeyword, ERROR, ".");
       return 2;
     if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
@@ -723,9 +752,13 @@ def fuMain(asArguments):
     # are used if they are supplied:
     asApplicationArguments = asApplicationOptionalArguments or [];
   else:
-    oConsole.fPrint(ERROR, "- You must specify something to debug. This can be either one or more process");
-    oConsole.fPrint(ERROR, "  ids, an application command-line or an UWP application package name.");
-    oConsole.fPrint("Run \"", INFO, "BugId -h", NORMAL, "\" for help on command-line arguments.");
+    oConsole.fLock();
+    try:
+      oConsole.fPrint(ERROR, "- You must provide something to debug. This can be either one or more process");
+      oConsole.fPrint(ERROR, "  ids, an application command-line or an UWP application package name.");
+      oConsole.fPrint("Run \"", INFO, "BugId -h", NORMAL, "\" for help on command-line arguments.");
+    finally:
+      oConsole.fUnlock();
     return 2;
   
   # Apply user provided settings:
@@ -742,32 +775,36 @@ def fuMain(asArguments):
       oConsole.fStatus("* Cleaning up application state...");
       fCleanup();
     uRunCounter += 1;
-    if sApplicationBinaryPath:
-      if not gbQuiet:
-        asCommandLine = [sApplicationBinaryPath] + asApplicationArguments;
-        oConsole.fPrint("* Command line: ", INFO, " ".join(asCommandLine));
-      oConsole.fStatus("* The debugger is starting the application...");
-    else:
-      if auApplicationProcessIds:
-        asProcessIdsOutput = [];
-        for uApplicationProcessId in auApplicationProcessIds:
-          if asProcessIdsOutput: asProcessIdsOutput.append(", ");
-          asProcessIdsOutput.extend([INFO, str(uApplicationProcessId), NORMAL]);
-        oConsole.fPrint("* Running process ids: ", INFO, *asProcessIdsOutput);
-      if sUWPApplicationPackageName:
+    oConsole.fLock();
+    try:
+      if sApplicationBinaryPath:
         if not gbQuiet:
-          if asApplicationArguments:
-            oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
-                sUWPApplicationPackageName, NORMAL, ", Arguments: ", INFO, " ".join(asApplicationArguments));
-          else:
-            oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
-                sUWPApplicationPackageName);
-      if not sUWPApplicationPackageName:
-        oConsole.fStatus("* The debugger is attaching to running processes of the application...");
-      elif auApplicationProcessIds:
-        oConsole.fStatus("* The debugger is attaching to running processes and starting the application...");
-      else:
+          asCommandLine = [sApplicationBinaryPath] + asApplicationArguments;
+          oConsole.fPrint("* Command line: ", INFO, " ".join(asCommandLine));
         oConsole.fStatus("* The debugger is starting the application...");
+      else:
+        if auApplicationProcessIds:
+          asProcessIdsOutput = [];
+          for uApplicationProcessId in auApplicationProcessIds:
+            if asProcessIdsOutput: asProcessIdsOutput.append(", ");
+            asProcessIdsOutput.extend([INFO, str(uApplicationProcessId), NORMAL]);
+          oConsole.fPrint("* Running process ids: ", INFO, *asProcessIdsOutput);
+        if sUWPApplicationPackageName:
+          if not gbQuiet:
+            if asApplicationArguments:
+              oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
+                  sUWPApplicationPackageName, NORMAL, ", Arguments: ", INFO, " ".join(asApplicationArguments));
+            else:
+              oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
+                  sUWPApplicationPackageName);
+        if not sUWPApplicationPackageName:
+          oConsole.fStatus("* The debugger is attaching to running processes of the application...");
+        elif auApplicationProcessIds:
+          oConsole.fStatus("* The debugger is attaching to running processes and starting the application...");
+        else:
+          oConsole.fStatus("* The debugger is starting the application...");
+    finally:
+      oConsole.fUnlock();
     oBugId = cBugId(
       sCdbISA = sApplicationISA or cBugId.sOSISA,
       sApplicationBinaryPath = sApplicationBinaryPath or None,
@@ -797,6 +834,7 @@ def fuMain(asArguments):
       fStdOutOutputCallback = gbVerbose and fStdOutOutputHandler or None,
       fStdErrOutputCallback = fStdErrOutputHandler,
       fNewProcessCallback = fNewProcessHandler,
+      fApplicationStdOutOrErrOutputCallback = fApplicationStdOutOrErrOutputHandler,
     );
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeHandler);
@@ -806,85 +844,92 @@ def fuMain(asArguments):
     oBugId.fWait();
     if gbAnErrorOccured:
       return 3;
-    if oBugId.oBugReport is not None:
-      oConsole.fPrint(HILITE, "A bug was detect in the application:");
-      if oBugId.oBugReport.sBugLocation:
-        oConsole.fPrint("  Id @ Location:    ", INFO, oBugId.oBugReport.sId, NORMAL, " @ ", INFO, oBugId.oBugReport.sBugLocation);
-        sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+    oConsole.fLock();
+    try:
+      if oBugId.oBugReport is not None:
+        oConsole.fPrint(HILITE, "+ A bug was detect in the application:");
+        if oBugId.oBugReport.sBugLocation:
+          oConsole.fPrint("  Id @ Location:    ", INFO, oBugId.oBugReport.sId, NORMAL, " @ ", INFO, oBugId.oBugReport.sBugLocation);
+          sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
+        else:
+          oConsole.fPrint("  Id:               ", INFO, oBugId.oBugReport.sId);
+          sBugIdAndLocation = oBugId.oBugReport.sId;
+        if oBugId.oBugReport.sBugSourceLocation:
+          oConsole.fPrint("  Source:           ", INFO, oBugId.oBugReport.sBugSourceLocation);
+        oConsole.fPrint("  Description:      ", INFO, oBugId.oBugReport.sBugDescription);
+        oConsole.fPrint("  Security impact:  ", INFO, oBugId.oBugReport.sSecurityImpact);
+        oConsole.fPrint("  Version:          ", HILITE, oBugId.oBugReport.asVersionInformation[0]); # There is always the process' binary.
+        for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
+          oConsole.fPrint("                    ", HILITE, sVersionInformation); # different binary (e.g. a .dll)
+        if dxConfig["bGenerateReportHTML"]:
+          # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
+          sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
+          # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
+          sValidReportFileName = mFileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
+          if dxConfig["sReportFolderPath"] is not None:
+            sReportFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+          else:
+            sReportFilePath = mFileSystem.fsPath(sValidReportFileName);
+          eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
+            oBugId.oBugReport.sReportHTML,
+            sReportFilePath,
+            fbRetryOnFailure = lambda: False,
+          );
+          if eWriteDataToFileResult:
+            oConsole.fPrint("  Bug report:       ", ERROR, "Cannot be saved (", \
+                ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
+          else:
+            oConsole.fPrint("  Bug report:       ", HILITE, sValidReportFileName, NORMAL, " (%d bytes)" % len(oBugId.oBugReport.sReportHTML));
       else:
-        oConsole.fPrint("  Id:               ", INFO, oBugId.oBugReport.sId);
-        sBugIdAndLocation = oBugId.oBugReport.sId;
-      if oBugId.oBugReport.sBugSourceLocation:
-        oConsole.fPrint("  Source:           ", INFO, oBugId.oBugReport.sBugSourceLocation);
-      oConsole.fPrint("  Description:      ", INFO, oBugId.oBugReport.sBugDescription);
-      oConsole.fPrint("  Security impact:  ", INFO, oBugId.oBugReport.sSecurityImpact);
-      oConsole.fPrint("  Version:          ", HILITE, oBugId.oBugReport.asVersionInformation[0]); # There is always the process' binary.
-      for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
-        oConsole.fPrint("                    ", HILITE, sVersionInformation); # different binary (e.g. a .dll)
-      if dxConfig["bGenerateReportHTML"]:
-        # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
-        sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
-        # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
-        sValidReportFileName = mFileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
-        if dxConfig["sReportFolderPath"] is not None:
-          sReportFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
-        else:
-          sReportFilePath = mFileSystem.fsPath(sValidReportFileName);
-        eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
-          oBugId.oBugReport.sReportHTML,
-          sReportFilePath,
-          fbRetryOnFailure = lambda: False,
-        );
-        if eWriteDataToFileResult:
-          oConsole.fPrint("  Bug report:       ", ERROR, "Cannot be saved (", \
-              ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
-        else:
-          oConsole.fPrint("  Bug report:       ", HILITE, sValidReportFileName, NORMAL, " (%d bytes)" % len(oBugId.oBugReport.sReportHTML));
-    else:
-      oConsole.fPrint(INFO, "The application terminated without a bug being detected.");
-      sBugIdAndLocation = "No crash";
-    if gbVerbose:
-      oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
-      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-      oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
-    if not bRepeat: return oBugId.oBugReport is not None and 1 or 0;
-    duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
-    duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
-    sStatistics = "";
-    auOrderedNumberOfRepros = sorted(list(set(duNumberOfRepros_by_sBugIdAndLocation.values())));
-    auOrderedNumberOfRepros.reverse();
-    for uNumberOfRepros in auOrderedNumberOfRepros:
-      for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
-        if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
-          sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), round(100.0 * uNumberOfRepros / uRunCounter));
-    if dxConfig["sReportFolderPath"] is not None:
-      sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
-    else:
-      sStatisticsFilePath = mFileSystem.fsPath(sValidStatisticsFileName);
-    eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
-      sStatistics,
-      sStatisticsFilePath,
-      fbRetryOnFailure = lambda: False,
-    );
-    if eWriteDataToFileResult:
-      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
-    else:
-      oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
-    oConsole.fPrint(); # and loop
+        oConsole.fPrint("+ The application terminated without a bug being detected.");
+        sBugIdAndLocation = "No crash";
+      if gbVerbose:
+        oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
+        nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+        oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
+      if not bRepeat: return oBugId.oBugReport is not None and 1 or 0;
+      duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
+      duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
+      sStatistics = "";
+      auOrderedNumberOfRepros = sorted(list(set(duNumberOfRepros_by_sBugIdAndLocation.values())));
+      auOrderedNumberOfRepros.reverse();
+      for uNumberOfRepros in auOrderedNumberOfRepros:
+        for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
+          if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
+            sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), round(100.0 * uNumberOfRepros / uRunCounter));
+      if dxConfig["sReportFolderPath"] is not None:
+        sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
+      else:
+        sStatisticsFilePath = mFileSystem.fsPath(sValidStatisticsFileName);
+      eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
+        sStatistics,
+        sStatisticsFilePath,
+        fbRetryOnFailure = lambda: False,
+      );
+      if eWriteDataToFileResult:
+        oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
+      else:
+        oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
+      oConsole.fPrint(); # and loop
+    finally:
+      oConsole.fUnlock();
 
 if __name__ == "__main__":
   try:
     uExitCode = fuMain(sys.argv[1:]);
     
     if not gbQuiet and dxConfig["bShowLicenseAndDonationInfo"]:
-      oConsole.fPrint();
-      oConsole.fPrint("This version of BugId is provided free of charge for non-commercial use only.");
-      oConsole.fPrint("If you find it useful and would like to make a donation, you can send bitcoin");
-      oConsole.fPrint("to ",INFO,"183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX",NORMAL,".");
-      oConsole.fPrint("If you wish to use BugId commercially, please contact the author to request a");
-      oConsole.fPrint("quote. Contact and licensing information can be found at:");
-      oConsole.fPrint("    ",INFO,"https://github.com/SkyLined/BugId#license",NORMAL,".");
-    
+      oConsole.fLock();
+      try:
+        oConsole.fPrint();
+        oConsole.fPrint("This version of BugId is provided free of charge for non-commercial use only.");
+        oConsole.fPrint("If you find it useful and would like to make a donation, you can send bitcoin");
+        oConsole.fPrint("to ",INFO,"183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX",NORMAL,".");
+        oConsole.fPrint("If you wish to use BugId commercially, please contact the author to request a");
+        oConsole.fPrint("quote. Contact and licensing information can be found at:");
+        oConsole.fPrint("    ",INFO,"https://github.com/SkyLined/BugId#license",NORMAL,".");
+      finally:
+        oConsole.fUnlock();
     os._exit(uExitCode);
   except Exception as oException:
     cException, oException, oTraceBack = sys.exc_info();
