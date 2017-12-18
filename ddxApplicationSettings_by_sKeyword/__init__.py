@@ -1,0 +1,9 @@
+from ddxChromeSettings_by_sKeyword import ddxChromeSettings_by_sKeyword;
+from ddxEdgeSettings_by_sKeyword import ddxEdgeSettings_by_sKeyword;
+from ddxFirefoxSettings_by_sKeyword import ddxFirefoxSettings_by_sKeyword;
+from ddxMSIESettings_by_sKeyword import ddxMSIESettings_by_sKeyword;
+ddxApplicationSettings_by_sKeyword = {};
+ddxApplicationSettings_by_sKeyword.update(ddxChromeSettings_by_sKeyword);
+ddxApplicationSettings_by_sKeyword.update(ddxEdgeSettings_by_sKeyword);
+ddxApplicationSettings_by_sKeyword.update(ddxFirefoxSettings_by_sKeyword);
+ddxApplicationSettings_by_sKeyword.update(ddxMSIESettings_by_sKeyword);

@@ -3,38 +3,27 @@ from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
 from oConsole import oConsole;
-from oVersionInformation import oVersionInformation;
+from fVersionCheck import fVersionCheck;
 
 def fDumpExceptionAndExit(oException, oTraceBack):
   import os, sys, traceback;
   oConsole.fLock();
   try:
-    oConsole.fPrint(ERROR, "-" * 80);
-    oConsole.fPrint(ERROR, "- An internal exception has occured:");
-    oConsole.fPrint(ERROR, "  ", repr(oException));
-    oConsole.fPrint(ERROR,"  Stack:");
+    oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " An internal exception has occured ", ERROR, sPadding = u"\u2500");
+    oConsole.fPrint(ERROR, u"\u2502 ", ERROR_INFO, repr(oException));
+    oConsole.fPrint(ERROR, u"\u2502");
+    oConsole.fPrint(ERROR, u"\u2502  Stack:");
     atxStack = traceback.extract_tb(oTraceBack);
-    uFrameIndex = len(atxStack) - 1;
+    uFrameIndex = 0;
     for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(atxStack):
-      sSource = "%s/%d" % (sFileName, uLineNumber);
+      asSource = [ERROR_INFO, sFileName, ERROR, "/", str(uLineNumber)];
       if sFunctionName != "<module>":
-        sSource = "%s (%s)" % (sFunctionName, sSource);
-      oConsole.fPrint(ERROR,"  %3d " % uFrameIndex, sSource);
+        asSource = [HILITE, sFunctionName, ERROR, " @ "] + asSource;
+      oConsole.fPrint(ERROR, u"\u2502 %3d " % uFrameIndex, *asSource);
       if sCode:
-        oConsole.fPrint(ERROR,"      > ", sCode.strip());
-      uFrameIndex -= 1;
-    oConsole.fPrint();
-    oConsole.fPrint(ERROR,"  Windows version: ", str(mWindowsAPI.oWindowsVersion));
-    oConsole.fPrint(ERROR,"  BugId version: ", oVersionInformation.sCurrentVersion);
-    for (sModule, xModule) in [
-      ("cBugId", cBugId),
-      ("mFileSystem", mFileSystem),
-      ("mWindowsAPI", mWindowsAPI),
-      ("oConsole", oConsole),
-    ]:
-      oConsole.fPrint(ERROR,"  ", sModule, " version: ", xModule.oVersionInformation.sCurrentVersion);
-    oConsole.fPrint(ERROR, "-" * 80);
-    oConsole.fPrint();
+        oConsole.fPrint(ERROR, u"\u2502      > ", NORMAL, sCode.strip(), uConvertTabsToSpaces = 2);
+      uFrameIndex += 1;
+    oConsole.fPrint(ERROR, u"\u2516", sPadding = u"\u2500");
     oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");
     oConsole.fPrint(INFO, "    https://github.com/SkyLined/BugId/issues/new");
     oConsole.fPrint("If you do not have a github account, or you want to report this issue");
@@ -50,6 +39,8 @@ def fDumpExceptionAndExit(oException, oTraceBack):
       oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
       oConsole.fPrint("as in:", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
       oConsole.fPrint();
+    fVersionCheck();
+    oConsole.fPrint();
     oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   finally:
     oConsole.fUnlock();

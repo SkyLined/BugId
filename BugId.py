@@ -69,166 +69,67 @@ import mFileSystem;
 import mWindowsAPI;
 from oConsole import oConsole;
 
-# Rather than a command line, a known application keyword can be provided. The default command line for such applications can be provided below and will
-# be used if the keyword is provided as the command line by the user:
+# Rather than a command line, a known application keyword can be provided. The default command line for such
+# applications can be provided below and will be used if the keyword is provided as the command line by the user:
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
-# ISA = Instruction Set Architecture
-sLocalAppData = os.getenv("LocalAppData");
-from ChromePath import sChromePath_x64, sChromePath_x86, sChromePath, \
-    sChromeSxSPath_x64, sChromeSxSPath_x86, sChromeSxSPath;
-from FirefoxPath import sFirefoxPath_x64, sFirefoxPath_x86, sFirefoxPath;
-from MSIEPath import sMSIEPath_x64, sMSIEPath_x86, sMSIEPath;
-def fasGetChromeDefaultArguments(bForHelp):
-  return [
-    "--enable-experimental-accessibility-features",
-    "--enable-experimental-canvas-features",
-    "--enable-experimental-input-view-features",
-    "--enable-experimental-web-platform-features",
-    "--enable-logging=stderr",
-    "--enable-usermedia-screen-capturing",
-    "--enable-viewport",
-    "--enable-webgl-draft-extensions",
-    "--enable-webvr",
-    "--expose-internals-for-testing",
-    "--disable-popup-blocking",
-    "--disable-prompt-on-repost",
-    "--force-renderer-accessibility",
-    "--javascript-harmony",
-    "--js-flags=\"--expose-gc\"",
-    "--no-sandbox",
-  ];
+# All application specific settings and features are in the process of being moved
+# to a sub-module. This should clean up the code quite a bit when finished.
+from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 
-sEdgeRecoveryPath = mFileSystem.fsPath(os.getenv("LocalAppData"), \
-    "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active");
+gdfCleanup_by_sKeyword = {};
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdfCleanup_by_sKeyword[sKeyword] = dxApplicationSettings.get("fCleanup");
 
-def fEdgeCleanup():
-  if mFileSystem.fbIsFolder(sEdgeRecoveryPath):
-    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath);
-
-sFirefoxProfilePath = mFileSystem.fsPath(os.getenv("TEMP"), "Firefox-profile");
-
-def fFirefoxCleanup():
-  if mFileSystem.fbIsFolder(sFirefoxProfilePath):
-    mFileSystem.fbDeleteChildrenFromFolder(sFirefoxProfilePath);
-  else:
-    assert mFileSystem.fbCreateFolder(sFirefoxProfilePath), \
-        "Cannot create Firefox profile folder %s" % sFirefoxProfilePath;
-
-def fasGetEdgeDefaultArguments(bForHelp):
-  if not bForHelp:
-    # We don't really return any arguments, but we do check that we can run this
-    # version of Edge...
-    if mWindowsAPI.oWindowsVersion.uCurrentBuild < 15063:
-      oConsole.fPrint(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
-      oConsole.fPrint(ERROR, "builds ", ERROR_INFO, "15063", ERROR, " and higher, and you are running build ", \
-          ERROR_INFO, mWindowsAPI.oWindowsVersion.sCurrentBuild, ERROR, ".");
-      oConsole.fPrint();
-      oConsole.fPrint("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
-      oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
-      oConsole.fPrint("It can be used to debug Edge in BugId on Windows versions before 10.0.15063.");
-      os._exit(4);
-  return [];
-
-def fasGetFirefoxDefaultArguments(bForHelp):
-  if bForHelp:
-    # The folder may not exist at this point, so we cannot guarantee a 8.3 path
-    # exists. Also, the 8.3 path may not be easily readable. Therefore, we'll
-    # always use the long path in the help.
-    sUsedFirefoxProfilePath = sFirefoxProfilePath;
-  else:
-    # Firefox cannot handle long paths (starting with "\\?\") so we'll use the
-    # 8.3 path to make sure it will work. To get an 8.3 path, there should be a
-    # file or folder for that path. In this case, we want a folder, so we'll
-    # make sure it's created if it does not exist yet.
-    if not mFileSystem.fbIsFolder(sFirefoxProfilePath):
-      assert mFileSystem.fbCreateFolder(sFirefoxProfilePath), \
-          "Cannot create Firefox profile folder %s" % sFirefoxProfilePath;
-    sUsedFirefoxProfilePath = mFileSystem.fs83Path(sFirefoxProfilePath)
-  return [
-    "--no-remote",
-    "-profile",
-        sUsedFirefoxProfilePath,
-  ];
-
-gdfCleanup_by_sKeyword = {
-  "edge": fEdgeCleanup,
-  "firefox": fFirefoxCleanup,
-  "firefox_x86": fFirefoxCleanup,
-  "firefox_x64": fFirefoxCleanup,
-};
 gdApplication_sBinaryPath_by_sKeyword = {
   "aoo-writer": r"%s\OpenOffice 4\program\swriter.exe" % sProgramFilesPath_x86,
   "acrobat": r"%s\Adobe\Reader 11.0\Reader\AcroRd32.exe" % sProgramFilesPath_x86,
   "acrobatdc": r"%s\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe" % sProgramFilesPath_x86,
-  "chrome": sChromePath,
-  "chrome_x86": sChromePath_x86,
-  "chrome_x64": sChromePath_x64,
-  "chrome-sxs": sChromeSxSPath,
-  "chrome-sxs_x86": sChromeSxSPath_x86,
-  "chrome-sxs_x64": sChromeSxSPath_x64,
-  "firefox": sFirefoxPath,
-  "firefox_x86": sFirefoxPath_x86,
-  "firefox_x64": sFirefoxPath_x64,
   "foxit": r"%s\Foxit Software\Foxit Reader\FoxitReader.exe" % sProgramFilesPath_x86,
-  "msie": sMSIEPath,
-  "msie_x86": sMSIEPath_x86,
-  "msie_x64": sMSIEPath_x64,
 };
-gsUWPApplicationPackageName_by_sKeyword = {
-  "edge": "Microsoft.MicrosoftEdge",
-};
-gsUWPApplicationId_by_sKeyword = {
-  "edge": "MicrosoftEdge",
-};
-gasApplicationAttachToProcessesForExecutableNames_by_sKeyword = {
-  "edge": ["browser_broker.exe"],
-};
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdApplication_sBinaryPath_by_sKeyword[sKeyword] = dxApplicationSettings.get("sBinaryPath");
+
+gsUWPApplicationPackageName_by_sKeyword = {};
+gsUWPApplicationId_by_sKeyword = {};
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  dxUwpApplication = dxApplicationSettings.get("dxUWPApplication");
+  if dxUwpApplication:
+    gsUWPApplicationPackageName_by_sKeyword[sKeyword] = dxUwpApplication["sPackageName"];
+    gsUWPApplicationId_by_sKeyword[sKeyword] = dxUwpApplication["sId"];
+
+gasApplicationAttachToProcessesForExecutableNames_by_sKeyword = {};
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sKeyword] = \
+      dxApplicationSettings.get("asApplicationAttachToProcessesForExecutableNames");
 # These arguments are always added
 gdApplication_fasGetStaticArguments_by_sKeyword = {
   "aoo-writer": lambda bForHelp: ["-norestore", "-view", "-nologo", "-nolockcheck"],
-  "chrome": fasGetChromeDefaultArguments,
-  "chrome_x86": fasGetChromeDefaultArguments,
-  "chrome_x64": fasGetChromeDefaultArguments,
-  "chrome-sxs": fasGetChromeDefaultArguments,
-  "chrome-sxs_x86": fasGetChromeDefaultArguments,
-  "chrome-sxs_x64": fasGetChromeDefaultArguments,
-  "edge": fasGetEdgeDefaultArguments,
-  "firefox": fasGetFirefoxDefaultArguments,
-  "firefox_x86": fasGetFirefoxDefaultArguments,
-  "firefox_x64": fasGetFirefoxDefaultArguments,
 };
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdApplication_fasGetStaticArguments_by_sKeyword[sKeyword] = dxApplicationSettings.get("fasGetStaticArguments");
+
 # These arguments are added if the 
 DEFAULT_BROWSER_TEST_URL = {}; # Placeholder for dxConfig["sDefaultBrowserTestURL"]
-gdApplication_asDefaultOptionalArguments_by_sKeyword = {
-  "acrobat": ["repro.pdf"],
-  "acrobatdc": ["repro.pdf"],
-  "chrome": [DEFAULT_BROWSER_TEST_URL],
-  "chrome_x86": [DEFAULT_BROWSER_TEST_URL],
-  "chrome_x64": [DEFAULT_BROWSER_TEST_URL],
-  "edge": [DEFAULT_BROWSER_TEST_URL],
-  "firefox": [DEFAULT_BROWSER_TEST_URL],
-  "firefox_x86": [DEFAULT_BROWSER_TEST_URL],
-  "firefox_x64": [DEFAULT_BROWSER_TEST_URL],
-  "foxit": ["repro.pdf"],
-  "msie": [DEFAULT_BROWSER_TEST_URL],
-  "msie_x86": [DEFAULT_BROWSER_TEST_URL],
-  "msie_x64": [DEFAULT_BROWSER_TEST_URL],
+gdApplication_fasGetOptionalArguments_by_sKeyword = {
+  "acrobat": lambda: ["repro.pdf"],
+  "acrobatdc": lambda: ["repro.pdf"],
+  "foxit": lambda: ["repro.pdf"],
 };
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdApplication_fasGetOptionalArguments_by_sKeyword[sKeyword] = dxApplicationSettings["fasGetOptionalArguments"];
+
 gdApplication_sISA_by_sKeyword = {
   # Applications will default to cBugId.sOSISA. Applications need only be added here if they can differ from that.
   "aoo-writer": "x86",
   "acrobat": "x86",
   "acrobatdc": "x86",
-  "chrome_x86": "x86",
-  "chrome_x64": "x64",
-  "firefox_x86": "x86",
-  "firefox_x64": "x64",
   "foxit": "x86",
-  "msie_x86": "x86",
-  "msie_x64": "x64",
 };
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdApplication_sISA_by_sKeyword[sKeyword] = dxApplicationSettings.get("sISA");
+
 dxBrowserSettings = {
   # Settings used by all browsers (these should eventually be fine-tuned for each browser)
   "bApplicationTerminatesWithMainProcess": True,
@@ -238,14 +139,7 @@ dxBrowserSettings = {
   "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
 };
 
-dxMicrosoftBrowserSettings = dxBrowserSettings.copy();
-# The MSHTML and EdgeHTML engines throw these a *lot* but I have never seen them thrown as part of a real bug.
-dxMicrosoftBrowserSettings.update({
-  "cBugId.bIgnoreCPPExceptions": True,
-  "cBugId.bIgnoreWinRTExceptions": True,
-});
-
-gdApplication_dxSettings_by_sKeyword = {
+gdApplication_dxConfigSettings_by_sKeyword = {
   "aoo-writer": {
     "bApplicationTerminatesWithMainProcess": True,
     "nApplicationMaxRunTime": 10.0, # Writer can be a bit slow to load, so give it some time.
@@ -270,15 +164,6 @@ gdApplication_dxSettings_by_sKeyword = {
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
-  "chrome": dxBrowserSettings,
-  "chrome_x86": dxBrowserSettings,
-  "chrome_x64": dxBrowserSettings,
-  "chrome": dxBrowserSettings,
-  "edge": dxMicrosoftBrowserSettings,
-  "edgedbg": dxMicrosoftBrowserSettings,
-  "firefox": dxBrowserSettings,
-  "firefox_x86": dxBrowserSettings,
-  "firefox_x64": dxBrowserSettings,
   "foxit": {
     "bApplicationTerminatesWithMainProcess": True,
     "nApplicationMaxRunTime": 10.0, # Normally loads within 2 seconds, but give it some more to be sure.
@@ -287,13 +172,12 @@ gdApplication_dxSettings_by_sKeyword = {
     "cBugId.nExcessiveCPUUsagePercent": 75,      # Application must be relatively busy.
     "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
   },
-  "msie": dxMicrosoftBrowserSettings, 
-  "msie_x86": dxMicrosoftBrowserSettings,
-  "msie_x64": dxMicrosoftBrowserSettings,
 };
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdApplication_dxConfigSettings_by_sKeyword[sKeyword] = dxApplicationSettings.get("dxConfigSettings");
 
-# Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
-# links to an online source repository:
+# Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML
+# for any detected bug can have clickable links to an online source repository:
 srMozillaCentralSourceURLMappings = "".join([
   r"c:[\\/]builds[\\/]moz2_slave[\\/][^\\/]+[\\/]build[\\/](?:src[\\/])?", # absolute file path
   r"(?P<path>[^:]+\.\w+)", # relative file path
@@ -301,12 +185,13 @@ srMozillaCentralSourceURLMappings = "".join([
   r"(?P<lineno>\d+)",  # line number
 ]);
 gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword = {
-  "firefox": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
-  "firefox_x86": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
-  "firefox_x64": {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"},
 };
-# Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These will be shown prominently in the details
-# HTML for any detected bug.
+for (sKeyword, dxApplicationSettings) in ddxApplicationSettings_by_sKeyword.items():
+  gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sKeyword] = \
+      dxApplicationSettings.get("dsURLTemplate_by_srSourceFilePath");
+
+# Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These
+# will be shown prominently in the details HTML for any detected bug.
 gdApplication_rImportantStdOutLines_by_sKeyword = {};
 gdApplication_rImportantStdErrLines_by_sKeyword = {};
 gbAnErrorOccured = False;
@@ -328,14 +213,15 @@ asApplicationKeywords = sorted(list(set(
   gsUWPApplicationId_by_sKeyword.keys() + # should be the same as above!
   gasApplicationAttachToProcessesForExecutableNames_by_sKeyword.keys() +
   gdApplication_fasGetStaticArguments_by_sKeyword.keys() +
-  gdApplication_asDefaultOptionalArguments_by_sKeyword.keys() +
-  gdApplication_dxSettings_by_sKeyword.keys() +
+  gdApplication_fasGetOptionalArguments_by_sKeyword.keys() +
+  gdApplication_dxConfigSettings_by_sKeyword.keys() +
   gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.keys() + 
   gdApplication_rImportantStdOutLines_by_sKeyword.keys() +
   gdApplication_rImportantStdErrLines_by_sKeyword.keys()
 )));
 gbQuiet = False;
 gbVerbose = False;
+guDefaultCollateralMaximumNumberOfBugs = 5; # Just a hunch that that's a reasonable value.
 
 def fuShowApplicationKeyWordHelp(sApplicationKeyword):
   if sApplicationKeyword not in asApplicationKeywords:
@@ -359,21 +245,19 @@ def fuShowApplicationKeyWordHelp(sApplicationKeyword):
           oConsole.fPrint("      ", INFO, sBinaryName);
     finally:
       oConsole.fUnlock();
-  if sApplicationKeyword in gdApplication_fasGetStaticArguments_by_sKeyword:
+  if gdApplication_fasGetStaticArguments_by_sKeyword.get(sApplicationKeyword):
     fasGetStaticArguments = gdApplication_fasGetStaticArguments_by_sKeyword[sApplicationKeyword];
     oConsole.fPrint("  Default static arguments: ", INFO, " ".join(
       fasGetStaticArguments(bForHelp = True))
     );
-  if sApplicationKeyword in gdApplication_asDefaultOptionalArguments_by_sKeyword:
-    oConsole.fPrint("  Default optional arguments: ", INFO, " ".join([
-      sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-      for sArgument in gdApplication_asDefaultOptionalArguments_by_sKeyword[sApplicationKeyword]
-    ]));
-  if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+  if sApplicationKeyword in gdApplication_fasGetOptionalArguments_by_sKeyword:
+    asOptionalArguments = gdApplication_fasGetOptionalArguments_by_sKeyword[sApplicationKeyword](bForHelp = True)
+    oConsole.fPrint("  Default optional arguments: ", INFO, " ".join(asOptionalArguments));
+  if gdApplication_dxConfigSettings_by_sKeyword.get(sApplicationKeyword):
     oConsole.fLock();
     try:
       oConsole.fPrint("  Application specific settings:");
-      for sSettingName, xValue in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+      for sSettingName, xValue in gdApplication_dxConfigSettings_by_sKeyword[sApplicationKeyword].items():
         oConsole.fPrint("    ", HILITE, sSettingName, NORMAL, " = ", INFO, json.dumps(xValue));
     finally:
       oConsole.fUnlock();
@@ -438,18 +322,9 @@ def fFailedToDebugApplicationHandler(oBugId, sErrorMessage):
   finally:
     oConsole.fUnlock();
 
-def fFailedToApplyMemoryLimitsHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
-  if not gbQuiet:
-    oConsole.fPrint(ERROR, "- Cannot apply memory limits to process ", ERROR_INFO, "%d" % uProcessId, \
-        ERROR, "/", ERROR_INFO, "0x%X" % uProcessId, ERROR, " (", ERROR_INFO, sBinaryName, ERROR, "): ", \
-        ERROR_INFO, sCommandLine or "<command line unknown>");
-  # This does not stop us from debugging the application, so we'll let it run.
-  # However, results may be sub-optimal if the application ends up using all
-  # available memory, as this may prevent BugId from functioning correctly.
-
 gasReportedBinaryNameWithoutPageHeap = [];
 gasAttachToProcessesForExecutableNames = [];
-def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bPreventable):
+def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bPreventable):
   global gbAnErrorOccured, \
          gasBinariesThatAreAllowedToRunWithoutPageHeap, \
          gasReportedBinaryNameWithoutPageHeap, \
@@ -490,36 +365,126 @@ def fPageHeapNotEnabledHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bP
     # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in
     # `dxConfig.py`or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
 
-def fMainProcessTerminatedHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
+def fCdbStdInInputHandler(oBugId, sInput):
+  oConsole.fPrint(HILITE, "<stdin<", NORMAL, sInput, uConvertTabsToSpaces = 8);
+def fCdbStdOutOutputHandler(oBugId, sOutput):
+  oConsole.fPrint(INFO, "stdout>", NORMAL, sOutput, uConvertTabsToSpaces = 8);
+def fCdbStdErrOutputHandler(oBugId, sOutput):
+  oConsole.fPrint(ERROR_INFO, "stderr>", ERROR, sOutput, uConvertTabsToSpaces = 8);
+
+# Helper function to format messages that are specific to a process.
+def fShowMessageForProcess(sHeaderChar, uProcessId, sBinaryName, bIsMainProcess, *asMessage):
+  oConsole.fPrint(
+    sHeaderChar, " ", bIsMainProcess and "Main" or "Sub", " process ",
+    INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL,
+    " (", INFO, sBinaryName, NORMAL, "): ",
+    *asMessage,
+    uConvertTabsToSpaces = 8
+  );
+
+gbFailedToApplyMemoryLimitsErrorShown = False;
+def fFailedToApplyApplicationMemoryLimitsHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+  global gbFailedToApplyMemoryLimitsErrorShown, gbQuiet, gbVerbose;
   if not gbQuiet:
-    oConsole.fPrint("* Process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
-        " (", INFO, sBinaryName, NORMAL, "): Terminated ", INFO, sCommandLine or "<command line unknown>");
-  if dxConfig["bApplicationTerminatesWithMainProcess"]:
-    oConsole.fStatus(INFO, "* BugId is stopping...");
-    oBugId.fStop();
+    fShowMessageForProcess("-", uProcessId, sBinaryName, bIsMainProcess,
+        ERROR_INFO, "Cannot apply application memory limits");
+    gbFailedToApplyMemoryLimitsErrorShown = True;
+    if not gbVerbose:
+      oConsole.fPrint("  Any additional failures to apply memory limits to processess will not be shown.");
+def fFailedToApplyProcessMemoryLimitsHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+  global gbFailedToApplyMemoryLimitsErrorShown, gbVerbose;
+  if gbVerbose or not gbFailedToApplyMemoryLimitsErrorShown:
+    fShowMessageForProcess("-", uProcessId, sBinaryName, bIsMainProcess,
+        ERROR_INFO, "Cannot apply process memory limits");
+    gbFailedToApplyMemoryLimitsErrorShown = True;
+    if not gbVerbose:
+      oConsole.fPrint("  Any additional failures to apply memory limits to processess will not be shown.");
 
-def fStdInInputHandler(oBugId, sInput):
-  oConsole.fPrint(HILITE, "<stdin<", NORMAL, sInput);
-def fStdOutOutputHandler(oBugId, sOutput):
-  oConsole.fPrint(INFO, "stdout>", NORMAL, sOutput);
-def fStdErrOutputHandler(oBugId, sOutput):
-  oConsole.fPrint(ERROR, "stderr>", NORMAL, sOutput);
 
-def fApplicationStdOutOrErrOutputHandler(oBugId, uProcessId, sBinaryName, sCommandLine, sStdOutOrErr, sMessage):
-  oConsole.fPrint("* Process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
-      " (", INFO, sBinaryName, NORMAL, "): ", INFO, sStdOutOrErr, NORMAL, ">", HILITE, sMessage);
-
-def fNewProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine):
+def fStartedProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+  fNewProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bAttached = False);
+def fAttachedToProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+  fNewProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bAttached = True);
+def fNewProcessHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bAttached):
   global gasAttachToProcessesForExecutableNames;
   if not gbQuiet:
-    oConsole.fPrint("* Process ", INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL, \
-        " (", INFO, sBinaryName, NORMAL, "): Started ", INFO, sCommandLine or "<command line unknown>");
+    fShowMessageForProcess("+", uProcessId, sBinaryName, bIsMainProcess,
+      bAttached and "Attached" or "Started", "; command line = ", INFO, sCommandLine or "<unknown>", NORMAL, "."
+    );
   # Now is a good time to look for additional binaries that may need to be debugged as well.
   if gasAttachToProcessesForExecutableNames:
     oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
 
+def fApplicationStdOutOutputHandler(oBugId, uProcessId, sBinaryName, sCommandLine, sMessage):
+  fShowMessageForProcess("*", uProcessId, sBinaryName, True, # Always a main process
+    INFO, "stdout", NORMAL, ">", HILITE, sMessage,
+  );
+def fApplicationStdErrOutputHandler(oBugId, uProcessId, sBinaryName, sCommandLine, sMessage):
+  fShowMessageForProcess("*", uProcessId, sBinaryName, True, # Always a main process
+    ERROR, "stderr", NORMAL, ">", ERROR_INFO, sMessage,
+  );
+
+def fProcessTerminatedHandler(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+  bStopBugId = bIsMainProcess and dxConfig["bApplicationTerminatesWithMainProcess"];
+  if not gbQuiet:
+    fShowMessageForProcess("-", uProcessId, sBinaryName, bIsMainProcess,
+      "Terminated", bStopBugId and "; the application is considered to have terminated with it." or ".",
+    );
+  if bStopBugId:
+    oConsole.fStatus(INFO, "* BugId is stopping because a main process terminated...");
+    oBugId.fStop();
+
+guDetectedBugsCount = 0;
+guMaximumNumberOfBugs = 1;
+def fBugReportHandler(oBugId, oBugReport):
+  global guDetectedBugsCount, guMaximumNumberOfBugs;
+  guDetectedBugsCount += 1;
+  oConsole.fLock();
+  try:
+    oConsole.fPrint(u"\u250C\u2500 ", HILITE, "A bug was detect in the application ", NORMAL, sPadding = u"\u2500");
+    if oBugReport.sBugLocation:
+      oConsole.fPrint(u"\u2502 Id @ Location:    ", INFO, oBugReport.sId, NORMAL, " @ ", INFO, oBugReport.sBugLocation);
+      sBugIdAndLocation = "%s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
+    else:
+      oConsole.fPrint(u"\u2502 Id:               ", INFO, oBugReport.sId);
+      sBugIdAndLocation = oBugReport.sId;
+    if oBugReport.sBugSourceLocation:
+      oConsole.fPrint(u"\u2502 Source:           ", INFO, oBugReport.sBugSourceLocation);
+    oConsole.fPrint(u"\u2502 Description:      ", INFO, oBugReport.sBugDescription);
+    oConsole.fPrint(u"\u2502 Security impact:  ", INFO, oBugReport.sSecurityImpact);
+    oConsole.fPrint(u"\u2502 Version:          ", NORMAL, oBugReport.asVersionInformation[0]); # The process' binary.
+    for sVersionInformation in oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
+      oConsole.fPrint(u"\u2502                   ", NORMAL, sVersionInformation); # different binary (e.g. a .dll)
+    if dxConfig["bGenerateReportHTML"]:
+      # Use a report file name base on the BugId.
+      sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
+      # In collateral mode, we will number the reports so you know in which order bugs were reported.
+      if guMaximumNumberOfBugs > 1:
+        sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
+      # Translate characters that are not valid in file names.
+      sValidReportFileName = mFileSystem.fsValidName(sDesiredReportFileName, bUnicode = \
+          dxConfig["bUseUnicodeReportFileNames"]);
+      if dxConfig["sReportFolderPath"] is not None:
+        sReportFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+      else:
+        sReportFilePath = mFileSystem.fsPath(sValidReportFileName);
+      eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
+        oBugReport.sReportHTML,
+        sReportFilePath,
+        fbRetryOnFailure = lambda: False,
+      );
+      if eWriteDataToFileResult:
+        oConsole.fPrint(u"\u2502 Bug report:       ", ERROR, "Cannot be saved (", \
+            ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
+      else:
+        oConsole.fPrint(u"\u2502 Bug report:       ", NORMAL, sValidReportFileName,  \
+            " (%d bytes)" % len(oBugReport.sReportHTML));
+    oConsole.fPrint(u"\u2516", sPadding = u"\u2500");
+  finally:
+    oConsole.fUnlock();
+
 def fuMain(asArguments):
-  global gbVerbose, gbQuiet, gasAttachToProcessesForExecutableNames;
+  global gbVerbose, gbQuiet, gasAttachToProcessesForExecutableNames, guMaximumNumberOfBugs, guDetectedBugsCount;
   if len(asArguments) == 0:
     fPrintLogo();
     fPrintUsage(asApplicationKeywords);
@@ -553,6 +518,8 @@ def fuMain(asArguments):
       bFast = True;
     elif sArgument in ["-r", "/r"]:
       bRepeat = True;
+    elif sArgument in ["-c", "/c"]:
+      guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
     elif sArgument in ["-?", "/?", "-h", "/h"]:
       fPrintLogo();
       fPrintUsage(asApplicationKeywords);
@@ -590,7 +557,8 @@ def fuMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot provide process ids and an UWP application package name.");
           return 2;
         if "!" not in sValue:
-          oConsole.fPrint(ERROR, "- Please provide a string of the form ", ERROR_INFO, sSettingName, "=<package name>!<application id>.");
+          oConsole.fPrint(ERROR, "- Please provide a string of the form ", ERROR_INFO, sSettingName, \
+              "=<package name>!<application id>.");
           return 2;
         sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
       elif sSettingName in ["version", "check-for-updates"]:
@@ -610,36 +578,49 @@ def fuMain(asArguments):
         elif sValue.lower() == "false":
           gbQuiet = False;
         else:
-          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be \"true\" or \"false\".");
       elif sSettingName in ["verbose", "debug"]:
         if sValue is None or sValue.lower() == "true":
           gbVerbose = True;
         elif sValue.lower() == "false":
           gbVerbose = False;
         else:
-          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be \"true\" or \"false\".");
       elif sSettingName in ["fast", "quick"]:
         if sValue is None or sValue.lower() == "true":
           bFast = True;
         elif sValue.lower() == "false":
           bFast = False;
         else:
-          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be \"true\" or \"false\".");
       elif sSettingName in ["repeat", "forever"]:
         if sValue is None or sValue.lower() == "true":
           bRepeat = True;
         elif sValue.lower() == "false":
           bRepeat = False;
         else:
-          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, " must be \"true\" or \"false\".");
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be \"true\" or \"false\".");
+      elif sSettingName in ["collateral"]:
+        if sValue is None:
+          guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
+        else:
+          guMaximumNumberOfBugs = long(sValue);
       elif sSettingName in ["test-internal-error", "internal-error-test"]:
         raise Exception("Testing internal error");
       else:
+        if not sValue:
+          oConsole.fPrint(ERROR, "- You cannot provide an argument (", ERROR_INFO, "--", sSettingName, ERROR, \
+              ") without a value.");
+          return 2;
         try:
           xValue = json.loads(sValue);
         except ValueError as oError:
-          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", ERROR_INFO, sValue, ERROR, ": ", \
-              ERROR_INFO, " ".join(oError.args), ERROR, ".");
+          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", ERROR_INFO, "--", sSettingName, "=", sValue, \
+              ERROR, ": ", ERROR_INFO, " ".join(oError.args), ERROR, ".");
           return 2;
         # User provided config settings must be applied after any keyword specific config settings:
         dxUserProvidedConfigSettings[sSettingName] = xValue;
@@ -655,7 +636,8 @@ def fuMain(asArguments):
         oConsole.fLock();
         try:
           oConsole.fPrint(ERROR, "- You cannot provide multiple application binaries.");
-          oConsole.fPrint(ERROR, "  (Did you perhaps forget to put ", ERROR_INFO, "--", ERROR, " before the start of the application arguments?)");
+          oConsole.fPrint(ERROR, "  (Did you perhaps forget to put ", ERROR_INFO, "--", ERROR, \
+              " before the start of the application arguments?)");
         finally:
           oConsole.fUnlock();
         return 2;
@@ -677,10 +659,19 @@ def fuMain(asArguments):
   rImportantStdOutLines = None;
   rImportantStdErrLines = None;
   
+  fCleanup = None;
   if sApplicationKeyword:
-    fCleanup = dxConfig["bCleanup"] and gdfCleanup_by_sKeyword.get(sApplicationKeyword) or None;
+    fCleanup = gdfCleanup_by_sKeyword.get(sApplicationKeyword) or None;
     # Get application binary/UWP package name/process ids as needed:
-    if sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
+    if sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
+      # This application is started as an application package.
+      if sApplicationBinaryPath:
+        oConsole.fPrint(ERROR, "- You cannot provide an application binary for application keyword ", \
+            ERROR_INFO, sApplicationKeyword, ERROR, ".");
+        return 2;
+      sUWPApplicationPackageName = gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword];
+      sUWPApplicationId = gsUWPApplicationId_by_sKeyword[sApplicationKeyword];
+    elif sApplicationKeyword in gdApplication_sBinaryPath_by_sKeyword:
       # This application is started from the command-line.
       if auApplicationProcessIds:
         oConsole.fPrint(ERROR, "- You cannot provide process ids for application keyword ", ERROR_INFO, \
@@ -697,14 +688,6 @@ def fuMain(asArguments):
               ERROR, " could not be detected on your system.");
           oConsole.fPrint(ERROR, "  Please provide the path to this binary in the arguments.");
           return 4;
-    elif sApplicationKeyword in gsUWPApplicationPackageName_by_sKeyword:
-      # This application is started as an application package.
-      if sApplicationBinaryPath:
-        oConsole.fPrint(ERROR, "- You cannot provide an application binary for application keyword ", \
-            ERROR_INFO, sApplicationKeyword, ERROR, ".");
-        return 2;
-      sUWPApplicationPackageName = gsUWPApplicationPackageName_by_sKeyword[sApplicationKeyword];
-      sUWPApplicationId = gsUWPApplicationId_by_sKeyword[sApplicationKeyword];
     elif not auApplicationProcessIds:
       # This application is attached to.
       oConsole.fPrint(ERROR, "- You must provide process ids for application keyword ", \
@@ -716,38 +699,36 @@ def fuMain(asArguments):
           ERROR_INFO, sApplicationKeyword, ERROR, ".");
       return 2;
     if sApplicationKeyword in gasApplicationAttachToProcessesForExecutableNames_by_sKeyword:
-      gasAttachToProcessesForExecutableNames = gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword];
+      gasAttachToProcessesForExecutableNames = \
+          gasApplicationAttachToProcessesForExecutableNames_by_sKeyword[sApplicationKeyword];
     # Get application arguments;
     fasGetApplicationStaticArguments = gdApplication_fasGetStaticArguments_by_sKeyword.get(sApplicationKeyword, None);
-    asApplicationStaticArguments = fasGetApplicationStaticArguments and fasGetApplicationStaticArguments(bForHelp = False) or [];
+    asApplicationStaticArguments = fasGetApplicationStaticArguments and \
+        fasGetApplicationStaticArguments(bForHelp = False) or [];
     if asApplicationOptionalArguments is None:
-      asApplicationOptionalArguments = [
-        sArgument is DEFAULT_BROWSER_TEST_URL and dxConfig["sDefaultBrowserTestURL"] or sArgument
-        for sArgument in gdApplication_asDefaultOptionalArguments_by_sKeyword.get(sApplicationKeyword, [])
-      ];
+      asApplicationOptionalArguments = gdApplication_fasGetOptionalArguments_by_sKeyword[sApplicationKeyword]();
     asApplicationArguments = asApplicationStaticArguments + asApplicationOptionalArguments;
     # Apply application specific settings
-    if sApplicationKeyword in gdApplication_dxSettings_by_sKeyword:
+    if sApplicationKeyword in gdApplication_dxConfigSettings_by_sKeyword:
       if gbVerbose:
         oConsole.fPrint("* Applying application specific configuration for %s:" % sApplicationKeyword);
-      for (sSettingName, xValue) in gdApplication_dxSettings_by_sKeyword[sApplicationKeyword].items():
+      for (sSettingName, xValue) in gdApplication_dxConfigSettings_by_sKeyword[sApplicationKeyword].items():
         if sSettingName not in dxUserProvidedConfigSettings:
           fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
       if gbVerbose:
         oConsole.fPrint();
     # Apply application specific source settings
-    if sApplicationKeyword in gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword:
-      dsURLTemplate_by_srSourceFilePath = gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sApplicationKeyword];
+    if gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword.get(sApplicationKeyword):
+      dsURLTemplate_by_srSourceFilePath = \
+          gdApplication_sURLTemplate_by_srSourceFilePath_by_sKeyword[sApplicationKeyword];
     # Apply application specific stdio settings:
     if sApplicationKeyword in gdApplication_rImportantStdOutLines_by_sKeyword:
       rImportantStdOutLines = gdApplication_rImportantStdOutLines_by_sKeyword[sApplicationKeyword];
     if sApplicationKeyword in gdApplication_rImportantStdErrLines_by_sKeyword:
       rImportantStdErrLines = gdApplication_rImportantStdErrLines_by_sKeyword[sApplicationKeyword];
-    if not sApplicationISA and sApplicationKeyword in gdApplication_sISA_by_sKeyword:
-      # Apply application specific ISA
-      sApplicationISA = gdApplication_sISA_by_sKeyword[sApplicationKeyword];
+    # If not ISA is specified, apply the application specific ISA (if any).
+    sApplicationISA = sApplicationISA or gdApplication_sISA_by_sKeyword.get(sApplicationKeyword);
   elif (auApplicationProcessIds or sUWPApplicationPackageName or sApplicationBinaryPath):
-    fCleanup = None;
     # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
     # are used if they are supplied:
     asApplicationArguments = asApplicationOptionalArguments or [];
@@ -771,7 +752,7 @@ def fuMain(asArguments):
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
     nStartTime = time.clock();
-    if fCleanup is not None:
+    if fCleanup and dxConfig["bCleanup"]:
       oConsole.fStatus("* Cleaning up application state...");
       fCleanup();
     uRunCounter += 1;
@@ -821,98 +802,71 @@ def fuMain(asArguments):
       bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
       uProcessMaxMemoryUse = dxConfig["uProcessMaxMemoryUse"],
       uTotalMaxMemoryUse = dxConfig["uTotalMaxMemoryUse"],
-      fFailedToDebugApplicationCallback = fFailedToDebugApplicationHandler,
-      fFailedToApplyMemoryLimitsCallback = fFailedToApplyMemoryLimitsHandler,
-      fApplicationRunningCallback = fApplicationRunningHandler,
-      fApplicationSuspendedCallback = fApplicationSuspendedHandler,
-      fApplicationResumedCallback = fApplicationResumedHandler,
-      fMainProcessTerminatedCallback = fMainProcessTerminatedHandler,
-      fInternalExceptionCallback = fInternalExceptionHandler,
-      fFinishedCallback = None,
-      fPageHeapNotEnabledCallback = fPageHeapNotEnabledHandler,
-      fStdInInputCallback = gbVerbose and fStdInInputHandler or None,
-      fStdOutOutputCallback = gbVerbose and fStdOutOutputHandler or None,
-      fStdErrOutputCallback = fStdErrOutputHandler,
-      fNewProcessCallback = fNewProcessHandler,
-      fApplicationStdOutOrErrOutputCallback = fApplicationStdOutOrErrOutputHandler,
+      uMaximumNumberOfBugs = guMaximumNumberOfBugs,
     );
+    oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationHandler);
+    oBugId.fAddEventCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsHandler);
+    oBugId.fAddEventCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsHandler);
+    oBugId.fAddEventCallback("Application running", fApplicationRunningHandler);
+    oBugId.fAddEventCallback("Application suspended", fApplicationSuspendedHandler);
+    oBugId.fAddEventCallback("Application resumed", fApplicationResumedHandler);
+    oBugId.fAddEventCallback("Process terminated", fProcessTerminatedHandler);
+    oBugId.fAddEventCallback("Internal exception", fInternalExceptionHandler);
+    oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledHandler);
+    if gbVerbose:
+      oBugId.fAddEventCallback("Cdb stdin input", fCdbStdInInputHandler);
+      oBugId.fAddEventCallback("Cdb stdout output", fCdbStdOutOutputHandler);
+    oBugId.fAddEventCallback("Cdb stderr output", fCdbStdErrOutputHandler);
+    oBugId.fAddEventCallback("Started process", fStartedProcessHandler);
+    oBugId.fAddEventCallback("Attached to process", fAttachedToProcessHandler);
+    oBugId.fAddEventCallback("Application stdout output", fApplicationStdOutOutputHandler);
+    oBugId.fAddEventCallback("Application stderr output", fApplicationStdOutOutputHandler);
+    oBugId.fAddEventCallback("Bug report", fBugReportHandler);
+
     if dxConfig["nApplicationMaxRunTime"] is not None:
-      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], fApplicationRunTimeHandler);
+      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], \
+          fApplicationRunTimeHandler);
     if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
+    guDetectedBugsCount = 0;
     oBugId.fStart();
     oBugId.fWait();
     if gbAnErrorOccured:
       return 3;
-    oConsole.fLock();
-    try:
-      if oBugId.oBugReport is not None:
-        oConsole.fPrint(HILITE, "+ A bug was detect in the application:");
-        if oBugId.oBugReport.sBugLocation:
-          oConsole.fPrint("  Id @ Location:    ", INFO, oBugId.oBugReport.sId, NORMAL, " @ ", INFO, oBugId.oBugReport.sBugLocation);
-          sBugIdAndLocation = "%s @ %s" % (oBugId.oBugReport.sId, oBugId.oBugReport.sBugLocation);
-        else:
-          oConsole.fPrint("  Id:               ", INFO, oBugId.oBugReport.sId);
-          sBugIdAndLocation = oBugId.oBugReport.sId;
-        if oBugId.oBugReport.sBugSourceLocation:
-          oConsole.fPrint("  Source:           ", INFO, oBugId.oBugReport.sBugSourceLocation);
-        oConsole.fPrint("  Description:      ", INFO, oBugId.oBugReport.sBugDescription);
-        oConsole.fPrint("  Security impact:  ", INFO, oBugId.oBugReport.sSecurityImpact);
-        oConsole.fPrint("  Version:          ", HILITE, oBugId.oBugReport.asVersionInformation[0]); # There is always the process' binary.
-        for sVersionInformation in oBugId.oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
-          oConsole.fPrint("                    ", HILITE, sVersionInformation); # different binary (e.g. a .dll)
-        if dxConfig["bGenerateReportHTML"]:
-          # We'd like a report file name base on the BugId, but the later may contain characters that are not valid in a file name
-          sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
-          # Thus, we need to translate these characters to create a valid filename that looks very similar to the BugId
-          sValidReportFileName = mFileSystem.fsValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
-          if dxConfig["sReportFolderPath"] is not None:
-            sReportFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
-          else:
-            sReportFilePath = mFileSystem.fsPath(sValidReportFileName);
-          eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
-            oBugId.oBugReport.sReportHTML,
-            sReportFilePath,
-            fbRetryOnFailure = lambda: False,
-          );
-          if eWriteDataToFileResult:
-            oConsole.fPrint("  Bug report:       ", ERROR, "Cannot be saved (", \
-                ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
-          else:
-            oConsole.fPrint("  Bug report:       ", HILITE, sValidReportFileName, NORMAL, " (%d bytes)" % len(oBugId.oBugReport.sReportHTML));
-      else:
-        oConsole.fPrint("+ The application terminated without a bug being detected.");
-        sBugIdAndLocation = "No crash";
-      if gbVerbose:
-        oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
-        nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-        oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
-      if not bRepeat: return oBugId.oBugReport is not None and 1 or 0;
-      duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
-      duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
-      sStatistics = "";
-      auOrderedNumberOfRepros = sorted(list(set(duNumberOfRepros_by_sBugIdAndLocation.values())));
-      auOrderedNumberOfRepros.reverse();
-      for uNumberOfRepros in auOrderedNumberOfRepros:
-        for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
-          if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
-            sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), round(100.0 * uNumberOfRepros / uRunCounter));
-      if dxConfig["sReportFolderPath"] is not None:
-        sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
-      else:
-        sStatisticsFilePath = mFileSystem.fsPath(sValidStatisticsFileName);
-      eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
-        sStatistics,
-        sStatisticsFilePath,
-        fbRetryOnFailure = lambda: False,
-      );
-      if eWriteDataToFileResult:
-        oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
-      else:
-        oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
-      oConsole.fPrint(); # and loop
-    finally:
-      oConsole.fUnlock();
+    if guDetectedBugsCount == 0:
+      oConsole.fPrint(u"\u2500\u2500 The application terminated without a bug being detected ", sPadding = u"\u2500");
+      sBugIdAndLocation = "No crash";
+    if gbVerbose:
+      oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
+      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
+      oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
+    if not bRepeat:
+      return guDetectedBugsCount > 0 and 1 or 0;
+    duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
+    duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
+    sStatistics = "";
+    auOrderedNumberOfRepros = sorted(list(set(duNumberOfRepros_by_sBugIdAndLocation.values())));
+    auOrderedNumberOfRepros.reverse();
+    for uNumberOfRepros in auOrderedNumberOfRepros:
+      for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
+        if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
+          sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
+              round(100.0 * uNumberOfRepros / uRunCounter));
+    if dxConfig["sReportFolderPath"] is not None:
+      sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
+    else:
+      sStatisticsFilePath = mFileSystem.fsPath(sValidStatisticsFileName);
+    eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
+      sStatistics,
+      sStatisticsFilePath,
+      fbRetryOnFailure = lambda: False,
+    );
+    if eWriteDataToFileResult:
+      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, repr(eWriteDataToFileResult), \
+          ERROR, ")");
+    else:
+      oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
+    oConsole.fPrint(); # and loop
 
 if __name__ == "__main__":
   try:

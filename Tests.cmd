@@ -6,6 +6,19 @@ ECHO   * Test if BugId can debug cmd.exe...
 CALL "BugId.cmd" %ComSpec% --nApplicationMaxRunTime=1 --cBugId.bEnsurePageHeap=false
 IF ERRORLEVEL 1 GOTO :ERROR
 
+ECHO   * Test if BugId can debug Google Chrome...
+CALL "BugId.cmd" chrome --nApplicationMaxRunTime=10
+IF ERRORLEVEL 1 GOTO :ERROR
+ECHO   * Test if BugId can debug Microsoft Edge...
+CALL "BugId.cmd" edge --nApplicationMaxRunTime=10
+IF ERRORLEVEL 1 GOTO :ERROR
+ECHO   * Test if BugId can debug Mozilla Firefox...
+CALL "BugId.cmd" firefox --nApplicationMaxRunTime=10
+IF ERRORLEVEL 1 GOTO :ERROR
+ECHO   * Test if BugId can debug Microsoft Internet Explorer...
+CALL "BugId.cmd" msie --nApplicationMaxRunTime=10
+IF ERRORLEVEL 1 GOTO :ERROR
+
 ECHO   * Test if BugId can run with redirected output...
 CALL "BugId.cmd" >nul
 IF ERRORLEVEL 1 GOTO :ERROR

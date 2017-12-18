@@ -1,3 +1,33 @@
+2017-12-18
+==========
++ `-c` and `--collateral[=int]` can now be used to turn on "collateral" bug
+  handling. In this case certain access violation bugs are reported, but rather
+  than terminating the application, cBugId will attempt to "fake" that the
+  instruction that caused this exception succeeded (providing a tainted value
+  0x41414141... as the read result if applicable). This allows you to see what
+  would happen if you were able to control this bad read/write operation. Any
+  subsequent access violations are treated similarly, up until the maximum
+  number of collateral bugs requested. This maximum number of bugs defaults to
+  5, but can be overwritten through a value provided for the `--collateral`
+  argument.
+  Collateral bug handling may be useful when trying to determine if a
+  particular vulnerability is theoretically exploitable or not: you can use it
+  get an idea of the effect that control over the data would provide. It might
+  show that nothing else happens, that the application crashes unavoidably and
+  immediately, both of which indicate that the issue is not exploitable. It
+  might also show that control over arbitrary parts of memory or the
+  instruction pointer is potentially possible, indicating it is exploitable.
++ `--bCleanup` should now work correctly.
++ Application specific settings (i.e. application identified with a "keyword")
+  have been moved into `ddxApplicationSettings_by_sKeyword` in a separate
+  folder to clean up the code.
++ Updated modules required code changes.
++ Output has been standardized and improved.
++ Line wrapping of code was improved.
++ Internal exception stack numbering was reversed and output improved. A
+  version check is now run and results output as well.
++ Added more tests.
+
 2017-11-24
 ==========
 + Update version of cBugId should resolve all open issues, provide more
