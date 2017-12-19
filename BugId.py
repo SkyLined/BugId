@@ -561,6 +561,10 @@ def fuMain(asArguments):
               "=<package name>!<application id>.");
           return 2;
         sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
+      elif sSettingName in ["help"]:
+        fPrintLogo();
+        fPrintUsage(asApplicationKeywords);
+        return 0;
       elif sSettingName in ["version", "check-for-updates"]:
         fVersionCheck();
         return 0;
