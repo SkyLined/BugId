@@ -27,6 +27,10 @@ ECHO   * Test if version checks work...
 CALL "BugId.cmd" --version >nul
 IF ERRORLEVEL 1 GOTO :ERROR
 
+ECHO   * Test if usage help work...
+CALL "BugId.cmd" --help >nul
+IF ERRORLEVEL 1 GOTO :ERROR
+
 ECHO   * Test if internal error reporting works...
 CALL "BugId.cmd" --test-internal-error >nul
 IF NOT ERRORLEVEL == 3 GOTO :ERROR
