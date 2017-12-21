@@ -17,31 +17,31 @@ dxConfigSettings = {
 };
 
 # Microsoft Internet Explorer
-sMSIEPath_x64 = sProgramFilesPath_x64 and fsFirstExistingFile(
+sApplicationBinaryPath_x64 = sProgramFilesPath_x64 and fsFirstExistingFile(
   r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x64,
 );
-sMSIEPath_x86 = fsFirstExistingFile(
+sApplicationBinaryPath_x86 = fsFirstExistingFile(
   r"%s\Internet Explorer\iexplore.exe" % sProgramFilesPath_x86,
 );
-sMSIEPath = sMSIEPath_x64 or sMSIEPath_x86;
+sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x86;
 
 def fasGetMSIEOptionalArguments(bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
 
-ddxMSIESettings_by_sKeyword = {
+ddxMicrosoftInternetExplorerSettings_by_sKeyword = {
   "msie": {
-    "sBinaryPath": sMSIEPath,
+    "sBinaryPath": sApplicationBinaryPath,
     "fasGetOptionalArguments": fasGetMSIEOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
   },
   "msie_x86": {
-    "sBinaryPath": sMSIEPath_x86,
+    "sBinaryPath": sApplicationBinaryPath_x86,
     "fasGetOptionalArguments": fasGetMSIEOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
   },
   "msie_x64": {
-    "sBinaryPath": sMSIEPath_x64,
+    "sBinaryPath": sApplicationBinaryPath_x64,
     "fasGetOptionalArguments": fasGetMSIEOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x64",

@@ -87,6 +87,9 @@ IF "%~1" == "" (
   IF ERRORLEVEL 1 EXIT /B 1
   CALL :SET_OR_SHOW_PAGE_HEAP "FoxitReader_Lib_Full.exe" "%~2"
   IF ERRORLEVEL 1 EXIT /B 1
+) ELSE IF "%~1" == "java" (
+  CALL :SET_OR_SHOW_PAGE_HEAP "java.exe" "%~2"
+  IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE IF "%~1" == "msie" (
   CALL :SET_OR_SHOW_PAGE_HEAP "iexplore.exe" "%~2"
   IF ERRORLEVEL 1 EXIT /B 1

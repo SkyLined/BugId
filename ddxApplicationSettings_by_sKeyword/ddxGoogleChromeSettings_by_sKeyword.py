@@ -7,12 +7,7 @@ sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 sLocalAppData = os.getenv("LocalAppData");
 
 dxConfigSettings = {
-  # Settings used by all browsers (these should eventually be fine-tuned for each browser)
   "bApplicationTerminatesWithMainProcess": True,
-  "nExcessiveCPUUsageCheckInitialTimeout": 30.0, # Give browser some time to load repro
-  "cBugId.nExcessiveCPUUsageCheckInterval": 30.0, # Browser may be busy for a bit, but no longer than 30 seconds.
-  "cBugId.nExcessiveCPUUsagePercent": 95,      # Browser msust be very, very busy.
-  "cBugId.nExcessiveCPUUsageWormRunTime": 0.5, # Any well written function should return within half a second IMHO.
 };
 
 # Chrome Canary (if installed)
@@ -26,20 +21,20 @@ sChromeSxSPath_x86 = fsFirstExistingFile(
 );
 sChromeSxSPath = sChromeSxSPath_x64 or sChromeSxSPath_x86;
 # Chrome stable (if installed)
-sChromePath_x64 = sProgramFilesPath_x64 and fsFirstExistingFile(
+sApplicationBinaryPath_x64 = sProgramFilesPath_x64 and fsFirstExistingFile(
   r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x64,
   r"%s\Google\Chrome\Application\chrome.exe" % sLocalAppData,
 );
 if os.getenv("ProgramFiles(x86)"):
   # on x64 systems, x64 versions of Chrome can be installed in the x86 Program Files folder...
-  sChromePath_x64 = sChromePath_x64 or fsFirstExistingFile(
+  sApplicationBinaryPath_x64 = sApplicationBinaryPath_x64 or fsFirstExistingFile(
     r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86,
   );
-sChromePath_x86 = fsFirstExistingFile(
+sApplicationBinaryPath_x86 = fsFirstExistingFile(
   r"%s\Google\Chrome\Application\chrome.exe" % sProgramFilesPath_x86,
   r"%s\Google\Chrome\Application\chrome.exe" % sLocalAppData,
 );
-sChromePath = sChromePath_x64 or sChromePath_x86 or sChromeSxSPath;
+sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x86 or sChromeSxSPath;
 
 
 def fasGetChromeStaticArguments(bForHelp = False):
@@ -65,32 +60,39 @@ def fasGetChromeStaticArguments(bForHelp = False):
 def fasGetChromeOptionalArguments(bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
 
-ddxChromeSettings_by_sKeyword = {
+# The `--enable-logging=stderr` argument causes Chrome to open a console in which to output log messages. This console
+# runs in a "conhost.exe" process, which is part of Windows and not of Chrome. It makes sense that you would not care
+# about it when looking for bugs in Chrome, and leave page disabled in this process.
+ddxGoogleChromeSettings_by_sKeyword = {
   "chrome": {
-    "sBinaryPath": sChromePath,
+    "sBinaryPath": sApplicationBinaryPath,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
   },
   "chrome_x86": {
-    "sBinaryPath": sChromePath_x86,
+    "sBinaryPath": sApplicationBinaryPath_x86,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
   },
   "chrome_x64": {
-    "sBinaryPath": sChromePath_x64,
+    "sBinaryPath": sApplicationBinaryPath_x64,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x64",
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
   },
   "chrome-sxs": {
     "sBinaryPath": sChromeSxSPath,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
   },
   "chrome-sxs_x86": {
     "sBinaryPath": sChromeSxSPath_x86,
@@ -98,6 +100,7 @@ ddxChromeSettings_by_sKeyword = {
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
   },
   "chrome-sxs_x64": {
     "sBinaryPath": sChromeSxSPath_x64,
@@ -105,5 +108,6 @@ ddxChromeSettings_by_sKeyword = {
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x64",
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
   },
 };

@@ -1,3 +1,5 @@
+from dxConfig import dxConfig;
+from mColors import *;
 from oConsole import oConsole;
 
 asBugIdLogo = [s.rstrip() for s in """
@@ -13,8 +15,7 @@ asBugIdLogo = [s.rstrip() for s in """
   ______________ YS,       |      ,SP ________________________________________  
                   `Sbs,_    ' _,sdS`                                            
                     `'*YSissiSY*'`                   https://bugid.skylined.nl  
-                          ``                                                    
-""".split("""
+                          ``                                                    """.split("""
 """)];
 
 # We can now add color to console output, so let's create a second version of
@@ -33,9 +34,19 @@ asBugIdLogoColors = [s.rstrip() for s in """
   87777777777778 887       8      788 8777777777777777777777777777777777777778  
                   887777    8 777788                                            
                     88877777777888                   AAAAAAAAAAAAAAAAAAAAAAAAA  
-                          88                                                    
-""".split("""
+                          88                                                    """.split("""
 """)];
+
+aasLicenseAndDonationInfoPrintArguments = [
+  [" ", DIM, u"\u250C", u"\u2500" * 76, u"\u2510"],
+  [" ", DIM, u"\u2502 ", NORMAL, " This version of BugId is provided free of charge for non-commercial use  ", DIM, u" \u2502"],
+  [" ", DIM, u"\u2502 ", NORMAL, "  only. If you find it useful and would like to make a donation, you can  ", DIM, u" \u2502"],
+  [" ", DIM, u"\u2502 ", NORMAL, "            send bitcoin to ", INFO, "183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX", NORMAL, ".           ", DIM, u" \u2502"],
+  [" ", DIM, u"\u2502 ", NORMAL, "    If you wish to use BugId commercially, please contact the author to   ", DIM, u" \u2502"],
+  [" ", DIM, u"\u2502 ", NORMAL, "    request a quote. Contact and licensing information can be found at:   ", DIM, u" \u2502"],
+  [" ", DIM, u"\u2502 ", NORMAL, "                ", INFO, "https://github.com/SkyLined/BugId#license", NORMAL, ".                ", DIM, u" \u2502"],
+  [" ", DIM, u"\u2514", u"\u2500" * 76, u"\u2518"],
+];
 
 def fPrintLogo():
   # We will use the above ASCII and color data to create a list of arguments
@@ -56,5 +67,10 @@ def fPrintLogo():
         sChar = sCharsLine[uColumnIndex];
         asBugIdLogoPrintArguments[-1] += sChar;
       oConsole.fPrint(*asBugIdLogoPrintArguments);
+    if dxConfig["bShowLicenseAndDonationInfo"]:
+      oConsole.fPrint();
+      for asLicenseAndDonationInfoPrintArguments in aasLicenseAndDonationInfoPrintArguments:
+        oConsole.fPrint(*asLicenseAndDonationInfoPrintArguments);
+      oConsole.fPrint();
   finally:
     oConsole.fUnlock();

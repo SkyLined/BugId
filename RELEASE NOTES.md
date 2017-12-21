@@ -1,7 +1,5 @@
 2017-12-21
 ==========
-New features
-------------
 + `cBugId.bIgnoreFirstChanceNULLPointerAccessViolations` in `dxConfig.py`
   allows you to ignore all first-chance NULL pointer access violations.
   This is useful when you are debugging an application that triggers NULL
@@ -9,6 +7,17 @@ New features
   and without this setting, you will get a report for the same NULL pointer
   every time. Now you can run Java in BugId successfully with
   `--cBugId.bIgnoreFirstChanceNULLPointerAccessViolations=true`.
++ The application keyword `java` has been added for Oracle Java. I've only
+  tested this with version 9.0.1. If you have other versions, please let me
+  know their installation path and whether you can run them successfully in
+  BugId, so I can support them.
++ PageHeap.cmd now has another known application called "java" which can be
+  used to enable/disable page heap for Oracle Java.
++ All application keyword settings have been cleaned up and moved to the
+  `ddxApplicationSettings_by_sKeyword` folder.
++ The application keyword for Apache Open Office has been removed as I was not
+  using it.
+
 
 2017-12-18
 ==========
