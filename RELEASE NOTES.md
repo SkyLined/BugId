@@ -1,3 +1,15 @@
+2017-12-21
+==========
+New features
+------------
++ `cBugId.bIgnoreFirstChanceNULLPointerAccessViolations` in `dxConfig.py`
+  allows you to ignore all first-chance NULL pointer access violations.
+  This is useful when you are debugging an application that triggers NULL
+  pointers on purpose, but handles them correctly. For instance, Java does this
+  and without this setting, you will get a report for the same NULL pointer
+  every time. Now you can run Java in BugId successfully with
+  `--cBugId.bIgnoreFirstChanceNULLPointerAccessViolations=true`.
+
 2017-12-18
 ==========
 + `-c` and `--collateral[=int]` can now be used to turn on "collateral" bug
