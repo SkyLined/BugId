@@ -1,5 +1,4 @@
 from dxConfig import dxConfig;
-from mColors import *;
 from oConsole import oConsole;
 
 asBugIdLogo = [s.rstrip() for s in """
@@ -37,15 +36,18 @@ asBugIdLogoColors = [s.rstrip() for s in """
                           88                                                    """.split("""
 """)];
 
+BORDER = 0x04;
+TEXT = 0x0C;
+HILITE = 0x0F;
 aasLicenseAndDonationInfoPrintArguments = [
-  [" ", DIM, u"\u250C", u"\u2500" * 76, u"\u2510"],
-  [" ", DIM, u"\u2502 ", NORMAL, " This version of BugId is provided free of charge for non-commercial use  ", DIM, u" \u2502"],
-  [" ", DIM, u"\u2502 ", NORMAL, "  only. If you find it useful and would like to make a donation, you can  ", DIM, u" \u2502"],
-  [" ", DIM, u"\u2502 ", NORMAL, "            send bitcoin to ", INFO, "183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX", NORMAL, ".           ", DIM, u" \u2502"],
-  [" ", DIM, u"\u2502 ", NORMAL, "    If you wish to use BugId commercially, please contact the author to   ", DIM, u" \u2502"],
-  [" ", DIM, u"\u2502 ", NORMAL, "    request a quote. Contact and licensing information can be found at:   ", DIM, u" \u2502"],
-  [" ", DIM, u"\u2502 ", NORMAL, "                ", INFO, "https://github.com/SkyLined/BugId#license", NORMAL, ".                ", DIM, u" \u2502"],
-  [" ", DIM, u"\u2514", u"\u2500" * 76, u"\u2518"],
+  [" ", BORDER, u"\u250C", u"\u2500" * 76, u"\u2510"],
+  [" ", BORDER, u"\u2502 ", TEXT, " This version of BugId is provided free of charge for non-commercial use  ", BORDER, u" \u2502"],
+  [" ", BORDER, u"\u2502 ", TEXT, "  only. If you find it useful and would like to make a donation, you can  ", BORDER, u" \u2502"],
+  [" ", BORDER, u"\u2502 ", TEXT, "           send bitcoin to ", HILITE, "183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX", TEXT, ".            ", BORDER, u" \u2502"],
+  [" ", BORDER, u"\u2502 ", TEXT, "    If you wish to use BugId commercially, please contact the author to   ", BORDER, u" \u2502"],
+  [" ", BORDER, u"\u2502 ", TEXT, "    request a quote. Contact and licensing information can be found at:   ", BORDER, u" \u2502"],
+  [" ", BORDER, u"\u2502 ", TEXT, "                ", HILITE, "https://github.com/SkyLined/BugId#license", TEXT, ".                ", BORDER, u" \u2502"],
+  [" ", BORDER, u"\u2514", u"\u2500" * 76, u"\u2518"],
 ];
 
 def fPrintLogo():
