@@ -538,7 +538,7 @@ def fMain(asArguments):
         oConsole.fPrint("* Applying application specific configuration for %s:" % sApplicationKeyword);
       for (sSettingName, xValue) in dxApplicationConfigSettings.items():
         if sSettingName not in dxUserProvidedConfigSettings:
-          fApplyConfigSetting(sSettingName, xValue, "  "); # Apply and show result indented.
+          fApplyConfigSetting(sSettingName, xValue, [None, "  "][gbVerbose]); # Apply and show result indented.
       if gbVerbose:
         oConsole.fPrint();
     # Apply application specific source settings
@@ -567,7 +567,7 @@ def fMain(asArguments):
   
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
-    fApplyConfigSetting(sSettingName, xValue, ""); # Apply and show result
+    fApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]); # Apply and show result
   
   if bRepeat:
     duNumberOfRepros_by_sBugIdAndLocation = {};

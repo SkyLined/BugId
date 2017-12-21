@@ -1,8 +1,9 @@
 import json;
+from dxConfig import dxConfig;
 from mColors import *;
 from oConsole import oConsole;
 
-def fApplyConfigSetting(sSettingName, xValue, sIndentation):
+def fApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is None means no output!
   asGroupNames = sSettingName.split("."); # last element is not a group name
   sFullName = ".".join(asGroupNames);
   sSettingName = asGroupNames.pop();          # so pop it.
@@ -17,11 +18,11 @@ def fApplyConfigSetting(sSettingName, xValue, sIndentation):
       "Unknown setting name %s%s." % (sSettingName, \
           len(asHandledGroupNames) > 0 and " in config group %s" % ".".join(asHandledGroupNames) or "");
   if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
-    if gbVerbose:
+    if sIndentation is not None:
       oConsole.fPrint(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
           " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
   else:
-    if gbVerbose:
+    if sIndentation is not None:
       oConsole.fPrint(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
           " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
     dxConfigGroup[sSettingName] = xValue;
