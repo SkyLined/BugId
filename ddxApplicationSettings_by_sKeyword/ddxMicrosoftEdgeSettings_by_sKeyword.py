@@ -1,7 +1,9 @@
 import os;
 from dxConfig import dxConfig;
 from fsFirstExistingFile import fsFirstExistingFile;
+from mColors import *;
 from mWindowsAPI import oWindowsVersion;
+from oConsole import oConsole;
 import mFileSystem;
 
 sLocalAppData = os.getenv("LocalAppData");
