@@ -154,7 +154,7 @@ EXIT /B 0
       REM "The system cannot find the path specified."
       FOR /F "usebackq tokens=3" %%I IN (`%WinDir%\System32\reg.exe QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%~1" /v "GlobalFlag" ^| "%WinDir%\System32\find.exe" "GlobalFlag"`) DO (
         IF "%%~I" == "0x02109870" (
-          ECHO   + Page heap is ON.
+          ECHO   + Page heap is ON ^(0x02109870^).
         ) ELSE IF "%%~I" == "0x00000000" (
           ECHO   - Page heap is OFF.
         ) ELSE (

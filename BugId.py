@@ -62,18 +62,16 @@ from cBugId import cBugId;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fApplyConfigSetting import fApplyConfigSetting;
-from fDumpExceptionAndExit import fDumpExceptionAndExit;
+from fPrintExceptionInformation import fPrintExceptionInformation;
 from fPrintLogo import fPrintLogo;
 from fPrintUsage import fPrintUsage;
 from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
-from fVersionCheck import fVersionCheck;
+from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
 from oConsole import oConsole;
 
-# Known applications can also have regular expressions that detect important lines in its stdout/stderr output. These
-# will be shown prominently in the details HTML for any detected bug.
 gasAttachToProcessesForExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [];
 gasReportedBinaryNameWithoutPageHeap = [];
@@ -104,7 +102,8 @@ def fApplicationMaxRunTimeCallback(oBugId):
 def fInternalExceptionCallback(oBugId, oException, oTraceBack):
   global gbAnErrorOccured;
   gbAnErrorOccured = True;
-  fDumpExceptionAndExit(oException, oTraceBack);
+  fPrintExceptionInformation(oException, oTraceBack);
+  os._exit(3);
 
 def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
   global gbAnErrorOccured;
@@ -165,7 +164,7 @@ def fPageHeapNotEnabledCallback(oBugId, uProcessId, sBinaryName, sCommandLine, b
 def fCdbStdInInputCallback(oBugId, sInput):
   oConsole.fPrint(HILITE, "<stdin<", NORMAL, sInput, uConvertTabsToSpaces = 8);
 def fCdbStdOutOutputCallback(oBugId, sOutput):
-  oConsole.fPrint(INFO, "stdout>", NORMAL, sOutput, uConvertTabsToSpaces = 8);
+  oConsole.fPrint(HILITE, "stdout>", NORMAL, sOutput, uConvertTabsToSpaces = 8);
 def fCdbStdErrOutputCallback(oBugId, sOutput):
   oConsole.fPrint(ERROR_INFO, "stderr>", ERROR, sOutput, uConvertTabsToSpaces = 8);
 
@@ -196,26 +195,46 @@ def fFailedToApplyProcessMemoryLimitsCallback(oBugId, uProcessId, sBinaryName, s
     if not gbVerbose:
       oConsole.fPrint("  Any additional failures to apply memory limits to processess will not be shown.");
 
-def fStartedProcessCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
-  fNewProcessCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bAttached = False);
+def fProcessStartedCallback(oBugId, oConsoleProcess):
+  if gbVerbose:
+    fPrintMessageForProcess("+", oConsoleProcess.uId, oConsoleProcess.oInformation.sBinaryName, True, # bIsMainProcess
+      "Started", "; command line = ", INFO, oConsoleProcess.oInformation.sCommandLine, NORMAL, "."
+    );
 def fAttachedToProcessCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
-  fNewProcessCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bAttached = True);
-def fNewProcessCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bAttached):
   global gasAttachToProcessesForExecutableNames;
-  if not gbQuiet:
+  if not gbQuiet: # Main processes
     fPrintMessageForProcess("+", uProcessId, sBinaryName, bIsMainProcess,
-      bAttached and "Attached" or "Started", "; command line = ", INFO, sCommandLine or "<unknown>", NORMAL, "."
+      "Attached", "; command line = ", INFO, sCommandLine or "<unknown>", NORMAL, "."
     );
   # Now is a good time to look for additional binaries that may need to be debugged as well.
   if gasAttachToProcessesForExecutableNames:
     oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
 
-def fApplicationStdOutOutputCallback(oBugId, uProcessId, sBinaryName, sCommandLine, sMessage):
-  fPrintMessageForProcess("*", uProcessId, sBinaryName, True, # Always a main process
+def fApplicationDebugOutputCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, asMessages):
+  uCount = 0;
+  for sMessage in asMessages:
+    uCount += 1;
+    if uCount == 1:
+      sHeader = "*";
+      uPrefixColor = INFO;
+      sPrefix = "debug";
+    else:
+      sHeader = " ";
+      uPrefixColor = DIM;
+      if uCount == len(asMessages):
+        sPrefix = u"  \u2516\u2500\u2500";
+      else:
+        sPrefix = u"  \u2502  ";
+    fPrintMessageForProcess(sHeader, uProcessId, sBinaryName, bIsMainProcess,
+      uPrefixColor, sPrefix, NORMAL, ">", HILITE, sMessage,
+    );
+
+def fApplicationStdOutOutputCallback(oBugId, oConsoleProcess, sMessage):
+  fPrintMessageForProcess("*", oConsoleProcess.uId, oConsoleProcess.oInformation.sBinaryName, True, # Always a main process
     INFO, "stdout", NORMAL, ">", HILITE, sMessage,
   );
-def fApplicationStdErrOutputCallback(oBugId, uProcessId, sBinaryName, sCommandLine, sMessage):
-  fPrintMessageForProcess("*", uProcessId, sBinaryName, True, # Always a main process
+def fApplicationStdErrOutputCallback(oBugId, oConsoleProcess, sMessage):
+  fPrintMessageForProcess("*", oConsoleProcess.uId, oConsoleProcess.oInformation.sBinaryName, True, # Always a main process
     ERROR, "stderr", NORMAL, ">", ERROR_INFO, sMessage,
   );
 
@@ -367,7 +386,7 @@ def fMain(asArguments):
         fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
         os._exit(0);
       elif sSettingName in ["version", "check-for-updates"]:
-        fVersionCheck();
+        fPrintVersionInformation();
         os._exit(0);
       elif sSettingName in ["isa", "cpu"]:
         if not sValue:
@@ -625,24 +644,25 @@ def fMain(asArguments):
       uTotalMaxMemoryUse = dxConfig["uTotalMaxMemoryUse"],
       uMaximumNumberOfBugs = guMaximumNumberOfBugs,
     );
-    oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationCallback);
-    oBugId.fAddEventCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsCallback);
-    oBugId.fAddEventCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
+    oBugId.fAddEventCallback("Application resumed", fApplicationResumedCallback);
     oBugId.fAddEventCallback("Application running", fApplicationRunningCallback);
     oBugId.fAddEventCallback("Application suspended", fApplicationSuspendedCallback);
-    oBugId.fAddEventCallback("Application resumed", fApplicationResumedCallback);
-    oBugId.fAddEventCallback("Process terminated", fProcessTerminatedCallback);
-    oBugId.fAddEventCallback("Internal exception", fInternalExceptionCallback);
-    oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
+    oBugId.fAddEventCallback("Application debug output", fApplicationDebugOutputCallback);
+    oBugId.fAddEventCallback("Application stderr output", fApplicationStdErrOutputCallback);
+    oBugId.fAddEventCallback("Application stdout output", fApplicationStdOutOutputCallback);
+    oBugId.fAddEventCallback("Attached to process", fAttachedToProcessCallback);
+    oBugId.fAddEventCallback("Bug report", fBugReportCallback);
+    oBugId.fAddEventCallback("Cdb stderr output", fCdbStdErrOutputCallback);
     if gbVerbose:
       oBugId.fAddEventCallback("Cdb stdin input", fCdbStdInInputCallback);
       oBugId.fAddEventCallback("Cdb stdout output", fCdbStdOutOutputCallback);
-    oBugId.fAddEventCallback("Cdb stderr output", fCdbStdErrOutputCallback);
-    oBugId.fAddEventCallback("Started process", fStartedProcessCallback);
-    oBugId.fAddEventCallback("Attached to process", fAttachedToProcessCallback);
-    oBugId.fAddEventCallback("Application stdout output", fApplicationStdOutOutputCallback);
-    oBugId.fAddEventCallback("Application stderr output", fApplicationStdOutOutputCallback);
-    oBugId.fAddEventCallback("Bug report", fBugReportCallback);
+    oBugId.fAddEventCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsCallback);
+    oBugId.fAddEventCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
+    oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationCallback);
+    oBugId.fAddEventCallback("Internal exception", fInternalExceptionCallback);
+    oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
+    oBugId.fAddEventCallback("Process started", fProcessStartedCallback);
+    oBugId.fAddEventCallback("Process terminated", fProcessTerminatedCallback);
 
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], \
@@ -694,4 +714,5 @@ if __name__ == "__main__":
     fMain(sys.argv[1:]);
   except Exception as oException:
     cException, oException, oTraceBack = sys.exc_info();
-    fDumpExceptionAndExit(oException, oTraceBack);
+    fPrintExceptionInformation(oException, oTraceBack);
+    os._exit(3);

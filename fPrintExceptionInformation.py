@@ -3,9 +3,9 @@ from mColors import *;
 import mFileSystem;
 import mWindowsAPI;
 from oConsole import oConsole;
-from fVersionCheck import fVersionCheck;
+from fPrintVersionInformation import fPrintVersionInformation;
 
-def fDumpExceptionAndExit(oException, oTraceBack):
+def fPrintExceptionInformation(oException, oTraceBack):
   import os, sys, traceback;
   oConsole.fLock();
   try:
@@ -39,10 +39,8 @@ def fDumpExceptionAndExit(oException, oTraceBack):
       oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
       oConsole.fPrint("as in:", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
       oConsole.fPrint();
-    fVersionCheck();
+    fPrintVersionInformation();
     oConsole.fPrint();
     oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   finally:
     oConsole.fUnlock();
-    os._exit(3);
-
