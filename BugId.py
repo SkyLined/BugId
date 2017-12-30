@@ -83,15 +83,6 @@ guDefaultCollateralMaximumNumberOfBugs = 5; # Just a hunch that that's a reasona
 guDetectedBugsCount = 0;
 guMaximumNumberOfBugs = 1;
 
-def fApplicationRunningCallback(oBugId):
-  oConsole.fStatus("* The application was started successfully and is running...");
-
-def fApplicationSuspendedCallback(oBugId, sReason):
-  oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTime(), sReason));
-
-def fApplicationResumedCallback(oBugId):
-  oConsole.fStatus("* The application is running...");
-
 def fApplicationMaxRunTimeCallback(oBugId):
   oConsole.fPrint("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
       (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]));
@@ -99,11 +90,14 @@ def fApplicationMaxRunTimeCallback(oBugId):
   oConsole.fStatus(INFO, "* BugId is stopping...");
   oBugId.fStop();
 
-def fInternalExceptionCallback(oBugId, oException, oTraceBack):
-  global gbAnErrorOccured;
-  gbAnErrorOccured = True;
-  fPrintExceptionInformation(oException, oTraceBack);
-  os._exit(3);
+def fApplicationResumedCallback(oBugId):
+  oConsole.fStatus("* The application is running...");
+
+def fApplicationRunningCallback(oBugId):
+  oConsole.fStatus("* The application was started successfully and is running...");
+
+def fApplicationSuspendedCallback(oBugId, sReason):
+  oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTime(), sReason));
 
 def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
   global gbAnErrorOccured;
@@ -119,12 +113,20 @@ def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
   finally:
     oConsole.fUnlock();
 
-def fPageHeapNotEnabledCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, bPreventable):
+def fInternalExceptionCallback(oBugId, oException, oTraceBack):
+  global gbAnErrorOccured;
+  gbAnErrorOccured = True;
+  fPrintExceptionInformation(oException, oTraceBack);
+  os._exit(3);
+
+def fPageHeapNotEnabledCallback(oBugId, oProcessInformation, bIsMainProcess, bPreventable):
   global \
       gasAttachToProcessesForExecutableNames, \
       gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
       gasReportedBinaryNameWithoutPageHeap, \
       gbAnErrorOccured;
+  sBinaryName = oProcessInformation.sBinaryName;
+  
   if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithoutPageHeap:
     return;
   if not bPreventable:
@@ -169,48 +171,49 @@ def fCdbStdErrOutputCallback(oBugId, sOutput):
   oConsole.fPrint(ERROR_INFO, "stderr>", ERROR, sOutput, uConvertTabsToSpaces = 8);
 
 # Helper function to format messages that are specific to a process.
-def fPrintMessageForProcess(sHeaderChar, uProcessId, sBinaryName, bIsMainProcess, *asMessage):
+def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *asMessage):
+  # oProcess is either a mWindowsAPI.cConsoleProcess or mWindowsAPI.cProcessInformation instance.
   oConsole.fPrint(
     sHeaderChar, " ", bIsMainProcess and "Main" or "Sub", " process ",
-    INFO, "%d" % uProcessId, NORMAL, "/", INFO , "0x%X" % uProcessId, NORMAL,
-    " (", INFO, sBinaryName, NORMAL, "): ",
+    INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL,
+    " (", INFO, oProcess.sBinaryName, NORMAL, "): ",
     *asMessage,
     uConvertTabsToSpaces = 8
   );
 
-def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcessInformation, bIsMainProcess):
   global gbFailedToApplyMemoryLimitsErrorShown, gbQuiet, gbVerbose;
   if not gbQuiet:
-    fPrintMessageForProcess("-", uProcessId, sBinaryName, bIsMainProcess,
+    fPrintMessageForProcess("-", oProcessInformation, bIsMainProcess,
         ERROR_INFO, "Cannot apply application memory limits");
     gbFailedToApplyMemoryLimitsErrorShown = True;
     if not gbVerbose:
       oConsole.fPrint("  Any additional failures to apply memory limits to processess will not be shown.");
-def fFailedToApplyProcessMemoryLimitsCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcessInformation, bIsMainProcess):
   global gbFailedToApplyMemoryLimitsErrorShown, gbVerbose;
   if gbVerbose or not gbFailedToApplyMemoryLimitsErrorShown:
-    fPrintMessageForProcess("-", uProcessId, sBinaryName, bIsMainProcess,
+    fPrintMessageForProcess("-", oProcessInformation, bIsMainProcess,
         ERROR_INFO, "Cannot apply process memory limits");
     gbFailedToApplyMemoryLimitsErrorShown = True;
     if not gbVerbose:
       oConsole.fPrint("  Any additional failures to apply memory limits to processess will not be shown.");
 
-def fProcessStartedCallback(oBugId, oConsoleProcess):
+def fProcessStartedCallback(oBugId, oConsoleProcess, bIsMainProcess):
   if gbVerbose:
-    fPrintMessageForProcess("+", oConsoleProcess.uId, oConsoleProcess.oInformation.sBinaryName, True, # bIsMainProcess
-      "Started", "; command line = ", INFO, oConsoleProcess.oInformation.sCommandLine, NORMAL, "."
+    fPrintMessageForProcess("+", oConsoleProcess, bIsMainProcess,
+      "Started", "; command line = ", INFO, oConsoleProcess.sCommandLine, NORMAL, "."
     );
-def fAttachedToProcessCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+def fProcessAttachedCallback(oBugId, oProcessInformation, bIsMainProcess):
   global gasAttachToProcessesForExecutableNames;
   if not gbQuiet: # Main processes
-    fPrintMessageForProcess("+", uProcessId, sBinaryName, bIsMainProcess,
-      "Attached", "; command line = ", INFO, sCommandLine or "<unknown>", NORMAL, "."
+    fPrintMessageForProcess("+", oProcessInformation, bIsMainProcess,
+      "Attached", "; command line = ", INFO, oProcessInformation.sCommandLine or "<unknown>", NORMAL, "."
     );
   # Now is a good time to look for additional binaries that may need to be debugged as well.
   if gasAttachToProcessesForExecutableNames:
     oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
 
-def fApplicationDebugOutputCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess, asMessages):
+def fApplicationDebugOutputCallback(oBugId, oProcessInformation, bIsMainProcess, asMessages):
   uCount = 0;
   for sMessage in asMessages:
     uCount += 1;
@@ -225,23 +228,23 @@ def fApplicationDebugOutputCallback(oBugId, uProcessId, sBinaryName, sCommandLin
         sPrefix = u"  \u2516\u2500\u2500";
       else:
         sPrefix = u"  \u2502  ";
-    fPrintMessageForProcess(sHeader, uProcessId, sBinaryName, bIsMainProcess,
+    fPrintMessageForProcess(sHeader, oProcessInformation, bIsMainProcess,
       uPrefixColor, sPrefix, NORMAL, ">", HILITE, sMessage,
     );
 
-def fApplicationStdOutOutputCallback(oBugId, oConsoleProcess, sMessage):
-  fPrintMessageForProcess("*", oConsoleProcess.uId, oConsoleProcess.oInformation.sBinaryName, True, # Always a main process
+def fApplicationStdOutOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
+  fPrintMessageForProcess("*", oConsoleProcess, bIsMainProcess,
     INFO, "stdout", NORMAL, ">", HILITE, sMessage,
   );
-def fApplicationStdErrOutputCallback(oBugId, oConsoleProcess, sMessage):
-  fPrintMessageForProcess("*", oConsoleProcess.uId, oConsoleProcess.oInformation.sBinaryName, True, # Always a main process
+def fApplicationStdErrOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
+  fPrintMessageForProcess("*", oConsoleProcess, bIsMainProcess,
     ERROR, "stderr", NORMAL, ">", ERROR_INFO, sMessage,
   );
 
-def fProcessTerminatedCallback(oBugId, uProcessId, sBinaryName, sCommandLine, bIsMainProcess):
+def fProcessTerminatedCallback(oBugId, oProcessInformation, bIsMainProcess):
   bStopBugId = bIsMainProcess and dxConfig["bApplicationTerminatesWithMainProcess"];
   if not gbQuiet:
-    fPrintMessageForProcess("-", uProcessId, sBinaryName, bIsMainProcess,
+    fPrintMessageForProcess("-", oProcessInformation, bIsMainProcess,
       "Terminated", bStopBugId and "; the application is considered to have terminated with it." or ".",
     );
   if bStopBugId:
@@ -650,7 +653,6 @@ def fMain(asArguments):
     oBugId.fAddEventCallback("Application debug output", fApplicationDebugOutputCallback);
     oBugId.fAddEventCallback("Application stderr output", fApplicationStdErrOutputCallback);
     oBugId.fAddEventCallback("Application stdout output", fApplicationStdOutOutputCallback);
-    oBugId.fAddEventCallback("Attached to process", fAttachedToProcessCallback);
     oBugId.fAddEventCallback("Bug report", fBugReportCallback);
     oBugId.fAddEventCallback("Cdb stderr output", fCdbStdErrOutputCallback);
     if gbVerbose:
@@ -661,6 +663,7 @@ def fMain(asArguments):
     oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationCallback);
     oBugId.fAddEventCallback("Internal exception", fInternalExceptionCallback);
     oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
+    oBugId.fAddEventCallback("Process attached", fProcessAttachedCallback);
     oBugId.fAddEventCallback("Process started", fProcessStartedCallback);
     oBugId.fAddEventCallback("Process terminated", fProcessTerminatedCallback);
 
