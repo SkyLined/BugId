@@ -490,16 +490,15 @@ def fMain(asArguments):
   
   dsApplicationURLTemplate_by_srSourceFilePath = {};
   
-  fCleanup = None;
+  fSetup = None; # Function specific to a keyword application, used to setup stuff before running.
+  fCleanup = None; # Function specific to a keyword application, used to cleanup stuff before & after running.
   if sApplicationKeyword:
     dxApplicationSettings = ddxApplicationSettings_by_sKeyword.get(sApplicationKeyword);
     if not dxApplicationSettings:
       oConsole.fPrint(ERROR, "- Unknown application keyword ", ERROR_INFO, sApplicationKeyword, ERROR, ".");
       os._exit(2);
-    fCheckApplication = dxApplicationSettings.get("fCheckApplication");
-    if fCheckApplication:
-      fCheckApplication(); # This should terminate BugId with the relevant exit code if needed.
-    fCleanup = dxApplicationSettings.get("fCleanup");
+    fSetup = dxApplicationSettings.get("fSetup");
+    fCleanup = dxConfig["bCleanup"] and dxApplicationSettings.get("fCleanup");
     # Get application binary/UWP package name/process ids as needed:
     if "sBinaryPath" in dxApplicationSettings:
       # This application is started from the command-line.
@@ -597,9 +596,11 @@ def fMain(asArguments):
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
     nStartTime = time.clock();
-    if fCleanup and dxConfig["bCleanup"]:
-      oConsole.fStatus("* Cleaning up application state...");
-      fCleanup();
+    if fSetup:
+      # Call setup before the application is started. Argument is boolean value indicating if this is the first time
+      # the function is being called.
+      oConsole.fStatus("* Applying special application configuration settings...");
+      fSetup(bFirstRun = uRunCounter == 0);
     uRunCounter += 1;
     oConsole.fLock();
     try:
@@ -676,6 +677,10 @@ def fMain(asArguments):
     oBugId.fStart();
     oBugId.fWait();
     if gbAnErrorOccured:
+      if fCleanup:
+        # Call cleanup after runnning the application, before exiting BugId
+        oConsole.fStatus("* Cleaning up application state...");
+        fCleanup();
       os._exit(3);
     if guDetectedBugsCount == 0:
       oConsole.fPrint(u"\u2500\u2500 The application terminated without a bug being detected ", sPadding = u"\u2500");
@@ -685,6 +690,10 @@ def fMain(asArguments):
       nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
       oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
     if not bRepeat:
+      if fCleanup:
+        # Call cleanup after runnning the application, before exiting BugId
+        oConsole.fStatus("* Cleaning up application state...");
+        fCleanup();
       os._exit(guDetectedBugsCount > 0 and 1 or 0);
     duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
     duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
