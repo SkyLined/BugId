@@ -720,7 +720,8 @@ def fMain(asArguments):
     else:
       oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
     oConsole.fPrint(); # and loop
-
+  raise AssertionError("Not reached!");
+  
 if __name__ == "__main__":
   try:
     fMain(sys.argv[1:]);
