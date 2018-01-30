@@ -44,13 +44,27 @@ def fasGetFirefoxStaticArguments(bForHelp):
 def fasGetFirefoxOptionalArguments(bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
 
+def fFirefoxSetup(bFirstRun):
+  if bFirstRun:
+    # We need to disable the Firefox sandbox, or it won't work with page heap.
+    os.environ["MOZ_DISABLE_CONTENT_SANDBOX"] = "1";
+    os.environ["MOZ_DISABLE_GMP_SANDBOX"] = "1";
+    os.environ["MOZ_DISABLE_NPAPI_SANDBOX"] = "1";
+    os.environ["MOZ_DISABLE_GPU_SANDBOX "] = "1";
+  # Delete the profile before the application runs, so as to start with a clean state, and not to keep state between
+  # different runs of the application.
+  fDeleteProfile();
+
 def fFirefoxCleanup():
+  # Delete the profile to clean up after application ran.
+  fDeleteProfile();
+
+def fDeleteProfile():
   if mFileSystem.fbIsFolder(sFirefoxProfilePath):
     mFileSystem.fbDeleteChildrenFromFolder(sFirefoxProfilePath);
   else:
     assert mFileSystem.fbCreateFolder(sFirefoxProfilePath), \
         "Cannot create Firefox profile folder %s" % sFirefoxProfilePath;
-
 
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
 # links to an online source repository:
@@ -68,6 +82,7 @@ ddxMozillaFirefoxSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetFirefoxStaticArguments,
     "fasGetOptionalArguments": fasGetFirefoxOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fFirefoxSetup,
     "fCleanup": fFirefoxCleanup,
     "dsURLTemplate_by_srSourceFilePath": dsURLTemplate_by_srSourceFilePath,
   },
@@ -76,6 +91,7 @@ ddxMozillaFirefoxSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetFirefoxStaticArguments,
     "fasGetOptionalArguments": fasGetFirefoxOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fFirefoxSetup,
     "fCleanup": fFirefoxCleanup,
     "sISA": "x86",
     "dsURLTemplate_by_srSourceFilePath": dsURLTemplate_by_srSourceFilePath,
@@ -85,6 +101,7 @@ ddxMozillaFirefoxSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetFirefoxStaticArguments,
     "fasGetOptionalArguments": fasGetFirefoxOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fFirefoxSetup,
     "fCleanup": fFirefoxCleanup,
     "sISA": "x64",
     "dsURLTemplate_by_srSourceFilePath": dsURLTemplate_by_srSourceFilePath,
