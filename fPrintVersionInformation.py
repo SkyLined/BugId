@@ -46,7 +46,11 @@ def fPrintVersionInformation():
       if oModuleVersionInformation.bPreRelease:
         oConsole.fPrint(u"\u2502  ", DIM, u"\u2516\u2500", NORMAL, " You are running a ", HILITE, "pre-release", NORMAL, " version: ",
             "the latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
-      elif not oModuleVersionInformation.bUpToDate:
+      elif oModuleVersionInformation.bUpToDate:
+        pass;
+      elif oModuleVersionInformation.sError:
+        oConsole.fPrint(u"\u2502   ", ERROR, oModuleVersionInformation.sError, NORMAL, ".");
+      else:
         oConsole.fPrint(u"\u2502   Version ", HILITE, oModuleVersionInformation.sLatestVersion, NORMAL,
             " is available at ", HILITE, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
       uCounter += 1;
