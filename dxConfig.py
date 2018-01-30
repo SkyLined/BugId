@@ -84,18 +84,7 @@ dxConfig = {
                                                   # used to reset this state. Examples include web-browsers caching
                                                   # sites to disk, or restoring previously open tabs after a crash.
   "cBugId": {
-    # The values from cBugId\dxConfig.py get loaded here.
-    # Any value provided here will override the values loaded above.
+    # The values from cBugId\dxConfig.py get loaded here unless they are provide here.
     # You can also modify these from the command line using --cBugId.<settings name>=<JSON value>
   },
 };
-
-# Load cBugId and apply its dxConfig:
-from cBugId import cBugId;
-# Apply desired changes in dxConfig["cBugId"] to cBugId.dxConfig.
-for (sName, xValue) in dxConfig["cBugId"].items():
-  # Note that this does not allow modifying individual properties of dictionaries in dxConfig for cBugId.
-  # But at this time, there are no dictionaries in dxConfig, so this is not required.
-  cBugId.dxConfig[sName] = xValue;
-# Replace dxConfig["cBugId"] with actual dxConfig for cBugId.
-dxConfig["cBugId"] = cBugId.dxConfig;
