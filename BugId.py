@@ -171,6 +171,9 @@ def fCdbStdOutOutputCallback(oBugId, sOutput):
   oConsole.fPrint(HILITE, "stdout>", NORMAL, sOutput, uConvertTabsToSpaces = 8);
 def fCdbStdErrOutputCallback(oBugId, sOutput):
   oConsole.fPrint(ERROR_INFO, "stderr>", ERROR, sOutput, uConvertTabsToSpaces = 8);
+def fLogMessageCallback(oBugId, sMessage, dsData = None):
+  sData = dsData and ", ".join(["%s: %s" % (sName, sValue) for (sName, sValue) in dsData.items()]);
+  oConsole.fPrint(DIM, "log>%s%s" % (sMessage, sData and " (%s)" % sData or ""));
 
 # Helper function to format messages that are specific to a process.
 def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *asMessage):
@@ -661,6 +664,7 @@ def fMain(asArguments):
     if gbVerbose:
       oBugId.fAddEventCallback("Cdb stdin input", fCdbStdInInputCallback);
       oBugId.fAddEventCallback("Cdb stdout output", fCdbStdOutOutputCallback);
+      oBugId.fAddEventCallback("Log message", fLogMessageCallback);
     oBugId.fAddEventCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsCallback);
     oBugId.fAddEventCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
     oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationCallback);
