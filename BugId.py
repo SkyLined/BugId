@@ -723,6 +723,12 @@ def fMain(asArguments):
   raise AssertionError("Not reached!");
   
 if __name__ == "__main__":
+  # Apply settings in dxConfig["cBugId"] to cBugId.dxConfig, then replace dxConfig["cBugId"] with cBugId.dxConfig.
+  for (sName, xValue) in dxConfig["cBugId"].items():
+    # Note that this does not allow modifying individual properties of dictionaries in dxConfig for cBugId.
+    # But at this time, there are no dictionaries in dxConfig, so this is not required.
+    cBugId.dxConfig[sName] = xValue;
+  dxConfig["cBugId"] = cBugId.dxConfig;
   try:
     fMain(sys.argv[1:]);
   except Exception as oException:
