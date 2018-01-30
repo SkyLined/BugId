@@ -29,7 +29,7 @@ dxConfig = {
   "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
-  "uProcessMaxMemoryUse": 2 * uGigaByte,          # Limit the total amount of memory a single process can allocate. If
+  "uProcessMaxMemoryUse": None,                   # Limit the total amount of memory a single process can allocate. If
                                                   # a process attempts to allocate memory that would cause it to have
                                                   # more than this maximum allocated, the allocation will fail.
                                                   # Use this to detect excessive allocations in a single process before
@@ -48,7 +48,7 @@ dxConfig = {
                                                   # point where the process may not be able to allocate or reserve
                                                   # large blocks of memory even if this would not cause it to more than
                                                   # the maximum amount of memory allocated.
-  "uTotalMaxMemoryUse": 2 * uGigaByte,            # Limit the total amount of memory the application can allocate in
+  "uTotalMaxMemoryUse": None,                     # Limit the total amount of memory the application can allocate in
                                                   # all its processes. If a process attempts to allocate additional
                                                   # memory that would cause it to have more than this maximum allocated,
                                                   # the allocation will fail.
