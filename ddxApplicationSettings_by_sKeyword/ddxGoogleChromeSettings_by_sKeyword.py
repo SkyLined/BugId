@@ -9,6 +9,9 @@ sLocalAppData = os.getenv("LocalAppData");
 dxConfigSettings = {
   "bApplicationTerminatesWithMainProcess": True,
 };
+dxConfigSettingsAsan = dxConfigSettings.copy().update({
+  "bIgnoreAccessViolations": True, # ASan throws a lot of these and should detect bugs before AVs happen, so ignore them.
+});
 
 # Chrome Canary (if installed)
 sChromeSxSPath_x64 = sProgramFilesPath_x64 and fsFirstExistingFile(
@@ -36,14 +39,13 @@ sApplicationBinaryPath_x86 = fsFirstExistingFile(
 );
 sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x86 or sChromeSxSPath;
 
-
 def fasGetChromeStaticArguments(bForHelp = False):
   return [
     "--enable-experimental-accessibility-features",
     "--enable-experimental-canvas-features",
     "--enable-experimental-input-view-features",
     "--enable-experimental-web-platform-features",
-    "--enable-logging=stderr",
+    "--enable-logging=stdout",
     "--enable-usermedia-screen-capturing",
     "--enable-viewport",
     "--enable-webgl-draft-extensions",
@@ -56,6 +58,12 @@ def fasGetChromeStaticArguments(bForHelp = False):
     "--js-flags=\"--expose-gc\"",
     "--no-sandbox",
   ];
+
+asBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
+  "chrome.exe", # ASan Chrome needs no page heap
+  "conhost.exe", # Used to dump debug data through stdout, not part of Chrome
+  "llvm-symbolizer.exe", # ASan Chrome uses this to dump info, not part of Chrome.
+];
 
 def fasGetChromeOptionalArguments(bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
@@ -85,14 +93,37 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x64",
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
+  },
+  "chrome_asan": {
+    "sBinaryPath": None, # We do not know where the user installed it
+    "fasGetStaticArguments": fasGetChromeStaticArguments,
+    "fasGetOptionalArguments": fasGetChromeOptionalArguments,
+    "dxConfigSettings": dxConfigSettingsAsan,
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
+  },
+  "chrome_asan_x86": {
+    "sBinaryPath": None, # We do not know where the user installed it
+    "fasGetStaticArguments": fasGetChromeStaticArguments,
+    "fasGetOptionalArguments": fasGetChromeOptionalArguments,
+    "dxConfigSettings": dxConfigSettingsAsan,
+    "sISA": "x86",
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
+  },
+  "chrome_asan_x64": {
+    "sBinaryPath": None, # We do not know where the user installed it
+    "fasGetStaticArguments": fasGetChromeStaticArguments,
+    "fasGetOptionalArguments": fasGetChromeOptionalArguments,
+    "dxConfigSettings": dxConfigSettingsAsan,
+    "sISA": "x64",
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
   "chrome-sxs": {
     "sBinaryPath": sChromeSxSPath,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
   "chrome-sxs_x86": {
     "sBinaryPath": sChromeSxSPath_x86,
@@ -100,7 +131,7 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
   "chrome-sxs_x64": {
     "sBinaryPath": sChromeSxSPath_x64,
@@ -108,6 +139,6 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x64",
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
 };
