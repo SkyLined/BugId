@@ -119,6 +119,7 @@ def fInternalExceptionCallback(oBugId, oException, oTraceBack):
   global gbAnErrorOccured;
   gbAnErrorOccured = True;
   fPrintExceptionInformation(oException, oTraceBack);
+  oConsole.fCleanup();
   os._exit(3);
 
 def fPageHeapNotEnabledCallback(oBugId, oProcessInformation, bIsMainProcess, bPreventable):
@@ -316,6 +317,7 @@ def fMain(asArguments):
   if len(asArguments) == 0:
     fPrintLogo();
     fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
+    oConsole.fCleanup();
     os._exit(0);
   # Parse all arguments until we encounter "--".
   sApplicationKeyword = None;
@@ -335,6 +337,7 @@ def fMain(asArguments):
       if len(auApplicationProcessIds) > 0:
       # The rest of the arguments are to be passed to the application
         oConsole.fPrint(ERROR, "- You cannot provide process ids and application arguments.");
+        oConsole.fCleanup();
         os._exit(2);
       asApplicationOptionalArguments = asArguments;
       break;
@@ -351,6 +354,7 @@ def fMain(asArguments):
     elif sArgument in ["-?", "/?", "-h", "/h"]:
       fPrintLogo();
       fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
+      oConsole.fCleanup();
       os._exit(0);
     elif sArgument.startswith("--"):
       if "=" in sArgument:
@@ -363,45 +367,57 @@ def fMain(asArguments):
       if sSettingName in ["pid", "pids"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide at least one process id.");
+          oConsole.fCleanup();
           os._exit(2);
         if sApplicationBinaryPath is not None:
           oConsole.fPrint(ERROR, "- You cannot provide an application binary and process ids.");
+          oConsole.fCleanup();
           os._exit(2);
         if sUWPApplicationPackageName is not None:
           oConsole.fPrint(ERROR, "- You cannot provide an UWP application package name and process ids.");
+          oConsole.fCleanup();
           os._exit(2);
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide an UWP application package name.");
+          oConsole.fCleanup();
           os._exit(2);
         if sUWPApplicationPackageName is not None:
           oConsole.fPrint(ERROR, "- You cannot provide multiple UWP application package names.");
+          oConsole.fCleanup();
           os._exit(2);
         if sApplicationBinaryPath is not None:
           oConsole.fPrint(ERROR, "- You cannot provide an application binary and UWP package name.");
+          oConsole.fCleanup();
           os._exit(2);
         if len(auApplicationProcessIds) > 0:
           oConsole.fPrint(ERROR, "- You cannot provide process ids and an UWP application package name.");
+          oConsole.fCleanup();
           os._exit(2);
         if "!" not in sValue:
           oConsole.fPrint(ERROR, "- Please provide a string of the form ", ERROR_INFO, sSettingName, \
               "=<package name>!<application id>.");
+          oConsole.fCleanup();
           os._exit(2);
         sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
       elif sSettingName in ["help"]:
         fPrintLogo();
         fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
+        oConsole.fCleanup();
         os._exit(0);
       elif sSettingName in ["version", "check-for-updates"]:
         fPrintVersionInformation();
+        oConsole.fCleanup();
         os._exit(0);
       elif sSettingName in ["isa", "cpu"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide an Instruction Set Architecture.");
+          oConsole.fCleanup();
           os._exit(2);
         if sValue not in ["x86", "x64"]:
           oConsole.fPrint(ERROR, "- Unknown Instruction Set Architecture ", repr(sValue));
+          oConsole.fCleanup();
           os._exit(2);
         sApplicationISA = sValue;
       elif sSettingName in ["quiet", "silent"]:
@@ -447,18 +463,21 @@ def fMain(asArguments):
         if not sValue:
           oConsole.fPrint(ERROR, "- You cannot provide an argument (", ERROR_INFO, "--", sSettingName, ERROR, \
               ") without a value.");
+          oConsole.fCleanup();
           os._exit(2);
         try:
           xValue = json.loads(sValue);
         except ValueError as oError:
           oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", ERROR_INFO, "--", sSettingName, "=", sValue, \
               ERROR, ": ", ERROR_INFO, " ".join(oError.args), ERROR, ".");
+          oConsole.fCleanup();
           os._exit(2);
         # User provided config settings must be applied after any keyword specific config settings:
         dxUserProvidedConfigSettings[sSettingName] = xValue;
     elif sArgument in ddxApplicationSettings_by_sKeyword:
       if sApplicationKeyword is not None:
         oConsole.fPrint(ERROR, "- You cannot provide multiple application keywords.");
+        oConsole.fCleanup();
         os._exit(2);
       sApplicationKeyword = sArgument;
     elif sArgument[-1] == "?":
@@ -466,8 +485,10 @@ def fMain(asArguments):
       dxApplicationSettings = ddxApplicationSettings_by_sKeyword.get(sApplicationKeyword);
       if not dxApplicationSettings:
         oConsole.fPrint(ERROR, "- Unknown application keyword ", ERROR_INFO, sApplicationKeyword, ERROR, ".");
+        oConsole.fCleanup();
         os._exit(2);
       fPrintApplicationKeyWordHelp(sApplicationKeyword, dxApplicationSettings);
+      oConsole.fCleanup();
       os._exit(0);
     else:
       if sApplicationBinaryPath is not None:
@@ -478,12 +499,15 @@ def fMain(asArguments):
               " before the start of the application arguments?)");
         finally:
           oConsole.fUnlock();
+        oConsole.fCleanup();
         os._exit(2);
       if len(auApplicationProcessIds) > 0:
         oConsole.fPrint(ERROR, "- You cannot provide process ids and an application binary.");
+        oConsole.fCleanup();
         os._exit(2);
       if sUWPApplicationPackageName is not None:
         oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name and a binary.");
+        oConsole.fCleanup();
         os._exit(2);
       sApplicationBinaryPath = sArgument;
   
@@ -501,6 +525,7 @@ def fMain(asArguments):
     dxApplicationSettings = ddxApplicationSettings_by_sKeyword.get(sApplicationKeyword);
     if not dxApplicationSettings:
       oConsole.fPrint(ERROR, "- Unknown application keyword ", ERROR_INFO, sApplicationKeyword, ERROR, ".");
+      oConsole.fCleanup();
       os._exit(2);
     fSetup = dxApplicationSettings.get("fSetup");
     fCleanup = dxConfig["bCleanup"] and dxApplicationSettings.get("fCleanup");
@@ -510,10 +535,12 @@ def fMain(asArguments):
       if auApplicationProcessIds:
         oConsole.fPrint(ERROR, "- You cannot provide process ids for application keyword ", ERROR_INFO, \
             sApplicationKeyword, ERROR, ".");
+        oConsole.fCleanup();
         os._exit(2);
       if sUWPApplicationPackageName:
         oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name for application keyword ", \
             ERROR_INFO, sApplicationKeyword, ERROR, ".");
+        oConsole.fCleanup();
         os._exit(2);
       if sApplicationBinaryPath is None:
         sApplicationBinaryPath = dxApplicationSettings["sBinaryPath"];
@@ -521,6 +548,7 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- The main application binary for ", ERROR_INFO, sApplicationKeyword, \
               ERROR, " could not be detected on your system.");
           oConsole.fPrint(ERROR, "  Please provide the path to this binary in the arguments.");
+          oConsole.fCleanup();
           os._exit(4);
     elif "dxUWPApplication" in dxApplicationSettings:
       dxUWPApplication = dxApplicationSettings["dxUWPApplication"];
@@ -528,10 +556,12 @@ def fMain(asArguments):
       if sApplicationBinaryPath:
         oConsole.fPrint(ERROR, "- You cannot provide an application binary for application keyword ", \
             ERROR_INFO, sApplicationKeyword, ERROR, ".");
+        oConsole.fCleanup();
         os._exit(2);
       if auApplicationProcessIds:
         oConsole.fPrint(ERROR, "- You cannot provide process ids for application keyword ", ERROR_INFO, \
             sApplicationKeyword, ERROR, ".");
+        oConsole.fCleanup();
         os._exit(2);
       sUWPApplicationPackageName = dxUWPApplication["sPackageName"];
       sUWPApplicationId = dxUWPApplication["sId"];
@@ -539,11 +569,13 @@ def fMain(asArguments):
       # This application is attached to.
       oConsole.fPrint(ERROR, "- You must provide process ids for application keyword ", \
           ERROR_INFO, sApplicationKeyword, ERROR, ".");
+      oConsole.fCleanup();
       os._exit(2);
     elif asApplicationOptionalArguments:
       # Cannot provide arguments if we're attaching to processes
       oConsole.fPrint(ERROR, "- You cannot provide arguments for application keyword ", \
           ERROR_INFO, sApplicationKeyword, ERROR, ".");
+      oConsole.fCleanup();
       os._exit(2);
     if "asApplicationAttachToProcessesForExecutableNames" in dxApplicationSettings:
       gasAttachToProcessesForExecutableNames = dxApplicationSettings["asApplicationAttachToProcessesForExecutableNames"];
@@ -589,6 +621,7 @@ def fMain(asArguments):
       oConsole.fPrint("Run \"", INFO, "BugId -h", NORMAL, "\" for help on command-line arguments.");
     finally:
       oConsole.fUnlock();
+    oConsole.fCleanup();
     os._exit(2);
   
   # Apply user provided settings:
@@ -687,6 +720,7 @@ def fMain(asArguments):
         # Call cleanup after runnning the application, before exiting BugId
         oConsole.fStatus("* Cleaning up application state...");
         fCleanup();
+      oConsole.fCleanup();
       os._exit(3);
     if guDetectedBugsCount == 0:
       oConsole.fPrint(u"\u2500\u2500 The application terminated without a bug being detected ", sPadding = u"\u2500");
@@ -700,6 +734,7 @@ def fMain(asArguments):
         # Call cleanup after runnning the application, before exiting BugId
         oConsole.fStatus("* Cleaning up application state...");
         fCleanup();
+      oConsole.fCleanup();
       os._exit(guDetectedBugsCount > 0 and 1 or 0);
     duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
     duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
@@ -740,4 +775,5 @@ if __name__ == "__main__":
   except Exception as oException:
     cException, oException, oTraceBack = sys.exc_info();
     fPrintExceptionInformation(oException, oTraceBack);
+    oConsole.fCleanup();
     os._exit(3);
