@@ -26,13 +26,9 @@ import codecs, json, re, os, shutil, sys, threading, time, traceback;
 # Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
 sMainFolderPath = os.path.abspath(os.path.dirname(__file__));
 sParentFolderPath = os.path.normpath(os.path.join(sMainFolderPath, ".."));
-sModuleFolderPath = os.path.join(sMainFolderPath, "modules");
-asAbsoluteLoweredSysPaths = [os.path.abspath(sPath).lower() for sPath in sys.path];
-sys.path += [sPath for sPath in [
-  sMainFolderPath,
-  sParentFolderPath,
-  sModuleFolderPath,
-] if sPath.lower() not in asAbsoluteLoweredSysPaths];
+sModulesFolderPath = os.path.join(sMainFolderPath, "modules");
+asOriginalSysPath = sys.path[:];
+sys.path = [sMainFolderPath, sParentFolderPath, sModulesFolderPath] + sys.path;
 
 # Load external dependecies to make sure they are available and shown an error
 # if any one fails to load. This error explains where the missing component
@@ -59,6 +55,11 @@ for (sModuleName, sDownloadURL) in [
     raise;
 
 from cBugId import cBugId;
+import mFileSystem;
+import mWindowsAPI;
+from oConsole import oConsole;
+# Augment the search path to access BugId internals.
+sys.path = [sMainFolderPath] + sys.path;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fApplyConfigSetting import fApplyConfigSetting;
@@ -68,9 +69,8 @@ from fPrintUsage import fPrintUsage;
 from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
 from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
-import mFileSystem;
-import mWindowsAPI;
-from oConsole import oConsole;
+# Restore the search path
+sys.path = asOriginalSysPath;
 
 gasAttachToProcessesForExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [];
