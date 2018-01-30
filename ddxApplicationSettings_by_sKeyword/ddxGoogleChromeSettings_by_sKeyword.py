@@ -61,7 +61,6 @@ def fasGetChromeStaticArguments(bForHelp = False):
 
 asBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
   "chrome.exe", # ASan Chrome needs no page heap
-  "conhost.exe", # Used to dump debug data through stdout, not part of Chrome
   "llvm-symbolizer.exe", # ASan Chrome uses this to dump info, not part of Chrome.
 ];
 

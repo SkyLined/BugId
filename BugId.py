@@ -73,7 +73,9 @@ from mColors import *;
 sys.path = asOriginalSysPath;
 
 gasAttachToProcessesForExecutableNames = [];
-gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [];
+gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
+  "conhost.exe", # Used to create console windows, not part of the target application (unless that is conhost :)
+];
 gasReportedBinaryNameWithoutPageHeap = [];
 gbAnErrorOccured = False;
 gbFailedToApplyMemoryLimitsErrorShown = False;
@@ -569,7 +571,7 @@ def fMain(asArguments):
     if not sApplicationISA and "sISA" in dxApplicationSettings:
       sApplicationISA = dxApplicationSettings["sISA"];
     if "asBinaryNamesThatAreAllowedToRunWithoutPageHeap" in dxApplicationSettings:
-      gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
+      gasBinaryNamesThatAreAllowedToRunWithoutPageHeap += [
         sBinaryName.lower() for sBinaryName in dxApplicationSettings["asBinaryNamesThatAreAllowedToRunWithoutPageHeap"]
       ];
   elif (auApplicationProcessIds or sUWPApplicationPackageName or sApplicationBinaryPath):
