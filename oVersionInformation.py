@@ -77,10 +77,12 @@ class cVersionInformation(object):
     oVersionInformation.__bPreRelease = uCurrentVersion > uLatestVersion;
   
   def __fsReadURL(oVersionInformation, sURL):
-    oHTTPRequest = urllib.urlopen(sURL);
-    uStatusCode = oHTTPRequest.getcode();
-    if uStatusCode == 404:
+    try:
+      oHTTPRequest = urllib.urlopen(sURL);
+    except Exception as oException:
+      oVersionInformation.sError = "Cannot check for updates: connection to %s failed with error %s" % (sURL, str(oException));
       return None;
+    uStatusCode = oHTTPRequest.getcode();
     if uStatusCode != 200:
       oVersionInformation.sError = "Cannot check for updates: %s returned HTTP %03d" % (sURL, uStatusCode);
       return None;
