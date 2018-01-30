@@ -65,6 +65,11 @@ asBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
   "llvm-symbolizer.exe", # ASan Chrome uses this to dump info, not part of Chrome.
 ];
 
+def fGoogleChromePageHeapSetup(bFirstRun):
+  if bFirstRun:
+    # We need to tell Chrome to use the Windows heap, or it won't work with page heap.
+    os.environ["CHROME_ALLOCATOR"] = "winheap";
+
 def fasGetChromeOptionalArguments(bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
 
@@ -77,21 +82,24 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
+    "fSetup": fGoogleChromePageHeapSetup,
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
   "chrome_x86": {
     "sBinaryPath": sApplicationBinaryPath_x86,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fGoogleChromePageHeapSetup,
     "sISA": "x86",
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["conhost.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
   "chrome_x64": {
     "sBinaryPath": sApplicationBinaryPath_x64,
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fGoogleChromePageHeapSetup,
     "sISA": "x64",
     "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
@@ -123,6 +131,7 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fGoogleChromePageHeapSetup,
     "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
   "chrome-sxs_x86": {
@@ -130,6 +139,7 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fGoogleChromePageHeapSetup,
     "sISA": "x86",
     "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
@@ -138,6 +148,7 @@ ddxGoogleChromeSettings_by_sKeyword = {
     "fasGetStaticArguments": fasGetChromeStaticArguments,
     "fasGetOptionalArguments": fasGetChromeOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
+    "fSetup": fGoogleChromePageHeapSetup,
     "sISA": "x64",
     "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": asBinaryNamesThatAreAllowedToRunWithoutPageHeap,
   },
