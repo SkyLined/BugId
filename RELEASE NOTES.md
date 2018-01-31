@@ -13,6 +13,8 @@ Externally noticeable changes
   Chrome).
 + The maximum amount of memory an application is allowed to allocate is no
   longer limited by default.
++ Relative application binary paths are now made absolute using the current
+  working directory as the base.
 
 Internal changes
 ----------------

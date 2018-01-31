@@ -9,8 +9,9 @@ sLocalAppData = os.getenv("LocalAppData");
 dxConfigSettings = {
   "bApplicationTerminatesWithMainProcess": True,
 };
-dxConfigSettingsAsan = dxConfigSettings.copy().update({
-  "bIgnoreAccessViolations": True, # ASan throws a lot of these and should detect bugs before AVs happen, so ignore them.
+dxConfigSettingsAsan = dxConfigSettings.copy();
+dxConfigSettingsAsan.update({
+  "cBugId.bIgnoreAccessViolations": True, # ASan throws a lot of these and should detect bugs before AVs happen, so ignore them.
 });
 
 # Chrome Canary (if installed)
