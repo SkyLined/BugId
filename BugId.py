@@ -643,6 +643,8 @@ def fMain(asArguments):
     oConsole.fLock();
     try:
       if sApplicationBinaryPath:
+        # make the binary path absolute because relative paths don't work.
+        sApplicationBinaryPath = os.path.abspath(sApplicationBinaryPath);
         if not gbQuiet:
           asCommandLine = [sApplicationBinaryPath] + asApplicationArguments;
           oConsole.fPrint("* Command line: ", INFO, " ".join(asCommandLine));
