@@ -32,7 +32,7 @@ def fEdgeSetup(bFirstRun):
   # between different runs of the application.
   fDeleteRecovery();
 
-def fEdgeCleanup(bLastRun):
+def fEdgeCleanup():
   fDeleteRecovery();
 
 def fDeleteRecovery():
