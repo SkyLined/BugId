@@ -106,11 +106,10 @@ def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
   gbAnErrorOccured = True;
   oConsole.fLock();
   try:
-    oConsole.fPrint(ERROR, "-" * 80);
-    oConsole.fPrint(ERROR, "- Failed to debug the application:");
+    oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " Failed to debug the application ", ERROR, sPadding = u"\u2500");
     for sLine in sErrorMessage.split("\n"):
-      oConsole.fPrint(ERROR, "  ", sLine.rstrip("\r"));
-    oConsole.fPrint(ERROR, "-" * 80);
+      oConsole.fPrint(ERROR, u"\u2502 ", ERROR_INFO, sLine.rstrip("\r"));
+    oConsole.fPrint(ERROR, u"\u2516", sPadding = u"\u2500");
     oConsole.fPrint();
   finally:
     oConsole.fUnlock();
@@ -121,6 +120,29 @@ def fInternalExceptionCallback(oBugId, oException, oTraceBack):
   fPrintExceptionInformation(oException, oTraceBack);
   oConsole.fCleanup();
   os._exit(3);
+
+def fLicenseErrorsCallback(oBugId, asErrors):
+  global gbAnErrorOccured;
+  gbAnErrorOccured = True;
+  oConsole.fLock();
+  try:
+    oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " Software license error ", ERROR, sPadding = u"\u2500");
+    for sError in asErrors:
+      oConsole.fPrint(ERROR, u"\u2502 ", ERROR_INFO, sError);
+    oConsole.fPrint(ERROR, u"\u2516", sPadding = u"\u2500");
+  finally:
+    oConsole.fUnlock();
+  os._exit(3);
+
+def fLicenseWarningsCallback(oBugId, asWarnings):
+  oConsole.fLock();
+  try:
+    oConsole.fPrint(WARNING, u"\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = u"\u2500");
+    for sWarning in asWarnings:
+      oConsole.fPrint(WARNING, u"\u2502 ", WARNING_INFO, sWarning);
+    oConsole.fPrint(WARNING, u"\u2516", sPadding = u"\u2500");
+  finally:
+    oConsole.fUnlock();
 
 def fPageHeapNotEnabledCallback(oBugId, oProcessInformation, bIsMainProcess, bPreventable):
   global \
@@ -704,6 +726,8 @@ def fMain(asArguments):
     oBugId.fAddEventCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
     oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationCallback);
     oBugId.fAddEventCallback("Internal exception", fInternalExceptionCallback);
+    oBugId.fAddEventCallback("License warnings", fLicenseWarningsCallback);
+    oBugId.fAddEventCallback("License errors", fLicenseErrorsCallback);
     oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
     oBugId.fAddEventCallback("Process attached", fProcessAttachedCallback);
     oBugId.fAddEventCallback("Process started", fProcessStartedCallback);
