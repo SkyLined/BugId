@@ -4,7 +4,7 @@ from oConsole import oConsole;
 asBugIdLogo = [s.rstrip() for s in """
                           __                     _____________                  
                     _,siSP**YSis,_        ,-~-._/             |                 
-  _______________ ,SP*'`    . `'*YS,  ___|____ |`-O    BugId  | ______________  
+                  ,SP*'`    . `'*YS,     |     |`-O    BugId  |                 
                  dS'  _    |    _ 'Sb   ,'      \_____________|   ,,,           
     ,,,         dP     \,-` `-<` `  Y; _&/                       :O()           
    :O()        ,S`  \+' \      \    `Sis|ssssssssssssssssss,      ```    ,,,    
@@ -23,7 +23,7 @@ asBugIdLogo = [s.rstrip() for s in """
 asBugIdLogoColors = [s.rstrip() for s in """
                           77                     AAAAAAAAAAAAA                  
                     77777777777777        AAAAAAA             A                 
-  877777777777778 777888    8 888877  878A8778 AAAA    AAAAA  A 87777777777778  
+                  777888    8 888877     A     AAAA    AAAAA  A                 
                  788  8    8    8 887   AA      AAAAAAAAAAAAAAA   888           
     888         78     8CCC CCC8 8  87 AAA                       7CCC           
    7CCC        788  87C 4      C    8877A7777777777777777777      888    888    
