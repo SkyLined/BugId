@@ -2,7 +2,7 @@ import os;
 from dxConfig import dxConfig;
 from fsFirstExistingFile import fsFirstExistingFile;
 from mColors import *;
-from mWindowsAPI import oWindowsVersion;
+from mWindowsAPI import oSystemInfo;
 from oConsole import oConsole;
 import mFileSystem;
 
@@ -19,10 +19,10 @@ sEdgeRecoveryPath = mFileSystem.fsPath(os.getenv("LocalAppData"), \
 
 def fEdgeSetup(bFirstRun):
   if bFirstRun:
-    if oWindowsVersion.uCurrentBuild < 15063:
+    if oSystemInfo.uOSBuild < 15063:
       oConsole.fPrint(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
       oConsole.fPrint(ERROR, "builds ", ERROR_INFO, "15063", ERROR, " and higher, and you are running build ", \
-          ERROR_INFO, oWindowsVersion.sCurrentBuild, ERROR, ".");
+          ERROR_INFO, oSystemInfo.sOSBuild, ERROR, ".");
       oConsole.fPrint();
       oConsole.fPrint("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
       oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
