@@ -2,8 +2,7 @@ import os, platform, sys;
 from cBugId import cBugId;
 from mColors import *;
 import mFileSystem;
-import mWindowsAPI;
-from mWindowsAPI import oWindowsVersion;
+from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from oConsole import oConsole;
 from oVersionInformation import oVersionInformation;
 
@@ -13,15 +12,15 @@ def fPrintVersionInformation():
     oConsole.fPrint(NORMAL, u"\u250C\u2500", INFO, " Version information ", NORMAL, sPadding = u"\u2500");
     oConsole.fPrint(
       u"\u2502 ", INFO, "Windows",
-      NORMAL, " version: ", INFO, oWindowsVersion.sProductName,
-      NORMAL, " release ", INFO, oWindowsVersion.sReleaseId,
-      NORMAL, ", build ", INFO, oWindowsVersion.sCurrentBuild,
-      NORMAL, " ", INFO, oWindowsVersion.sISA,
-      NORMAL, ", installed at ", INFO, oWindowsVersion.sPath, NORMAL, ".",
+      NORMAL, " version: ", INFO, oSystemInfo.sOSName,
+      NORMAL, " release ", INFO, oSystemInfo.sOSReleaseId,
+      NORMAL, ", build ", INFO, oSystemInfo.sOSBuild,
+      NORMAL, " ", INFO, oSystemInfo.sOSISA,
+      NORMAL, ", installed at ", INFO, oSystemInfo.sOSPath, NORMAL, ".",
     );
     oConsole.fPrint(
       u"\u2502 ", INFO, "Python", NORMAL, " version: ", INFO, str(platform.python_version()),
-      NORMAL, " ", INFO, mWindowsAPI.fsGetPythonISA(),
+      NORMAL, " ", INFO, fsGetPythonISA(),
       NORMAL, ", installed at ", INFO, os.path.dirname(sys.executable), NORMAL, ".",
     );
     axModules = [
