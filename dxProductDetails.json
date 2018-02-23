@@ -1,0 +1,19 @@
+{
+  "asDependentOnProductNames": [
+    "cBugId", 
+    "mFileSystem", 
+    "mProductDetails", 
+    "mWindowsAPI", 
+    "oConsole"
+  ], 
+  "oProductVersion": "2018-02-23 21:44", 
+  "oRepository": {
+    "sBranch": "master", 
+    "sRepositoryName": "BugId", 
+    "sType": "GitHub", 
+    "sUserName": "SkyLined"
+  }, 
+  "sLicenseServerURL": "https://license.skylined.nl/fdxGetLicenseCheckResult.php", 
+  "sProductName": "BugId", 
+  "sTrialPeriodDuration": "1m"
+}

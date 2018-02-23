@@ -1,59 +1,74 @@
 import os, platform, sys;
-from cBugId import cBugId;
 from mColors import *;
-import mFileSystem;
+import mProductDetails;
 from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from oConsole import oConsole;
-from oVersionInformation import oVersionInformation;
+
+def fPrintProductDetails(oProductDetails):
+  oConsole.fPrint(
+    u"\u2502 ", INFO, oProductDetails.sProductName,
+    NORMAL, " version: ", INFO, str(oProductDetails.oProductVersion),
+    NORMAL, ".",
+  );
+  if oProductDetails.oLatestProductVersion:
+    if oProductDetails.bVersionIsPreRelease:
+      oConsole.fPrint(
+        u"\u2502  ", DIM, u"\u2514\u2500",
+        NORMAL, " You are running a ", HILITE, "pre-release", NORMAL, " version:",
+        " the latest release version is ", INFO, str(oProductDetails.oLatestProductVersion), NORMAL, ".",
+      );
+    elif not oProductDetails.bVersionIsUpToDate:
+      oConsole.fPrint(
+        u"\u2502  ", DIM, u"\u2514\u2500",
+        NORMAL, "Version ", HILITE, str(oProductDetails.oLatestProductVersion), NORMAL,
+        " is available at ", HILITE, oProductDetails.oRepository.sLatestVersionURL, NORMAL, ".",
+      );
 
 def fPrintVersionInformation():
+  oBugIdProductDetails = mProductDetails.cProductDetails.foGetForProductName("BugId");
+  uTotalProducts = len(oBugIdProductDetails.doProductDetails_by_sName);
+  uCounter = 0;
+  for oProductDetails in oBugIdProductDetails.doProductDetails_by_sName.values():
+    oConsole.fProgressBar(
+      uCounter * 1.0 / uTotalProducts,
+      "Checking %s for updates..." % oProductDetails.sProductName,
+    );
+    try:
+      oProductDetails.oLatestProductDetailsFromRepository;
+    except Exception as oException:
+      oConsole.fPrint(
+        ERROR, u"Version check for ", ERROR_INFO, oProductDetails.sProductName,
+        ERROR, " failed: ", ERROR_INFO, str(oException),
+      );
+    uCounter+=1;
   oConsole.fLock();
   try:
-    oConsole.fPrint(NORMAL, u"\u250C\u2500", INFO, " Version information ", NORMAL, sPadding = u"\u2500");
+    oConsole.fPrint(
+      u"\u250C\u2500", INFO, " Version information ",
+      NORMAL, sPadding = u"\u2500"
+    );
+    # Output the BugId product information first, then its dependencies:
+    fPrintProductDetails(oBugIdProductDetails);
     oConsole.fPrint(
       u"\u2502 ", INFO, "Windows",
       NORMAL, " version: ", INFO, oSystemInfo.sOSName,
       NORMAL, " release ", INFO, oSystemInfo.sOSReleaseId,
       NORMAL, ", build ", INFO, oSystemInfo.sOSBuild,
       NORMAL, " ", INFO, oSystemInfo.sOSISA,
-      NORMAL, ", installed at ", INFO, oSystemInfo.sOSPath, NORMAL, ".",
+      NORMAL, ".",
     );
     oConsole.fPrint(
-      u"\u2502 ", INFO, "Python", NORMAL, " version: ", INFO, str(platform.python_version()),
+      u"\u2502 ", INFO, "Python",
+      NORMAL, " version: ", INFO, str(platform.python_version()),
       NORMAL, " ", INFO, fsGetPythonISA(),
-      NORMAL, ", installed at ", INFO, os.path.dirname(sys.executable), NORMAL, ".",
+      NORMAL, ".",
     );
-    axModules = [
-      ("BugId",             "__main__",           oVersionInformation),
-      ("cBugId",            "cBugId",             cBugId.oVersionInformation),
-      ("mFileSystem",       "mFileSystem",        mFileSystem.oVersionInformation),
-      ("mWindowsAPI",       "mWindowsAPI",        mWindowsAPI.oVersionInformation),
-      ("oConsole",          "oConsole",           oConsole.oVersionInformation),
-    ];
-    uCounter = 0;
-    for (sModuleName, sSysModuleName, oModuleVersionInformation) in axModules:
-      assert sModuleName == oModuleVersionInformation.sProjectName, \
-          "Module %s reports that it is called %s" % (sModuleName, oModuleVersionInformation.sProjectName);
-      sInstallationPath = os.path.dirname(sys.modules[sSysModuleName].__file__);
-      oConsole.fPrint(
-        u"\u2502 ", INFO, oModuleVersionInformation.sProjectName,
-        NORMAL, " version: ", INFO, oModuleVersionInformation.sCurrentVersion,
-        NORMAL, ", installed at ", INFO, sInstallationPath, NORMAL, ".",
-      );
-      oConsole.fProgressBar(uCounter * 1.0 / len(axModules), \
-          "* Checking %s for updates..." % oModuleVersionInformation.sProjectName);
-      if oModuleVersionInformation.bPreRelease:
-        oConsole.fPrint(u"\u2502  ", DIM, u"\u2516\u2500", NORMAL, " You are running a ", HILITE, "pre-release", NORMAL, " version: ",
-            "the latest release version is ", INFO, oModuleVersionInformation.sLatestVersion, NORMAL, ".");
-      elif oModuleVersionInformation.bUpToDate:
-        pass;
-      elif oModuleVersionInformation.sError:
-        oConsole.fPrint(u"\u2502   ", ERROR, oModuleVersionInformation.sError, NORMAL, ".");
-      else:
-        oConsole.fPrint(u"\u2502   Version ", HILITE, oModuleVersionInformation.sLatestVersion, NORMAL,
-            " is available at ", HILITE, oModuleVersionInformation.sUpdateURL, NORMAL, ".");
-      uCounter += 1;
-    oConsole.fPrint(u"\u2516", sPadding = u"\u2500");
+    for oProductDetails in oBugIdProductDetails.faoGetAllLoadedProductDetails():
+      if oProductDetails != oBugIdProductDetails:
+        fPrintProductDetails(oProductDetails);
+    oConsole.fPrint(
+      u"\u2514", sPadding = u"\u2500",
+    );
     oConsole.fPrint();
   finally:
     oConsole.fUnlock();
