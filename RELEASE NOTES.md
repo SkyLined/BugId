@@ -1,3 +1,13 @@
+2018-02-23
+==========
+BugId and all its modules require a license to use. There is a 30 day trial
+period during which you can test BugId without a license. After the trial
+period you will need to get a license to continue to use it.
+
+Licenses for non-commercial use are available for free, while licenses for
+commercial use can be purchased from the author. For more details, and to
+acquire a license, please visit https://bugid.skylined.nl.
+
 2018-01-30
 ==========
 Externally noticeable changes
