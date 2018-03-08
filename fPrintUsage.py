@@ -72,6 +72,10 @@ def fPrintUsage(asApplicationKeywords):
     oConsole.fPrint("    debugged using the x64 version of cdb, and you are strongly encouraged to ");
     oConsole.fPrint("    do so. But you can use the x86 debugger to debug x86 application if you");
     oConsole.fPrint("    want to. (ISA = Instruction Set Architecture)");
+    oConsole.fPrint(INFO,"  --symbols=path/to/symbols/folder");
+    oConsole.fPrint("    Use the given path as a local symbol folder in addition to symbol paths");
+    oConsole.fPrint("    specified in dxConfig.py. You can provide this option multiple times to");
+    oConsole.fPrint("    add any number of local symbol paths.");
     oConsole.fPrint(INFO,"  --version");
     oConsole.fPrint("    Show cBugId version and that of its sub-modules and check for updates.");
     oConsole.fPrint();
