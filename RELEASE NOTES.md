@@ -8,6 +8,10 @@ Licenses for non-commercial use are available for free, while licenses for
 commercial use can be purchased from the author. For more details, and to
 acquire a license, please visit https://bugid.skylined.nl.
 
++ I have added the "--symbols=path/to/symbols" option, which will use the
+  provided local symbol path in additional to whatever you have defined in
+  dxConfig.
+
 2018-01-30
 ==========
 Externally noticeable changes
