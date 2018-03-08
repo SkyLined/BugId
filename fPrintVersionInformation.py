@@ -24,23 +24,24 @@ def fPrintProductDetails(oProductDetails):
         " is available at ", HILITE, oProductDetails.oRepository.sLatestVersionURL, NORMAL, ".",
       );
 
-def fPrintVersionInformation():
+def fPrintVersionInformation(bCheckForUpdates = True):
   oBugIdProductDetails = mProductDetails.cProductDetails.foGetForProductName("BugId");
-  uTotalProducts = len(oBugIdProductDetails.doProductDetails_by_sName);
-  uCounter = 0;
-  for oProductDetails in oBugIdProductDetails.doProductDetails_by_sName.values():
-    oConsole.fProgressBar(
-      uCounter * 1.0 / uTotalProducts,
-      "Checking %s for updates..." % oProductDetails.sProductName,
-    );
-    try:
-      oProductDetails.oLatestProductDetailsFromRepository;
-    except Exception as oException:
-      oConsole.fPrint(
-        ERROR, u"Version check for ", ERROR_INFO, oProductDetails.sProductName,
-        ERROR, " failed: ", ERROR_INFO, str(oException),
+  aoAllLoadedProductDetails = oBugIdProductDetails.faoGetAllLoadedProductDetails();
+  if bCheckForUpdates:
+    uCheckedProductCounter = 0;
+    for oProductDetails in aoAllLoadedProductDetails:
+      oConsole.fProgressBar(
+        uCheckedProductCounter * 1.0 / len(aoAllLoadedProductDetails),
+        "Checking %s for updates..." % oProductDetails.sProductName,
       );
-    uCounter+=1;
+      try:
+        oProductDetails.oLatestProductDetailsFromRepository;
+      except Exception as oException:
+        oConsole.fPrint(
+          ERROR, u"Version check for ", ERROR_INFO, oProductDetails.sProductName,
+          ERROR, " failed: ", ERROR_INFO, str(oException),
+        );
+      uCheckedProductCounter += 1;
   oConsole.fLock();
   try:
     oConsole.fPrint(
@@ -63,7 +64,7 @@ def fPrintVersionInformation():
       NORMAL, " ", INFO, fsGetPythonISA(),
       NORMAL, ".",
     );
-    for oProductDetails in oBugIdProductDetails.faoGetAllLoadedProductDetails():
+    for oProductDetails in aoAllLoadedProductDetails:
       if oProductDetails != oBugIdProductDetails:
         fPrintProductDetails(oProductDetails);
     oConsole.fPrint(
