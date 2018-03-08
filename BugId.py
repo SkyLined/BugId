@@ -391,6 +391,7 @@ def fMain(asArguments):
   bRepeat = False;
   bCheckForUpdates = False;
   dxUserProvidedConfigSettings = {};
+  asAdditionalLocalSymbolPaths = [];
   bFast = False;
   while asArguments:
     sArgument = asArguments.pop(0);
@@ -519,6 +520,11 @@ def fMain(asArguments):
         else:
           # -- collateral=1 means one collateral bug in addition to the first bug.
           guMaximumNumberOfBugs = long(sValue) + 1;
+      elif sSettingName in ["symbols"]:
+        if sValue is None or not mFileSystem.fbIsFolder(sValue):
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be a valid path.");
+        asAdditionalLocalSymbolPaths.append(sValue);
       elif sSettingName in ["test-internal-error", "internal-error-test"]:
         raise Exception("Testing internal error");
       else:
@@ -734,6 +740,9 @@ def fMain(asArguments):
           oConsole.fStatus("* The debugger is starting the application...");
     finally:
       oConsole.fUnlock();
+    asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"] or [];
+    if asAdditionalLocalSymbolPaths:
+      asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
     oBugId = cBugId(
       sCdbISA = sApplicationISA or cBugId.sOSISA,
       sApplicationBinaryPath = sApplicationBinaryPath or None,
@@ -741,7 +750,7 @@ def fMain(asArguments):
       sUWPApplicationPackageName = sUWPApplicationPackageName or None,
       sUWPApplicationId = sUWPApplicationId or None,
       asApplicationArguments = asApplicationArguments,
-      asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"],
+      asLocalSymbolPaths = asLocalSymbolPaths or None,
       asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
       asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
       dsURLTemplate_by_srSourceFilePath = dsApplicationURLTemplate_by_srSourceFilePath,
