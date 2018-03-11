@@ -9,6 +9,7 @@ ERROR =             0x0F04; # Red
 ERROR_INFO =        0x0F0C; # Bright red
 WARNING =           0x0F06; # Yellow
 WARNING_INFO =      0x0F0E; # Bright yellow
+UNDERLINE =        0x10000;
 
 oConsole.uDefaultColor = NORMAL;
 oConsole.uDefaultBarColor = 0xFF8A; # Light green on Dark gray

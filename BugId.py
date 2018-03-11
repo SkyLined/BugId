@@ -22,6 +22,7 @@ import codecs, json, re, os, shutil, sys, threading, time, traceback;
 # 2 = bad arguments
 # 3 = internal error
 # 4 = failed to start process or attach to process(es).
+# 5 = license error
 
 # Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
 sMainFolderPath = os.path.abspath(os.path.dirname(__file__));
@@ -60,14 +61,6 @@ import cBugId, mFileSystem, mProductDetails, mWindowsAPI, oConsole;
 # Restore the search path
 sys.path = asOriginalSysPath;
 
-# Read product details for cBugId and all modules it uses.
-oProductDetails = mProductDetails.cProductDetails.foReadForMainModule();
-mProductDetails.cProductDetails.foReadForModule(cBugId);
-mProductDetails.cProductDetails.foReadForModule(mFileSystem);
-mProductDetails.cProductDetails.foReadForModule(mProductDetails);
-mProductDetails.cProductDetails.foReadForModule(mWindowsAPI);
-mProductDetails.cProductDetails.foReadForModule(oConsole);
-
 from cBugId import cBugId;
 from oConsole import oConsole;
 # Augment the search path to access BugId internals.
@@ -75,10 +68,10 @@ sys.path = [sMainFolderPath] + sys.path;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fApplyConfigSetting import fApplyConfigSetting;
+from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
 from fPrintExceptionInformation import fPrintExceptionInformation;
 from fPrintLogo import fPrintLogo;
-from fPrintUsage import fPrintUsage;
-from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
+from fPrintUsageInformation import fPrintUsageInformation;
 from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
 
@@ -144,7 +137,7 @@ def fLicenseErrorsCallback(oBugId, asErrors):
     oConsole.fPrint(ERROR, u"\u2514", sPadding = u"\u2500");
   finally:
     oConsole.fUnlock();
-  os._exit(3);
+  os._exit(5);
 
 def fLicenseWarningsCallback(oBugId, asWarnings):
   # These were already reported when BugId started; ignore them.
@@ -350,33 +343,10 @@ def fMain(asArguments):
       gbVerbose, \
       guDetectedBugsCount, \
       guMaximumNumberOfBugs;
-  # Show license errors, if any, and terminate if there are:
-  asErrors = oProductDetails.fasGetLicenseErrors();
-  if asErrors:
-    oConsole.fLock();
-    try:
-      oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " Software license error ", ERROR, sPadding = u"\u2500");
-      for sError in asErrors:
-        oConsole.fPrint(ERROR, u"\u2502 ", ERROR_INFO, sError);
-      oConsole.fPrint(ERROR, u"\u2514", sPadding = u"\u2500");
-    finally:
-      oConsole.fUnlock();
-    return -1;
-  # Show license warnings, if any:
-  asWarnings = oProductDetails.fasGetLicenseWarnings();
-  if asWarnings:
-    oConsole.fLock();
-    try:
-      oConsole.fPrint(WARNING, u"\u250C\u2500", WARNING_INFO, " Software license warning ", WARNING, sPadding = u"\u2500");
-      for sWarning in asWarnings:
-        oConsole.fPrint(WARNING, u"\u2502 ", WARNING_INFO, sWarning);
-      oConsole.fPrint(WARNING, u"\u2514", sPadding = u"\u2500");
-    finally:
-      oConsole.fUnlock();
   # Show usage information if no arguments are provided:
   if len(asArguments) == 0:
     fPrintLogo();
-    fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
+    fPrintUsageInformation(ddxApplicationSettings_by_sKeyword.keys());
     oConsole.fCleanup();
     os._exit(0);
   
@@ -415,7 +385,7 @@ def fMain(asArguments):
       guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
     elif sArgument in ["-?", "/?", "-h", "/h"]:
       fPrintLogo();
-      fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
+      fPrintUsageInformation(ddxApplicationSettings_by_sKeyword.keys());
       oConsole.fCleanup();
       os._exit(0);
     elif sArgument.startswith("--"):
@@ -465,7 +435,7 @@ def fMain(asArguments):
         sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
       elif sSettingName in ["help"]:
         fPrintLogo();
-        fPrintUsage(ddxApplicationSettings_by_sKeyword.keys());
+        fPrintUsageInformation(ddxApplicationSettings_by_sKeyword.keys());
         oConsole.fCleanup();
         os._exit(0);
       elif sSettingName in ["version", "check-for-updates"]:
@@ -695,6 +665,29 @@ def fMain(asArguments):
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
     fApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]); # Apply and show result
+  
+  # Check license
+  oLicenseCollection = mProductDetails.foGetLicenseCollectionForAllLoadedProducts();
+  (asLicenseErrors, asLicenseWarnings) = oLicenseCollection.ftasGetLicenseErrorsAndWarnings();
+  if asLicenseErrors:
+    oConsole.fLock();
+    try:
+      oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " Software license error ", ERROR, sPadding = u"\u2500");
+      for sLicenseError in asLicenseErrors:
+        oConsole.fPrint(ERROR, u"\u2502 ", ERROR_INFO, sLicenseError);
+      oConsole.fPrint(ERROR, u"\u2514", sPadding = u"\u2500");
+    finally:
+      oConsole.fUnlock();
+    os._exit(5);
+  if asLicenseWarnings:
+    oConsole.fLock();
+    try:
+      oConsole.fPrint(WARNING, u"\u250C\u2500", WARNING_INFO, " Software license warning ", WARNING, sPadding = u"\u2500");
+      for sLicenseWarning in asLicenseWarnings:
+        oConsole.fPrint(WARNING, u"\u2502 ", WARNING_INFO, sLicenseWarning);
+      oConsole.fPrint(WARNING, u"\u2514", sPadding = u"\u2500");
+    finally:
+      oConsole.fUnlock();
   
   if bRepeat:
     duNumberOfRepros_by_sBugIdAndLocation = {};
