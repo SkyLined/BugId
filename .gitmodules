@@ -1,15 +1,20 @@
 [submodule "modules/mWindowsAPI"]
 	path = modules/mWindowsAPI
 	url = https://github.com/SkyLined/mWindowsAPI
+  branch = dev
 [submodule "modules/oConsole"]
 	path = modules/oConsole
 	url = https://github.com/SkyLined/oConsole
+  branch = dev
 [submodule "modules/cBugId"]
 	path = modules/cBugId
 	url = https://github.com/SkyLined/cBugId/
+  branch = dev
 [submodule "modules/mFileSystem"]
 	path = modules/mFileSystem
 	url = https://github.com/SkyLined/mFileSystem
+  branch = dev
 [submodule "modules/mProductDetails"]
 	path = modules/mProductDetails
 	url = https://github.com/SkyLined/mProductDetails/
+  branch = dev
