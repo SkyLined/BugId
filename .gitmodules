@@ -10,3 +10,6 @@
 [submodule "modules/mFileSystem"]
 	path = modules/mFileSystem
 	url = https://github.com/SkyLined/mFileSystem
+[submodule "modules/mProductDetails"]
+	path = modules/mProductDetails
+	url = https://github.com/SkyLined/mProductDetails/
