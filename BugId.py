@@ -667,8 +667,7 @@ def fMain(asArguments):
     fApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]); # Apply and show result
   
   # Check license
-  oLicenseCollection = mProductDetails.foGetLicenseCollectionForAllLoadedProducts();
-  (asLicenseErrors, asLicenseWarnings) = oLicenseCollection.ftasGetLicenseErrorsAndWarnings();
+  (asLicenseErrors, asLicenseWarnings) = mProductDetails.ftasGetLicenseErrorsAndWarnings();
   if asLicenseErrors:
     oConsole.fLock();
     try:
