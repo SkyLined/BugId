@@ -13,7 +13,7 @@
     "sType": "GitHub", 
     "sUserName": "SkyLined"
   }, 
-  "sLicenseServerURL": "https://license.skylined.nl/dxCheckLicense/", 
+  "sLicenseServerURL": "https://license.skylined.nl/dxCheckLicense.php", 
   "sProductAuthor": "SkyLined", 
   "sProductName": "BugId", 
   "sProductURL": "https://github.com/SkyLined/BugId", 
