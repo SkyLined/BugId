@@ -6,7 +6,7 @@ sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 
 dxConfigSettings = {
   "bApplicationTerminatesWithMainProcess": True,
-  "cBugId.bIgnoreFirstChanceNULLPointerAccessViolations": True,
+  "cBugId.bIgnoreFirstChanceAccessViolations": True,
 };
 
 sApplicationBinaryPath_x64 = sProgramFilesPath_x64 and fsFirstExistingFile(

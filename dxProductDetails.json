@@ -1,0 +1,21 @@
+{
+  "asDependentOnProductNames": [
+    "cBugId", 
+    "mFileSystem", 
+    "mProductDetails", 
+    "mWindowsAPI", 
+    "oConsole"
+  ], 
+  "oProductVersion": "2018-04-16 16:58", 
+  "oRepository": {
+    "sBranch": "master", 
+    "sRepositoryName": "BugId", 
+    "sType": "GitHub", 
+    "sUserName": "SkyLined"
+  }, 
+  "sLicenseServerURL": "https://license.skylined.nl/dxCheckLicense.php", 
+  "sProductAuthor": "SkyLined", 
+  "sProductName": "BugId", 
+  "sProductURL": "https://github.com/SkyLined/BugId", 
+  "sTrialPeriodDuration": "1m"
+}

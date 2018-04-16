@@ -1,3 +1,54 @@
+2018-02-23
+==========
+BugId and all its modules require a license to use. There is a 30 day trial
+period during which you can test BugId without a license. After the trial
+period you will need to get a license to continue to use it.
+
+Licenses for non-commercial use are available for free, while licenses for
+commercial use can be purchased from the author. For more details, and to
+acquire a license, please visit https://bugid.skylined.nl.
+
++ New cBugId version changes many bug ids and has many improvements. See
+  separate `RELEASE NOTES.md` in that project for full details.
++ I have added the "--symbols=path/to/symbols" option, which will use the
+  provided local symbol path in additional to whatever you have defined in
+  dxConfig.
+
+2018-01-30
+==========
+Externally noticeable changes
+-----------------------------
++ New cBugId version changes many bug ids and has many improvements. See
+  separate `RELEASE NOTES.md` in that project for full details.
++ Google Chrome ASan builds should now be supported again. The old code no
+  longer worked with recent builds and had been disabled for a while. The new
+  code improves on the old code in various ways, even if ASan has removed some
+  useful info from its output.
++ Mozilla Firefox's new sandbox is disabled when using the `firefox` keyword,
+  as the application would not function correctly otherwise (similar to Google
+  Chrome).
++ The maximum amount of memory an application is allowed to allocate is no
+  longer limited by default.
++ Relative application binary paths are now made absolute using the current
+  working directory as the base.
+
+Internal changes
+----------------
++ Module importing has been improved to prevent leaking internal modules to the
+  global namespace.
++ The way `dxConfig` settings from `cBugId` are imported has been improved.
++ `fSetup` and `fCleanup` replace `fCheckApplication` and
+  `fCleanup` for keyword application.
++ Google Chrome logging is done through stdout instead of stderr.
++ More Google Chrome executables have been allowed to run without page heap.
++ Google Chrome environment variable needed to enable page heap is now set
+  when using the `chrome` keyword in case the user forgets to do so.
++ All first-chance access violations are now ignored in Java, not just NULL
+  pointers. This is done to prevent having to special case NULL pointers and
+  reuse the same code that Google Chrome ASan builds need (which cause various
+  access violations, apparently also by design).
++ When checking for updates, failures to connect are now handled correctly.
+
 2017-12-21
 ==========
 + `cBugId.bIgnoreFirstChanceNULLPointerAccessViolations` in `dxConfig.py`

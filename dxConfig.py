@@ -24,12 +24,11 @@ dxConfig = {
   "nExcessiveCPUUsageCheckInitialTimeout": 5,     # Start checking the application for excessive CPU usage after this
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.
-                                                  # Set to 0 or null to disable excessive CPU usage checks.
   "sDefaultBrowserTestURL": "http://%s:28876/" % os.getenv("COMPUTERNAME"), # Default URL for browser tests.
   "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
-  "uProcessMaxMemoryUse": 2 * uGigaByte,          # Limit the total amount of memory a single process can allocate. If
+  "uProcessMaxMemoryUse": None,                   # Limit the total amount of memory a single process can allocate. If
                                                   # a process attempts to allocate memory that would cause it to have
                                                   # more than this maximum allocated, the allocation will fail.
                                                   # Use this to detect excessive allocations in a single process before
@@ -48,7 +47,7 @@ dxConfig = {
                                                   # point where the process may not be able to allocate or reserve
                                                   # large blocks of memory even if this would not cause it to more than
                                                   # the maximum amount of memory allocated.
-  "uTotalMaxMemoryUse": 2 * uGigaByte,            # Limit the total amount of memory the application can allocate in
+  "uTotalMaxMemoryUse": None,                     # Limit the total amount of memory the application can allocate in
                                                   # all its processes. If a process attempts to allocate additional
                                                   # memory that would cause it to have more than this maximum allocated,
                                                   # the allocation will fail.
@@ -84,18 +83,7 @@ dxConfig = {
                                                   # used to reset this state. Examples include web-browsers caching
                                                   # sites to disk, or restoring previously open tabs after a crash.
   "cBugId": {
-    # The values from cBugId\dxConfig.py get loaded here.
-    # Any value provided here will override the values loaded above.
+    # The values from cBugId\dxConfig.py get loaded here unless they are provide here.
     # You can also modify these from the command line using --cBugId.<settings name>=<JSON value>
   },
 };
-
-# Load cBugId and apply its dxConfig:
-from cBugId import cBugId;
-# Apply desired changes in dxConfig["cBugId"] to cBugId.dxConfig.
-for (sName, xValue) in dxConfig["cBugId"].items():
-  # Note that this does not allow modifying individual properties of dictionaries in dxConfig for cBugId.
-  # But at this time, there are no dictionaries in dxConfig, so this is not required.
-  cBugId.dxConfig[sName] = xValue;
-# Replace dxConfig["cBugId"] with actual dxConfig for cBugId.
-dxConfig["cBugId"] = cBugId.dxConfig;

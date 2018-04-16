@@ -23,7 +23,8 @@ def fPrintExceptionInformation(oException, oTraceBack):
       if sCode:
         oConsole.fPrint(ERROR, u"\u2502      > ", NORMAL, sCode.strip(), uConvertTabsToSpaces = 2);
       uFrameIndex += 1;
-    oConsole.fPrint(ERROR, u"\u2516", sPadding = u"\u2500");
+    oConsole.fPrint(ERROR, u"\u2514", sPadding = u"\u2500");
+    oConsole.fPrint();
     oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");
     oConsole.fPrint(INFO, "    https://github.com/SkyLined/BugId/issues/new");
     oConsole.fPrint("If you do not have a github account, or you want to report this issue");
