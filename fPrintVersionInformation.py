@@ -112,15 +112,15 @@ def fPrintVersionInformation(bCheckForUpdates = True):
     );
     if dasProductNames_by_oLicense:
       oConsole.fPrint(
-        NORMAL, u"\u2502 This system is registered with id ", INFO, mProductDetails.fsGetSystemId(), NORMAL, " on the license server",
+        NORMAL, u"\u2502 \u2219 This system is registered with id ", INFO, mProductDetails.fsGetSystemId(), NORMAL, " on the license server",
       );
     for (oLicense, asProductNames) in dasProductNames_by_oLicense.items():
       oConsole.fPrint(
         u"\u2502 \u2219 License ", INFO, oLicense.sAuthentication,
-        NORMAL, " for ", INFO, oLicense.sUsageTypeDescription, 
-        NORMAL, " of ", INFO, oLicense.asProductNames[0], 
+        NORMAL, " for ", INFO, oLicense.asProductNames[0], 
+        NORMAL, " covers ", INFO, oLicense.sUsageTypeDescription, 
         NORMAL, " by ", INFO, oLicense.sLicenseeName,
-        NORMAL, " covers the following products:",
+        NORMAL, " of the following products:",
       );
       oConsole.fPrint(*(
         [
@@ -132,18 +132,19 @@ def fPrintVersionInformation(bCheckForUpdates = True):
     if asProductNamesInTrial:
       oConsole.fPrint(*(
         [
-          u"\u2502 \u2219"
+          u"\u2502 \u2219 "
         ] + fasProductNamesOutput(asProductNamesInTrial, WARNING)  + [
-          WARNING, " ", len(asProductNamesInTrial) == 1 and "is in its" or "are in their", " trial period."
+          WARNING, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license but ",
+          len(asProductNamesInTrial) == 1 and "it is in its" or "they are in their", " trial period.",
         ]
       ));
     if asUnlicensedProductNames:
       oConsole.fPrint(*(
         [
-          u"\u2502 \u2219"
+          u"\u2502 \u2219 "
         ] + fasProductNamesOutput(asUnlicensedProductNames, ERROR)  + [
-          ERROR, " ", len(asUnlicensedProductNames) == 1 and "has" or "have", " exceeded their trial period and ",
-          len(asUnlicensedProductNames) == 1 and "is" or "are", " not currently covered by a valid, active license."
+          ERROR, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license and ",
+          len(asProductNamesInTrial) == 1 and "has exceeded its" or "have exceeded their", " trial period.",
         ]
       ));
 #    if bCheckForUpdates and bEverythingUpToDate:
