@@ -35,7 +35,7 @@ def fPrintProductDetails(oProductDetails, bIsMainProduct):
     elif not oProductDetails.bVersionIsUpToDate:
       oConsole.fPrint(
         u"\u2502     You are running an ", WARNING, "old", NORMAL, " version:",
-        " the latest released version is  ", HILITE, str(oProductDetails.oLatestProductVersion), NORMAL, ",",
+        " the latest released version is ", HILITE, str(oProductDetails.oLatestProductVersion), NORMAL, ",",
         " available at ", HILITE, oProductDetails.oRepository.sLatestVersionURL, NORMAL, ".",
       );
 
@@ -49,7 +49,7 @@ def fasProductNamesOutput(asProductNames, uNormalColor):
     asOutput.extend([uNormalColor, ", and ", INFO, asProductNames[-1]]);
   return asOutput;
 
-def fPrintVersionInformation(bCheckForUpdates = True):
+def fPrintVersionInformation(bCheckForUpdates = True, bCheckLicenses = True):
   # Read product details for rs and all modules it uses.
   aoProductDetails = mProductDetails.faoGetProductDetailsForAllLoadedModules();
   oMainProductDetails = mProductDetails.foGetProductDetailsForMainModule();
@@ -73,24 +73,44 @@ def fPrintVersionInformation(bCheckForUpdates = True):
       uCheckedProductCounter += 1;
   oConsole.fLock();
   try:
+    aoLicenses = [];
+    asLicensedProductNames = [];
+    asProductNamesInTrial = [];
+    asUnlicensedProductNames = [];
+    for oProductDetails in aoProductDetails:
+      if oProductDetails.oLicense:
+        if oProductDetails.oLicense not in aoLicenses:
+          aoLicenses.append(oProductDetails.oLicense);
+        asLicensedProductNames.append(oProductDetails.sProductName);
+      elif oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod:
+        asProductNamesInTrial.append(oProductDetails.sProductName);
+      else:
+        asUnlicensedProductNames.append(oProductDetails.sProductName);
+
+    oLicenseCheckServer = mProductDetails.cLicenseCheckServer(oMainProductDetails.sLicenseServerURL);
+    uCheckedLicenseCounter = 0;
+    for oLicense in aoLicenses:
+      oConsole.fProgressBar(
+        uCheckedLicenseCounter * 1.0 / len(aoLicenses),
+        "Checking license %s with server..." % oLicense.sLicenseId,
+      );
+      sLicenseCheckServerError = oLicense.fsCheckWithServerAndGetError(oLicenseCheckServer, bForceCheck = True);
+      if sLicenseCheckServerError:
+        oConsole.fPrint(
+          ERROR, u"- License check for ", ERROR_INFO, oLicense.sLicenseId,
+          ERROR, " on server ", ERROR_INFO, oMainProductDetails.sLicenseServerURL,
+          ERROR, " failed: ", ERROR_INFO, sLicenseCheckServerError,
+        );
+      uCheckedLicenseCounter += 1;
+    
     oConsole.fPrint(
       u"\u250C\u2500 ", INFO, "Version information", NORMAL, " ", sPadding = u"\u2500"
     );
     # Output the BugId product information first, then its dependencies:
     fPrintProductDetails(oMainProductDetails, True);
-    dasProductNames_by_oLicense = {};
-    asProductNamesInTrial = [];
-    asUnlicensedProductNames = [];
-    
     for oProductDetails in aoProductDetails:
       if oProductDetails != oMainProductDetails:
         fPrintProductDetails(oProductDetails, False);
-      if oProductDetails.oLicense:
-        dasProductNames_by_oLicense.setdefault(oProductDetails.oLicense, []).append(oProductDetails.sProductName);
-      elif oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod:
-        asProductNamesInTrial.append(oProductDetails.sProductName);
-      else:
-        asUnlicensedProductNames.append(oProductDetails.sProductName);
     
     oConsole.fPrint(
       u"\u2502 \u2219 ", INFO, "Windows",
@@ -110,25 +130,35 @@ def fPrintVersionInformation(bCheckForUpdates = True):
     oConsole.fPrint(
       u"\u251C\u2500 ", INFO, "License information", NORMAL, " ", sPadding = u"\u2500",
     );
-    if dasProductNames_by_oLicense:
+    if aoLicenses:
       oConsole.fPrint(
         NORMAL, u"\u2502 \u2219 This system is registered with id ", INFO, mProductDetails.fsGetSystemId(), NORMAL, " on the license server",
       );
-    for (oLicense, asProductNames) in dasProductNames_by_oLicense.items():
+    for oLicense in aoLicenses:
       oConsole.fPrint(
-        u"\u2502 \u2219 License ", INFO, oLicense.sAuthentication,
+        u"\u2502 \u2219 License ", INFO, oLicense.sLicenseId,
         NORMAL, " for ", INFO, oLicense.asProductNames[0], 
         NORMAL, " covers ", INFO, oLicense.sUsageTypeDescription, 
         NORMAL, " by ", INFO, oLicense.sLicenseeName,
         NORMAL, " of the following products:",
       );
-      oConsole.fPrint(*(
-        [
-          u"\u2502     ",
-        ] + fasProductNamesOutput(asProductNames, NORMAL) + [
-          NORMAL, "."
-        ]
-      ));
+      asOutput = [u"\u2502     "];
+      uNamesLeft = len(oLicense.asProductNames);
+      for sProductName in oLicense.asProductNames:
+        if sProductName in asLicensedProductNames:
+          asOutput += [INFO, sProductName, NORMAL];
+        else:
+          asOutput += [sProductName];
+        uNamesLeft -= 1;
+        if uNamesLeft == 0:
+          asOutput += ["."];
+        elif uNamesLeft > 1:
+          asOutput += [", "];
+        else:
+          if len(oLicense.asProductNames) > 2:
+            asOutput += [","];
+          asOutput += [" and "];
+      oConsole.fPrint(*asOutput);
     if asProductNamesInTrial:
       oConsole.fPrint(*(
         [
