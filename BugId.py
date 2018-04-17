@@ -439,7 +439,11 @@ def fMain(asArguments):
         oConsole.fCleanup();
         os._exit(0);
       elif sSettingName in ["version", "check-for-updates"]:
-        fPrintVersionInformation();
+        fPrintVersionInformation(
+          bCheckForUpdates = True,
+          bCheckAndShowLicenses = True,
+          bShowInstallationFolders = True,
+        );
         oConsole.fCleanup();
         os._exit(0);
       elif sSettingName in ["isa", "cpu"]:

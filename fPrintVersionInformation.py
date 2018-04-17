@@ -5,27 +5,27 @@ from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from oConsole import oConsole;
 
 
-def fPrintProductDetails(oProductDetails, bIsMainProduct):
-  if oProductDetails.oLicense:
-    oConsole.fPrint(
+def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders):
+  oConsole.fPrint(*(
+    [
       u"\u2502 \u2219 ", bIsMainProduct and HILITE or INFO, oProductDetails.sProductName,
       NORMAL, " version: ", INFO, str(oProductDetails.oProductVersion),
+    ] + (
+      bShowInstallationFolders and [
+        NORMAL, " installed at ", INFO, oProductDetails.sInstallationFolderPath,
+      ] or [ ]
+    ) + (
+      not oProductDetails.oLicense and (
+        (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) and [
+          NORMAL, " ", WARNING, "(in trial period)",
+        ] or [
+          NORMAL, " ", ERROR, "(no valid license found)",
+        ]
+      ) or []
+    ) + [
       NORMAL, ".",
-    );
-  elif oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod:
-    oConsole.fPrint(
-      u"\u2502 \u2219 ", bIsMainProduct and HILITE or INFO, oProductDetails.sProductName,
-      NORMAL, " version: ", INFO, str(oProductDetails.oProductVersion),
-      NORMAL, " ", WARNING, "(in trial period)",
-      NORMAL, ".",
-    );
-  else:
-    oConsole.fPrint(
-      u"\u2502 \u2219 ", bIsMainProduct and HILITE or INFO, oProductDetails.sProductName,
-      NORMAL, " version: ", INFO, str(oProductDetails.oProductVersion),
-      NORMAL, " ", ERROR, "(no valid license found)",
-      NORMAL, ".",
-    );
+    ]
+  ));
   if oProductDetails.oLatestProductVersion:
     if oProductDetails.bVersionIsPreRelease:
       oConsole.fPrint(
@@ -49,12 +49,11 @@ def fasProductNamesOutput(asProductNames, uNormalColor):
     asOutput.extend([uNormalColor, ", and ", INFO, asProductNames[-1]]);
   return asOutput;
 
-def fPrintVersionInformation(bCheckForUpdates = True, bCheckLicenses = True):
+def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInstallationFolders):
   # Read product details for rs and all modules it uses.
   aoProductDetails = mProductDetails.faoGetProductDetailsForAllLoadedModules();
   oMainProductDetails = mProductDetails.foGetProductDetailsForMainModule();
   if bCheckForUpdates:
-    bEverythingUpToDate = True;
     uCheckedProductCounter = 0;
     for oProductDetails in aoProductDetails:
       oConsole.fProgressBar(
@@ -68,49 +67,48 @@ def fPrintVersionInformation(bCheckForUpdates = True, bCheckLicenses = True):
           ERROR, u"- Version check for ", ERROR_INFO, oProductDetails.sProductName,
           ERROR, " failed: ", ERROR_INFO, str(oException),
         );
-      else:
-        bEverythingUpToDate &= oProductDetails.bVersionIsUpToDate; 
       uCheckedProductCounter += 1;
   oConsole.fLock();
   try:
-    aoLicenses = [];
-    asLicensedProductNames = [];
-    asProductNamesInTrial = [];
-    asUnlicensedProductNames = [];
-    for oProductDetails in aoProductDetails:
-      if oProductDetails.oLicense:
-        if oProductDetails.oLicense not in aoLicenses:
-          aoLicenses.append(oProductDetails.oLicense);
-        asLicensedProductNames.append(oProductDetails.sProductName);
-      elif oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod:
-        asProductNamesInTrial.append(oProductDetails.sProductName);
-      else:
-        asUnlicensedProductNames.append(oProductDetails.sProductName);
+    if bCheckAndShowLicenses:
+      aoLicenses = [];
+      asLicensedProductNames = [];
+      asProductNamesInTrial = [];
+      asUnlicensedProductNames = [];
+      for oProductDetails in aoProductDetails:
+        if oProductDetails.oLicense:
+          if oProductDetails.oLicense not in aoLicenses:
+            aoLicenses.append(oProductDetails.oLicense);
+          asLicensedProductNames.append(oProductDetails.sProductName);
+        elif oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod:
+          asProductNamesInTrial.append(oProductDetails.sProductName);
+        else:
+          asUnlicensedProductNames.append(oProductDetails.sProductName);
 
-    oLicenseCheckServer = mProductDetails.cLicenseCheckServer(oMainProductDetails.sLicenseServerURL);
-    uCheckedLicenseCounter = 0;
-    for oLicense in aoLicenses:
-      oConsole.fProgressBar(
-        uCheckedLicenseCounter * 1.0 / len(aoLicenses),
-        "Checking license %s with server..." % oLicense.sLicenseId,
-      );
-      sLicenseCheckServerError = oLicense.fsCheckWithServerAndGetError(oLicenseCheckServer, bForceCheck = True);
-      if sLicenseCheckServerError:
-        oConsole.fPrint(
-          ERROR, u"- License check for ", ERROR_INFO, oLicense.sLicenseId,
-          ERROR, " on server ", ERROR_INFO, oMainProductDetails.sLicenseServerURL,
-          ERROR, " failed: ", ERROR_INFO, sLicenseCheckServerError,
+      oLicenseCheckServer = mProductDetails.cLicenseCheckServer(oMainProductDetails.sLicenseServerURL);
+      uCheckedLicenseCounter = 0;
+      for oLicense in aoLicenses:
+        oConsole.fProgressBar(
+          uCheckedLicenseCounter * 1.0 / len(aoLicenses),
+          "Checking license %s with server..." % oLicense.sLicenseId,
         );
-      uCheckedLicenseCounter += 1;
+        sLicenseCheckServerError = oLicense.fsCheckWithServerAndGetError(oLicenseCheckServer, bForceCheck = True);
+        if sLicenseCheckServerError:
+          oConsole.fPrint(
+            ERROR, u"- License check for ", ERROR_INFO, oLicense.sLicenseId,
+            ERROR, " on server ", ERROR_INFO, oMainProductDetails.sLicenseServerURL,
+            ERROR, " failed: ", ERROR_INFO, sLicenseCheckServerError,
+          );
+        uCheckedLicenseCounter += 1;
     
     oConsole.fPrint(
       u"\u250C\u2500 ", INFO, "Version information", NORMAL, " ", sPadding = u"\u2500"
     );
     # Output the BugId product information first, then its dependencies:
-    fPrintProductDetails(oMainProductDetails, True);
+    fPrintProductDetails(oMainProductDetails, bIsMainProduct = True, bShowInstallationFolders = bShowInstallationFolders);
     for oProductDetails in aoProductDetails:
       if oProductDetails != oMainProductDetails:
-        fPrintProductDetails(oProductDetails, False);
+        fPrintProductDetails(oProductDetails, bIsMainProduct = False, bShowInstallationFolders = bShowInstallationFolders);
     
     oConsole.fPrint(
       u"\u2502 \u2219 ", INFO, "Windows",
@@ -127,60 +125,57 @@ def fPrintVersionInformation(bCheckForUpdates = True, bCheckLicenses = True):
       NORMAL, ".",
     );
     
-    oConsole.fPrint(
-      u"\u251C\u2500 ", INFO, "License information", NORMAL, " ", sPadding = u"\u2500",
-    );
-    if aoLicenses:
+    if bCheckAndShowLicenses:
       oConsole.fPrint(
-        NORMAL, u"\u2502 \u2219 This system is registered with id ", INFO, mProductDetails.fsGetSystemId(), NORMAL, " on the license server",
+        u"\u251C\u2500 ", INFO, "License information", NORMAL, " ", sPadding = u"\u2500",
       );
-    for oLicense in aoLicenses:
-      oConsole.fPrint(
-        u"\u2502 \u2219 License ", INFO, oLicense.sLicenseId,
-        NORMAL, " for ", INFO, oLicense.asProductNames[0], 
-        NORMAL, " covers ", INFO, oLicense.sUsageTypeDescription, 
-        NORMAL, " by ", INFO, oLicense.sLicenseeName,
-        NORMAL, " of the following products:",
-      );
-      asOutput = [u"\u2502     "];
-      uNamesLeft = len(oLicense.asProductNames);
-      for sProductName in oLicense.asProductNames:
-        if sProductName in asLicensedProductNames:
-          asOutput += [INFO, sProductName, NORMAL];
-        else:
-          asOutput += [sProductName];
-        uNamesLeft -= 1;
-        if uNamesLeft == 0:
-          asOutput += ["."];
-        elif uNamesLeft > 1:
-          asOutput += [", "];
-        else:
-          if len(oLicense.asProductNames) > 2:
-            asOutput += [","];
-          asOutput += [" and "];
-      oConsole.fPrint(*asOutput);
-    if asProductNamesInTrial:
-      oConsole.fPrint(*(
-        [
-          u"\u2502 \u2219 "
-        ] + fasProductNamesOutput(asProductNamesInTrial, WARNING)  + [
-          WARNING, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license but ",
-          len(asProductNamesInTrial) == 1 and "it is in its" or "they are in their", " trial period.",
-        ]
-      ));
-    if asUnlicensedProductNames:
-      oConsole.fPrint(*(
-        [
-          u"\u2502 \u2219 "
-        ] + fasProductNamesOutput(asUnlicensedProductNames, ERROR)  + [
-          ERROR, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license and ",
-          len(asProductNamesInTrial) == 1 and "has exceeded its" or "have exceeded their", " trial period.",
-        ]
-      ));
-#    if bCheckForUpdates and bEverythingUpToDate:
-#      oConsole.fPrint(
-#        u"\u2502 All modules are up-to-date.",
-#      );
+      if aoLicenses:
+        oConsole.fPrint(
+          NORMAL, u"\u2502 \u2219 This system is registered with id ", INFO, mProductDetails.fsGetSystemId(), NORMAL, " on the license server",
+        );
+      for oLicense in aoLicenses:
+        oConsole.fPrint(
+          u"\u2502 \u2219 License ", INFO, oLicense.sLicenseId,
+          NORMAL, " for ", INFO, oLicense.asProductNames[0], 
+          NORMAL, " covers ", INFO, oLicense.sUsageTypeDescription, 
+          NORMAL, " by ", INFO, oLicense.sLicenseeName,
+          NORMAL, " of the following products:",
+        );
+        asOutput = [u"\u2502     "];
+        uNamesLeft = len(oLicense.asProductNames);
+        for sProductName in oLicense.asProductNames:
+          if sProductName in asLicensedProductNames:
+            asOutput += [INFO, sProductName, NORMAL];
+          else:
+            asOutput += [sProductName];
+          uNamesLeft -= 1;
+          if uNamesLeft == 0:
+            asOutput += ["."];
+          elif uNamesLeft > 1:
+            asOutput += [", "];
+          else:
+            if len(oLicense.asProductNames) > 2:
+              asOutput += [","];
+            asOutput += [" and "];
+        oConsole.fPrint(*asOutput);
+      if asProductNamesInTrial:
+        oConsole.fPrint(*(
+          [
+            u"\u2502 \u2219 "
+          ] + fasProductNamesOutput(asProductNamesInTrial, WARNING)  + [
+            WARNING, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license but ",
+            len(asProductNamesInTrial) == 1 and "it is in its" or "they are in their", " trial period.",
+          ]
+        ));
+      if asUnlicensedProductNames:
+        oConsole.fPrint(*(
+          [
+            u"\u2502 \u2219 "
+          ] + fasProductNamesOutput(asUnlicensedProductNames, ERROR)  + [
+            ERROR, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license and ",
+            len(asProductNamesInTrial) == 1 and "has exceeded its" or "have exceeded their", " trial period.",
+          ]
+        ));
     oConsole.fPrint(
       u"\u2514", sPadding = u"\u2500",
     );

@@ -40,7 +40,11 @@ def fPrintExceptionInformation(oException, oTraceBack):
       oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
       oConsole.fPrint("as in:", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
       oConsole.fPrint();
-    fPrintVersionInformation();
+    fPrintVersionInformation(
+      bCheckForUpdates = False,
+      bCheckAndShowLicenses = False,
+      bShowInstallationFolders = False,
+    );
     oConsole.fPrint();
     oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   finally:
