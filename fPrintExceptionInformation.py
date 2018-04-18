@@ -38,7 +38,7 @@ def fPrintExceptionInformation(oException, oTraceBack):
     if "-v" not in sys.argv[1:] and "/v" not in sys.argv[1:] and "--verbose=true" not in sys.argv[1:]:
       oConsole.fPrint("If you can reproduce the issue, it would help a lot if you can run BugId in");
       oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
-      oConsole.fPrint("as in:", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
+      oConsole.fPrint("as in: ", HILITE, "BugId -v ", " ".join(sys.argv[1:]));
       oConsole.fPrint();
     fPrintVersionInformation(
       bCheckForUpdates = False,
