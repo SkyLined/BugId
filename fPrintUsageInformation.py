@@ -71,13 +71,15 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("        ", INFO, "--bGenerateReportHTML=false");
     oConsole.fPrint("        ", INFO, "--cBugId.asSymbolServerURLs=[]");
     oConsole.fPrint("        ", INFO, "--cBugId.bUse_NT_SYMBOL_PATH=false");
-    oConsole.fPrint(INFO, "  -r, --repeat");
+    oConsole.fPrint(INFO, "  -r, --repeat[=number of loops]");
     oConsole.fPrint("    Restart the application to run another test as soon as the application is");
     oConsole.fPrint("    terminated. Useful when testing the reliability of a repro, detecting the");
     oConsole.fPrint("    various crashes a non-deterministic repro can cause or while making ");
     oConsole.fPrint("    modifications to the repro in order to test how they affect the crash.");
     oConsole.fPrint("    A statistics file is created or updated after each run that contains the");
-    oConsole.fPrint("    number of occurances of each Bug Id that was detected.");
+    oConsole.fPrint("    number of occurances of each Bug Id that was detected. If a number is");
+    oConsole.fPrint("    provided, the application will be run that many times. Otherwise the");
+    oConsole.fPrint("    application will be run indefinitely.");
     oConsole.fPrint();
     oConsole.fPrint("  Options also include any of the settings in dxConfig.py; you can specify them");
     oConsole.fPrint("  using ", INFO, "--[name]=[JSON value]", NORMAL, ". Here are some examples:");

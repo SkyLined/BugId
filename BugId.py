@@ -87,6 +87,7 @@ gbVerbose = False;
 guDefaultCollateralMaximumNumberOfBugs = 5; # Just a hunch that that's a reasonable value.
 guDetectedBugsCount = 0;
 guMaximumNumberOfBugs = 1;
+gduNumberOfRepros_by_sBugIdAndLocation = {};
 
 def fApplicationMaxRunTimeCallback(oBugId):
   oConsole.fPrint("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
@@ -287,9 +288,9 @@ def fProcessTerminatedCallback(oBugId, oProcessInformation, bIsMainProcess):
     oBugId.fStop();
 
 def fBugReportCallback(oBugId, oBugReport):
-  global \
-      guDetectedBugsCount, \
-      guMaximumNumberOfBugs;
+  global guDetectedBugsCount, \
+         guMaximumNumberOfBugs, \
+         gduNumberOfRepros_by_sBugIdAndLocation;
   guDetectedBugsCount += 1;
   oConsole.fLock();
   try:
@@ -300,6 +301,8 @@ def fBugReportCallback(oBugId, oBugReport):
     else:
       oConsole.fPrint(u"\u2502 Id:               ", INFO, oBugReport.sId);
       sBugIdAndLocation = oBugReport.sId;
+    gduNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0);
+    gduNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
     if oBugReport.sBugSourceLocation:
       oConsole.fPrint(u"\u2502 Source:           ", INFO, oBugReport.sBugSourceLocation);
     oConsole.fPrint(u"\u2502 Description:      ", INFO, oBugReport.sBugDescription);
@@ -374,6 +377,7 @@ def fMain(asArguments):
   asApplicationOptionalArguments = None;
   sApplicationISA = None;
   bRepeat = False;
+  uNumberOfRepeats = None;
   bCheckForUpdates = False;
   dxUserProvidedConfigSettings = {};
   asAdditionalLocalSymbolPaths = [];
@@ -495,7 +499,7 @@ def fMain(asArguments):
         else:
           oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
               " must be \"true\" or \"false\".");
-      elif sSettingName in ["repeat", "forever"]:
+      elif sSettingName in ["forever"]:
         if sValue is None or sValue.lower() == "true":
           bRepeat = True;
         elif sValue.lower() == "false":
@@ -503,6 +507,20 @@ def fMain(asArguments):
         else:
           oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
               " must be \"true\" or \"false\".");
+      elif sSettingName in ["repeat"]:
+        bRepeat = sValue is None or sValue.lower() != "false";
+        if bRepeat and sValue is not None:
+          try:
+            uNumberOfRepeats = long(sValue);
+            if uNumberOfRepeats < 2:
+              uNumberOfRepeats = None;
+            elif str(uNumberOfRepeats) != sValue:
+              uNumberOfRepeats = None;
+          except:
+            pass;
+          if uNumberOfRepeats is None:
+            oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+                " must be an integer larger than 1 or \"false\".");
       elif sSettingName in ["collateral"]:
         if sValue is None:
           guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
@@ -708,7 +726,6 @@ def fMain(asArguments):
       oConsole.fUnlock();
   
   if bRepeat:
-    duNumberOfRepros_by_sBugIdAndLocation = {};
     sValidStatisticsFileName = mFileSystem.fsValidName("Reproduction statistics.txt");
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
@@ -810,11 +827,16 @@ def fMain(asArguments):
       os._exit(3);
     if guDetectedBugsCount == 0:
       oConsole.fPrint(u"\u2500\u2500 The application terminated without a bug being detected ", sPadding = u"\u2500");
-      sBugIdAndLocation = "No crash";
+      gduNumberOfRepros_by_sBugIdAndLocation.setdefault("No crash", 0);
+      gduNumberOfRepros_by_sBugIdAndLocation["No crash"] += 1;
     if gbVerbose:
       oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
       nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
       oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
+    if uNumberOfRepeats is not None:
+      uNumberOfRepeats -= 1;
+      if uNumberOfRepeats == 0:
+        bRepeat = False;
     if not bRepeat:
       if fCleanup:
         # Call cleanup after runnning the application, before exiting BugId
@@ -822,14 +844,12 @@ def fMain(asArguments):
         fCleanup();
       oConsole.fCleanup();
       os._exit(guDetectedBugsCount > 0 and 1 or 0);
-    duNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0)
-    duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
     sStatistics = "";
-    auOrderedNumberOfRepros = sorted(list(set(duNumberOfRepros_by_sBugIdAndLocation.values())));
+    auOrderedNumberOfRepros = sorted(list(set(gduNumberOfRepros_by_sBugIdAndLocation.values())));
     auOrderedNumberOfRepros.reverse();
     for uNumberOfRepros in auOrderedNumberOfRepros:
-      for sBugIdAndLocation in duNumberOfRepros_by_sBugIdAndLocation.keys():
-        if duNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
+      for sBugIdAndLocation in gduNumberOfRepros_by_sBugIdAndLocation.keys():
+        if gduNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
           sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
               round(100.0 * uNumberOfRepros / uRunCounter));
     if dxConfig["sReportFolderPath"] is not None:
