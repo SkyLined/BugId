@@ -1,19 +1,7 @@
 BugId
 =====
 
-Python module to detect, analyze and id application bugs
-
-*This project is under very active development and I appreciate any feedback
-you can give me; if you are having any problems running it, or have any
-questions, please do let me know (e.g. by opening a bug). I will try to help
-you and get the issue resolved as soon as possible.*
-
-*Note that the below documentation is way behind on code development. Some
-or all of it may not describe the way BugId currently functions; you may
-have to experiment a bit to figure things out, for which I appologize. If
-you need any help, please do contact me. If you find any parts that really
-need updating as soon as possible, let me know and I will try to prioritize
-them.*
+Python module to detect, analyze and id application bugs.
 
 TL;DR
 -----
@@ -26,6 +14,23 @@ Do you...
 * have no problem integrating a tool written in Python into your framework?
 
 ...then BugId may be for you!
+
+BugId is free for non-commercial use and commercial licenses are available.
+BugId has a 30 day trial period after which a valid license is required.
+Commercial licenses can be bought and non-commercial licenses requested at
+<a href="https://license.skylined.nl">license.skylined.nl</a>.
+
+Keep up-to-date with BugId development through the [BugId blog page](https://bugid.skylined.nl).
+
+*Note that the below documentation is way behind on code development. Some
+or all of it may not describe the way BugId currently functions; you may
+have to experiment a bit to figure things out, for which I apologize. If
+you need any help, please do contact me. If you find any parts that really
+need updating as soon as possible, let me know and I will try to prioritize
+them. This project is under very active development and I appreciate any feedback
+you can give me; if you are having any problems running it, or have any
+questions, please do let me know (e.g. by opening a bug). I will try to help
+you and get the issue resolved as soon as possible.*
 
 Description
 -----------
