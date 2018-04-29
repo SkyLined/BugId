@@ -1,7 +1,5 @@
 @ECHO OFF
 
-ECHO * Running unit-tests...
-
 ECHO   * Test version check...
 CALL "%~dp0BugId.cmd" --version %*
 IF ERRORLEVEL 1 GOTO :ERROR
@@ -13,6 +11,7 @@ IF ERRORLEVEL 1 GOTO :ERROR
 ECHO   * Test repeat in fast mode...
 CALL "%~dp0BugId.cmd" --repeat=2 --fast %ComSpec% --cBugId.bEnsurePageHeap=false -- /C "@ECHO OFF" >nul
 IF ERRORLEVEL 1 GOTO :ERROR
+IF EXIST "%~dp0Reproduction statistics.txt" DEL "%~dp0Reproduction statistics.txt"
 
 ECHO   * Test usage help...
 CALL "%~dp0BugId.cmd" --help %* >nul
