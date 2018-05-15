@@ -1,4 +1,3 @@
-from dxConfig import dxConfig;
 from oConsole import oConsole;
 from mColors import *;
 
