@@ -67,7 +67,7 @@ from oConsole import oConsole;
 sys.path = [sMainFolderPath] + sys.path;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
-from fApplyConfigSetting import fApplyConfigSetting;
+from fbApplyConfigSetting import fbApplyConfigSetting;
 from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
 from fPrintExceptionInformation import fPrintExceptionInformation;
 from fPrintLogo import fPrintLogo;
@@ -671,7 +671,9 @@ def fMain(asArguments):
         oConsole.fPrint("* Applying application specific configuration for %s:" % sApplicationKeyword);
       for (sSettingName, xValue) in dxApplicationConfigSettings.items():
         if sSettingName not in dxUserProvidedConfigSettings:
-          fApplyConfigSetting(sSettingName, xValue, [None, "  "][gbVerbose]); # Apply and show result indented.
+          # Apply and show result indented or errors.
+          if not fbApplyConfigSetting(sSettingName, xValue, [None, "  "][gbVerbose]):
+            os._exit(2);
       if gbVerbose:
         oConsole.fPrint();
     # Apply application specific source settings
@@ -701,8 +703,9 @@ def fMain(asArguments):
   
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
-    fApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]); # Apply and show result
-  
+    # Apply and show result or errors:
+    if not fbApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]):
+      os._exit(2);
   # Check license
   (asLicenseErrors, asLicenseWarnings) = mProductDetails.ftasGetLicenseErrorsAndWarnings();
   if asLicenseErrors:
