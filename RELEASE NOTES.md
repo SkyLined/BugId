@@ -1,3 +1,14 @@
+2018-05-30
+==========
++ The `--repeat` argument now takes a number that allows you to specify how
+  many times you want BugId to run the application.
++ The cBugId engine has had various improvements; most importantly bug fixes
+  and changes to the way register values and disassembly are gathered and
+  stored in the report.
++ BugId now checks to make sure you are running the latest version of Python
+  as some older versions do not implement certain features required for BugId
+  to function.
+
 2018-02-23
 ==========
 BugId and all its modules require a license to use. There is a 30 day trial
