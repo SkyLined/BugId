@@ -49,7 +49,7 @@ for (sModuleName, sDownloadURL) in [
       print "BugId depends on %s which you can download at:" % sModuleName;
       print "    %s" % sDownloadURL;
       print "After downloading, please save the code in this folder:";
-      print "    %s" % os.path.join(sModuleFolderPath, sModuleName);
+      print "    %s" % os.path.join(sModulesFolderPath, sModuleName);
       print " - or -";
       print "    %s" % os.path.join(sParentFolderPath, sModuleName);
       print "Once you have completed these steps, please try again.";
