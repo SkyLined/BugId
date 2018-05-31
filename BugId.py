@@ -369,6 +369,12 @@ def fMain(asArguments):
           sExpectedPythonVersion, WARNING, ".");
       oConsole.fPrint(WARNING, "If you experience any issues, please report them so BugId can be made compatible.");
       break;
+  if oSystemInfo.sOSISA == "x64" and fsGetPythonISA() == "x86":
+    oConsole.fPrint(WARNING, "Warning: you are running a ", WARNING_INFO, "32-bit", WARNING, " version of Python on a ",
+        WARNING_INFO, "64-bit", WARNING, " version of Windows.");
+    oConsole.fPrint(WARNING, "BugId will not be able to debug 64-bit applications unless you run it in a 64-bit " +
+        "version of Python.");
+      oConsole.fPrint(WARNING, "If you experience any issues, use a 64-bit version of Python and try again.");
     
   # Show usage information if no arguments are provided:
   if len(asArguments) == 0:
