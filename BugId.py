@@ -74,6 +74,7 @@ from fPrintLogo import fPrintLogo;
 from fPrintUsageInformation import fPrintUsageInformation;
 from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
+from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 
 gasAttachToProcessesForExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
@@ -349,16 +350,24 @@ def fMain(asArguments):
   
   # Make sure the Python binary is up to date; we don't want our users to unknowingly run outdated software as this is
   # likely to cause unexpected issues.
-  asVersionComponent = platform.python_version().split(".");
-  auExpectedVersionComponent = [2, 7, 14];
+  sPythonVersion = platform.python_version();
+  sExpectedPythonVersion = "2.7.14";
+  asVersionComponent = sPythonVersion.split(".");
+  auExpectedVersionComponent = sExpectedPythonVersion.split(".");
   for uIndex in xrange(3):
     uVersionComponent = long(asVersionComponent[uIndex]);
     if uVersionComponent < auExpectedVersionComponent[uIndex]:
-      oConsole.fPrint(ERROR, "You are running an old version of Python. Please update before using BugId.");
+      oConsole.fPrint(ERROR, "You are running Python ", ERROR_INFO, sPythonVersion, ERROR, 
+          " but BugId requires version ", ERROR_INFO, sExpectedPythonVersion, ERROR, ".");
+      oConsole.fPrint(ERROR, "Please update your copy of Python and try again.");
       oConsole.fCleanup();
       os._exit(3);
     elif uVersionComponent > auExpectedVersionComponent[uIndex]:
-      oConsole.fPrint(WARNING, "You are running a version of Python on which this version of BugId has not been tested.");
+      oConsole.fPrint(WARNING, "Warning: you are running a version of Python (", WARNING_INFO, sPythonVersion, WARNING,
+          ") on which this version of BugId has not been tested.");
+      oConsole.fPrint(WARNING, "BugId has been designed to work well with Python version ", WARNING_INFO, 
+          sExpectedPythonVersion, WARNING, ".");
+      oConsole.fPrint(WARNING, "If you experience any issues, please report them so BugId can be made compatible.");
       break;
     
   # Show usage information if no arguments are provided:
