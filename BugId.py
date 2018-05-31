@@ -209,7 +209,7 @@ def fLogMessageCallback(oBugId, sMessage, dsData = None):
 
 # Helper function to format messages that are specific to a process.
 def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *asMessage):
-  # oProcess is either a mWindowsAPI.cConsoleProcess or mWindowsAPI.cProcessInformation instance.
+  # oProcess is a mWindowsAPI.cProcess or derivative.
   oConsole.fPrint(
     sHeaderChar, " ", bIsMainProcess and "Main" or "Sub", " process ",
     INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL,
