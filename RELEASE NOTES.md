@@ -1,3 +1,7 @@
+2018-06-01
+==========
++ Bug fixes and updated README.md.
+
 2018-05-30
 ==========
 + The `--repeat` argument now takes a number that allows you to specify how
