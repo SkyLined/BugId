@@ -78,9 +78,13 @@ from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 
 gasAttachToProcessesForExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
-  "conhost.exe", # Used to create console windows, not part of the target application (unless that is conhost :)
+  "conhost.exe", # Used to create console windows, not part of the target application (unless the target is conhost)
 ];
 gasReportedBinaryNameWithoutPageHeap = [];
+gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA = [
+  # No application is known to require running processes with a non-ideal cdb ISA at this point.
+];
+gasReportedBinaryNameWithNonIdealCdbISA = [];
 gbAnErrorOccured = False;
 gbFailedToApplyMemoryLimitsErrorShown = False;
 gbQuiet = False;
@@ -153,14 +157,61 @@ def fLicenseWarningsCallback(oBugId, asWarnings):
 #  finally:
 #    oConsole.fUnlock();
 
-def fPageHeapNotEnabledCallback(oBugId, oProcessInformation, bIsMainProcess, bPreventable):
+def fCdbISANotIdealCallback(oBugId, oProcess, bIsMainProcess, sCdbISA, bPreventable):
   global \
-      gasAttachToProcessesForExecutableNames, \
+      gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA, \
+      gasReportedBinaryNameWithNonIdealCdbISA, \
+      gbAnErrorOccured;
+  sBinaryName = oProcess.sBinaryName;
+  if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA:
+    return;
+  if not bPreventable:
+    if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithNonIdealCdbISA:
+      gasReportedBinaryNameWithNonIdealCdbISA.append(sBinaryName);
+      oConsole.fLock();
+      try:
+        oConsole.fPrint(
+          WARNING, "- You are debugging an ",
+          WARNING_INFO, oProcess.sISA, WARNING, " process running ",
+          WARNING_INFO, sBinaryName, WARNING, " with a ",
+          WARNING_INFO, sCdbISA, WARNING, " cdb.exe."
+        );
+        oConsole.fPrint("  This appears to be due to the application running both x86 and x64 processes.");
+        oConsole.fPrint("  Unfortunately, this means use-after-free bugs in this process may be reported");
+        oConsole.fPrint("  as attempts to access reserved memory regions, which is tecnically true but");
+        oConsole.fPrint("  not as accurate as you might expect.");
+        oConsole.fPrint();
+      finally:
+        oConsole.fUnlock();
+  else:
+    gbAnErrorOccured = True;
+    oConsole.fLock();
+    try:
+      oConsole.fPrint(
+        ERROR, "- You are debugging an ",
+        ERROR_INFO, oProcess.sISA, WARNING, " process running ",
+        ERROR_INFO, sBinaryName, WARNING, " with a ",
+        ERROR_INFO, sCdbISA, WARNING, " cdb.exe."
+      );
+      oConsole.fPrint(
+        "  You should use the ", INFO, "--isa=", oProcess.sISA, NORMAL, " command line argument to let BugId know",
+        "it should be using a ", oProcess.sISA, " cdb.exe.");
+      oConsole.fPrint("  Please restart BugId with the aboce command line argument to try again.");
+      oConsole.fPrint();
+      oConsole.fStatus(INFO, "* BugId is stopping...");
+    finally:
+      oConsole.fUnlock();
+    # There is no reason to run without page heap, so terminated.
+    oBugId.fStop();
+    # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in
+    # `dxConfig.py`or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+  
+def fPageHeapNotEnabledCallback(oBugId, oProcess, bIsMainProcess, bPreventable):
+  global \
       gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
       gasReportedBinaryNameWithoutPageHeap, \
       gbAnErrorOccured;
-  sBinaryName = oProcessInformation.sBinaryName;
-  
+  sBinaryName = oProcess.sBinaryName;
   if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithoutPageHeap:
     return;
   if not bPreventable:
@@ -168,7 +219,7 @@ def fPageHeapNotEnabledCallback(oBugId, oProcessInformation, bIsMainProcess, bPr
       gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
       oConsole.fLock();
       try:
-        oConsole.fPrint(ERROR,"- Full page heap is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
+        oConsole.fPrint(WARNING, "- Full page heap is not enabled for ", WARNING_INFO, sBinaryName, WARNING, ".");
         oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
         oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
         oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
@@ -181,7 +232,7 @@ def fPageHeapNotEnabledCallback(oBugId, oProcessInformation, bIsMainProcess, bPr
     oConsole.fLock();
     try:
       oConsole.fPrint(ERROR, "- Full page heap is not enabled for all binaries used by the application.");
-      oConsole.fPrint(ERROR, "  Specifically it is not enabled for ", ERROR_INFO, sBinaryName, ERROR,".");
+      oConsole.fPrint(ERROR, "  Specifically it is not enabled for ", ERROR_INFO, sBinaryName, ERROR, ".");
       oConsole.fPrint("  You can enabled full page heap for ", sBinaryName, " by running:");
       oConsole.fPrint();
       oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', sBinaryName, '" ON');
@@ -218,18 +269,18 @@ def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *asMessage):
     uConvertTabsToSpaces = 8
   );
 
-def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcessInformation, bIsMainProcess):
+def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
   global gbFailedToApplyMemoryLimitsErrorShown, gbQuiet, gbVerbose;
   if not gbQuiet:
-    fPrintMessageForProcess("-", oProcessInformation, bIsMainProcess,
+    fPrintMessageForProcess("-", oProcess, bIsMainProcess,
         ERROR_INFO, "Cannot apply application memory limits");
     gbFailedToApplyMemoryLimitsErrorShown = True;
     if not gbVerbose:
       oConsole.fPrint("  Any additional failures to apply memory limits to processess will not be shown.");
-def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcessInformation, bIsMainProcess):
+def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
   global gbFailedToApplyMemoryLimitsErrorShown, gbVerbose;
   if gbVerbose or not gbFailedToApplyMemoryLimitsErrorShown:
-    fPrintMessageForProcess("-", oProcessInformation, bIsMainProcess,
+    fPrintMessageForProcess("-", oProcess, bIsMainProcess,
         ERROR_INFO, "Cannot apply process memory limits");
     gbFailedToApplyMemoryLimitsErrorShown = True;
     if not gbVerbose:
@@ -240,17 +291,17 @@ def fProcessStartedCallback(oBugId, oConsoleProcess, bIsMainProcess):
     fPrintMessageForProcess("+", oConsoleProcess, bIsMainProcess,
       "Started", "; command line = ", INFO, oConsoleProcess.sCommandLine, NORMAL, "."
     );
-def fProcessAttachedCallback(oBugId, oProcessInformation, bIsMainProcess):
+def fProcessAttachedCallback(oBugId, oProcess, bIsMainProcess):
   global gasAttachToProcessesForExecutableNames;
   if not gbQuiet: # Main processes
-    fPrintMessageForProcess("+", oProcessInformation, bIsMainProcess,
-      "Attached", "; command line = ", INFO, oProcessInformation.sCommandLine or "<unknown>", NORMAL, "."
+    fPrintMessageForProcess("+", oProcess, bIsMainProcess,
+      "Attached", "; command line = ", INFO, oProcess.sCommandLine or "<unknown>", NORMAL, "."
     );
   # Now is a good time to look for additional binaries that may need to be debugged as well.
   if gasAttachToProcessesForExecutableNames:
     oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
 
-def fApplicationDebugOutputCallback(oBugId, oProcessInformation, bIsMainProcess, asMessages):
+def fApplicationDebugOutputCallback(oBugId, oProcess, bIsMainProcess, asMessages):
   uCount = 0;
   for sMessage in asMessages:
     uCount += 1;
@@ -265,7 +316,7 @@ def fApplicationDebugOutputCallback(oBugId, oProcessInformation, bIsMainProcess,
         sPrefix = u"  \u2514\u2500\u2500";
       else:
         sPrefix = u"  \u2502  ";
-    fPrintMessageForProcess(sHeader, oProcessInformation, bIsMainProcess,
+    fPrintMessageForProcess(sHeader, oProcess, bIsMainProcess,
       uPrefixColor, sPrefix, NORMAL, ">", HILITE, sMessage,
     );
 
@@ -278,10 +329,10 @@ def fApplicationStdErrOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sM
     ERROR, "stderr", NORMAL, ">", ERROR_INFO, sMessage,
   );
 
-def fProcessTerminatedCallback(oBugId, oProcessInformation, bIsMainProcess):
+def fProcessTerminatedCallback(oBugId, oProcess, bIsMainProcess):
   bStopBugId = bIsMainProcess and dxConfig["bApplicationTerminatesWithMainProcess"];
   if not gbQuiet:
-    fPrintMessageForProcess("-", oProcessInformation, bIsMainProcess,
+    fPrintMessageForProcess("-", oProcess, bIsMainProcess,
       "Terminated", bStopBugId and "; the application is considered to have terminated with it." or ".",
     );
   if bStopBugId:
@@ -823,6 +874,7 @@ def fMain(asArguments):
     oBugId.fAddEventCallback("License warnings", fLicenseWarningsCallback);
     oBugId.fAddEventCallback("License errors", fLicenseErrorsCallback);
     oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
+    oBugId.fAddEventCallback("Cdb ISA not ideal", fCdbISANotIdealCallback);
     oBugId.fAddEventCallback("Process attached", fProcessAttachedCallback);
     oBugId.fAddEventCallback("Process started", fProcessStartedCallback);
     oBugId.fAddEventCallback("Process terminated", fProcessTerminatedCallback);
