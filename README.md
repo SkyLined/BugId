@@ -32,6 +32,8 @@ for notepad, run the following command:
 ```
 C:\BugId>pageheap notepad.exe ON
 ```
+*(Note that this command must be run from an elevated command-prompt with
+administrative access to the machine).*
 To make things even easier, `pageheap.cmd` has a list of *known applications*. You
 can enable or disable full page heap for any one of them by providing its name, e.g.
 `pageheap msie ON` enables full page heap for Microsoft Internet Explorer. Use
