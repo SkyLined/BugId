@@ -158,7 +158,7 @@ License
 </a>
 This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 International License](http://creativecommons.org/licenses/by-nc/4.0/). It is provided free of charge for non-commercial use only.
 
-BugId has a trial period to allow you to assess it's usefulness. If you
+BugId has a trial period to allow you to assess its usefulness. If you
 want to continue to use BugId after the trial period has ended, you are
 required to get a license file from [license.skylined.nl](https://license.skylined.nl/).
 On this site you can request a non-commercial license or buy a commercial
