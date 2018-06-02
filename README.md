@@ -9,7 +9,7 @@ Do you...
 * want to know what kind of bug is causing an application to crash?
 * want to know if a bug might be security vulnerability?
 * want to find out if two or more crashes are caused by the same bug?
-* want a human readable report for with an analysis of a bug?
+* want a human readable report with an analysis of a bug?
 
 ...then BugId may be for you!
 
