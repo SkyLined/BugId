@@ -352,17 +352,16 @@ def fMain(asArguments):
   # likely to cause unexpected issues.
   sPythonVersion = platform.python_version();
   sExpectedPythonVersion = "2.7.14";
-  asVersionComponent = sPythonVersion.split(".");
-  auExpectedVersionComponent = sExpectedPythonVersion.split(".");
+  auVersionComponent = [long(s) for s in sPythonVersion.split(".")];
+  auExpectedVersionComponent = [long(s) for s in sExpectedPythonVersion.split(".")];
   for uIndex in xrange(3):
-    uVersionComponent = long(asVersionComponent[uIndex]);
-    if uVersionComponent < auExpectedVersionComponent[uIndex]:
+    if auVersionComponent[uIndex] < auExpectedVersionComponent[uIndex]:
       oConsole.fPrint(ERROR, "You are running Python ", ERROR_INFO, sPythonVersion, ERROR, 
           " but BugId requires version ", ERROR_INFO, sExpectedPythonVersion, ERROR, ".");
       oConsole.fPrint(ERROR, "Please update your copy of Python and try again.");
       oConsole.fCleanup();
       os._exit(3);
-    elif uVersionComponent > auExpectedVersionComponent[uIndex]:
+    elif auVersionComponent[uIndex] > auExpectedVersionComponent[uIndex]:
       oConsole.fPrint(WARNING, "Warning: you are running a version of Python (", WARNING_INFO, sPythonVersion, WARNING,
           ") on which this version of BugId has not been tested.");
       oConsole.fPrint(WARNING, "BugId has been designed to work well with Python version ", WARNING_INFO, 
@@ -374,8 +373,8 @@ def fMain(asArguments):
         WARNING_INFO, "64-bit", WARNING, " version of Windows.");
     oConsole.fPrint(WARNING, "BugId will not be able to debug 64-bit applications unless you run it in a 64-bit " +
         "version of Python.");
-      oConsole.fPrint(WARNING, "If you experience any issues, use a 64-bit version of Python and try again.");
-    
+    oConsole.fPrint(WARNING, "If you experience any issues, use a 64-bit version of Python and try again.");
+  
   # Show usage information if no arguments are provided:
   if len(asArguments) == 0:
     fPrintLogo();
