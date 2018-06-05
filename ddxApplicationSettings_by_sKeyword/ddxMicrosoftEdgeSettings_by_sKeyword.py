@@ -2,7 +2,7 @@ import os;
 from dxConfig import dxConfig;
 from fsFirstExistingFile import fsFirstExistingFile;
 from mColors import *;
-from mWindowsAPI import oSystemInfo;
+from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateProcessForId, oSystemInfo;
 from oConsole import oConsole;
 import mFileSystem;
 
@@ -28,12 +28,18 @@ def fEdgeSetup(bFirstRun):
       oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
       oConsole.fPrint("It can be used to debug Edge in BugId on Windows versions before 10.0.15063.");
       os._exit(4);
-  # Delete the recovery path both the application runs, so as to start with a clean state, and not to keep state
-  # between different runs of the application.
+  # RuntimeBroker.exe can apparently hang with dbgsrv.exe attached, preventing Edge from opening new pages. Killing
+  # all processes running either exe appears to resolve this issue.
+  fKillRuntimeBrokerAndDbgSrv();
+  # Prevent keeping state between different runs of the application.
   fDeleteRecovery();
 
 def fEdgeCleanup():
   fDeleteRecovery();
+
+def fKillRuntimeBrokerAndDbgSrv():
+  for uProcessId in fauProcessesIdsForExecutableNames(["dbgsrv.exe", "RuntimeBroker.exe"]):
+    fbTerminateProcessForId(uProcessId);
 
 def fDeleteRecovery():
   # Delete the recovery path to clean up after the application ran.
