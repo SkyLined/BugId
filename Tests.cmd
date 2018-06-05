@@ -1,7 +1,7 @@
 @ECHO OFF
 
 ECHO   * Test version check...
-CALL "%~dp0BugId.cmd" --version %*
+CALL "%~dp0BugId.cmd" --version
 IF ERRORLEVEL 1 GOTO :ERROR
 
 ECHO   * Test verbose mode with redirected output... 
@@ -14,25 +14,25 @@ IF ERRORLEVEL 1 GOTO :ERROR
 IF EXIST "%~dp0Reproduction statistics.txt" DEL "%~dp0Reproduction statistics.txt"
 
 ECHO   * Test usage help...
-CALL "%~dp0BugId.cmd" --help %* >nul
+CALL "%~dp0BugId.cmd" --help >nul
 IF ERRORLEVEL 1 GOTO :ERROR
 
 ECHO   * Test internal error reporting...
-CALL "%~dp0BugId.cmd" --test-internal-error %* >nul
+CALL "%~dp0BugId.cmd" --test-internal-error >nul
 IF NOT ERRORLEVEL == 3 GOTO :ERROR
 
-IF "%~1" == "--extended" (
+IF "%~1" == "--all" (
   ECHO   * Test debugging Google Chrome...
-  CALL "%~dp0BugId.cmd" chrome --nApplicationMaxRunTime=10 %*
+  CALL "%~dp0BugId.cmd" chrome --nApplicationMaxRunTime=10
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO   * Test debugging Microsoft Edge...
-  CALL "%~dp0BugId.cmd" edge --nApplicationMaxRunTime=10 %*
+  CALL "%~dp0BugId.cmd" edge --nApplicationMaxRunTime=10
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO   * Test debugging Mozilla Firefox...
-  CALL "%~dp0BugId.cmd" firefox --nApplicationMaxRunTime=10 %*
+  CALL "%~dp0BugId.cmd" firefox --nApplicationMaxRunTime=10
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO   * Test debugging Microsoft Internet Explorer...
-  CALL "%~dp0BugId.cmd" msie --nApplicationMaxRunTime=10 %*
+  CALL "%~dp0BugId.cmd" msie --nApplicationMaxRunTime=10
   IF ERRORLEVEL 1 GOTO :ERROR
 )
 
