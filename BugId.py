@@ -358,7 +358,7 @@ def fBugReportCallback(oBugId, oBugReport):
     if oBugReport.sBugSourceLocation:
       oConsole.fPrint(u"\u2502 Source:           ", INFO, oBugReport.sBugSourceLocation);
     oConsole.fPrint(u"\u2502 Description:      ", INFO, oBugReport.sBugDescription);
-    oConsole.fPrint(u"\u2502 Security impact:  ", INFO, oBugReport.sSecurityImpact);
+    oConsole.fPrint(u"\u2502 Security impact:  ", INFO, (oBugReport.sSecurityImpact or "None"));
     oConsole.fPrint(u"\u2502 Version:          ", NORMAL, oBugReport.asVersionInformation[0]); # The process' binary.
     for sVersionInformation in oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
       oConsole.fPrint(u"\u2502                   ", NORMAL, sVersionInformation); # different binary (e.g. a .dll)
