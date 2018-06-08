@@ -346,7 +346,7 @@ def fBugReportCallback(oBugId, oBugReport):
   guDetectedBugsCount += 1;
   oConsole.fLock();
   try:
-    oConsole.fPrint(u"\u250C\u2500 ", HILITE, "A bug was detect in the application ", NORMAL, sPadding = u"\u2500");
+    oConsole.fPrint(u"\u250C\u2500 ", HILITE, "A bug was detected ", NORMAL, sPadding = u"\u2500");
     if oBugReport.sBugLocation:
       oConsole.fPrint(u"\u2502 Id @ Location:    ", INFO, oBugReport.sId, NORMAL, " @ ", INFO, oBugReport.sBugLocation);
       sBugIdAndLocation = "%s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
