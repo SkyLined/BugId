@@ -402,23 +402,23 @@ def fMain(asArguments):
   # Make sure the Python binary is up to date; we don't want our users to unknowingly run outdated software as this is
   # likely to cause unexpected issues.
   sPythonVersion = platform.python_version();
-  sExpectedPythonVersion = "2.7.14";
-  auVersionComponent = [long(s) for s in sPythonVersion.split(".")];
-  auExpectedVersionComponent = [long(s) for s in sExpectedPythonVersion.split(".")];
-  for uIndex in xrange(3):
-    if auVersionComponent[uIndex] < auExpectedVersionComponent[uIndex]:
-      oConsole.fPrint(ERROR, "You are running Python ", ERROR_INFO, sPythonVersion, ERROR, 
-          " but BugId requires version ", ERROR_INFO, sExpectedPythonVersion, ERROR, ".");
-      oConsole.fPrint(ERROR, "Please update your copy of Python and try again.");
-      oConsole.fCleanup();
-      os._exit(3);
-    elif auVersionComponent[uIndex] > auExpectedVersionComponent[uIndex]:
-      oConsole.fPrint(WARNING, "Warning: you are running a version of Python (", WARNING_INFO, sPythonVersion, WARNING,
-          ") on which this version of BugId has not been tested.");
-      oConsole.fPrint(WARNING, "BugId has been designed to work well with Python version ", WARNING_INFO, 
-          sExpectedPythonVersion, WARNING, ".");
-      oConsole.fPrint(WARNING, "If you experience any issues, please report them so BugId can be made compatible.");
-      break;
+  asTestedPythonVersions = ["2.7.14", "2.7.15"];
+  if sPythonVersion not in asTestedPythonVersions:
+    oConsole.fPrint(WARNING, "Warning: you are running a version of Python (", WARNING_INFO, sPythonVersion, WARNING,
+        ") on which this version of BugId has not been tested.");
+    asTestedPythonVersionsOutput = [WARNING_INFO, asTestedPythonVersionsOutput.pop(0), WARNING];
+    if len(asTestedPythonVersions) == 1:
+      asTestedPythonVersionsOutput.append(" and ", WARNING_INFO, asTestedPythonVersionsOutput[0], WARNING);
+    elif len(asTestedPythonVersions) > 1:
+      for uIndex in xrange(len(asTestedPythonVersionsOutput) - 1):
+        asTestedPythonVersionsOutput.append(", ", WARNING_INFO, asTestedPythonVersionsOutput[uIndex], WARNING);
+      asTestedPythonVersionsOutput.append(", and ", WARNING_INFO, asTestedPythonVersionsOutput[-1], WARNING);
+    asTestedPythonVersionsOutput.append(".");
+    oConsole.fPrint(WARNING, "BugId has been designed to work well with Python version ", *asTestedPythonVersionsOutput);
+    oConsole.fPrint(WARNING, "If you experience any issues, please report them so BugId can be made compatible.");
+  if oSystemInfo.sOSVersion != "6.3":
+    oConsole.fPrint(ERROR, "Error: unfortunately BugId only runs on Windows 10 at this time.");
+    os._exit(3);
   if oSystemInfo.sOSISA == "x64" and fsGetPythonISA() == "x86":
     oConsole.fPrint(WARNING, "Warning: you are running a ", WARNING_INFO, "32-bit", WARNING, " version of Python on a ",
         WARNING_INFO, "64-bit", WARNING, " version of Windows.");
