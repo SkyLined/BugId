@@ -1,3 +1,11 @@
+2018-06-06
+==========
++ BugId will no longer run in Windows older than Windows 10. An error messsage
+  will be shown instead. This is due to a bug in cdb.exe that prevents cBugId
+  from functioning properly. There is no work-around, so I will have to stop
+  using cdb.exe as the debugging engine to fix this. That is my plan, but it
+  will require a lot of work, so it may take quite some time to get there.
+
 2018-06-01
 ==========
 + Bug fixes and updated README.md.
