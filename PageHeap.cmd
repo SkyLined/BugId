@@ -3,7 +3,6 @@ IF NOT "%~2" == "ON" IF NOT "%~2" == "OFF" GOTO :DO_NOT_REQUIRE_ADMIN
 REM Setting the value requires administrator priviledges.
 FSUTIL dirty query %systemdrive% >nul
 IF ERRORLEVEL 1 (
-  COLOR 4
   ECHO Please run as an administrator with elevated privileges.
   EXIT /B 1
 )
