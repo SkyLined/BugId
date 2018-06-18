@@ -3,7 +3,7 @@
 + Error messages have been clarified.
 + Python 2.7.15 is now supported, warn when using supported but outdated Python.
 + Warning when using the wrong cdb.exe ISA.
-+ BugId will no longer run in Windows older than Windows 10. An error messsage
++ BugId will no longer run in Windows older than Windows 10. An error message
   will be shown instead. This is due to a bug in cdb.exe that prevents cBugId
   from functioning properly. There is no work-around, so I will have to stop
   using cdb.exe as the debugging engine to fix this. That is my plan, but it
