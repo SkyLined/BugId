@@ -41,6 +41,12 @@ EXIT /B 0
 
 :SHOW_STATE
   REM Query the MemGC setting and display the current state if known.
+  "%WinDir%\System32\reg.exe" QUERY "HKCU\SOFTWARE\Microsoft\Internet Explorer\Main" /v "OverrideMemoryProtectionSetting" 2>&1 | "%WinDir%\System32\find.exe" "ERROR: The system was unable to find the specified registry key or value." >nul
+  IF %ERRORLEVEL% == 0 (
+    ECHO + MemGC is enabled ^(default setting^).
+    EXIT /B 0
+  )
+
   "%WinDir%\System32\reg.exe" QUERY "HKCU\SOFTWARE\Microsoft\Internet Explorer\Main" /v "OverrideMemoryProtectionSetting" | "%WinDir%\System32\find.exe" "0x3" >nul
   IF %ERRORLEVEL% == 0 (
     ECHO + MemGC is enabled.
