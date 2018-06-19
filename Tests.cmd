@@ -49,4 +49,5 @@ EXIT /B 0
 
 :ERROR
   ECHO     - Failed with error level %ERRORLEVEL%
-  ENDLOCAL & EXIT /B %ERRORLEVEL%
+  ENDLOCAL
+  EXIT /B 3
