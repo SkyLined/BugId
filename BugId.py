@@ -47,11 +47,14 @@ for (sModuleName, sDownloadURL) in [
     if oError.message == "No module named %s" % sModuleName:
       print "*" * 80;
       print "BugId depends on %s which you can download at:" % sModuleName;
+      print;
       print "    %s" % sDownloadURL;
+      print;
       print "After downloading, please save the code in this folder:";
       print "    %s" % os.path.join(sModulesFolderPath, sModuleName);
       print " - or -";
       print "    %s" % os.path.join(sParentFolderPath, sModuleName);
+      print;
       print "Once you have completed these steps, please try again.";
       print "*" * 80;
     raise;
@@ -525,24 +528,24 @@ def fMain(asArguments):
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
-          oConsole.fPrint(ERROR, "- You must provide an UWP application package name.");
+          oConsole.fPrint(ERROR, "- You must provide UWP application details.");
           oConsole.fCleanup();
           os._exit(2);
         if sUWPApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot provide multiple UWP application package names.");
+          oConsole.fPrint(ERROR, "- You cannot provide UWP application details more than once.");
           oConsole.fCleanup();
           os._exit(2);
         if sApplicationBinaryPath is not None:
-          oConsole.fPrint(ERROR, "- You cannot provide an application binary and UWP package name.");
+          oConsole.fPrint(ERROR, "- You cannot provide an application binary and UWP application details.");
           oConsole.fCleanup();
           os._exit(2);
         if len(auApplicationProcessIds) > 0:
-          oConsole.fPrint(ERROR, "- You cannot provide process ids and an UWP application package name.");
+          oConsole.fPrint(ERROR, "- You cannot provide process ids and UWP application details.");
           oConsole.fCleanup();
           os._exit(2);
         if "!" not in sValue:
-          oConsole.fPrint(ERROR, "- Please provide a string of the form ", ERROR_INFO, sSettingName, \
-              "=<package name>!<application id>.");
+          oConsole.fPrint(ERROR, "- Please provide UWP application details in the form ", ERROR_INFO, sSettingName, \
+              "=<package name>!<application id>", ERROR, ".");
           oConsole.fCleanup();
           os._exit(2);
         sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
@@ -637,8 +640,8 @@ def fMain(asArguments):
         try:
           xValue = json.loads(sValue);
         except ValueError as oError:
-          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value ", ERROR_INFO, "--", sSettingName, "=", sValue, \
-              ERROR, ": ", ERROR_INFO, " ".join(oError.args), ERROR, ".");
+          oConsole.fPrint(ERROR, "- Cannot decode argument JSON value --", ERROR_INFO, sSettingName, ERROR, "=", \
+              ERROR_INFO, sValue, ERROR, ": ", ERROR_INFO, " ".join(oError.args), ERROR, ".");
           oConsole.fCleanup();
           os._exit(2);
         # User provided config settings must be applied after any keyword specific config settings:

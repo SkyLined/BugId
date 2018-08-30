@@ -14,9 +14,9 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
     if sGroupName not in dxConfigGroup:
       oConsole.fPrint(
         ERROR, "Unknown config group ",
-        ERROR_INFO, repr(".".join(asHandledGroupNames)),
+        ERROR_INFO, ".".join(asHandledGroupNames),
         ERROR, " in setting name ",
-        ERROR_INFO, repr(sFullName),
+        ERROR_INFO, sFullName,
         ERROR, ".",
       );
       return False;
