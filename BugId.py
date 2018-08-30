@@ -803,6 +803,27 @@ def fMain(asArguments):
     # Apply and show result or errors:
     if not fbApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]):
       os._exit(2);
+  
+  # Check if cdb.exe is found:
+  sCdbISA = sApplicationISA or cBugId.sOSISA;
+  if not cBugId.fbCdbFound(sCdbISA):
+    oConsole.fLock();
+    try:
+      oConsole.fPrint(ERROR, "- BugId depends on ", ERROR_INFO, "Debugging Tools for Windows", ERROR, " which was not found.");
+      oConsole.fPrint();
+      oConsole.fPrint("To install, download the Windows 10 SDK installer at:");
+      oConsole.fPrint();
+      oConsole.fPrint("  ", INFO, "https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk");
+      oConsole.fPrint();
+      oConsole.fPrint("After downloading, run the installer. You can deselect all other features");
+      oConsole.fPrint("of the SDK before installation; only ", INFO, "Debugging Tools for Windows", NORMAL, " is required.");
+      oConsole.fPrint();
+      oConsole.fPrint("Once you have completed these steps, please try again.");
+    finally:
+      oConsole.fUnlock();
+    oConsole.fCleanup();
+    os._exit(2);
+  
   # Check license
   (asLicenseErrors, asLicenseWarnings) = mProductDetails.ftasGetLicenseErrorsAndWarnings();
   if asLicenseErrors:
@@ -872,7 +893,7 @@ def fMain(asArguments):
     if asAdditionalLocalSymbolPaths:
       asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
     oBugId = cBugId(
-      sCdbISA = sApplicationISA or cBugId.sOSISA,
+      sCdbISA = sCdbISA,
       sApplicationBinaryPath = sApplicationBinaryPath or None,
       auApplicationProcessIds = auApplicationProcessIds or None,
       sUWPApplicationPackageName = sUWPApplicationPackageName or None,
