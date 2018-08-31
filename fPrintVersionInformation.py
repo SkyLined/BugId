@@ -179,7 +179,6 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
     oConsole.fPrint(
       u"\u2514", sPadding = u"\u2500",
     );
-    oConsole.fPrint();
   finally:
     oConsole.fUnlock();
 
