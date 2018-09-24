@@ -6,7 +6,7 @@
     "mWindowsAPI", 
     "oConsole"
   ], 
-  "oProductVersion": "2018-06-18 20:10", 
+  "oProductVersion": "2018-09-24 12:23", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "BugId", 
