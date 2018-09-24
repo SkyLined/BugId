@@ -71,6 +71,7 @@ sys.path = [sMainFolderPath] + sys.path;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fbApplyConfigSetting import fbApplyConfigSetting;
+from fCheckPythonVersion import fCheckPythonVersion;
 from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
 from fPrintExceptionInformation import fPrintExceptionInformation;
 from fPrintLogo import fPrintLogo;
@@ -78,6 +79,8 @@ from fPrintUsageInformation import fPrintUsageInformation;
 from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
 from mWindowsAPI import fsGetPythonISA, oSystemInfo;
+
+asTestedPythonVersions = ["2.7.14", "2.7.15"];
 
 gasAttachToProcessesForExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
@@ -404,47 +407,10 @@ def fMain(asArguments):
   
   # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
   # software as this is likely to cause unexpected issues.
+  fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
   if oSystemInfo.sOSVersion != "6.3":
     oConsole.fPrint(ERROR, "Error: unfortunately BugId only runs on Windows 10 at this time.");
     os._exit(3);
-  sPythonVersion = platform.python_version();
-  if not sPythonVersion.startswith("2."):
-    oConsole.fPrint(ERROR, "Error: BugId requires ", ERROR_INFO, "Python 2", ERROR, ".");
-    os._exit(3);
-  nPythonSubVersion = float(sPythonVersion[2:]);
-  anTestedPythonSubVersions = sorted([7.14, 7.15]);
-  if nPythonSubVersion not in anTestedPythonSubVersions:
-    oConsole.fLock();
-    try:
-      asTestedPythonVersionsOutput = [WARNING_INFO, "2.%1.2f" % anTestedPythonSubVersions.pop(0), WARNING];
-      if len(anTestedPythonSubVersions) == 1:
-        asTestedPythonVersionsOutput.extend([" and ", WARNING_INFO, "2.%1.2f" % anTestedPythonSubVersions[0], WARNING]);
-      elif len(anTestedPythonSubVersions) > 1:
-        for uIndex in xrange(len(asTestedPythonVersionsOutput) - 1):
-          asTestedPythonVersionsOutput.extend([", ", WARNING_INFO, "2.%1.2f" % anTestedPythonSubVersions[uIndex], WARNING]);
-        asTestedPythonVersionsOutput.extend([", and ", WARNING_INFO, "2.%1.2f" % anTestedPythonSubVersions[-1], WARNING]);
-      asTestedPythonVersionsOutput.append(".");
-      oConsole.fPrint(WARNING, u"\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = u"\u2500");
-      oConsole.fPrint(WARNING, u"\u2502 You are running a version of Python (", WARNING_INFO, sPythonVersion, WARNING,
-          ") on which this version of");
-      oConsole.fPrint(WARNING, u"\u2502 BugId has not been tested.");
-      oConsole.fPrint(WARNING, u"\u2502 BugId has been designed to work well with the following Python versions:");
-      oConsole.fPrint(WARNING, u"\u2502   ", *asTestedPythonVersionsOutput);
-      if nPythonSubVersion < anTestedPythonSubVersions[0]:
-        oConsole.fPrint(WARNING, u"\u2502 Please update Python to the latest version.");
-      else:
-        assert nPythonSubVersion > anTestedPythonSubVersions[-1];
-        oConsole.fPrint(WARNING, u"\u2502 Please report this so BugId can be made compatible at:");
-        oConsole.fPrint(WARNING, u"\u2502   ", WARNING_INFO | UNDERLINE, "https://github.com/SkyLined/BugId/issues/new");
-      oConsole.fPrint(WARNING, u"\u2514", sPadding = u"\u2500");
-    finally:
-      oConsole.fUnlock();
-  elif nPythonSubVersion != anTestedPythonSubVersions[-1]:
-    oConsole.fPrint(WARNING, u"\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = u"\u2500");
-    oConsole.fPrint(WARNING, u"\u2502 You are running an outdated version of Python (", WARNING_INFO,
-        sPythonVersion, WARNING, ").");
-    oConsole.fPrint(WARNING, u"\u2502 Please update Python to the latest version.");
-    oConsole.fPrint(WARNING, u"\u2514", sPadding = u"\u2500");
   if oSystemInfo.sOSISA == "x64" and fsGetPythonISA() == "x86":
     oConsole.fLock();
     try:

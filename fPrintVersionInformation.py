@@ -1,9 +1,9 @@
 import os, platform;
+from faxListOutput import faxListOutput;
 from mColors import *;
 import mProductDetails;
 from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from oConsole import oConsole;
-
 
 def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders):
   oConsole.fPrint(*(
@@ -38,16 +38,6 @@ def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolde
         " the latest released version is ", HILITE, str(oProductDetails.oLatestProductVersion), NORMAL, ",",
         " available at ", HILITE, oProductDetails.oRepository.sLatestVersionURL, NORMAL, ".",
       );
-
-def fasProductNamesOutput(asProductNames, uNormalColor):
-  asOutput = [INFO, asProductNames[0]];
-  if len(asProductNames) == 2:
-    asOutput.extend([uNormalColor, " and ", INFO, asProductNames[1]]);
-  elif len(asProductNames) > 2:
-    for sProductName in asProductNames[1:-1]:
-      asOutput.extend([uNormalColor, ", ", INFO, sProductName]);
-    asOutput.extend([uNormalColor, ", and ", INFO, asProductNames[-1]]);
-  return asOutput;
 
 def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInstallationFolders):
   # Read product details for rs and all modules it uses.
@@ -141,28 +131,12 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
           NORMAL, " by ", INFO, oLicense.sLicenseeName,
           NORMAL, " of the following products:",
         );
-        asOutput = [u"\u2502     "];
-        uNamesLeft = len(oLicense.asProductNames);
-        for sProductName in oLicense.asProductNames:
-          if sProductName in asLicensedProductNames:
-            asOutput += [INFO, sProductName, NORMAL];
-          else:
-            asOutput += [sProductName];
-          uNamesLeft -= 1;
-          if uNamesLeft == 0:
-            asOutput += ["."];
-          elif uNamesLeft > 1:
-            asOutput += [", "];
-          else:
-            if len(oLicense.asProductNames) > 2:
-              asOutput += [","];
-            asOutput += [" and "];
-        oConsole.fPrint(*asOutput);
+        oConsole.fPrint(u"\u2502     ", faxListOutput(oLicense.asProductNames, "and", INFO, NORMAL));
       if asProductNamesInTrial:
         oConsole.fPrint(*(
           [
             u"\u2502 \u2219 "
-          ] + fasProductNamesOutput(asProductNamesInTrial, WARNING)  + [
+          ] + faxListOutput(asProductNamesInTrial, "and", WARNING_INFO, WARNING)  + [
             WARNING, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license but ",
             len(asProductNamesInTrial) == 1 and "it is in its" or "they are in their", " trial period.",
           ]
@@ -171,7 +145,7 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
         oConsole.fPrint(*(
           [
             u"\u2502 \u2219 "
-          ] + fasProductNamesOutput(asUnlicensedProductNames, ERROR)  + [
+          ] + faxListOutput(asUnlicensedProductNames, "and", ERROR_INFO, ERROR)  + [
             ERROR, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license and ",
             len(asProductNamesInTrial) == 1 and "has exceeded its" or "have exceeded their", " trial period.",
           ]
@@ -179,6 +153,7 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
     oConsole.fPrint(
       u"\u2514", sPadding = u"\u2500",
     );
+    oConsole.fPrint();
   finally:
     oConsole.fUnlock();
 
