@@ -6,7 +6,7 @@ from oConsole import oConsole;
 from fPrintVersionInformation import fPrintVersionInformation;
 
 def fPrintExceptionInformation(oException, oTraceBack):
-  import os, sys, traceback;
+  import sys, traceback;
   oConsole.fLock();
   try:
     oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " An internal exception has occured ", ERROR, sPadding = u"\u2500");
