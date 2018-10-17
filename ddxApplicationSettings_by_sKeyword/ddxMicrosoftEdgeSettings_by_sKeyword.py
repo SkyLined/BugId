@@ -43,8 +43,27 @@ def fKillRuntimeBrokerAndDbgSrv():
 
 def fDeleteRecovery():
   # Delete the recovery path to clean up after the application ran.
-  if mFileSystem.fbIsFolder(sEdgeRecoveryPath):
-    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath);
+  if not mFileSystem.fbIsFolder(sEdgeRecoveryPath):
+    return;
+  if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False):
+    return;
+  # Microsoft Edge will have a lock on these files if its running; terminate it.
+  oConsole.fPrint(WARNING, "Microsoft Edge appears to be running becasuse the recovery files cannot be");
+  oConsole.fPrint(WARNING, "deleted. All running Microsoft Edge processes will now be terminated to try");
+  oConsole.fPrint(WARNING, "to fix this...");
+  # Microsoft Edge may attempt to restart killed processes, so we do this in a loop until there are no more processes
+  # running.
+  while 1:
+    auProcessIds = fauProcessesIdsForExecutableNames(["MicrosoftEdge.exe", "MicrosoftEdgeCP.exe"])
+    if not auProcessIds:
+      break;
+    for uProcessId in auProcessIds:
+      fbTerminateProcessForId(uProcessId);
+  if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False):
+    return;
+  oConsole.fPrint(ERROR, "The recovery files still cannot be deleted. Please manually terminated all");
+  oConsole.fPrint(ERROR, "processes related to Microsoft Edge and try again.");
+  os._exit(4);
 
 def fasGetEdgeOptionalArguments(bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
