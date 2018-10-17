@@ -28,25 +28,23 @@ def fEdgeSetup(bFirstRun):
       oConsole.fPrint("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
       oConsole.fPrint("It can be used to debug Edge in BugId on Windows versions before 10.0.15063.");
       os._exit(4);
-  # RuntimeBroker.exe can apparently hang with dbgsrv.exe attached, preventing Edge from opening new pages. Killing
-  # all processes running either exe appears to resolve this issue.
-  fKillRuntimeBrokerAndDbgSrv();
-  # Prevent keeping state between different runs of the application.
-  fDeleteRecovery();
+  # Cleanup in case Edge is currently running or there is state data from a previous run.
+  fEdgeCleanup();
 
 def fEdgeCleanup():
-  fDeleteRecovery();
-
-def fKillRuntimeBrokerAndDbgSrv():
+  # RuntimeBroker.exe can apparently hang with dbgsrv.exe attached, preventing Edge from opening new pages. Killing
+  # all processes running either exe appears to resolve this issue.
   for uProcessId in fauProcessesIdsForExecutableNames(["dbgsrv.exe", "RuntimeBroker.exe"]):
     fbTerminateProcessForId(uProcessId);
-
-def fDeleteRecovery():
-  # Delete the recovery path to clean up after the application ran.
+  
+  # Delete the recovery path to prevent conserving state between different runs of the application.
   if not mFileSystem.fbIsFolder(sEdgeRecoveryPath):
     return;
-  if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False):
-    return;
+  try:
+    if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = lambda: False):
+      return;
+  except:
+    pass;
   # Microsoft Edge will have a lock on these files if its running; terminate it.
   oConsole.fPrint(WARNING, "Microsoft Edge appears to be running becasuse the recovery files cannot be");
   oConsole.fPrint(WARNING, "deleted. All running Microsoft Edge processes will now be terminated to try");
@@ -59,8 +57,11 @@ def fDeleteRecovery():
       break;
     for uProcessId in auProcessIds:
       fbTerminateProcessForId(uProcessId);
-  if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False):
-    return;
+  try:
+    if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False):
+      return;
+  except:
+    pass;
   oConsole.fPrint(ERROR, "The recovery files still cannot be deleted. Please manually terminated all");
   oConsole.fPrint(ERROR, "processes related to Microsoft Edge and try again.");
   os._exit(4);
