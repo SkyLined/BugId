@@ -267,13 +267,23 @@ def fLogMessageCallback(oBugId, sMessage, dsData = None):
 # Helper function to format messages that are specific to a process.
 def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *asMessage):
   # oProcess is a mWindowsAPI.cProcess or derivative.
-  oConsole.fPrint(
-    sHeaderChar, " ", bIsMainProcess and "Main" or "Sub", " process ",
-    INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL,
-    " (", INFO, oProcess.sBinaryName, NORMAL, "): ",
-    *asMessage,
-    uConvertTabsToSpaces = 8
-  );
+  if sHeaderChar is None:
+    # Just blanks for the header (used for multi-line output to reduce redundant output).
+    oConsole.fPrint(
+      " ", " ", bIsMainProcess and "    " or "   ", "         ",
+      " " * len("%d" % oProcess.uId), " ", " " * len("0x%X" % oProcess.uId),
+      "  ", " " * len(oProcess.sBinaryName), "   ",
+      *asMessage,
+      uConvertTabsToSpaces = 8
+    );
+  else:
+    oConsole.fPrint(
+      sHeaderChar, " ", bIsMainProcess and "Main" or "Sub", " process ",
+      INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL,
+      " (", INFO, oProcess.sBinaryName, NORMAL, "): ",
+      *asMessage,
+      uConvertTabsToSpaces = 8
+    );
 
 def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
   global gbFailedToApplyMemoryLimitsErrorShown, gbQuiet, gbVerbose;
@@ -309,22 +319,21 @@ def fProcessAttachedCallback(oBugId, oProcess, bIsMainProcess):
 
 def fApplicationDebugOutputCallback(oBugId, oProcess, bIsMainProcess, asMessages):
   uCount = 0;
+  sDebug = "debug";
+  oConsole.fLock();
   for sMessage in asMessages:
     uCount += 1;
     if uCount == 1:
       sHeader = "*";
-      uPrefixColor = INFO;
-      sPrefix = "debug";
+      sPrefix = "\u2500" if len(asMessages) == 1 else u"\u252c";       # "---" or "-.-"
     else:
-      sHeader = " ";
-      uPrefixColor = DIM;
-      if uCount == len(asMessages):
-        sPrefix = u"  \u2514\u2500\u2500";
-      else:
-        sPrefix = u"  \u2502  ";
+      sHeader = None;
+      sPrefix = u"\u2514" if uCount == len(asMessages) else u"\u2502"; # " '-" or " | " 
     fPrintMessageForProcess(sHeader, oProcess, bIsMainProcess,
-      uPrefixColor, sPrefix, NORMAL, ">", HILITE, sMessage,
+      INFO, sDebug, NORMAL, sPrefix, HILITE, sMessage,
     );
+    sDebug = "     ";
+  oConsole.fUnlock();
 
 def fApplicationStdOutOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
   fPrintMessageForProcess("*", oConsoleProcess, bIsMainProcess,
