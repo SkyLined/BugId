@@ -123,7 +123,6 @@ EXIT /B 0
   REM 00000010 Enable heap tail checking
   REM 00000020 Enable heap free checking
   REM 00000040 Enable heap parameter checking
-  REM 00000800 Enable heap tagging
   REM 00001000 Create user mode stack trace database
   REM 00008000 Enable heap tagging by DLL
   REM 00100000 Enable system critical breaks
@@ -133,6 +132,7 @@ EXIT /B 0
   
   REM The following flags were considered but not enabled:
   REM 00000080 Enable heap validation on call ## disabled because of overhead
+  REM 00000800 Enable heap tagging ## disabled because tags are not used.
   REM 00000100 Enable application verifier ## disabled because of idunno
   REM 00200000 Disable heap coalesce on free ## superfluous: page heap is enabled
   REM 00400000 Enable close exception ## I don't think this is useful
