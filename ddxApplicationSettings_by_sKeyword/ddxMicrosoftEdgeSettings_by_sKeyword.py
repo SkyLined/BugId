@@ -41,10 +41,11 @@ def fEdgeCleanup():
   if not mFileSystem.fbIsFolder(sEdgeRecoveryPath):
     return;
   try:
-    if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = lambda: False):
-      return;
+    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = lambda: False);
   except:
-    pass;
+    pass; # Failed to delete
+  else:
+    return;
   # Microsoft Edge will have a lock on these files if its running; terminate it.
   oConsole.fPrint(WARNING, "Microsoft Edge appears to be running becasuse the recovery files cannot be");
   oConsole.fPrint(WARNING, "deleted. All running Microsoft Edge processes will now be terminated to try");
@@ -58,12 +59,14 @@ def fEdgeCleanup():
     for uProcessId in auProcessIds:
       fbTerminateProcessForId(uProcessId);
   try:
-    if mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False):
-      return;
+    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False);
   except:
-    pass;
+    pass; # Failed to delete
+  else:
+    return;
   oConsole.fPrint(ERROR, "The recovery files still cannot be deleted. Please manually terminated all");
-  oConsole.fPrint(ERROR, "processes related to Microsoft Edge and try again.");
+  oConsole.fPrint(ERROR, "processes related to Microsoft Edge and try to delete everything in");
+  oConsole.fPrint(ERROR_INFO, sEdgeRecoveryPath.replace("\\\\?\\", ""), ERROR, ".");
   os._exit(4);
 
 def fasGetEdgeOptionalArguments(bForHelp = False):
