@@ -1,3 +1,9 @@
+2018-11-06
+==========
++ I have forgotten to update this file through a number of releases. Change
+  logs on GitHub will have to suffice as I unfortunately do not have the time
+  to retroactively describe all changes here.
+
 2018-06-06
 ==========
 + Error messages have been clarified.
