@@ -6,5 +6,6 @@ Commons, PO Box 1866, Mountain View, CA 94042, USA.
 This work is provided free of charge for non-commercial use only. It may offer
 a trial period to allow you to assess its usefulness. If you want to continue
 to use the work after the trial period has ended, you are required to get a
-license from https://license.skylined.nl/. On this site you can request a
-non-commercial license or buy a commercial license.
+license. Please contact license@skylined.nl for more details.
+
+Licenses for this work may be available at https://license.skylined.nl/.
