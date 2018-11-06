@@ -24,16 +24,16 @@ import codecs, json, re, os, platform, shutil, sys, threading, time, traceback;
 # 4 = failed to start process or attach to process(es).
 # 5 = license error
 
-# Augment the search path: look in main folder, parent folder or "modules" child folder, in that order.
+# Augment the search path for loading external modules.
+# look in main folder, parent folder or "modules" child folder, in that order.
 sMainFolderPath = os.path.abspath(os.path.dirname(__file__));
 sParentFolderPath = os.path.normpath(os.path.join(sMainFolderPath, ".."));
 sModulesFolderPath = os.path.join(sMainFolderPath, "modules");
 asOriginalSysPath = sys.path[:];
 sys.path = [sMainFolderPath, sParentFolderPath, sModulesFolderPath] + sys.path;
 
-# Load external dependecies to make sure they are available and shown an error
-# if any one fails to load. This error explains where the missing component
-# can be downloaded to fix the error.
+# Try to load external modules to make sure they are available. Show an error
+# message if any one fails to load.
 for (sModuleName, sDownloadURL) in [
   ("cBugId", "https://github.com/SkyLined/cBugId/"),
   ("mFileSystem", "https://github.com/SkyLined/mFileSystem/"),
@@ -59,15 +59,13 @@ for (sModuleName, sDownloadURL) in [
       print "*" * 80;
     raise;
 
-import cBugId, mFileSystem, mProductDetails, mWindowsAPI, oConsole;
-
-# Restore the search path
-sys.path = asOriginalSysPath;
-
+# Actually load the stuff from external modules that we need.
 from cBugId import cBugId;
+import mFileSystem, mProductDetails, mWindowsAPI;
 from oConsole import oConsole;
-# Augment the search path to access BugId internals.
-sys.path = [sMainFolderPath] + sys.path;
+
+# Restore the search path and load internal stuff.
+sys.path = asOriginalSysPath;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fbApplyConfigSetting import fbApplyConfigSetting;
@@ -78,11 +76,10 @@ from fPrintLogo import fPrintLogo;
 from fPrintUsageInformation import fPrintUsageInformation;
 from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
-from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 
 asTestedPythonVersions = ["2.7.14", "2.7.15"];
 
-gasAttachToProcessesForExecutableNames = [];
+gasAttachForProcessExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
   "conhost.exe", # Used to create console windows, not part of the target application (unless the target is conhost)
 ];
@@ -308,14 +305,14 @@ def fProcessStartedCallback(oBugId, oConsoleProcess, bIsMainProcess):
       "Started", "; command line = ", INFO, oConsoleProcess.sCommandLine, NORMAL, "."
     );
 def fProcessAttachedCallback(oBugId, oProcess, bIsMainProcess):
-  global gasAttachToProcessesForExecutableNames;
+  global gasAttachForProcessExecutableNames;
   if not gbQuiet: # Main processes
     fPrintMessageForProcess("+", oProcess, bIsMainProcess,
       "Attached", "; command line = ", INFO, oProcess.sCommandLine or "<unknown>", NORMAL, "."
     );
   # Now is a good time to look for additional binaries that may need to be debugged as well.
-  if gasAttachToProcessesForExecutableNames:
-    oBugId.fAttachToProcessesForExecutableNames(*gasAttachToProcessesForExecutableNames);
+  if gasAttachForProcessExecutableNames:
+    oBugId.fAttachForProcessExecutableNames(*gasAttachForProcessExecutableNames);
 
 def fApplicationDebugOutputCallback(oBugId, oProcess, bIsMainProcess, asMessages):
   uCount = 0;
@@ -407,7 +404,7 @@ def fBugReportCallback(oBugId, oBugReport):
 
 def fMain(asArguments):
   global \
-      gasAttachToProcessesForExecutableNames, \
+      gasAttachForProcessExecutableNames, \
       gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
       gbQuiet, \
       gbVerbose, \
@@ -417,10 +414,10 @@ def fMain(asArguments):
   # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
   # software as this is likely to cause unexpected issues.
   fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
-  if oSystemInfo.sOSVersion != "6.3":
+  if mWindowsAPI.oSystemInfo.sOSVersion != "6.3":
     oConsole.fPrint(ERROR, "Error: unfortunately BugId only runs on Windows 10 at this time.");
     os._exit(3);
-  if oSystemInfo.sOSISA == "x64" and fsGetPythonISA() == "x86":
+  if mWindowsAPI.oSystemInfo.sOSISA == "x64" and mWindowsAPI.fsGetPythonISA() == "x86":
     oConsole.fLock();
     try:
       oConsole.fPrint(WARNING, u"\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = u"\u2500");
@@ -724,8 +721,8 @@ def fMain(asArguments):
           ERROR_INFO, sApplicationKeyword, ERROR, ".");
       oConsole.fCleanup();
       os._exit(2);
-    if "asApplicationAttachToProcessesForExecutableNames" in dxApplicationSettings:
-      gasAttachToProcessesForExecutableNames = dxApplicationSettings["asApplicationAttachToProcessesForExecutableNames"];
+    if "asApplicationAttachForProcessExecutableNames" in dxApplicationSettings:
+      gasAttachForProcessExecutableNames = dxApplicationSettings["asApplicationAttachForProcessExecutableNames"];
     # Get application arguments;
     if "fasGetStaticArguments" in dxApplicationSettings:
       fasGetApplicationStaticArguments = dxApplicationSettings["fasGetStaticArguments"];

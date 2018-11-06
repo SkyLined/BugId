@@ -2,7 +2,7 @@ import os;
 from dxConfig import dxConfig;
 from fsFirstExistingFile import fsFirstExistingFile;
 from mColors import *;
-from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateProcessForId, oSystemInfo;
+from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateForProcessId, oSystemInfo;
 from oConsole import oConsole;
 import mFileSystem;
 
@@ -35,7 +35,7 @@ def fEdgeCleanup():
   # RuntimeBroker.exe can apparently hang with dbgsrv.exe attached, preventing Edge from opening new pages. Killing
   # all processes running either exe appears to resolve this issue.
   for uProcessId in fauProcessesIdsForExecutableNames(["dbgsrv.exe", "RuntimeBroker.exe"]):
-    fbTerminateProcessForId(uProcessId);
+    fbTerminateForProcessId(uProcessId);
   
   # Delete the recovery path to prevent conserving state between different runs of the application.
   if not mFileSystem.fbIsFolder(sEdgeRecoveryPath):
@@ -57,7 +57,7 @@ def fEdgeCleanup():
     if not auProcessIds:
       break;
     for uProcessId in auProcessIds:
-      fbTerminateProcessForId(uProcessId);
+      fbTerminateForProcessId(uProcessId);
   try:
     mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False);
   except:
@@ -79,7 +79,7 @@ ddxMicrosoftEdgeSettings_by_sKeyword = {
       "sPackageName": "Microsoft.MicrosoftEdge",
       "sId": "MicrosoftEdge",
     },
-    "asApplicationAttachToProcessesForExecutableNames": ["browser_broker.exe"],
+    "asApplicationAttachForProcessExecutableNames": ["browser_broker.exe"],
     "fasGetOptionalArguments": fasGetEdgeOptionalArguments,
     "fSetup": fEdgeSetup,
     "fCleanup": fEdgeCleanup,
