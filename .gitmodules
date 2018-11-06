@@ -16,3 +16,6 @@
 [submodule "modules/mDebugOutput"]
 	path = modules/mDebugOutput
 	url = https://github.com/SkyLined/mDebugOutput/
+[submodule "modules/mMultiThreading"]
+	path = modules/mMultiThreading
+	url = https://github.com/SkyLined/mMultiThreading/
