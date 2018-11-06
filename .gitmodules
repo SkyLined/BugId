@@ -13,3 +13,6 @@
 [submodule "modules/mProductDetails"]
 	path = modules/mProductDetails
 	url = https://github.com/SkyLined/mProductDetails/
+[submodule "modules/mDebugOutput"]
+	path = modules/mDebugOutput
+	url = https://github.com/SkyLined/mDebugOutput/
