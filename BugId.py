@@ -36,7 +36,9 @@ sys.path = [sMainFolderPath, sParentFolderPath, sModulesFolderPath] + sys.path;
 # message if any one fails to load.
 for (sModuleName, sDownloadURL) in [
   ("cBugId", "https://github.com/SkyLined/cBugId/"),
+  ("mDebugOutput", "https://github.com/SkyLined/mDebugOutput/"),
   ("mFileSystem", "https://github.com/SkyLined/mFileSystem/"),
+  ("mMultiThreading", "https://github.com/SkyLined/mMultiThreading/"),
   ("mProductDetails", "https://github.com/SkyLined/mProductDetails/"),
   ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
   ("oConsole", "https://github.com/SkyLined/oConsole/"),
