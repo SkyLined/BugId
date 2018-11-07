@@ -1,8 +1,25 @@
-2018-11-06
+2018-11-07
 ==========
-+ I have forgotten to update this file through a number of releases. Change
-  logs on GitHub will have to suffice as I unfortunately do not have the time
-  to retroactively describe all changes here.
+I have forgotten to update this file through a number of releases. Change
+logs on GitHub will have to suffice as I unfortunately do not have the time
+to retroactively describe all changes here.
+
+Externally noticeable changes
+-----------------------------
++ `mMultiThreading` and `mDebugOutput` modules have been added to dependencies
+  as they are now used by the `cBugId` module. This required a chance to the
+  license for BugId to cover these modules too. **You will need to download a
+  new copy of your license file to make sure BugId is using the updated
+  license.**
++ All timeouts are now named `TimeoutInSeconds` to clarify the unit used. This
+  includes those in `dxConfig.py`.
+
+Internal changes since last release:
+------------------------------------
++ `BugId` itself and the modules `mWindowsAPI` and `cBugId` have received quite
+  a few changes to improve function and variable naming standardization.
++ Timeout and application interruption implementation has been improved to make
+  them more reliable and the simplify the code.
 
 2018-06-06
 ==========
