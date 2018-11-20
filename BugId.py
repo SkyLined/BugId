@@ -909,8 +909,8 @@ def fMain(asArguments):
     if dxConfig["nApplicationMaxRunTime"] is not None:
       oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], \
           fApplicationMaxRunTimeCallback);
-    if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]:
-      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeout"]);
+    if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]:
+      oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]);
     guDetectedBugsCount = 0;
     oBugId.fStart();
     oBugId.fWait();

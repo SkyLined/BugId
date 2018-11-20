@@ -21,7 +21,7 @@ dxConfig = {
   "bExcessiveCPUUsageCheckEnabled": False,        # Set to True to enabled checking for excessive CPU usage in the
                                                   # application. This used to be the default, but I've found most
                                                   # people prefer not having this check.
-  "nExcessiveCPUUsageCheckInitialTimeout": 5,     # Start checking the application for excessive CPU usage after this
+  "nExcessiveCPUUsageCheckInitialTimeoutInSeconds": 5, # Start checking the application for excessive CPU usage after this
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.
   "sDefaultBrowserTestURL": "http://%s:28876/" % os.getenv("COMPUTERNAME"), # Default URL for browser tests.
