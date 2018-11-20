@@ -1,3 +1,19 @@
+2018-11-20
+==========
+Externally noticeable changes
+-----------------------------
++ dxConfig names to represent time have always been in seconds. The names of
+  such settings have been updated to reflect this. This was previously done
+  for `cBugId` already but `BugId` itself was not updated to use the new names.
+  This cause a bug when running `msie`. Also, `BugId` itself has such setings.
+  These have now also been renamed.
+  `nExcessiveCPUUsageCheckInitialTimeout` -> `nExcessiveCPUUsageCheckInitialTimeoutInSeconds`
+  `nApplicationMaxRunTime` -> `nApplicationMaxRunTimeInSeconds`
+  `cBugId.nExcessiveCPUUsageCheckInterval` -> `cBugId.nExcessiveCPUUsageCheckIntervalInSeconds`
+  `cBugId.nExcessiveCPUUsageWormRunTime` -> `cBugId.nExcessiveCPUUsageWormRunTimeInSeconds`
+  `cBugId.nTimeoutGranularity` -> `cBugId.nTimeoutGranularityInSeconds`
+  `cBugId.nUWPApplicationAttachTimeout` -> `cBugId.nUWPApplicationAttachTimeoutInSeconds`
+
 2018-11-07
 ==========
 I have forgotten to update this file through a number of releases. Change

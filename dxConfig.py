@@ -25,7 +25,7 @@ dxConfig = {
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.
   "sDefaultBrowserTestURL": "http://%s:28876/" % os.getenv("COMPUTERNAME"), # Default URL for browser tests.
-  "nApplicationMaxRunTime": None,                 # Terminate BugId if the application has been running for this many
+  "nApplicationMaxRunTimeInSeconds": None,        # Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
   "uProcessMaxMemoryUse": None,                   # Limit the total amount of memory a single process can allocate. If

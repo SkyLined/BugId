@@ -101,7 +101,7 @@ gduNumberOfRepros_by_sBugIdAndLocation = {};
 
 def fApplicationMaxRunTimeCallback(oBugId):
   oConsole.fPrint("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
-      (oBugId.fnApplicationRunTime(), dxConfig["nApplicationMaxRunTime"]));
+      (oBugId.fnApplicationRunTimeInSeconds(), dxConfig["nApplicationMaxRunTimeInSeconds"]));
   oConsole.fPrint();
   oConsole.fStatus(INFO, "* BugId is stopping...");
   oBugId.fStop();
@@ -113,7 +113,7 @@ def fApplicationRunningCallback(oBugId):
   oConsole.fStatus("* The application was started successfully and is running...");
 
 def fApplicationSuspendedCallback(oBugId, sReason):
-  oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTime(), sReason));
+  oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTimeInSeconds(), sReason));
 
 def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
   global gbAnErrorOccured;
@@ -824,7 +824,7 @@ def fMain(asArguments):
     sValidStatisticsFileName = mFileSystem.fsValidName("Reproduction statistics.txt");
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
-    nStartTime = time.clock();
+    nStartTimeInSeconds = time.clock();
     if fSetup:
       # Call setup before the application is started. Argument is boolean value indicating if this is the first time
       # the function is being called.
@@ -906,8 +906,8 @@ def fMain(asArguments):
     oBugId.fAddEventCallback("Process started", fProcessStartedCallback);
     oBugId.fAddEventCallback("Process terminated", fProcessTerminatedCallback);
 
-    if dxConfig["nApplicationMaxRunTime"] is not None:
-      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTime"], \
+    if dxConfig["nApplicationMaxRunTimeInSeconds"] is not None:
+      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTimeInSeconds"], \
           fApplicationMaxRunTimeCallback);
     if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]);
@@ -926,9 +926,9 @@ def fMain(asArguments):
       gduNumberOfRepros_by_sBugIdAndLocation.setdefault("No crash", 0);
       gduNumberOfRepros_by_sBugIdAndLocation["No crash"] += 1;
     if gbVerbose:
-      oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTime() * 1000) / 1000.0));
-      nOverheadTime = time.clock() - nStartTime - oBugId.fnApplicationRunTime();
-      oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTime * 1000) / 1000.0));
+      oConsole.fPrint("  Application time: %s seconds" % (long(oBugId.fnApplicationRunTimeInSeconds() * 1000) / 1000.0));
+      nOverheadTimeInSeconds = time.clock() - nStartTimeInSeconds - oBugId.fnApplicationRunTimeInSeconds();
+      oConsole.fPrint("  BugId overhead:   %s seconds" % (long(nOverheadTimeInSeconds * 1000) / 1000.0));
     if uNumberOfRepeats is not None:
       uNumberOfRepeats -= 1;
       if uNumberOfRepeats == 0:
