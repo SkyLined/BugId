@@ -1,7 +1,18 @@
-2018-11-20
+2018-11-21
 ==========
 Externally noticeable changes
 -----------------------------
++ Bug ids for Access Violation exceptions have been standardized to the
+  following format: `<bug type id>:<memory details>[<size>][<offset>]`. This
+  includes bug ids for guard page access exceptions, as
+  `STATUS_GUARD_PAGE_VIOLATION` exceptions are just a sub-type of
+  `STATUS_ACCESS_VIOLATION`. bug type ids `W2RO` and `DEP` have been changed
+  back to `AVW` and `AVE` to simplify things.
++ Text descriptions for Access Violation exceptions should now all follow the
+  same format.
++ Determining if an Access Violations happened near the stack is now more
+  precise.
++ The integrity level of a process is no longer shown in the report.
 + dxConfig names to represent time have always been in seconds. The names of
   such settings have been updated to reflect this. This was previously done
   for `cBugId` already but `BugId` itself was not updated to use the new names.
