@@ -23,16 +23,16 @@ IF NOT ERRORLEVEL == 3 GOTO :ERROR
 
 IF "%~1" == "--all" (
   ECHO   * Test debugging Google Chrome...
-  CALL "%~dp0BugId.cmd" chrome --nApplicationMaxRunTime=10
+  CALL "%~dp0BugId.cmd" chrome --nApplicationMaxRunTimeInSeconds=10
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO   * Test debugging Microsoft Edge...
-  CALL "%~dp0BugId.cmd" edge --nApplicationMaxRunTime=10
+  CALL "%~dp0BugId.cmd" edge --nApplicationMaxRunTimeInSeconds=10
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO   * Test debugging Mozilla Firefox...
-  CALL "%~dp0BugId.cmd" firefox --nApplicationMaxRunTime=10
+  CALL "%~dp0BugId.cmd" firefox --nApplicationMaxRunTimeInSeconds=10
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO   * Test debugging Microsoft Internet Explorer...
-  CALL "%~dp0BugId.cmd" msie --nApplicationMaxRunTime=10
+  CALL "%~dp0BugId.cmd" msie --nApplicationMaxRunTimeInSeconds=10
   IF ERRORLEVEL 1 GOTO :ERROR
 )
 
