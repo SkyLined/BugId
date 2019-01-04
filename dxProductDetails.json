@@ -1,7 +1,7 @@
 {
   "asDependentOnProductNames": [
     "cBugId", 
-    "mDebugOuput", 
+    "mDebugOutput", 
     "mFileSystem", 
     "mMultiThreading", 
     "mProductDetails", 
@@ -19,5 +19,5 @@
   "sProductAuthor": "SkyLined", 
   "sProductName": "BugId", 
   "sProductURL": "https://github.com/SkyLined/BugId", 
-  "sTrialPeriodDuration": "1m"
+  "oTrialPeriodDuration": "1m"
 }
