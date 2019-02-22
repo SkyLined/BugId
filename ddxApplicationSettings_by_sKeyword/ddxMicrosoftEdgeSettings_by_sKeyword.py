@@ -4,7 +4,7 @@ from fsFirstExistingFile import fsFirstExistingFile;
 from mColors import *;
 from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateForProcessId, oSystemInfo;
 from oConsole import oConsole;
-import mFileSystem;
+import mFileSystem2;
 
 sLocalAppData = os.getenv("LocalAppData");
 
@@ -14,8 +14,10 @@ dxConfigSettings = {
   "cBugId.bIgnoreWinRTExceptions": True,
 };
 
-sEdgeRecoveryPath = mFileSystem.fsPath(os.getenv("LocalAppData"), \
-    "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active");
+oEdgeRecoveryFolder = mFileSystem2.foGetOrCreateFolder(os.path.join(
+  os.getenv("LocalAppData"), \
+  "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active"
+));
 
 def fEdgeSetup(bFirstRun):
   if bFirstRun:
@@ -38,10 +40,10 @@ def fEdgeCleanup():
     fbTerminateForProcessId(uProcessId);
   
   # Delete the recovery path to prevent conserving state between different runs of the application.
-  if not mFileSystem.fbIsFolder(sEdgeRecoveryPath):
+  if not oEdgeRecoveryFolder.fbIsFolder():
     return;
   try:
-    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = lambda: False);
+    oEdgeRecoveryFolder.fDeleteChildren();
   except:
     pass; # Failed to delete
   else:
@@ -59,14 +61,14 @@ def fEdgeCleanup():
     for uProcessId in auProcessIds:
       fbTerminateForProcessId(uProcessId);
   try:
-    mFileSystem.fbDeleteChildrenFromFolder(sEdgeRecoveryPath, fbRetryOnFailure = False);
+    oEdgeRecoveryFolder.fDeleteChildren();
   except:
     pass; # Failed to delete
   else:
     return;
   oConsole.fPrint(ERROR, "The recovery files still cannot be deleted. Please manually terminated all");
   oConsole.fPrint(ERROR, "processes related to Microsoft Edge and try to delete everything in");
-  oConsole.fPrint(ERROR_INFO, sEdgeRecoveryPath.replace("\\\\?\\", ""), ERROR, ".");
+  oConsole.fPrint(ERROR_INFO, oEdgeRecoveryFolder.sPath, ERROR, ".");
   os._exit(4);
 
 def fasGetEdgeOptionalArguments(bForHelp = False):

@@ -23,7 +23,10 @@ ddxAdobeAcrobatReaderDCSettings_by_sKeyword = {
     "fasGetOptionalArguments": fasGetOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     # Adobe Reader has a component that constantly crashes with a NULL pointer when you enable page heap.
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["rdrcef.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": [
+      "AcroCEF.exe",
+      "rdrcef.exe",
+    ],
   },
   "acrobatdc_x86": {
     "sBinaryPath": sApplicationBinaryPath_x86,
@@ -31,6 +34,9 @@ ddxAdobeAcrobatReaderDCSettings_by_sKeyword = {
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
     # Adobe Reader has a component that constantly crashes with a NULL pointer when you enable page heap.
-    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": ["rdrcef.exe"],
+    "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": [
+      "AcroCEF.exe",
+      "rdrcef.exe"
+    ],
   },
 };

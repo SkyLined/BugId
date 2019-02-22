@@ -37,7 +37,7 @@ sys.path = [sMainFolderPath, sParentFolderPath, sModulesFolderPath] + sys.path;
 for (sModuleName, sDownloadURL) in [
   ("cBugId", "https://github.com/SkyLined/cBugId/"),
   ("mDebugOutput", "https://github.com/SkyLined/mDebugOutput/"),
-  ("mFileSystem", "https://github.com/SkyLined/mFileSystem/"),
+  ("mFileSystem2", "https://github.com/SkyLined/mFileSystem2/"),
   ("mMultiThreading", "https://github.com/SkyLined/mMultiThreading/"),
   ("mProductDetails", "https://github.com/SkyLined/mProductDetails/"),
   ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
@@ -63,7 +63,7 @@ for (sModuleName, sDownloadURL) in [
 
 # Actually load the stuff from external modules that we need.
 from cBugId import cBugId;
-import mFileSystem, mProductDetails, mWindowsAPI;
+import mFileSystem2, mProductDetails, mWindowsAPI;
 from oConsole import oConsole;
 
 # Restore the search path and load internal stuff.
@@ -383,23 +383,22 @@ def fBugReportCallback(oBugId, oBugReport):
       if guMaximumNumberOfBugs > 1:
         sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
       # Translate characters that are not valid in file names.
-      sValidReportFileName = mFileSystem.fsValidName(sDesiredReportFileName, bUnicode = \
+      sValidReportFileName = mFileSystem2.fsGetValidName(sDesiredReportFileName, bUnicode = \
           dxConfig["bUseUnicodeReportFileNames"]);
       if dxConfig["sReportFolderPath"] is not None:
-        sReportFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidReportFileName);
+        sReportFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName);
       else:
-        sReportFilePath = mFileSystem.fsPath(sValidReportFileName);
-      eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
-        oBugReport.sReportHTML,
-        sReportFilePath,
-        fbRetryOnFailure = lambda: False,
-      );
-      if eWriteDataToFileResult:
-        oConsole.fPrint(u"\u2502 Bug report:       ", ERROR, "Cannot be saved (", \
-            ERROR_INFO, repr(eWriteDataToFileResult), ERROR, ")");
+        sReportFilePath = sValidReportFileName;
+      oReportFile = None;
+      try:
+        oReportFile = mFileSystem2.foGetOrCreateFile(sReportFilePath);
+        oReportFile.fWrite(oBugReport.sReportHTML);
+      except Exception as oException:
+        oConsole.fPrint(u"\u2502 Bug report:       ", ERROR, "Cannot be saved (", ERROR_INFO, str(oException), ERROR, ")");
       else:
-        oConsole.fPrint(u"\u2502 Bug report:       ", NORMAL, sValidReportFileName,  \
-            " (%d bytes)" % len(oBugReport.sReportHTML));
+        oConsole.fPrint(u"\u2502 Bug report:       ", NORMAL, sValidReportFileName, " (%d bytes)" % len(oBugReport.sReportHTML));
+      if oReportFile:
+        oReportFile.fClose();
     oConsole.fPrint(u"\u2514", sPadding = u"\u2500");
   finally:
     oConsole.fUnlock();
@@ -599,7 +598,7 @@ def fMain(asArguments):
           # -- collateral=1 means one collateral bug in addition to the first bug.
           guMaximumNumberOfBugs = long(sValue) + 1;
       elif sSettingName in ["symbols"]:
-        if sValue is None or not mFileSystem.fbIsFolder(sValue):
+        if sValue is None or not mFileSystem2.foGetFolder(sValue):
           oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
               " must be a valid path.");
         asAdditionalLocalSymbolPaths.append(sValue);
@@ -821,7 +820,7 @@ def fMain(asArguments):
       oConsole.fUnlock();
   
   if bRepeat:
-    sValidStatisticsFileName = mFileSystem.fsValidName("Reproduction statistics.txt");
+    sValidStatisticsFileName = mFileSystem2.fsGetValidName("Reproduction statistics.txt");
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
     nStartTimeInSeconds = time.clock();
@@ -949,19 +948,19 @@ def fMain(asArguments):
           sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
               round(100.0 * uNumberOfRepros / uRunCounter));
     if dxConfig["sReportFolderPath"] is not None:
-      sStatisticsFilePath = mFileSystem.fsPath(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
+      sStatisticsFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
     else:
-      sStatisticsFilePath = mFileSystem.fsPath(sValidStatisticsFileName);
-    eWriteDataToFileResult = mFileSystem.feWriteDataToFile(
-      sStatistics,
-      sStatisticsFilePath,
-      fbRetryOnFailure = lambda: False,
-    );
-    if eWriteDataToFileResult:
-      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, repr(eWriteDataToFileResult), \
-          ERROR, ")");
+      sStatisticsFilePath = sValidStatisticsFileName;
+    oStatisticsFile = None;
+    try:
+      oStatisticsFile = mFileSystem2.foGetOrCreateFile(sStatisticsFilePath);
+      oStatisticsFile.fWrite(sStatistics);
+    except Exception as oException:
+      oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, str(oException), ERROR, ")");
     else:
       oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
+    if oStatisticsFile:
+      oStatisticsFile.fClose();
     oConsole.fPrint(); # and loop
   raise AssertionError("Not reached!");
   

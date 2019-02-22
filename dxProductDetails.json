@@ -1,7 +1,7 @@
 {
   "asDependentOnProductNames": [
     "cBugId", 
-    "mFileSystem", 
+    "mFileSystem2", 
     "mProductDetails", 
     "mWindowsAPI", 
     "oConsole"

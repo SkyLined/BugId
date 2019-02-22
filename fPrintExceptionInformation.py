@@ -1,6 +1,5 @@
 from cBugId import cBugId;
 from mColors import *;
-import mFileSystem;
 import mWindowsAPI;
 from oConsole import oConsole;
 from fPrintVersionInformation import fPrintVersionInformation;
