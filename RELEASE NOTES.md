@@ -9,8 +9,10 @@ Externally noticeable changes
   `mProductDetails` requires changes to `dxProductsDetails.json` structure.
 + New `cBugId` module improves handling of UWP Application to prevent errors
   for certain UWP applications.
++ `cBugId.sDumpPath` config setting has been renamed `cBugId.sDumpFilePath`.
 + Corrected the check for the installed version of Windows.
 + Fixed output text of version information.
+
 
 Internal changes
 ----------------
