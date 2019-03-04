@@ -1,9 +1,21 @@
-2019-01-09
+2019-03-04
 ==========
+This update introduces new modules; you will need to download a new license
+file to use it.
+
+Externally noticeable changes
+-----------------------------
++ Older version may fail to check for updates because a new version of
+  `mProductDetails` requires changes to `dxProductsDetails.json` structure.
++ New `cBugId` module improves handling of UWP Application to prevent errors
+  for certain UWP applications.
++ Corrected the check for the installed version of Windows.
++ Fixed output text of version information.
 
 Internal changes
 ----------------
 + Switched from mFileSystem to mFileSystem2
++ Dependencies have been fixed.
 
 2018-11-21
 ==========
