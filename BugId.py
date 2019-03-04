@@ -415,7 +415,7 @@ def fMain(asArguments):
   # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
   # software as this is likely to cause unexpected issues.
   fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
-  if mWindowsAPI.oSystemInfo.sOSVersion != "6.3":
+  if mWindowsAPI.oSystemInfo.sOSVersion != "10.0":
     oConsole.fPrint(ERROR, "Error: unfortunately BugId only runs on Windows 10 at this time.");
     os._exit(3);
   if mWindowsAPI.oSystemInfo.sOSISA == "x64" and mWindowsAPI.fsGetPythonISA() == "x86":
