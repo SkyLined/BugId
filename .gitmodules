@@ -19,3 +19,6 @@
 [submodule "modules/mMultiThreading"]
 	path = modules/mMultiThreading
 	url = https://github.com/SkyLined/mMultiThreading/
+[submodule "modules/mFileSystem2"]
+	path = modules/mFileSystem2
+	url = https://github.com/SkyLined/mFileSystem2/
