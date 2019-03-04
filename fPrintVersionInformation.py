@@ -146,8 +146,8 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
           [
             u"\u2502 \u2219 "
           ] + faxListOutput(asUnlicensedProductNames, "and", ERROR_INFO, ERROR)  + [
-            ERROR, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license and ",
-            len(asProductNamesInTrial) == 1 and "has exceeded its" or "have exceeded their", " trial period.",
+            ERROR, " ", len(asUnlicensedProductNames) == 1 and "is" or "are", " not covered by a valid, active license and ",
+            len(asUnlicensedProductNames) == 1 and "has exceeded its" or "have exceeded their", " trial period.",
           ]
         ));
     oConsole.fPrint(
