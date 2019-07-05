@@ -80,7 +80,7 @@ from fPrintUsageInformation import fPrintUsageInformation;
 from fPrintVersionInformation import fPrintVersionInformation;
 from mColors import *;
 
-asTestedPythonVersions = ["2.7.14", "2.7.15"];
+asTestedPythonVersions = ["2.7.14", "2.7.15", "2.7.16"];
 
 gasAttachForProcessExecutableNames = [];
 gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
