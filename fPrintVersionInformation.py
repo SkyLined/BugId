@@ -8,20 +8,22 @@ from oConsole import oConsole;
 def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders):
   oConsole.fPrint(*(
     [
-      u"\u2502 \u2219 ", bIsMainProduct and HILITE or INFO, oProductDetails.sProductName,
-      NORMAL, " version: ", INFO, str(oProductDetails.oProductVersion),
+      u"\u2502 \u2219 ", (
+        HILITE + UNDERLINE if bIsMainProduct else
+        INFO if not oProductDetails.bRequiresLicense else
+        HILITE if oProductDetails.oLicense else
+        WARNING if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
+        ERROR
+      ),
+      oProductDetails.sProductName, NORMAL, " version: ", INFO, str(oProductDetails.oProductVersion),
     ] + (
       bShowInstallationFolders and [
         NORMAL, " installed at ", INFO, oProductDetails.sInstallationFolderPath,
       ] or [ ]
     ) + (
-      not oProductDetails.oLicense and (
-        (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) and [
-          NORMAL, " ", WARNING, "(in trial period)",
-        ] or [
-          NORMAL, " ", ERROR, "(no valid license found)",
-        ]
-      ) or []
+      [] if (not oProductDetails.bRequiresLicense  or oProductDetails.oLicense) else
+      [NORMAL, " ", WARNING, "(in trial period)"] if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
+      [NORMAL, " ", ERROR, "(no valid license found)"]
     ) + [
       NORMAL, ".",
     ]
@@ -62,11 +64,14 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
   try:
     if bCheckAndShowLicenses:
       aoLicenses = [];
+      asProductNamesWithoutLicenseRequirement = [];
       asLicensedProductNames = [];
       asProductNamesInTrial = [];
       asUnlicensedProductNames = [];
       for oProductDetails in aoProductDetails:
-        if oProductDetails.oLicense:
+        if not oProductDetails.bRequiresLicense:
+          asProductNamesWithoutLicenseRequirement.append(oProductDetails.sProductName);
+        elif oProductDetails.oLicense:
           if oProductDetails.oLicense not in aoLicenses:
             aoLicenses.append(oProductDetails.oLicense);
           asLicensedProductNames.append(oProductDetails.sProductName);
@@ -94,7 +99,7 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
     oConsole.fPrint(
       u"\u250C\u2500 ", INFO, "Version information", NORMAL, " ", sPadding = u"\u2500"
     );
-    # Output the BugId product information first, then its dependencies:
+    # Output the main product information first, then its dependencies:
     fPrintProductDetails(oMainProductDetails, bIsMainProduct = True, bShowInstallationFolders = bShowInstallationFolders);
     for oProductDetails in aoProductDetails:
       if oProductDetails != oMainProductDetails:
@@ -139,6 +144,14 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
           ] + faxListOutput(asProductNamesInTrial, "and", WARNING_INFO, WARNING)  + [
             WARNING, " ", len(asProductNamesInTrial) == 1 and "is" or "are", " not covered by a valid, active license but ",
             len(asProductNamesInTrial) == 1 and "it is in its" or "they are in their", " trial period.",
+          ]
+        ));
+      if asProductNamesWithoutLicenseRequirement:
+        oConsole.fPrint(*(
+          [
+            u"\u2502 \u2219 "
+          ] + faxListOutput(asProductNamesWithoutLicenseRequirement, "and", INFO, NORMAL)  + [
+            NORMAL, " ", len(asProductNamesInTrial) == 1 and "does not require a license" or "do not require licenses", ".",
           ]
         ));
       if asUnlicensedProductNames:
