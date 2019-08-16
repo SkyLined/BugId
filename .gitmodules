@@ -19,3 +19,6 @@
 [submodule "modules/mFileSystem2"]
 	path = modules/mFileSystem2
 	url = https://github.com/SkyLined/mFileSystem2/
+[submodule "modules/mDateTime"]
+	path = modules/mDateTime
+	url = https://github.com/SkyLined/mDateTime/
