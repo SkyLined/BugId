@@ -1,3 +1,23 @@
+2019-08-20
+==========
+These notes include changes made to two previous releases where I forgot to
+update this file.
+
+Externally noticeable changes
+-----------------------------
+* The license check engine has been update to simplify license checks and
+  provide a better user experience whenver a license update is required as well
+  as fix bugs.
+* Fix bug in reloading symbol files.
+* Simplified and updated ntdll.dll heap bug translations.
+* Tested with latest Python (2.7.16).
+* Update code to handle products that require no license.
+
+Internal changes
+----------------
+* Added missing submodules to git.
+* Added missing dependencies to dxProductDetails.json.
+
 2019-03-04
 ==========
 This update introduces new modules; you will need to download a new license
