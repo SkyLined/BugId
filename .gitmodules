@@ -25,3 +25,6 @@
 [submodule "modules/mWindowsSDK"]
 	path = modules/mWindowsSDK
 	url = https://github.com/SkyLined/mWindowsSDK/
+[submodule "modules/mRegistry"]
+	path = modules/mRegistry
+	url = https://github.com/SkyLined/mRegistry/
