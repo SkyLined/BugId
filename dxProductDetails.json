@@ -8,6 +8,7 @@
     "mFileSystem2", 
     "mProductDetails", 
     "mWindowsAPI", 
+    "mRegistry", 
     "oConsole"
   ], 
   "oProductVersion": "2019-08-20 12:54", 
