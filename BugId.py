@@ -24,51 +24,13 @@ import codecs, json, re, os, platform, shutil, sys, threading, time, traceback;
 # 4 = failed to start process or attach to process(es).
 # 5 = license error
 
-# Augment the search path for loading external modules.
-# look in main folder, parent folder or "modules" child folder, in that order.
-sMainFolderPath = os.path.abspath(os.path.dirname(__file__));
-sParentFolderPath = os.path.normpath(os.path.join(sMainFolderPath, ".."));
-sModulesFolderPath = os.path.join(sMainFolderPath, "modules");
-asOriginalSysPath = sys.path[:];
-sys.path = [sMainFolderPath, sParentFolderPath, sModulesFolderPath] + sys.path;
+from fCheckDependencies import fCheckDependencies;
+fCheckDependencies();
 
-# Try to load external modules to make sure they are available. Show an error
-# message if any one fails to load.
-for (sModuleName, sDownloadURL) in [
-  ("cBugId", "https://github.com/SkyLined/cBugId/"),
-  ("mDateTime", "https://github.com/SkyLined/mDateTime/"),
-  ("mDebugOutput", "https://github.com/SkyLined/mDebugOutput/"),
-  ("mFileSystem2", "https://github.com/SkyLined/mFileSystem2/"),
-  ("mMultiThreading", "https://github.com/SkyLined/mMultiThreading/"),
-  ("mProductDetails", "https://github.com/SkyLined/mProductDetails/"),
-  ("mWindowsAPI", "https://github.com/SkyLined/mWindowsAPI/"),
-  ("oConsole", "https://github.com/SkyLined/oConsole/"),
-]:
-  try:
-    __import__(sModuleName, globals(), locals(), [], -1);
-  except ImportError as oError:
-    if oError.message == "No module named %s" % sModuleName:
-      print "*" * 80;
-      print "BugId depends on %s which you can download at:" % sModuleName;
-      print;
-      print "    %s" % sDownloadURL;
-      print;
-      print "After downloading, please save the code in this folder:";
-      print "    %s" % os.path.join(sModulesFolderPath, sModuleName);
-      print " - or -";
-      print "    %s" % os.path.join(sParentFolderPath, sModuleName);
-      print;
-      print "Once you have completed these steps, please try again.";
-      print "*" * 80;
-    raise;
-
-# Actually load the stuff from external modules that we need.
+# Load the stuff from external modules that we need.
 from cBugId import cBugId;
 import mFileSystem2, mProductDetails, mWindowsAPI;
 from oConsole import oConsole;
-
-# Restore the search path and load internal stuff.
-sys.path = asOriginalSysPath;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fbApplyConfigSetting import fbApplyConfigSetting;
