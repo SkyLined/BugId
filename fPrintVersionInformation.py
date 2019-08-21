@@ -147,13 +147,16 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
           ]
         ));
       if asProductNamesWithoutLicenseRequirement:
-        oConsole.fPrint(*(
-          [
-            u"\u2502 \u2219 "
-          ] + faxListOutput(asProductNamesWithoutLicenseRequirement, "and", INFO, NORMAL)  + [
-            NORMAL, " ", len(asProductNamesInTrial) == 1 and "does not require a license" or "do not require licenses", ".",
-          ]
-        ));
+        if not asProductNamesInTrial and not asUnlicensedProductNames and not asLicensedProductNames:
+          oConsole.fPrint(u"\u2502 \u2219 No license is required for this product.");
+        else:
+          oConsole.fPrint(*(
+            [
+              u"\u2502 \u2219 "
+            ] + faxListOutput(asProductNamesWithoutLicenseRequirement, "and", INFO, NORMAL)  + [
+              NORMAL, " ", len(asProductNamesInTrial) == 1 and "does not require a license" or "do not require licenses", ".",
+            ]
+          ));
       if asUnlicensedProductNames:
         oConsole.fPrint(*(
           [
