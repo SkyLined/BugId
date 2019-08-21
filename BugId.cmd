@@ -5,14 +5,16 @@ IF DEFINED PYTHON (
   IF ERRORLEVEL 1 EXIT /B 1
 ) ELSE (
   REM Try to detect the location of python automatically
-  FOR /F "usebackq delims=" %%I IN (`where "python" 2^>nul`) DO SET PYTHON="%%~I"
-  IF NOT DEFINED PYTHON (
-    REM Check if python is found in its default installation path.
-    SET PYTHON="%SystemDrive%\Python27\python.exe"
-    CALL :CHECK_PYTHON
-    IF ERRORLEVEL 1 EXIT /B 1
+  FOR /F "usebackq delims=" %%I IN (`where "python" 2^>nul`) DO (
+    SET PYTHON="%%~I"
+    GOTO :FOUND_PYTHON
   )
+  REM Check if python is found in its default installation path.
+  SET PYTHON="%SystemDrive%\Python27\python.exe"
+  CALL :CHECK_PYTHON
+  IF ERRORLEVEL 1 EXIT /B 1
 )
+:FOUND_PYTHON
 
 %PYTHON% "%~dpn0.py" %*
 ENDLOCAL & EXIT /B %ERRORLEVEL%
