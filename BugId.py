@@ -287,10 +287,13 @@ def fApplicationDebugOutputCallback(oBugId, oProcess, bIsMainProcess, asMessages
     uCount += 1;
     if uCount == 1:
       sHeader = "*";
-      sPrefix = "\u2500" if len(asMessages) == 1 else u"\u252c";       # "---" or "-.-"
+      # we will create a box shape to show which messages belong together.
+      # On the first line we will branch down and right if the message is multi-line.
+      sPrefix = " " if len(asMessages) == 1 else u"\u252c";
     else:
       sHeader = None;
-      sPrefix = u"\u2514" if uCount == len(asMessages) else u"\u2502"; # " '-" or " | " 
+      # if more lines folow, show a vertical stripe, otherwise bend right on the last line
+      sPrefix = u"\u2514" if uCount == len(asMessages) else u"\u2502";
     fPrintMessageForProcess(sHeader, oProcess, bIsMainProcess,
       INFO, sDebug, NORMAL, sPrefix, HILITE, sMessage,
     );
