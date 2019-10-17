@@ -408,8 +408,7 @@ def fMain(asArguments):
   sApplicationKeyword = None;
   sApplicationBinaryPath = None;
   auApplicationProcessIds = [];
-  sUWPApplicationPackageName = None;
-  sUWPApplicationId = None;
+  oUWPApplication = None;
   asApplicationOptionalArguments = None;
   sApplicationISA = None;
   bRepeat = False;
@@ -460,8 +459,8 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot provide an application binary and process ids.");
           oConsole.fCleanup();
           os._exit(2);
-        if sUWPApplicationPackageName is not None:
-          oConsole.fPrint(ERROR, "- You cannot provide an UWP application package name and process ids.");
+        if oUWPApplication is not None:
+          oConsole.fPrint(ERROR, "- You cannot provide UWP application details and process ids.");
           oConsole.fCleanup();
           os._exit(2);
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
@@ -470,7 +469,7 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- You must provide UWP application details.");
           oConsole.fCleanup();
           os._exit(2);
-        if sUWPApplicationPackageName is not None:
+        if oUWPApplication is not None:
           oConsole.fPrint(ERROR, "- You cannot provide UWP application details more than once.");
           oConsole.fCleanup();
           os._exit(2);
@@ -482,12 +481,10 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot provide process ids and UWP application details.");
           oConsole.fCleanup();
           os._exit(2);
-        if "!" not in sValue:
-          oConsole.fPrint(ERROR, "- Please provide UWP application details in the form ", ERROR_INFO, sSettingName, \
-              "=<package name>!<application id>", ERROR, ".");
-          oConsole.fCleanup();
-          os._exit(2);
-        sUWPApplicationPackageName, sUWPApplicationId = sValue.split("!", 1);
+        tsUWPApplicationPackageNameAndId = sValue.split("!", 1);
+        sUWPApplicationPackageName = tsUWPApplicationPackageNameAndId[0];
+        sUWPApplicationId = tsUWPApplicationPackageNameAndId[1] if len(tsUWPApplicationPackageNameAndId) == 2 else None;
+        oUWPApplication = mWindowsAPI.cUWPApplication(sUWPApplicationPackageName, sUWPApplicationId);
       elif sSettingName in ["help"]:
         fPrintLogo();
         fPrintUsageInformation(ddxApplicationSettings_by_sKeyword.keys());
@@ -616,7 +613,7 @@ def fMain(asArguments):
         oConsole.fPrint(ERROR, "- You cannot provide process ids and an application binary.");
         oConsole.fCleanup();
         os._exit(2);
-      if sUWPApplicationPackageName is not None:
+      if oUWPApplication is not None:
         oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name and a binary.");
         oConsole.fCleanup();
         os._exit(2);
@@ -648,7 +645,7 @@ def fMain(asArguments):
             sApplicationKeyword, ERROR, ".");
         oConsole.fCleanup();
         os._exit(2);
-      if sUWPApplicationPackageName:
+      if oUWPApplication:
         oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name for application keyword ", \
             ERROR_INFO, sApplicationKeyword, ERROR, ".");
         oConsole.fCleanup();
@@ -676,6 +673,7 @@ def fMain(asArguments):
         os._exit(2);
       sUWPApplicationPackageName = dxUWPApplication["sPackageName"];
       sUWPApplicationId = dxUWPApplication["sId"];
+      oUWPApplication = mWindowsAPI.cUWPApplication(sUWPApplicationPackageName, sUWPApplicationId);
     elif not auApplicationProcessIds:
       # This application is attached to.
       oConsole.fPrint(ERROR, "- You must provide process ids for application keyword ", \
@@ -722,7 +720,7 @@ def fMain(asArguments):
       gasBinaryNamesThatAreAllowedToRunWithoutPageHeap += [
         sBinaryName.lower() for sBinaryName in dxApplicationSettings["asBinaryNamesThatAreAllowedToRunWithoutPageHeap"]
       ];
-  elif (auApplicationProcessIds or sUWPApplicationPackageName or sApplicationBinaryPath):
+  elif (auApplicationProcessIds or oUWPApplication or sApplicationBinaryPath):
     # There are no static arguments if there is no application keyword, only the user-supplied optional arguments
     # are used if they are supplied:
     asApplicationArguments = asApplicationOptionalArguments or [];
@@ -737,6 +735,19 @@ def fMain(asArguments):
     oConsole.fCleanup();
     os._exit(2);
   
+  # Check that the UWP application exists if needed.
+  if oUWPApplication:
+    if not oUWPApplication.bPackageExists:
+      oConsole.fPrint(ERROR, "- UWP application package ", ERROR_INFO, oUWPApplication.sPackageName,
+          ERROR, " does not exist.");
+      oConsole.fCleanup();
+      os._exit(2);
+    elif not oUWPApplication.bIdExists:
+      oConsole.fPrint(ERROR, "- UWP application package ", ERROR_INFO, oUWPApplication.sPackageName,
+          ERROR, " does not contain an application with id ", ERROR_INFO, oUWPApplication.sApplicationId,
+          ERROR, ".");
+      oConsole.fCleanup();
+      os._exit(2);
   # Apply user provided settings:
   for (sSettingName, xValue) in dxUserProvidedConfigSettings.items():
     # Apply and show result or errors:
@@ -787,6 +798,9 @@ def fMain(asArguments):
   
   if bRepeat:
     sValidStatisticsFileName = mFileSystem2.fsGetValidName("Reproduction statistics.txt");
+  asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"] or [];
+  if asAdditionalLocalSymbolPaths:
+    asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
   uRunCounter = 0;
   while 1: # Will only loop if bRepeat is True
     nStartTimeInSeconds = time.clock();
@@ -796,6 +810,21 @@ def fMain(asArguments):
       oConsole.fStatus("* Applying special application configuration settings...");
       fSetup(bFirstRun = uRunCounter == 0);
     uRunCounter += 1;
+    oBugId = cBugId(
+      sCdbISA = sCdbISA,
+      sApplicationBinaryPath = sApplicationBinaryPath or None,
+      auApplicationProcessIds = auApplicationProcessIds or None,
+      oUWPApplication = oUWPApplication,
+      asApplicationArguments = asApplicationArguments,
+      asLocalSymbolPaths = asLocalSymbolPaths or None,
+      asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
+      asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
+      dsURLTemplate_by_srSourceFilePath = dsApplicationURLTemplate_by_srSourceFilePath,
+      bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
+      uProcessMaxMemoryUse = dxConfig["uProcessMaxMemoryUse"],
+      uTotalMaxMemoryUse = dxConfig["uTotalMaxMemoryUse"],
+      uMaximumNumberOfBugs = guMaximumNumberOfBugs,
+    );
     oConsole.fLock();
     try:
       if sApplicationBinaryPath:
@@ -812,15 +841,14 @@ def fMain(asArguments):
             if asProcessIdsOutput: asProcessIdsOutput.append(", ");
             asProcessIdsOutput.extend([INFO, str(uApplicationProcessId), NORMAL]);
           oConsole.fPrint("* Running process ids: ", INFO, *asProcessIdsOutput);
-        if sUWPApplicationPackageName:
-          if not gbQuiet:
-            if asApplicationArguments:
-              oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
-                  sUWPApplicationPackageName, NORMAL, ", Arguments: ", INFO, " ".join(asApplicationArguments));
-            else:
-              oConsole.fPrint("* UWP application id: ", INFO, sUWPApplicationId, NORMAL, ", package name: ", INFO, \
-                  sUWPApplicationPackageName);
-        if not sUWPApplicationPackageName:
+        if oUWPApplication and not gbQuiet:
+          oConsole.fPrint(*(
+            ["* UWP application id: ", INFO, oBugId.oUWPApplication.sApplicationId, NORMAL] +
+            [", package name: ", INFO, oBugId.oUWPApplication.sPackageName, NORMAL] +
+            ([", Arguments: ", INFO, " ".join(asApplicationArguments), NORMAL] if asApplicationArguments else []) +
+            ["."]
+          ));
+        if not oUWPApplication:
           oConsole.fStatus("* The debugger is attaching to running processes of the application...");
         elif auApplicationProcessIds:
           oConsole.fStatus("* The debugger is attaching to running processes and starting the application...");
@@ -828,25 +856,6 @@ def fMain(asArguments):
           oConsole.fStatus("* The debugger is starting the application...");
     finally:
       oConsole.fUnlock();
-    asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"] or [];
-    if asAdditionalLocalSymbolPaths:
-      asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
-    oBugId = cBugId(
-      sCdbISA = sCdbISA,
-      sApplicationBinaryPath = sApplicationBinaryPath or None,
-      auApplicationProcessIds = auApplicationProcessIds or None,
-      sUWPApplicationPackageName = sUWPApplicationPackageName or None,
-      sUWPApplicationId = sUWPApplicationId or None,
-      asApplicationArguments = asApplicationArguments,
-      asLocalSymbolPaths = asLocalSymbolPaths or None,
-      asSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
-      asSymbolServerURLs = dxConfig["asSymbolServerURLs"],
-      dsURLTemplate_by_srSourceFilePath = dsApplicationURLTemplate_by_srSourceFilePath,
-      bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
-      uProcessMaxMemoryUse = dxConfig["uProcessMaxMemoryUse"],
-      uTotalMaxMemoryUse = dxConfig["uTotalMaxMemoryUse"],
-      uMaximumNumberOfBugs = guMaximumNumberOfBugs,
-    );
     oBugId.fAddEventCallback("Application resumed", fApplicationResumedCallback);
     oBugId.fAddEventCallback("Application running", fApplicationRunningCallback);
     oBugId.fAddEventCallback("Application suspended", fApplicationSuspendedCallback);

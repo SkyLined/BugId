@@ -16,10 +16,12 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("    Attach debugger to the process(es) provided in the list. The processes ", HILITE, "must");
     oConsole.fPrint("    all have been suspended, as they will be resumed by the debugger.");
     oConsole.fPrint("    Arguments cannot be provided for obvious reasons.");
-    oConsole.fPrint(INFO,"  --uwp-app=<package name>!<application id>");
+    oConsole.fPrint(INFO,"  --uwp-app=<package name>[!<application id>]");
     oConsole.fPrint("    Start and debug a Universal Windows Platform App identified by the given");
-    oConsole.fPrint("    package name and application id. Note that only one argument can be");
-    oConsole.fPrint("    passed to a UWP App; additional arguments will be ignored.");
+    oConsole.fPrint("    package name and application id. If no application id is provided and the");
+    oConsole.fPrint("    package exposes only one if, it will default to that id. Note that only");
+    oConsole.fPrint("    a single argument can be passed to a UWP App; additional arguments will be");
+    oConsole.fPrint("    silently ignored.");
     oConsole.fPrint(INFO,"  <known application keyword>");
     oConsole.fPrint("    BugId has a list of known targets that are identified by a keyword. You can");
     oConsole.fPrint("    use such a keyword to have BugId try to automatically find the binary or");
