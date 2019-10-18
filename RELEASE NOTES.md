@@ -1,3 +1,22 @@
+2019-10-17
+==========
+Externally noticeable changes
+-----------------------------
+* The way the startup script detects where Python is installed has been
+  improved.
+* Improve the licensing information shown to users when a modules does not
+  require a license.
+* Improve the way application debug output is shown on the console.
+* Show better error messages when an invalid UWP application package name or
+  application id is provided by the user.
+
+Internal changes
+----------------
+* Update dependencies.
+* Improve the way UWP applications are handled.
+* UWP application ids are optional for packages that have only a single
+  application id; the default is to use that id.
+
 2019-08-20
 ==========
 These notes include changes made to two previous releases where I forgot to
