@@ -937,7 +937,7 @@ def fMain(asArguments):
     if oStatisticsFile:
       oStatisticsFile.fClose();
     oConsole.fPrint(); # and loop
-  raise AssertionError("Not reached!");
+  raise AssertionError("Not reached!"); #  lgtm [py/unreachable-statement]
   
 if __name__ == "__main__":
   # Apply settings in dxConfig["cBugId"] to cBugId.dxConfig, then replace dxConfig["cBugId"] with cBugId.dxConfig.

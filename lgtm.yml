@@ -1,0 +1,3 @@
+queries:
+  - include: *
+  - exclude: py/not-named-self
