@@ -588,7 +588,7 @@ def fMain(asArguments):
         oConsole.fCleanup();
         os._exit(2);
       sApplicationKeyword = sArgument;
-    elif sArgument[-1] == "?":
+    elif len(sArgument) > 0 and sArgument[-1] == "?":
       sApplicationKeyword = sArgument[:-1];
       dxApplicationSettings = ddxApplicationSettings_by_sKeyword.get(sApplicationKeyword);
       if not dxApplicationSettings:
@@ -615,6 +615,10 @@ def fMain(asArguments):
         os._exit(2);
       if oUWPApplication is not None:
         oConsole.fPrint(ERROR, "- You cannot provide an application UWP package name and a binary.");
+        oConsole.fCleanup();
+        os._exit(2);
+      if len(sArgument) == 0:
+        oConsole.fPrint(ERROR, "- You cannot provide an empty string as the application binary path.");
         oConsole.fCleanup();
         os._exit(2);
       sApplicationBinaryPath = sArgument;
