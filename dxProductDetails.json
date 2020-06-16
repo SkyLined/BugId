@@ -11,14 +11,14 @@
     "mRegistry", 
     "oConsole"
   ], 
-  "oProductVersion": "2020-01-09 11:00", 
+  "oProductVersion": "2020-06-16 08:48", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "BugId", 
     "sType": "GitHub", 
     "sUserName": "SkyLined"
   }, 
-  "oTrialPeriodDuration": "1m", 
+  "oTrialPeriodDuration": "+1m", 
   "sLicenseServerURL": "https://license.skylined.nl/License_dxCheck.php", 
   "sProductAuthor": "SkyLined", 
   "sProductName": "BugId", 
