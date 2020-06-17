@@ -6,10 +6,13 @@ class cProductDetails(object):
     # Load product details
     try:
       sProductDetailsFilePath = os.path.join(sProductFolderPath, "dxProductDetails.json");
-      with open(sProductDetailsFilePath, "rb") as oProductDetailsFile:
+      oProductDetailsFile = open(sProductDetailsFilePath, "rb");
+      try:
         dxProductDetails = json.load(oProductDetailsFile);
+      finally:
+        oProductDetailsFile.close();
       oSelf.sProductName = dxProductDetails["sProductName"];
-      oSelf.asDependentOnProductNames = dxProductDetails["asDependentOnProductNames"];
+      oSelf.asDependentOnProductNames = dxProductDetails.get("asDependentOnProductNames", []);
     except:
       print "*" * 80;
       print "The file %s does not appear to contain valid product details!" % sProductDetailsFilePath;

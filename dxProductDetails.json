@@ -1,7 +1,6 @@
 {
   "asDependentOnProductNames": [
     "cBugId", 
-    "mDebugOutput", 
     "mWindowsSDK", 
     "mMultiThreading", 
     "mDateTime", 
@@ -11,7 +10,9 @@
     "mRegistry", 
     "oConsole"
   ], 
-  "asOptionalProductNames": [], 
+  "asOptionalProductNames": [
+    "mDebugOutput"
+  ],
   "oProductVersion": "2020-06-17 11:10", 
   "oRepository": {
     "sBranch": "master", 
