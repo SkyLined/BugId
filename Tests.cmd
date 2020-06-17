@@ -52,10 +52,10 @@ ECHO   + Passed unit-tests.
 EXIT /B 0
 
 :ERROR
+  ECHO     - Failed with error level %ERRORLEVEL%
   IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
     TYPE "%REDIRECT_STDOUT_FILE_PATH%"
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
-  ECHO     - Failed with error level %ERRORLEVEL%
   ENDLOCAL
   EXIT /B 3
