@@ -6,7 +6,7 @@ sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFile
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 
 dxConfigSettings = {
-  "bApplicationTerminatesWithMainProcess": True,
+  "bApplicationTerminatesWithMainProcess": False,
 };
 
 # Firefox stable (if installed, otherwise use Firefox Developer Edition if installed).
