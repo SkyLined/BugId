@@ -62,6 +62,7 @@ guDetectedBugsCount = 0;
 guMaximumNumberOfBugs = 1;
 gduNumberOfRepros_by_sBugIdAndLocation = {};
 gbSaveOutputWithReport = False;
+gbPauseBeforeExit = False;
 
 def fTerminate(uExitCode):
   oConsole.fCleanup();
@@ -444,6 +445,7 @@ def fMain(asArguments):
   sApplicationKeyword = None;
   sApplicationBinaryPath = None;
   auApplicationProcessIds = [];
+  u0JITDebuggerEventId = None;
   oUWPApplication = None;
   asApplicationOptionalArguments = None;
   sApplicationISA = None;
@@ -495,6 +497,11 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- You cannot provide UWP application details and process ids.");
           fTerminate(2);
         auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+      elif sSettingName == "handle-jit-event":
+        if not sValue:
+          oConsole.fPrint(ERROR, "- No event handle provided!");
+          fTerminate(2);
+        u0JITDebuggerEventId = long(sValue);
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide UWP application details.");
