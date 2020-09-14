@@ -44,7 +44,6 @@ def fPrintExceptionInformation(oException, oTraceBack):
       bCheckAndShowLicenses = False,
       bShowInstallationFolders = False,
     );
-    oConsole.fPrint();
     oConsole.fPrint("Thank you in advance for helping to improve BugId!");
   finally:
     oConsole.fUnlock();
