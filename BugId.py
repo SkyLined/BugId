@@ -66,6 +66,9 @@ gbPauseBeforeExit = False;
 
 def fTerminate(uExitCode):
   oConsole.fCleanup();
+  if gbPauseBeforeExit:
+    oConsole.fPrint("Press ENTER to quit...");
+    raw_input();
   os._exit(uExitCode);
 
 def fApplicationMaxRunTimeCallback(oBugId):
@@ -114,8 +117,6 @@ def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
   oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True);
   oConsole.fCleanup();
   oConsole.fPrint("A copy of the error report can be found in ", INFO, sErrorReportFilePath, NORMAL, "...");
-  oConsole.fPrint("Press ENTER to continue...");
-  raw_input();
   fTerminate(3);
 
 
@@ -414,7 +415,8 @@ def fMain(asArguments):
       gbVerbose, \
       guDetectedBugsCount, \
       guMaximumNumberOfBugs, \
-      gbSaveOutputWithReport;
+      gbSaveOutputWithReport, \
+      gbPauseBeforeExit;
   
   # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
   # software as this is likely to cause unexpected issues.
@@ -502,6 +504,8 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- No event handle provided!");
           fTerminate(2);
         u0JITDebuggerEventId = long(sValue);
+      elif sSettingName == "pause":
+        gbPauseBeforeExit = True;
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide UWP application details.");
