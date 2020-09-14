@@ -43,6 +43,8 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint(INFO, "  -v, --verbose");
     oConsole.fPrint("    Output all commands send to cdb.exe and everything it outputs in return.");
     oConsole.fPrint("    Note that -q and -v are not mutually exclusive.");
+    oConsole.fPrint(INFO, "  -p, --pause");
+    oConsole.fPrint("    Always wait for the user to press ENTER before terminating at the end.");
     oConsole.fPrint(INFO,"  --isa=x86|x64");
     oConsole.fPrint("    Use the x86 or x64 version of cdb to debug the application. The default is");
     oConsole.fPrint("    to use the ISA* of the OS. Applications build to run on x86 systems can be");

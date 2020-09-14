@@ -474,6 +474,8 @@ def fMain(asArguments):
       bFast = True;
     elif sArgument in ["-r", "/r"]:
       bRepeat = True;
+    elif sArgument in ["-p", "/p"]:
+      gbPauseBeforeExit = True;
     elif sArgument in ["-c", "/c"]:
       guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
     elif sArgument in ["-?", "/?", "-h", "/h"]:
@@ -504,8 +506,6 @@ def fMain(asArguments):
           oConsole.fPrint(ERROR, "- No event handle provided!");
           fTerminate(2);
         u0JITDebuggerEventId = long(sValue);
-      elif sSettingName == "pause":
-        gbPauseBeforeExit = True;
       elif sSettingName in ["uwp", "uwp-app"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide UWP application details.");
@@ -590,6 +590,8 @@ def fMain(asArguments):
           if uNumberOfRepeats is None:
             oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                 " must be an integer larger than 1 or \"false\".");
+      elif sSettingName == "pause":
+        gbPauseBeforeExit = True;
       elif sSettingName in ["collateral"]:
         if sValue is None:
           guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
