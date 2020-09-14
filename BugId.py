@@ -99,9 +99,24 @@ def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
 def fInternalExceptionCallback(oBugId, oException, oTraceBack):
   global gbAnErrorOccured;
   gbAnErrorOccured = True;
+  fSaveInternalExceptionReportAndExit(oException, oTraceBack);
+
+def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
   fPrintExceptionInformation(oException, oTraceBack);
+  uIndex = 0;
+  while True:
+    uIndex += 1;
+    sErrorReportFilePath = os.path.join(os.path.dirname(__file__), "BugId error report #%d.txt" % uIndex);
+    if not os.path.isfile(sErrorReportFilePath):
+      break;
+  oConsole.fStatus("Creating a copy of the error report in %s..." % (sErrorReportFilePath,));
+  oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True);
   oConsole.fCleanup();
+  oConsole.fPrint("A copy of the error report can be found in ", INFO, sErrorReportFilePath, NORMAL, "...");
+  oConsole.fPrint("Press ENTER to continue...");
+  raw_input();
   fTerminate(3);
+
 
 def fLicenseErrorsCallback(oBugId, asErrors):
   # These should have been reported before cBugId was even instantiated, so this is kind of unexpected.
@@ -349,7 +364,7 @@ def fBugReportCallback(oBugId, oBugReport):
       oConsole.fPrint(u"\u2502                   ", NORMAL, sVersionInformation); # different binary (e.g. a .dll)
     if dxConfig["bGenerateReportHTML"]:
       # Use a report file name base on the BugId.
-      sDesiredReportFileName = "%s.html" % sBugIdAndLocation;
+      sDesiredReportFileName = "%s" % sBugIdAndLocation;
       # In collateral mode, we will number the reports so you know in which order bugs were reported.
       if guMaximumNumberOfBugs > 1:
         sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
@@ -357,19 +372,35 @@ def fBugReportCallback(oBugId, oBugReport):
       sValidReportFileName = mFileSystem2.fsGetValidName(sDesiredReportFileName, bUnicode = \
           dxConfig["bUseUnicodeReportFileNames"]);
       if dxConfig["sReportFolderPath"] is not None:
-        sReportFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName);
+        sReportFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + ".html");
       else:
-        sReportFilePath = sValidReportFileName;
+        sReportFilePath = sValidReportFileName + ".html";
       oReportFile = None;
+      oConsole.fStatus(u"\u2502 Bug report:       ", INFO, sValidReportFileName, ".html", NORMAL, "...");
       try:
         oReportFile = mFileSystem2.foGetOrCreateFile(sReportFilePath);
         oReportFile.fWrite(oBugReport.sReportHTML);
       except Exception as oException:
-        oConsole.fPrint(u"\u2502 Bug report:       ", ERROR, "Cannot be saved (", ERROR_INFO, str(oException), ERROR, ")");
+        oConsole.fPrint(u"\u2502 ", ERROR, "Bug report:       ", ERROR_INFO, sValidReportFileName, ".html", ERROR, " not saved!");
+        oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
       else:
-        oConsole.fPrint(u"\u2502 Bug report:       ", NORMAL, sValidReportFileName, " (%d bytes)" % len(oBugReport.sReportHTML));
+        oConsole.fPrint(u"\u2502 Bug report:       ", INFO, sValidReportFileName, ".html", NORMAL, ".");
       if oReportFile:
         oReportFile.fClose();
+      if gbSaveOutputWithReport:
+        if dxConfig["sReportFolderPath"] is not None:
+          sOutputFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + " BugId output.txt");
+        else:
+          sOutputFilePath = sValidReportFileName + " BugId output.txt";
+        oConsole.fStatus(u"\u2502 BugId output log: ", INFO, sValidReportFileName, ".txt", NORMAL, "...");
+        try:
+          oConsole.fbCopyOutputToFilePath(sOutputFilePath);
+        except Exception as oException:
+          oConsole.fCleanup();
+          oConsole.fPrint(u"\u2502 BugId output log: ", ERROR_INFO, sValidReportFileName, ".txt", ERROR, " not saved!");
+          oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
+        else:
+          oConsole.fPrint(u"\u2502 BugId output log: ", INFO, sValidReportFileName, ".txt", NORMAL, ".");
     oConsole.fPrint(u"\u2514", sPadding = u"\u2500");
   finally:
     oConsole.fUnlock();
@@ -381,7 +412,8 @@ def fMain(asArguments):
       gbQuiet, \
       gbVerbose, \
       guDetectedBugsCount, \
-      guMaximumNumberOfBugs;
+      guMaximumNumberOfBugs, \
+      gbSaveOutputWithReport;
   
   # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
   # software as this is likely to cause unexpected issues.
@@ -491,15 +523,15 @@ def fMain(asArguments):
           bShowInstallationFolders = True,
         );
         fTerminate(0);
+      elif sSettingName in ["log-output"]:
+        gbSaveOutputWithReport = True;
       elif sSettingName in ["isa", "cpu"]:
         if not sValue:
           oConsole.fPrint(ERROR, "- You must provide an Instruction Set Architecture.");
-          oConsole.fCleanup();
-          os._exit(2);
+          fTerminate(2);
         if sValue not in ["x86", "x64"]:
           oConsole.fPrint(ERROR, "- Unknown Instruction Set Architecture ", repr(sValue));
-          oConsole.fCleanup();
-          os._exit(2);
+          fTerminate(2);
         sApplicationISA = sValue;
       elif sSettingName in ["quiet", "silent"]:
         if sValue is None or sValue.lower() == "true":
@@ -564,8 +596,7 @@ def fMain(asArguments):
         if not sValue:
           oConsole.fPrint(ERROR, "- You cannot provide an argument (", ERROR_INFO, "--", sSettingName, ERROR, \
               ") without a value.");
-          oConsole.fCleanup();
-          os._exit(2);
+          fTerminate(2);
         try:
           xValue = json.loads(sValue);
         except ValueError as oError:
@@ -615,6 +646,9 @@ def fMain(asArguments):
     dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
   
   dsApplicationURLTemplate_by_srSourceFilePath = {};
+  
+  if gbSaveOutputWithReport:
+    oConsole.fEnableLog();
   
   fSetup = None; # Function specific to a keyword application, used to setup stuff before running.
   fCleanup = None; # Function specific to a keyword application, used to cleanup stuff before & after running.
@@ -922,10 +956,10 @@ if __name__ == "__main__":
     # But at this time, there are no dictionaries in dxConfig, so this is not required.
     cBugId.dxConfig[sName] = xValue;
   dxConfig["cBugId"] = cBugId.dxConfig;
+  oConsole.fEnableLog();
   try:
     fMain(sys.argv[1:]);
   except Exception as oException:
+    gbAnErrorOccured = True;
     cException, oException, oTraceBack = sys.exc_info();
-    fPrintExceptionInformation(oException, oTraceBack);
-    oConsole.fCleanup();
-    os._exit(3);
+    fSaveInternalExceptionReportAndExit(oException, oTraceBack);
