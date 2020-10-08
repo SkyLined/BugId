@@ -1,28 +1,14 @@
-from cBugId import cBugId;
+import sys;
+
 from mColors import *;
-import mWindowsAPI;
 from oConsole import oConsole;
 from fPrintVersionInformation import fPrintVersionInformation;
+from mDebugOutput import fConsoleOutputExceptionDetails;
 
-def fPrintExceptionInformation(oException, oTraceBack):
-  import sys, traceback;
+def fPrintExceptionInformation(oException, oTraceback):
+  fConsoleOutputExceptionDetails(oException, o0Traceback = oTraceback);
   oConsole.fLock();
   try:
-    oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " An internal exception has occured ", ERROR, sPadding = u"\u2500");
-    oConsole.fPrint(ERROR, u"\u2502 ", ERROR_INFO, repr(oException));
-    oConsole.fPrint(ERROR, u"\u2502");
-    oConsole.fPrint(ERROR, u"\u2502  Stack:");
-    atxStack = traceback.extract_tb(oTraceBack);
-    uFrameIndex = 0;
-    for (sFileName, uLineNumber, sFunctionName, sCode) in reversed(atxStack):
-      asSource = [ERROR_INFO, sFileName, ERROR, "/", str(uLineNumber)];
-      if sFunctionName != "<module>":
-        asSource = [HILITE, sFunctionName, ERROR, " @ "] + asSource;
-      oConsole.fPrint(ERROR, u"\u2502 %3d " % uFrameIndex, *asSource);
-      if sCode:
-        oConsole.fPrint(ERROR, u"\u2502      > ", NORMAL, sCode.strip(), uConvertTabsToSpaces = 2);
-      uFrameIndex += 1;
-    oConsole.fPrint(ERROR, u"\u2514", sPadding = u"\u2500");
     oConsole.fPrint();
     oConsole.fPrint("Please report the above details at the below web-page so it can be addressed:");
     oConsole.fPrint(INFO, "    https://github.com/SkyLined/BugId/issues/new");
@@ -34,7 +20,7 @@ def fPrintExceptionInformation(oException, oTraceBack):
     oConsole.fPrint("above, as well as the stack trace and BugId version information. This makes");
     oConsole.fPrint("it easier to determine the cause of this issue and makes for faster fixes.");
     oConsole.fPrint();
-    if "-v" not in sys.argv[1:] and "/v" not in sys.argv[1:] and "--verbose=true" not in sys.argv[1:]:
+    if not any([sVerbose in sys.argv[1:] for sVerbose in ["-v", "/v", "-V", "/V", "--verbose=true"]]):
       oConsole.fPrint("If you can reproduce the issue, it would help a lot if you can run BugId in");
       oConsole.fPrint("verbose mode by adding the ", INFO, "--verbose", NORMAL, " command-line argument.");
       oConsole.fPrint("as in: ", HILITE, "BugId -v ", " ".join(sys.argv[1:]));

@@ -1,6 +1,7 @@
 {
   "asDependentOnProductNames": [
     "cBugId", 
+    "mDebugOutput",
     "mWindowsSDK", 
     "mMultiThreading", 
     "mDateTime", 

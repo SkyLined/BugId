@@ -34,27 +34,7 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("    detects, or if BugId is unable to detect the binary on your system.");
     oConsole.fPrint();
     oConsole.fPrint(HILITE, "Options:");
-    oConsole.fPrint(INFO, "  -h, --help");
-    oConsole.fPrint("    This cruft.");
-    oConsole.fPrint(INFO,"  --version");
-    oConsole.fPrint("    Show version information and check for updates.");
-    oConsole.fPrint(INFO, "  -q, --quiet");
-    oConsole.fPrint("    Output only essential information.");
-    oConsole.fPrint(INFO, "  -v, --verbose");
-    oConsole.fPrint("    Output all commands send to cdb.exe and everything it outputs in return.");
-    oConsole.fPrint("    Note that -q and -v are not mutually exclusive.");
-    oConsole.fPrint(INFO, "  -p, --pause");
-    oConsole.fPrint("    Always wait for the user to press ENTER before terminating at the end.");
-    oConsole.fPrint(INFO,"  --isa=x86|x64");
-    oConsole.fPrint("    Use the x86 or x64 version of cdb to debug the application. The default is");
-    oConsole.fPrint("    to use the ISA* of the OS. Applications build to run on x86 systems can be");
-    oConsole.fPrint("    debugged using the x64 version of cdb, and you are strongly encouraged to ");
-    oConsole.fPrint("    do so. But you can use the x86 debugger to debug x86 application if you");
-    oConsole.fPrint("    want to. (ISA = Instruction Set Architecture)");
-    oConsole.fPrint(INFO,"  --symbols=path/to/symbols/folder");
-    oConsole.fPrint("    Use the given path as a local symbol folder in addition to the symbol paths");
-    oConsole.fPrint("    specified in dxConfig. You can provide this option multiple times to add");
-    oConsole.fPrint("    as many additional local symbol paths as needed.");
+    
     oConsole.fPrint(INFO, "  -c, --collateral[=number of bugs]");
     oConsole.fPrint("    When the specified number of bugs is larger than 1 (default 5), BugId will");
     oConsole.fPrint("    go into \"collateral bug handling\" mode. This means that after certain");
@@ -72,11 +52,35 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("    is not exploitable. It might also show that reading from or writing to");
     oConsole.fPrint("    otherwise inaccessible parts of memory or controlling execution flow is");
     oConsole.fPrint("    potentially possible, indicating it is exploitable.");
+    
+    oConsole.fPrint(INFO,"  -d, --dump");
+    oConsole.fPrint("    Save a mini crash dump when a crash is detected.");
+    
+    oConsole.fPrint(INFO,"  --dump=full");
+    oConsole.fPrint("    Save a full crash dump when a crash is detected.");
+    
     oConsole.fPrint(INFO, "  -f, --fast");
     oConsole.fPrint("    Create no HTML report, do not use symbols. This is an alias for:");
     oConsole.fPrint("        ", INFO, "--bGenerateReportHTML=false");
     oConsole.fPrint("        ", INFO, "--cBugId.asSymbolServerURLs=[]");
     oConsole.fPrint("        ", INFO, "--cBugId.bUse_NT_SYMBOL_PATH=false");
+    
+    oConsole.fPrint(INFO, "  -h, --help");
+    oConsole.fPrint("    This cruft.");
+    
+    oConsole.fPrint(INFO,"  --isa=x86|x64");
+    oConsole.fPrint("    Use the x86 or x64 version of cdb to debug the application. The default is");
+    oConsole.fPrint("    to use the ISA* of the OS. Applications build to run on x86 systems can be");
+    oConsole.fPrint("    debugged using the x64 version of cdb, and you are strongly encouraged to ");
+    oConsole.fPrint("    do so. But you can use the x86 debugger to debug x86 application if you");
+    oConsole.fPrint("    want to. (ISA = Instruction Set Architecture)");
+    
+    oConsole.fPrint(INFO, "  -p, --pause");
+    oConsole.fPrint("    Always wait for the user to press ENTER before terminating at the end.");
+    
+    oConsole.fPrint(INFO, "  -q, --quiet");
+    oConsole.fPrint("    Output only essential information.");
+    
     oConsole.fPrint(INFO, "  -r, --repeat[=number of loops]");
     oConsole.fPrint("    Restart the application to run another test as soon as the application is");
     oConsole.fPrint("    terminated. Useful when testing the reliability of a repro, detecting the");
@@ -86,6 +90,19 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("    number of occurances of each Bug Id that was detected. If a number is");
     oConsole.fPrint("    provided, the application will be run that many times. Otherwise the");
     oConsole.fPrint("    application will be run indefinitely.");
+    
+    oConsole.fPrint(INFO,"  --symbols=path\\to\\symbols\\folder");
+    oConsole.fPrint("    Use the given path as a local symbol folder in addition to the symbol paths");
+    oConsole.fPrint("    specified in dxConfig. You can provide this option multiple times to add");
+    oConsole.fPrint("    as many additional local symbol paths as needed.");
+    
+    oConsole.fPrint(INFO, "  -v, --verbose");
+    oConsole.fPrint("    Output all commands send to cdb.exe and everything it outputs in return.");
+    oConsole.fPrint("    Note that -q and -v are not mutually exclusive.");
+    
+    oConsole.fPrint(INFO,"  --version");
+    oConsole.fPrint("    Show version information and check for updates.");
+    
     oConsole.fPrint();
     oConsole.fPrint("  Options also include any of the settings in dxConfig.py; you can specify them");
     oConsole.fPrint("  using ", INFO, "--[name]=[JSON value]", NORMAL, ". Here are some examples:");
@@ -107,8 +124,6 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("  See ", INFO, "dxConfig.py", NORMAL, " for details on each setting.");
     oConsole.fPrint();
     oConsole.fPrint("  You can also adjust cBugId specific settings, such as:");
-    oConsole.fPrint(INFO,"  --cBugId.bSaveDump=true");
-    oConsole.fPrint("    Save a debug dump file when a crash is detected.");
     oConsole.fPrint(INFO,"  --cBugId.asSymbolServerURLs=[\"http://msdl.microsoft.com/download/symbols\"]");
     oConsole.fPrint("    Use http://msdl.microsoft.com/download/symbols as a symbol server.");
     oConsole.fPrint(INFO,"  --cBugId.asSymbolCachePaths=[\"C:\\Symbols\"]");

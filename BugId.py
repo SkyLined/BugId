@@ -1,4 +1,4 @@
-import codecs, json, re, os, platform, shutil, sys, threading, time, traceback;
+import json, os, sys, time;
 
 """
                           __                     _____________                  
@@ -57,12 +57,15 @@ gbAnErrorOccured = False;
 gbFailedToApplyMemoryLimitsErrorShown = False;
 gbQuiet = False;
 gbVerbose = False;
+gbSaveDump = False;
+gbSaveFullDump = False;
 guDefaultCollateralMaximumNumberOfBugs = 5; # Just a hunch that that's a reasonable value.
 guDetectedBugsCount = 0;
 guMaximumNumberOfBugs = 1;
 gduNumberOfRepros_by_sBugIdAndLocation = {};
 gbSaveOutputWithReport = False;
 gbPauseBeforeExit = False;
+gbRunningAsJITDebugger = False;
 
 def fTerminate(uExitCode):
   oConsole.fCleanup();
@@ -100,7 +103,7 @@ def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
   finally:
     oConsole.fUnlock();
 
-def fInternalExceptionCallback(oBugId, oException, oTraceBack):
+def fInternalExceptionCallback(oBugId, oThread, oException, oTraceBack):
   global gbAnErrorOccured;
   gbAnErrorOccured = True;
   fSaveInternalExceptionReportAndExit(oException, oTraceBack);
@@ -201,42 +204,33 @@ def fPageHeapNotEnabledCallback(oBugId, oProcess, bIsMainProcess, bPreventable):
       gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
       gasReportedBinaryNameWithoutPageHeap, \
       gbAnErrorOccured;
-  sBinaryName = oProcess.sBinaryName;
-  if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithoutPageHeap:
+  sLowerBinaryName = oProcess.sBinaryName.lower();
+  if (
+    gbQuiet
+    or sLowerBinaryName in gasBinaryNamesThatAreAllowedToRunWithoutPageHeap
+    or sLowerBinaryName in gasReportedBinaryNameWithoutPageHeap 
+  ):
     return;
-  if not bPreventable:
-    if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithoutPageHeap:
-      gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
-      oConsole.fLock();
-      try:
-        oConsole.fPrint(WARNING, "- Full page heap is not enabled for ", WARNING_INFO, sBinaryName, WARNING, ".");
-        oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
-        oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
-        oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
-        oConsole.fPrint("  any bugs in this process will be sub-optimal.");
-        oConsole.fPrint();
-      finally:
-        oConsole.fUnlock();
-  else:
-    gbAnErrorOccured = True;
-    oConsole.fLock();
-    try:
-      oConsole.fPrint(ERROR, "- Full page heap is not enabled for all binaries used by the application.");
-      oConsole.fPrint(ERROR, "  Specifically it is not enabled for ", ERROR_INFO, sBinaryName, ERROR, ".");
+  gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
+  oConsole.fLock();
+  try:
+    oConsole.fPrint(WARNING, "- Full page heap is not enabled for ", WARNING_INFO, sBinaryName,
+                    WARNING, " in process ", WARNING_INFO, "0x%X" % oProcess.uId, WARNING, ".");
+    if bPreventable:
+      oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
+      oConsole.fPrint("  optimal. Please enable page heap to improve detection and analysis.");
+      oConsole.fPrint();
       oConsole.fPrint("  You can enabled full page heap for ", sBinaryName, " by running:");
       oConsole.fPrint();
       oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', sBinaryName, '" ON');
-      oConsole.fPrint();
-      oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
-      oConsole.fPrint("  optimal. Please enable page heap and try again.");
-      oConsole.fPrint();
-      oConsole.fStatus(INFO, "* BugId is stopping...");
-    finally:
-      oConsole.fUnlock();
-    # There is no reason to run without page heap, so terminated.
-    oBugId.fStop();
-    # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in
-    # `dxConfig.py`or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+    else:
+      oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
+      oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
+      oConsole.fPrint("  or work-around for this. BugId will continue, but detection and analysis of");
+      oConsole.fPrint("  any bugs in this process will be sub-optimal.");
+    oConsole.fPrint();
+  finally:
+    oConsole.fUnlock();
 
 def fCdbStdInInputCallback(oBugId, sInput):
   oConsole.fPrint(HILITE, "<stdin<", NORMAL, sInput, uConvertTabsToSpaces = 8);
@@ -371,38 +365,47 @@ def fBugReportCallback(oBugId, oBugReport):
       if guMaximumNumberOfBugs > 1:
         sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
       # Translate characters that are not valid in file names.
-      sValidReportFileName = mFileSystem2.fsGetValidName(sDesiredReportFileName, bUnicode = \
+      suValidReportFileName = mFileSystem2.fsGetValidName(sDesiredReportFileName, bUnicode = \
           dxConfig["bUseUnicodeReportFileNames"]);
       if dxConfig["sReportFolderPath"] is not None:
-        sReportFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + ".html");
+        suReportFilePath = os.path.join(dxConfig["sReportFolderPath"], suValidReportFileName + ".html");
       else:
-        sReportFilePath = sValidReportFileName + ".html";
+        suReportFilePath = suValidReportFileName + ".html";
       oReportFile = None;
-      oConsole.fStatus(u"\u2502 Bug report:       ", INFO, sValidReportFileName, ".html", NORMAL, "...");
+      oConsole.fStatus(u"\u2502 Bug report:       ", INFO, suValidReportFileName, ".html", NORMAL, "...");
       try:
-        oReportFile = mFileSystem2.foGetOrCreateFile(sReportFilePath);
+        oReportFile = mFileSystem2.foGetOrCreateFile(suReportFilePath);
         oReportFile.fWrite(oBugReport.sReportHTML);
       except Exception as oException:
-        oConsole.fPrint(u"\u2502 ", ERROR, "Bug report:       ", ERROR_INFO, sValidReportFileName, ".html", ERROR, " not saved!");
+        oConsole.fPrint(u"\u2502 ", ERROR, "Bug report:       ", ERROR_INFO, suValidReportFileName, ".html", ERROR, " not saved!");
         oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
       else:
-        oConsole.fPrint(u"\u2502 Bug report:       ", INFO, sValidReportFileName, ".html", NORMAL, ".");
+        oConsole.fPrint(u"\u2502 Bug report:       ", INFO, suValidReportFileName, ".html", NORMAL, ".");
       if oReportFile:
         oReportFile.fClose();
       if gbSaveOutputWithReport:
         if dxConfig["sReportFolderPath"] is not None:
-          sOutputFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + " BugId output.txt");
+          suLogOutputFilePath = os.path.join(dxConfig["sReportFolderPath"], suValidReportFileName + " BugId output.txt");
         else:
-          sOutputFilePath = sValidReportFileName + " BugId output.txt";
-        oConsole.fStatus(u"\u2502 BugId output log: ", INFO, sValidReportFileName, ".txt", NORMAL, "...");
+          suLogOutputFilePath = suValidReportFileName + " BugId output.txt";
+        oConsole.fStatus(u"\u2502 BugId output log: ", INFO, suValidReportFileName, ".txt", NORMAL, "...");
         try:
-          oConsole.fbCopyOutputToFilePath(sOutputFilePath);
+          oConsole.fbCopyOutputToFilePath(suLogOutputFilePath);
         except Exception as oException:
           oConsole.fCleanup();
-          oConsole.fPrint(u"\u2502 BugId output log: ", ERROR_INFO, sValidReportFileName, ".txt", ERROR, " not saved!");
+          oConsole.fPrint(u"\u2502 BugId output log: ", ERROR_INFO, suValidReportFileName, ".txt", ERROR, " not saved!");
           oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
         else:
-          oConsole.fPrint(u"\u2502 BugId output log: ", INFO, sValidReportFileName, ".txt", NORMAL, ".");
+          oConsole.fPrint(u"\u2502 BugId output log: ", INFO, suValidReportFileName, ".txt", NORMAL, ".");
+      if gbSaveDump:
+        if dxConfig["sReportFolderPath"] is not None:
+          suDumpFilePath = os.path.join(dxConfig["sReportFolderPath"], suValidReportFileName + ".dmp");
+        else:
+          suDumpFilePath = suValidReportFileName + ".dmp";
+        sDumpFilePath = unicode(suDumpFilePath).encode("ascii", 'replace').replace("?", ".");
+        oConsole.fStatus(u"\u2502 Dump file:        ", INFO, suValidReportFileName, ".dmp", NORMAL, "...");
+        oBugId.fSaveDumpToFile(sDumpFilePath, True, gbSaveFullDump);
+        oConsole.fPrint(u"\u2502 Dump file:        ", INFO, suValidReportFileName, ".dmp", NORMAL, ".");
     oConsole.fPrint(u"\u2514", sPadding = u"\u2500");
   finally:
     oConsole.fUnlock();
@@ -413,6 +416,8 @@ def fMain(asArguments):
       gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
       gbQuiet, \
       gbVerbose, \
+      gbSaveDump, \
+      gbSaveFullDump, \
       guDetectedBugsCount, \
       guMaximumNumberOfBugs, \
       gbSaveOutputWithReport, \
@@ -457,6 +462,7 @@ def fMain(asArguments):
   dxUserProvidedConfigSettings = {};
   asAdditionalLocalSymbolPaths = [];
   bFast = False;
+  bInstallAsJITDebugger = True;
   while asArguments:
     sArgument = asArguments.pop(0);
     if sArgument == "--":
@@ -466,19 +472,21 @@ def fMain(asArguments):
         fTerminate(2);
       asApplicationOptionalArguments = asArguments;
       break;
-    elif sArgument in ["-q", "/q"]:
+    elif sArgument in ["-q", "/q", "-Q", "/Q"]:
       gbQuiet = True;
-    elif sArgument in ["-v", "/v"]:
+    elif sArgument in ["-v", "/v", "-V", "/V"]:
       gbVerbose = True;
-    elif sArgument in ["-f", "/f"]:
+    elif sArgument in ["-f", "/f", "-F", "/F"]:
       bFast = True;
-    elif sArgument in ["-r", "/r"]:
+    elif sArgument in ["-r", "/r", "-R", "/R"]:
       bRepeat = True;
-    elif sArgument in ["-p", "/p"]:
+    elif sArgument in ["-d", "/d", "-D", "/D"]:
+      gbSaveDump = True;
+    elif sArgument in ["-p", "/p", "-P", "/P"]:
       gbPauseBeforeExit = True;
-    elif sArgument in ["-c", "/c"]:
+    elif sArgument in ["-c", "/c", "-C", "/C"]:
       guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
-    elif sArgument in ["-?", "/?", "-h", "/h"]:
+    elif sArgument in ["-h", "/h", "-H", "/H", "-?", "/?"]:
       fPrintLogo();
       fPrintUsageInformation(ddxApplicationSettings_by_sKeyword.keys());
       fTerminate(0);
@@ -565,6 +573,22 @@ def fMain(asArguments):
           bFast = True;
         elif sValue.lower() == "false":
           bFast = False;
+        else:
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be \"true\" or \"false\".");
+      elif sSettingName in ["dump"]:
+        if sValue is None or sValue.lower() == "true":
+          gbSaveDump = True;
+        elif sValue.lower() == "false":
+          gbSaveDump = False;
+        else:
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be \"true\" or \"false\".");
+      elif sSettingName in ["full-dump"]:
+        if sValue is None or sValue.lower() == "true":
+          gbSaveFullDump = True;
+        elif sValue.lower() == "false":
+          gbSaveFullDump = False;
         else:
           oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
               " must be \"true\" or \"false\".");
@@ -881,33 +905,36 @@ def fMain(asArguments):
           oConsole.fStatus("* The debugger is starting the application...");
     finally:
       oConsole.fUnlock();
-    oBugId.fAddEventCallback("Application resumed", fApplicationResumedCallback);
-    oBugId.fAddEventCallback("Application running", fApplicationRunningCallback);
-    oBugId.fAddEventCallback("Application suspended", fApplicationSuspendedCallback);
-    oBugId.fAddEventCallback("Application debug output", fApplicationDebugOutputCallback);
-    oBugId.fAddEventCallback("Application stderr output", fApplicationStdErrOutputCallback);
-    oBugId.fAddEventCallback("Application stdout output", fApplicationStdOutOutputCallback);
-    oBugId.fAddEventCallback("Bug report", fBugReportCallback);
-    oBugId.fAddEventCallback("Cdb stderr output", fCdbStdErrOutputCallback);
+    oBugId.fAddCallback("Application resumed", fApplicationResumedCallback);
+    oBugId.fAddCallback("Application running", fApplicationRunningCallback);
+    oBugId.fAddCallback("Application suspended", fApplicationSuspendedCallback);
+    oBugId.fAddCallback("Application debug output", fApplicationDebugOutputCallback);
+    oBugId.fAddCallback("Application stderr output", fApplicationStdErrOutputCallback);
+    oBugId.fAddCallback("Application stdout output", fApplicationStdOutOutputCallback);
+    oBugId.fAddCallback("Bug report", fBugReportCallback);
+    oBugId.fAddCallback("Cdb stderr output", fCdbStdErrOutputCallback);
     if gbVerbose:
-      oBugId.fAddEventCallback("Cdb stdin input", fCdbStdInInputCallback);
-      oBugId.fAddEventCallback("Cdb stdout output", fCdbStdOutOutputCallback);
-      oBugId.fAddEventCallback("Log message", fLogMessageCallback);
-    oBugId.fAddEventCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsCallback);
-    oBugId.fAddEventCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
-    oBugId.fAddEventCallback("Failed to debug application", fFailedToDebugApplicationCallback);
-    oBugId.fAddEventCallback("Internal exception", fInternalExceptionCallback);
-    oBugId.fAddEventCallback("License warnings", fLicenseWarningsCallback);
-    oBugId.fAddEventCallback("License errors", fLicenseErrorsCallback);
-    oBugId.fAddEventCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
-    oBugId.fAddEventCallback("Cdb ISA not ideal", fCdbISANotIdealCallback);
-    oBugId.fAddEventCallback("Process attached", fProcessAttachedCallback);
-    oBugId.fAddEventCallback("Process started", fProcessStartedCallback);
-    oBugId.fAddEventCallback("Process terminated", fProcessTerminatedCallback);
+      oBugId.fAddCallback("Cdb stdin input", fCdbStdInInputCallback);
+      oBugId.fAddCallback("Cdb stdout output", fCdbStdOutOutputCallback);
+      oBugId.fAddCallback("Log message", fLogMessageCallback);
+    oBugId.fAddCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsCallback);
+    oBugId.fAddCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
+    oBugId.fAddCallback("Failed to debug application", fFailedToDebugApplicationCallback);
+    oBugId.fAddCallback("Internal exception", fInternalExceptionCallback);
+    oBugId.fAddCallback("License warnings", fLicenseWarningsCallback);
+    oBugId.fAddCallback("License errors", fLicenseErrorsCallback);
+    oBugId.fAddCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
+    oBugId.fAddCallback("Cdb ISA not ideal", fCdbISANotIdealCallback);
+    oBugId.fAddCallback("Process attached", fProcessAttachedCallback);
+    oBugId.fAddCallback("Process started", fProcessStartedCallback);
+    oBugId.fAddCallback("Process terminated", fProcessTerminatedCallback);
 
     if dxConfig["nApplicationMaxRunTimeInSeconds"] is not None:
-      oBugId.foSetTimeout("Maximum application runtime", dxConfig["nApplicationMaxRunTimeInSeconds"], \
-          fApplicationMaxRunTimeCallback);
+      oBugId.foSetTimeout(
+        sDescription = "Maximum application runtime",
+        nTimeoutInSeconds = dxConfig["nApplicationMaxRunTimeInSeconds"],
+        f0Callback = fApplicationMaxRunTimeCallback,
+     );
     if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]:
       oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]);
     guDetectedBugsCount = 0;
@@ -972,6 +999,8 @@ if __name__ == "__main__":
   oConsole.fEnableLog();
   try:
     fMain(sys.argv[1:]);
+  except KeyboardInterrupt:
+    oConsole.fPrint("+ Interrupted.");
   except Exception as oException:
     gbAnErrorOccured = True;
     cException, oException, oTraceBack = sys.exc_info();
