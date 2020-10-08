@@ -1,3 +1,10 @@
+TBD
+==========
+* Case-independent handling of binary names
+* Do not stop BugId if page heap is not enabled.
+* Allow creation of mini dumps through `-d` or `--dump` command line argument and full dumps through `--full-dump`.
+* Handle keyboard interrupt gracefully.
+
 2019-10-17
 ==========
 Externally noticeable changes
