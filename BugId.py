@@ -34,6 +34,7 @@ from oConsole import oConsole;
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
 from dxConfig import dxConfig;
 from fbApplyConfigSetting import fbApplyConfigSetting;
+from fbInstallAsJITDebugger import fbInstallAsJITDebugger;
 from fCheckPythonVersion import fCheckPythonVersion;
 from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
 from fPrintExceptionInformation import fPrintExceptionInformation;
@@ -484,6 +485,11 @@ def fMain(asArguments):
       gbSaveDump = True;
     elif sArgument in ["-p", "/p", "-P", "/P"]:
       gbPauseBeforeExit = True;
+    elif sArgument in ["-i", "/i", "-I", "/I"]:
+      # Install as JIT Debugger. Remaining arguments are passed on the command line to the JIT debugger.
+      if fbInstallAsJITDebugger(asArguments):
+        fTerminate(0);
+      fTerminate(3);
     elif sArgument in ["-c", "/c", "-C", "/C"]:
       guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
     elif sArgument in ["-h", "/h", "-H", "/H", "-?", "/?"]:
