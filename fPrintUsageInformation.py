@@ -96,6 +96,10 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("    specified in dxConfig. You can provide this option multiple times to add");
     oConsole.fPrint("    as many additional local symbol paths as needed.");
     
+    oConsole.fPrint(INFO,"  --reports=path\\to\\reports\\folder");
+    oConsole.fPrint("    Store reports in the given path. Optional cdb output and crash dumps are");
+    oConsole.fPrint("    stored in the same location.");
+    
     oConsole.fPrint(INFO, "  -v, --verbose");
     oConsole.fPrint("    Output all commands send to cdb.exe and everything it outputs in return.");
     oConsole.fPrint("    Note that -q and -v are not mutually exclusive.");
