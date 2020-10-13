@@ -626,8 +626,13 @@ def fMain(asArguments):
       elif sSettingName in ["symbols"]:
         if sValue is None or not mFileSystem2.foGetFolder(sValue):
           oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
-              " must be a valid path.");
+              " must be a valid folder path.");
         asAdditionalLocalSymbolPaths.append(sValue);
+      elif sSettingName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path"]:
+        if sValue is None or not mFileSystem2.foGetFolder(sValue):
+          oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
+              " must be a valid folder path.");
+        dxConfig["sReportFolderPath"] = sValue;
       elif sSettingName in ["test-internal-error", "internal-error-test"]:
         raise Exception("Testing internal error");
       else:
