@@ -56,7 +56,7 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint(INFO,"  -d, --dump");
     oConsole.fPrint("    Save a mini crash dump when a crash is detected.");
     
-    oConsole.fPrint(INFO,"  --dump=full");
+    oConsole.fPrint(INFO,"  --full-dump");
     oConsole.fPrint("    Save a full crash dump when a crash is detected.");
     
     oConsole.fPrint(INFO, "  -f, --fast");

@@ -586,6 +586,7 @@ def fMain(asArguments):
               " must be \"true\" or \"false\".");
       elif sSettingName in ["full-dump"]:
         if sValue is None or sValue.lower() == "true":
+          gbSaveDump = True; # Saving a full dumps means saving a dump.
           gbSaveFullDump = True;
         elif sValue.lower() == "false":
           gbSaveFullDump = False;
