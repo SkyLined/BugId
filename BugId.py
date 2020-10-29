@@ -46,10 +46,10 @@ from mColors import *;
 asTestedPythonVersions = ["2.7.14", "2.7.15", "2.7.16", "2.7.17"];
 
 gasAttachForProcessExecutableNames = [];
-gasBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
+gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
   "conhost.exe", # Used to create console windows, not part of the target application (unless the target is conhost)
 ];
-gasReportedBinaryNameWithoutPageHeap = [];
+gasReportedLowercaseBinaryNamesWithoutPageHeap = [];
 gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA = [
   # No application is known to require running processes with a non-ideal cdb ISA at this point.
 ];
@@ -202,28 +202,28 @@ def fCdbISANotIdealCallback(oBugId, oProcess, bIsMainProcess, sCdbISA, bPreventa
   
 def fPageHeapNotEnabledCallback(oBugId, oProcess, bIsMainProcess, bPreventable):
   global \
-      gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
-      gasReportedBinaryNameWithoutPageHeap, \
+      gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
+      gasReportedLowercaseBinaryNamesWithoutPageHeap, \
       gbAnErrorOccured;
   sLowerBinaryName = oProcess.sBinaryName.lower();
   if (
     gbQuiet
-    or sLowerBinaryName in gasBinaryNamesThatAreAllowedToRunWithoutPageHeap
-    or sLowerBinaryName in gasReportedBinaryNameWithoutPageHeap 
+    or sLowerBinaryName in gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap
+    or sLowerBinaryName in gasReportedLowercaseBinaryNamesWithoutPageHeap 
   ):
     return;
-  gasReportedBinaryNameWithoutPageHeap.append(sBinaryName);
+  gasReportedLowercaseBinaryNamesWithoutPageHeap.append(sLowerBinaryName);
   oConsole.fLock();
   try:
-    oConsole.fPrint(WARNING, "- Full page heap is not enabled for ", WARNING_INFO, sBinaryName,
+    oConsole.fPrint(WARNING, "- Full page heap is not enabled for ", WARNING_INFO, oProcess.sBinaryName,
                     WARNING, " in process ", WARNING_INFO, "0x%X" % oProcess.uId, WARNING, ".");
     if bPreventable:
       oConsole.fPrint("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
       oConsole.fPrint("  optimal. Please enable page heap to improve detection and analysis.");
       oConsole.fPrint();
-      oConsole.fPrint("  You can enabled full page heap for ", sBinaryName, " by running:");
+      oConsole.fPrint("  You can enabled full page heap for ", sLowerBinaryName, " by running:");
       oConsole.fPrint();
-      oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', sBinaryName, '" ON');
+      oConsole.fPrint("      ", INFO, 'PageHeap.cmd "', oProcess.sBinaryName, '" ON');
     else:
       oConsole.fPrint("  This appears to be due to a bug in page heap that prevents it from");
       oConsole.fPrint("  determining the binary name correctly. Unfortunately, there is no known fix");
@@ -414,7 +414,7 @@ def fBugReportCallback(oBugId, oBugReport):
 def fMain(asArguments):
   global \
       gasAttachForProcessExecutableNames, \
-      gasBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
+      gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
       gbQuiet, \
       gbVerbose, \
       gbSaveDump, \
@@ -781,7 +781,7 @@ def fMain(asArguments):
     if not sApplicationISA and "sISA" in dxApplicationSettings:
       sApplicationISA = dxApplicationSettings["sISA"];
     if "asBinaryNamesThatAreAllowedToRunWithoutPageHeap" in dxApplicationSettings:
-      gasBinaryNamesThatAreAllowedToRunWithoutPageHeap += [
+      gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap += [
         sBinaryName.lower() for sBinaryName in dxApplicationSettings["asBinaryNamesThatAreAllowedToRunWithoutPageHeap"]
       ];
   elif (auApplicationProcessIds or oUWPApplication or sApplicationBinaryPath):
