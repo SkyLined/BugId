@@ -76,7 +76,7 @@ class cDependencyChecker(object):
           oSelf.foLoadProductDetailsForFolderPath(sProductFolderPath);
         asCheckedProductNames.append(sProductName);
 
-def fCheckDependencies():
+def fInitializeProduct():
   # This file is supposed to be store in the main product folder.
   # Our search path will be the main product folder first, its parent folder
   # second, the "modules" child folder of the main product folder third, and

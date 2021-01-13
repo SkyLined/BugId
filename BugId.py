@@ -24,8 +24,6 @@ import json, os, sys, time;
 # 4 = failed to start process or attach to process(es).
 # 5 = license error
 
-from fCheckDependencies import fCheckDependencies;
-fCheckDependencies();
 
 # Load the stuff from external modules that we need.
 from cBugId import cBugId;
@@ -138,6 +136,8 @@ def fLicenseErrorsCallback(oBugId, asErrors):
   finally:
     oConsole.fUnlock();
   fTerminate(5);
+from fInitializeProduct import fInitializeProduct;
+fInitializeProduct();
 
 def fLicenseWarningsCallback(oBugId, asWarnings):
   # These were already reported when BugId started; ignore them.
