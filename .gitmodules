@@ -28,3 +28,6 @@
 [submodule "modules/mRegistry"]
 	path = modules/mRegistry
 	url = https://github.com/SkyLined/mRegistry/
+[submodule "modules/cFileSystemItem"]
+	path = modules/cFileSystemItem
+	url = https://github.com/SkyLined/cFileSystemItem/
