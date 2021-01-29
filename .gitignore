@@ -5,4 +5,5 @@
 *.user
 *.filters
 *.pyc
+BugId error report*.txt
 releases
