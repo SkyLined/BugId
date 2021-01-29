@@ -1,7 +1,9 @@
 import json;
+
+from oConsole import oConsole;
+
 from dxConfig import dxConfig;
 from mColors import *;
-from oConsole import oConsole;
 
 def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is None means no output!
   asGroupNames = sSettingName.split("."); # last element is not a group name

@@ -1,7 +1,9 @@
 import platform;
+
+from oConsole import oConsole;
+
 from faxListOutput import faxListOutput;
 from mColors import *;
-from oConsole import oConsole;
 
 def fCheckPythonVersion(sApplicationName, asTestedPythonVersions, sBugURL):
   sPythonVersion = platform.python_version();

@@ -1,6 +1,9 @@
 import os;
+
 from dxConfig import dxConfig;
+
 from fsFirstExistingFile import fsFirstExistingFile;
+
 import mFileSystem2;
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");

@@ -1,9 +1,10 @@
 import os, platform;
-from faxListOutput import faxListOutput;
-from mColors import *;
 import mProductDetails;
 from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from oConsole import oConsole;
+
+from faxListOutput import faxListOutput;
+from mColors import *;
 
 def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders):
   oConsole.fPrint(*(

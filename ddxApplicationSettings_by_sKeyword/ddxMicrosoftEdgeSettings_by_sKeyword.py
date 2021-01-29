@@ -1,10 +1,13 @@
 import os;
-from dxConfig import dxConfig;
-from fsFirstExistingFile import fsFirstExistingFile;
-from mColors import *;
+
 from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateForProcessId, oSystemInfo;
 from oConsole import oConsole;
 import mFileSystem2;
+
+from dxConfig import dxConfig;
+from mColors import *;
+
+from .fsFirstExistingFile import fsFirstExistingFile;
 
 sLocalAppData = os.getenv("LocalAppData");
 

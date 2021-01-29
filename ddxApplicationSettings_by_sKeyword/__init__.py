@@ -24,3 +24,7 @@ for ddxApplicationSpecificSettings_by_sKeyword in [
         "You cannot defined settings for keyword %s twice!" % sKeyword;
     ddxApplicationSettings_by_sKeyword[sKeyword] = dxSettings;
 
+__all__ = [
+  "ddxApplicationSettings_by_sKeyword",
+];
+

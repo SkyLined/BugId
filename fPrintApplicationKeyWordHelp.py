@@ -1,6 +1,7 @@
 import json;
-from mColors import *;
 from oConsole import oConsole;
+
+from mColors import *;
 
 def fPrintApplicationKeyWordHelp(sApplicationKeyword, dxApplicationSettings):
   oConsole.fLock();

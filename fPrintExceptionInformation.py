@@ -1,9 +1,9 @@
 import sys;
+from mDebugOutput import fConsoleOutputExceptionDetails;
+from oConsole import oConsole;
 
 from mColors import *;
-from oConsole import oConsole;
 from fPrintVersionInformation import fPrintVersionInformation;
-from mDebugOutput import fConsoleOutputExceptionDetails;
 
 def fPrintExceptionInformation(oException, oTraceback):
   fConsoleOutputExceptionDetails(oException, o0Traceback = oTraceback);

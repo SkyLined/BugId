@@ -2,7 +2,9 @@ import json, os, re, sys;
 
 import mRegistry;
 from oConsole import oConsole;
+
 from mColors import *;
+
 sJITDebuggerComandLineRegistryHiveName = "HKLM";
 sJITDebuggerComandLineRegistryKeyPath = r"Software\Microsoft\Windows NT\CurrentVersion\AEDebug";
 # Command line arguments that contain only alphanumeric chars, underscores and a select set of other chars do not need quotes.
