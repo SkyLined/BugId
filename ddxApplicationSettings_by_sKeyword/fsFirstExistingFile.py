@@ -1,7 +1,8 @@
-import mFileSystem2;
+from cFileSystemItem import cFileSystemItem;
+
 def fsFirstExistingFile(*asPossiblePaths):
   for sPossiblePath in asPossiblePaths:
-    if sPossiblePath and mFileSystem2.fo0GetFile(sPossiblePath):
+    if sPossiblePath and cFileSystemItem(sPossiblePath).fbIsFile():
       return sPossiblePath;
   return None;
 

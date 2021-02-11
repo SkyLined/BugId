@@ -4,7 +4,7 @@ from dxConfig import dxConfig;
 
 from fsFirstExistingFile import fsFirstExistingFile;
 
-import mFileSystem2;
+from cFileSystemItem import cFileSystemItem;
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 
@@ -21,11 +21,10 @@ sApplicationBinaryPath_x86 = fsFirstExistingFile(
 );
 sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x86;
 
-oTempFolder = mFileSystem2.foGetFolder(os.getenv("TEMP"));
-oFirefoxProfileFolder = oTempFolder.foGetOrCreateChildFolder("Firefox-profile");
+oFirefoxProfileFolder = cFileSystemItem(os.getenv("TEMP")).foGetChild("Firefox-profile");
 
 def fasGetFirefoxStaticArguments(bForHelp):
-  oFirefoxProfileFolder.fCreate();
+  fFirefoxCleanup();
   return [
     "--no-remote",
     "-profile", oFirefoxProfileFolder.sPath,
@@ -44,12 +43,16 @@ def fFirefoxSetup(bFirstRun):
   # We want to start with a clean state and we use an empty profile folder to
   # do that; create the profile folder if it does not exist and delete everything
   # in it if it does exist.
-  oFirefoxProfileFolder.fCreate();
-  oFirefoxProfileFolder.fDeleteChildren();
+  fFirefoxCleanup();
 
 def fFirefoxCleanup():
-  # Delete the profile to clean up after application ran.
-  oFirefoxProfileFolder.fDeleteChildren();
+  if not oFirefoxProfileFolder.fbIsFolder():
+    assert oFirefoxProfileFolder.fbCreateAsFolder(), \
+        "Cannot create Firefox profile folder %s" % oFirefoxProfileFolder.sPath;
+  else:
+    # Delete the profile to clean up after application ran.
+    assert oFirefoxProfileFolder.fbDeleteDescendants(), \
+        "Cannot clean up Firefox profile folder %s" % oFirefoxProfileFolder.sPath;
 
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
 # links to an online source repository:

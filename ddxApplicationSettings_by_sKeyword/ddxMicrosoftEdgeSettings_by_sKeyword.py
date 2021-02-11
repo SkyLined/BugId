@@ -2,7 +2,7 @@ import os;
 
 from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateForProcessId, oSystemInfo;
 from oConsole import oConsole;
-import mFileSystem2;
+from cFileSystemItem import cFileSystemItem;
 
 from dxConfig import dxConfig;
 from mColors import *;
@@ -17,7 +17,7 @@ dxConfigSettings = {
   "cBugId.bIgnoreWinRTExceptions": True,
 };
 
-oEdgeRecoveryFolder = mFileSystem2.foGetOrCreateFolder(os.path.join(
+oEdgeRecoveryFolder = cFileSystemItem(os.path.join(
   os.getenv("LocalAppData"), \
   "Packages", "Microsoft.MicrosoftEdge_8wekyb3d8bbwe", "AC", "MicrosoftEdge", "User", "Default", "Recovery", "Active"
 ));
@@ -45,11 +45,7 @@ def fEdgeCleanup():
   # Delete the recovery path to prevent conserving state between different runs of the application.
   if not oEdgeRecoveryFolder.fbIsFolder():
     return;
-  try:
-    oEdgeRecoveryFolder.fDeleteChildren();
-  except:
-    pass; # Failed to delete
-  else:
+  if oEdgeRecoveryFolder.fbDelete():
     return;
   # Microsoft Edge will have a lock on these files if its running; terminate it.
   oConsole.fPrint(WARNING, "Microsoft Edge appears to be running becasuse the recovery files cannot be");
@@ -63,11 +59,7 @@ def fEdgeCleanup():
       break;
     for uProcessId in auProcessIds:
       fbTerminateForProcessId(uProcessId);
-  try:
-    oEdgeRecoveryFolder.fDeleteChildren();
-  except:
-    pass; # Failed to delete
-  else:
+  if oEdgeRecoveryFolder.fbDelete():
     return;
   oConsole.fPrint(ERROR, "The recovery files still cannot be deleted. Please manually terminated all");
   oConsole.fPrint(ERROR, "processes related to Microsoft Edge and try to delete everything in");

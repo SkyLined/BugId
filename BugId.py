@@ -40,7 +40,8 @@ except: # Do nothing if not available.
 try:
   # Load the stuff from external modules that we need.
   from cBugId import cBugId;
-  import mFileSystem2, mProductDetails, mWindowsAPI;
+  from cFileSystemItem import cFileSystemItem;
+  import mProductDetails, mWindowsAPI;
   from oConsole import oConsole;
   
   from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
@@ -53,6 +54,7 @@ try:
   from fPrintLogo import fPrintLogo;
   from fPrintUsageInformation import fPrintUsageInformation;
   from fPrintVersionInformation import fPrintVersionInformation;
+  from fsGetValidName import fsGetValidName;
   from mColors import *;
   
   if __name__ == "__main__":
@@ -378,24 +380,23 @@ try:
           if guMaximumNumberOfBugs > 1:
             sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
           # Translate characters that are not valid in file names.
-          suValidReportFileName = mFileSystem2.fsGetValidName(sDesiredReportFileName, bUnicode = \
-              dxConfig["bUseUnicodeReportFileNames"]);
+          suValidReportFileName = fsGetValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
           if dxConfig["sReportFolderPath"] is not None:
             suReportFilePath = os.path.join(dxConfig["sReportFolderPath"], suValidReportFileName + ".html");
           else:
             suReportFilePath = suValidReportFileName + ".html";
-          oReportFile = None;
           oConsole.fStatus(u"\u2502 Bug report:       ", INFO, suValidReportFileName, ".html", NORMAL, "...");
           try:
-            oReportFile = mFileSystem2.foGetOrCreateFile(suReportFilePath);
-            oReportFile.fWrite(oBugReport.sReportHTML);
+            oReportFile = cFileSystemItem(suReportFilePath);
+            if oReportFile.fbIsFile(bParseZipFiles = True):
+              oReportFile.fbWrite(oBugReport.sReportHTML, bKeepOpen = False, bParseZipFiles = True, bThrowErrors = True);
+            else:
+              oReportFile.fbCreateAsFile(oBugReport.sReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
           except Exception as oException:
             oConsole.fPrint(u"\u2502 ", ERROR, "Bug report:       ", ERROR_INFO, suValidReportFileName, ".html", ERROR, " not saved!");
             oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
           else:
             oConsole.fPrint(u"\u2502 Bug report:       ", INFO, suValidReportFileName, ".html", NORMAL, ".");
-          if oReportFile:
-            oReportFile.fClose();
           if gbSaveOutputWithReport:
             if dxConfig["sReportFolderPath"] is not None:
               suLogOutputFilePath = os.path.join(dxConfig["sReportFolderPath"], suValidReportFileName + " BugId output.txt");
@@ -642,14 +643,19 @@ try:
               # -- collateral=1 means one collateral bug in addition to the first bug.
               guMaximumNumberOfBugs = long(sValue) + 1;
           elif sSettingName in ["symbols"]:
-            if sValue is None or not mFileSystem2.foGetFolder(sValue):
+            if sValue is None or not cFileSystemItem(sValue).fbIsFolder():
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be a valid folder path.");
             asAdditionalLocalSymbolPaths.append(sValue);
           elif sSettingName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path"]:
-            if sValue is None or not mFileSystem2.foGetFolder(sValue):
+            if sValue is None:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be a valid folder path.");
+              fTerminate(2);
+            oReportFolder = cFileSystemItem(sValue);
+            if not oReportFolder.fbIsFolder(bParseZipFiles = True) and not oReportFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True):
+              oConsole.fPrint(ERROR, "- The folder ", ERROR_INFO, sValue, ERROR, " does not exist and cannot be created.");
+              fTerminate(2);
             dxConfig["sReportFolderPath"] = sValue;
           elif sSettingName in ["test-internal-error", "internal-error-test"]:
             raise Exception("Testing internal error");
@@ -868,8 +874,6 @@ try:
         finally:
           oConsole.fUnlock();
       
-      if bRepeat:
-        sValidStatisticsFileName = mFileSystem2.fsGetValidName("Reproduction statistics.txt");
       asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"] or [];
       if asAdditionalLocalSymbolPaths:
         asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
@@ -996,20 +1000,21 @@ try:
             if gduNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
               sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
                   round(100.0 * uNumberOfRepros / uRunCounter));
+        sStatisticsFileName = "Reproduction statistics.txt";
         if dxConfig["sReportFolderPath"] is not None:
-          sStatisticsFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidStatisticsFileName);
+          sStatisticsFilePath = os.path.join(dxConfig["sReportFolderPath"], sStatisticsFileName);
         else:
-          sStatisticsFilePath = sValidStatisticsFileName;
-        oStatisticsFile = None;
+          sStatisticsFilePath = sStatisticsFileName;
         try:
-          oStatisticsFile = mFileSystem2.foGetOrCreateFile(sStatisticsFilePath);
-          oStatisticsFile.fWrite(sStatistics);
+          oStatisticsFile = cFileSystemItem(sStatisticsFilePath);
+          if oStatisticsFile.fbIsFile(bParseZipFiles = True):
+            oStatisticsFile.fbWrite(sStatistics, bKeepOpen = False, bParseZipFiles = True, bThrowErrors = True);
+          else:
+            oStatisticsFile.fbCreateAsFile(sStatistics, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
         except Exception as oException:
           oConsole.fPrint("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, str(oException), ERROR, ")");
         else:
           oConsole.fPrint("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
-        if oStatisticsFile:
-          oStatisticsFile.fClose();
         oConsole.fPrint(); # and loop
       raise AssertionError("Not reached!"); #  lgtm [py/unreachable-statement]
       
