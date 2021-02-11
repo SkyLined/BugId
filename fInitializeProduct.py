@@ -19,13 +19,18 @@ class cProductDetails(object):
       print "*" * 80;
       raise;
 
-def foLoadModule(sProductName, oMainProductDetails):
+def foLoadModule(sProductName, oMainProductDetails, sDependencyForProductName):
   try:
     oProductModule = __import__(sProductName, globals(), locals(), [], -1);
   except ImportError as oError:
     print "*" * 80;
     if oError.message == "No module named %s" % sProductName:
-      print "%s depends on %s which cannot be found on your system." % (oMainProductDetails.sProductName, sProductName);
+      print "%s%s depends on %s which cannot be found on your system." % (
+        sDependencyForProductName,
+        "" if sDependencyForProductName == oMainProductDetails.sProductName else
+          (", one of the dependencies of %s, in turn" % oMainProductDetails.sProductName),
+        sProductName,
+      )
       print "You can download the repository from GitHub at the following URL:";
       print "https://github.com/SkyLined/%s/" % sProductName
       print "After downloading, please save the code in one of these two folders:";
@@ -36,7 +41,12 @@ def foLoadModule(sProductName, oMainProductDetails):
       print "*" * 80;
     else:
       print "*" * 80;
-      print "%s depends on %s which cannot be loaded." % (oMainProductDetails.sProductName, sProductName);
+      print "%s%s depends on %s which cannot be loaded." % (
+        sDependencyForProductName,
+        "" if sDependencyForProductName == oMainProductDetails.sProductName else
+          (", one of the dependencies of %s, in turn" % oMainProductDetails.sProductName),
+        sProductName,
+      );
       print "*" * 80;
     raise;
   return oProductModule;
@@ -68,7 +78,7 @@ class cDependencyChecker(object):
         for sDepentOnProductName in oProductDetails.asDependentOnProductNames:
           if sDepentOnProductName in asLoadedProductNames:
             continue;
-          oProductModule = foLoadModule(sDepentOnProductName, oSelf.oMainProductDetails);
+          oProductModule = foLoadModule(sDepentOnProductName, oSelf.oMainProductDetails, sProductName);
           sProductFolderPath = os.path.dirname(oProductModule.__file__);
           # This dependency's module can be loaded; record this.
           asLoadedProductNames.append(sDepentOnProductName);
