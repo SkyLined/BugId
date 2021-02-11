@@ -1,4 +1,8 @@
 {
+  "asProductTypes": ["Python application"],
+  "asPythonApplicationNames": [
+    "BugId"
+  ],
   "asDependentOnProductNames": [
     "cBugId", 
     "cFileSystemItem",
@@ -6,7 +10,6 @@
     "mWindowsSDK", 
     "mMultiThreading", 
     "mDateTime", 
-    "mFileSystem2", 
     "mProductDetails", 
     "mWindowsAPI", 
     "mRegistry", 
