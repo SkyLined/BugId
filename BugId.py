@@ -579,6 +579,7 @@ try:
             else:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be \"true\" or \"false\".");
+              fTerminate(2);
           elif sSettingName in ["verbose", "debug"]:
             if sValue is None or sValue.lower() == "true":
               gbVerbose = True;
@@ -587,6 +588,7 @@ try:
             else:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be \"true\" or \"false\".");
+              fTerminate(2);
           elif sSettingName in ["fast", "quick"]:
             if sValue is None or sValue.lower() == "true":
               bFast = True;
@@ -595,6 +597,7 @@ try:
             else:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be \"true\" or \"false\".");
+              fTerminate(2);
           elif sSettingName in ["dump"]:
             if sValue is None or sValue.lower() == "true":
               gbSaveDump = True;
@@ -603,6 +606,7 @@ try:
             else:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be \"true\" or \"false\".");
+              fTerminate(2);
           elif sSettingName in ["full-dump"]:
             if sValue is None or sValue.lower() == "true":
               gbSaveDump = True; # Saving a full dumps means saving a dump.
@@ -612,6 +616,7 @@ try:
             else:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be \"true\" or \"false\".");
+              fTerminate(2);
           elif sSettingName in ["forever"]:
             if sValue is None or sValue.lower() == "true":
               bRepeat = True;
@@ -620,6 +625,7 @@ try:
             else:
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be \"true\" or \"false\".");
+              fTerminate(2);
           elif sSettingName in ["repeat"]:
             bRepeat = sValue is None or sValue.lower() != "false";
             if bRepeat and sValue is not None:
@@ -634,6 +640,7 @@ try:
               if uNumberOfRepeats is None:
                 oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                     " must be an integer larger than 1 or \"false\".");
+                fTerminate(2);
           elif sSettingName == "pause":
             gbPauseBeforeExit = True;
           elif sSettingName in ["collateral"]:
@@ -646,6 +653,7 @@ try:
             if sValue is None or not cFileSystemItem(sValue).fbIsFolder():
               oConsole.fPrint(ERROR, "- The value for ", ERROR_INFO, "--", sSettingName, ERROR, \
                   " must be a valid folder path.");
+              fTerminate(2);
             asAdditionalLocalSymbolPaths.append(sValue);
           elif sSettingName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path"]:
             if sValue is None:
