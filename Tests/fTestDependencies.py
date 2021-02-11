@@ -9,7 +9,6 @@ def fTestDependencies():
   sParentFolderPath = os.path.dirname(sMainFolderPath);
   sModulesFolderPath = os.path.join(sMainFolderPath, "modules");
   asOriginalSysPath = sys.path[:];
-  sys.path = [sMainFolderPath, sParentFolderPath, sModulesFolderPath] + asOriginalSysPath;
   # Load product details
   oProductDetailsFile = open(os.path.join(sMainFolderPath, "dxProductDetails.json"), "rb");
   try:
@@ -27,23 +26,23 @@ def fTestDependencies():
     asExpectedDependencyPythonInternalModuleBaseNames = [s.rstrip("\r") for s in sInternalPythonModuleDepenciesList.split("\n") if s.rstrip("\r")];
   else:
     asExpectedDependencyPythonInternalModuleBaseNames = [];
-  # Load list of dependencies on python internal modules:
-  sMainPythonModulesListFilePath = os.path.join(sTestsFolderPath, "main-python-modules.txt");
-  assert os.path.isfile(sMainPythonModulesListFilePath), \
-      "main-python-modules.txt is missing!";
-  oMainPythonModulesListFile = open(sMainPythonModulesListFilePath, "rb");
-  try:
-    sMainPythonModulesList = oMainPythonModulesListFile.read();
-  finally:
-    oMainPythonModulesListFile.close();
-  asMainPythonModuleNames = [s.rstrip("\r") for s in sMainPythonModulesList.split("\n") if s.rstrip("\r")];
-  assert asMainPythonModuleNames, \
-      "main-python-modules.txt is empty!";
   
-  # Load the main modules, which should load all their dependencies:
-  for sMainPythonModuleName in asMainPythonModuleNames:
-    __import__(sMainPythonModuleName, globals(), locals(), [], -1);
-  
+  # Find out the type of product and load modules/application modules:
+  for sProductType in dxProductDetails["asProductTypes"]:
+    if sProductType == "Python module":
+      # This product offers a Python module; it should be loaded from the parent folder.
+      sys.path = [sParentFolderPath] + asOriginalSysPath;
+      __import__(dxProductDetails["sPythonModuleName"], globals(), locals(), [], -1);
+    elif sProductType == "Python application":
+      # This product offers a a Python application and/or module; it should be loaded from the main folder, with the
+      # parent folder in the path too.
+      sys.path = [sMainFolderPath, sParentFolderPath] + asOriginalSysPath;
+      for sPythonApplicationName in dxProductDetails["asPythonApplicationNames"]:
+        __import__(sPythonApplicationName, globals(), locals(), [], -1);
+    elif sProductType in ["JavaScript module", "PHP module"]:
+      pass;
+    else:
+      raise AssertionError("Unknown \"asProductTypes\" value %s!" % repr(sProductType));
   
   # Determine which Python internal modules were unexpectedly loaded as dependencies:
   asLoadedPythonInteralModuleBaseNames = [
@@ -51,6 +50,7 @@ def fTestDependencies():
     for (sModuleName, o0Module) in sys.modules.items()
     if (
       "." not in sModuleName # Ignore sub-modules
+      and not sModuleName.startswith("_") # ignore "private/internal" modules
       and sModuleName not in asInitiallyLoadedModuleNames
       and not (o0Module and hasattr(o0Module, "__file__") and o0Module.__file__.startswith(sParentFolderPath))
     )
@@ -58,10 +58,7 @@ def fTestDependencies():
   asUnexpectedDependencyPythonInteralModuleBaseNames = [
     sModuleName
     for sModuleName in asLoadedPythonInteralModuleBaseNames
-    if (
-      not sModuleName.startswith("_") # ignore "private/internal" modules
-      and sModuleName not in asExpectedDependencyPythonInternalModuleBaseNames
-    )
+    if sModuleName not in asExpectedDependencyPythonInternalModuleBaseNames
   ];
   # Determine which Python internal modules were reported as dependencies but not loaded
   asSuperflousDependencyPythonInternalModuleBaseNames = [
@@ -84,19 +81,22 @@ def fTestDependencies():
     raise AssertionError("Incorrect dependencies on Python internal modules found!");
   
   # Determine which product modules were unexpectedly loaded as dependencies:
-  dsLoadedDependencyModules_by_sName = dict([
-    (sModuleName, o0Module)
-    for (sModuleName, o0Module) in sys.modules.items()
-    if (
-      "." not in sModuleName # Ignore sub-modules
-      and o0Module and hasattr(o0Module, "__file__") # Must have a path
-      and o0Module.__file__.startswith(sParentFolderPath) # Must not be an internal module
-      and not (
-        o0Module.__file__.startswith(sMainFolderPath) # ignore modules in product folder
-        and not o0Module.__file__.startswith(sModulesFolderPath) # except if in "/modules/" folder (which contains dependencies)
-      )
-    )
-  ]);
+  dsLoadedDependencyModules_by_sName = {};
+  for (sModuleName, o0Module) in sys.modules.items():
+    if "." not in sModuleName and o0Module and hasattr(o0Module, "__file__") and o0Module.__file__:
+      sSourceFilePath = o0Module.__file__;
+      try:
+        bSourceIsUnderParentFolder = not os.path.relpath(sSourceFilePath, sParentFolderPath).startswith("..");
+        bSourceIsUnderMainFolder = not os.path.relpath(sSourceFilePath, sMainFolderPath).startswith("..");
+        bSourceIsUnderModulesFolder = not os.path.relpath(sSourceFilePath, sModulesFolderPath).startswith("..");
+      except ValueError:
+        continue; # Not a dependency but a Python internal module
+      if not bSourceIsUnderParentFolder:
+        continue; # Not a dependency but a Python internal module
+      if bSourceIsUnderMainFolder and not bSourceIsUnderModulesFolder:
+        continue; # Not a dependency but part of the product
+      dsLoadedDependencyModules_by_sName[sModuleName] = o0Module;
+  
   asExpectedDependencyModulesNames = dxProductDetails.get("asDependentOnProductNames", []) + dxProductDetails.get("asOptionalProductNames", []);
   asUnexpectedDependencyModuleNames = [
     sModuleName
@@ -125,19 +125,24 @@ def fTestDependencies():
   if asUnexpectedDependencyPythonInteralModuleBaseNames or asSuperflousDependencyPythonInternalModuleBaseNames \
       or asUnexpectedDependencyModuleNames or asSuperfluousDependencyModuleNames:
     for sModuleName in sorted(sys.modules.keys()):
-      if "." not in sModuleName:
-        o0Module = sys.modules[sModuleName];
-        s0SourceFilePath = o0Module and getattr(o0Module, "__file__");
-        sOrigin = (
-          "PYTHON" if (
-            s0SourceFilePath is None
-            or not s0SourceFilePath.startswith(sParentFolderPath)
-          ) else
-          "DEPENDENCY" if not (
-            s0SourceFilePath.startswith(sMainFolderPath)
-            and not s0SourceFilePath.startswith(sModulesFolderPath)
-          ) else 
-          "PRODUCT"
-        );
-        print "%-30s => %s %s" % (sModuleName, sOrigin, sFile);
+      if "." in sModuleName:
+        continue;
+      o0Module = sys.modules[sModuleName];
+      if not o0Module or not hasattr(o0Module, "__file__") or not o0Module.__file__:
+        sOrigin = "INTERNAL";
+        sSourceFilePath = "<none>";
+      else:
+        sSourceFilePath = o0Module.__file__;
+        try:
+          bSourceIsUnderParentFolder = not os.path.relpath(sSourceFilePath, sParentFolderPath).startswith("..");
+          bSourceIsUnderMainFolder = not os.path.relpath(sSourceFilePath, sMainFolderPath).startswith("..");
+          bSourceIsUnderModulesFolder = not os.path.relpath(sSourceFilePath, sModulesFolderPath).startswith("..");
+          sOrigin = (
+            "PRODUCT" if bSourceIsUnderMainFolder and not bSourceIsUnderModulesFolder else
+            "DEPENDENCY" if bSourceIsUnderParentFolder else
+            "PYTHON"
+          );
+        except ValueError:
+          sOrigin = "PYTHON";
+      print "%-30s => %s %s" % (sModuleName, sOrigin, sSourceFilePath);
     raise AssertionError("Incorrect dependencies found!");
