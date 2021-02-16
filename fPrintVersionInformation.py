@@ -4,6 +4,8 @@ from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from oConsole import oConsole;
 
 from faxListOutput import faxListOutput;
+from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
+from fxGetCurrentJITDebuggerCommandLine import fxGetCurrentJITDebuggerCommandLine;
 from mColors import *;
 
 def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders):
@@ -80,7 +82,7 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
           asProductNamesInTrial.append(oProductDetails.sProductName);
         else:
           asUnlicensedProductNames.append(oProductDetails.sProductName);
-
+      
       oLicenseCheckServer = mProductDetails.cLicenseCheckServer(oMainProductDetails.sLicenseServerURL);
       uCheckedLicenseCounter = 0;
       for oLicense in aoLicenses:
@@ -121,6 +123,32 @@ def fPrintVersionInformation(bCheckForUpdates, bCheckAndShowLicenses, bShowInsta
       NORMAL, ".",
     );
     
+    oConsole.fPrint(
+      u"\u251C\u2500 ", INFO, "JIT Debugger", NORMAL, " ", sPadding = u"\u2500",
+    );
+    xCurrentJITDebuggerCommandLine = fxGetCurrentJITDebuggerCommandLine();
+    if xCurrentJITDebuggerCommandLine is None:
+      oConsole.fPrint(
+        u"\u2502 \u2219 JIT debugger: None.",
+      );
+    elif xCurrentJITDebuggerCommandLine is False:
+      oConsole.fPrint(
+        u"\u2502 \u2219 JIT debugger: ", ERROR_INFO, "Unknown", NORMAL, " (unable to read registry).",
+      );
+    else:
+      sBugIdJITDebuggerCommandLineStartsWith = fsCreateBugIdCommandLine();
+      if xCurrentJITDebuggerCommandLine.startswith(sBugIdJITDebuggerCommandLineStartsWith):
+        oConsole.fPrint(u"\u2502 \u2219 JIT debugger: ", INFO, "BugId", NORMAL, ".");
+        sArguments = xCurrentJITDebuggerCommandLine[len(sBugIdJITDebuggerCommandLineStartsWith) + 1:];
+        oConsole.fPrint(
+          u"\u2502     Arguments: ", INFO, sArguments, NORMAL, ".",
+        );
+      else:
+        oConsole.fPrint(u"\u2502 \u2219 JIT debugger: ", WARNING_INFO, "Other", NORMAL, ".");
+        oConsole.fPrint(
+          u"\u2502     Command line: ", INFO, xCurrentJITDebuggerCommandLine, NORMAL, ".",
+        );
+      
     if bCheckAndShowLicenses:
       oConsole.fPrint(
         u"\u251C\u2500 ", INFO, "License information", NORMAL, " ", sPadding = u"\u2500",
