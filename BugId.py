@@ -82,6 +82,7 @@ try:
     gbSaveOutputWithReport = False;
     gbPauseBeforeExit = False;
     gbRunningAsJITDebugger = False;
+    gsInternalErrorReportsFolder = os.path.join(os.path.dirname(__file__), "Internal error reports");
     
     def fTerminate(uExitCode):
       oConsole.fCleanup();
@@ -129,7 +130,7 @@ try:
       uIndex = 0;
       while True:
         uIndex += 1;
-        sErrorReportFilePath = os.path.join(os.path.dirname(__file__), "BugId error report #%d.txt" % uIndex);
+        sErrorReportFilePath = os.path.join(gsInternalErrorReportsFolder, "BugId error report #%d.txt" % uIndex);
         if not os.path.isfile(sErrorReportFilePath):
           break;
       oConsole.fStatus("Creating a copy of the error report in %s..." % (sErrorReportFilePath,));
