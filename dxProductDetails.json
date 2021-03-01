@@ -1,12 +1,8 @@
 {
-  "asProductTypes": ["Python application"],
-  "asPythonApplicationNames": [
-    "BugId"
-  ],
   "asDependentOnProductNames": [
     "cBugId", 
-    "cFileSystemItem",
-    "mDebugOutput",
+    "cFileSystemItem", 
+    "mDebugOutput", 
     "mWindowsSDK", 
     "mMultiThreading", 
     "mDateTime", 
@@ -15,10 +11,18 @@
     "mRegistry", 
     "oConsole"
   ], 
+  "asJavaScriptModuleNames": [], 
   "asOptionalProductNames": [
     "mDebugOutput"
   ], 
-  "oProductVersion": "2020-08-28 09:02", 
+  "asPHPModuleNames": [], 
+  "asProductTypes": [
+    "Python application"
+  ], 
+  "asPythonApplicationNames": [
+    "BugId"
+  ], 
+  "oProductVersion": "2021-03-01 10:16", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "BugId", 
