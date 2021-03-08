@@ -14,7 +14,7 @@ def fbInstallAsJITDebugger(asArguments):
     asArguments
   );
   oRegistryHiveKey = mRegistry.cRegistryHiveKey(
-    sHiveName = mJITDebuggerRegistry.sRegistryHiveName,
+    sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
     sKeyName = mJITDebuggerRegistry.sComandLineKeyPath,
   );
   oConsole.fStatus("* Installing as JIT debugger...");
