@@ -2,6 +2,7 @@
   "asDependentOnProductNames": [
     "cBugId", 
     "cFileSystemItem", 
+    "mHumanReadable",
     "mDebugOutput", 
     "mWindowsSDK", 
     "mMultiThreading", 
