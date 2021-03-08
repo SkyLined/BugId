@@ -54,7 +54,6 @@ try:
   from fPrintLogo import fPrintLogo;
   from fPrintUsageInformation import fPrintUsageInformation;
   from fPrintVersionInformation import fPrintVersionInformation;
-  from fsGetValidName import fsGetValidName;
   from mColors import *;
   
   if __name__ == "__main__":
@@ -381,7 +380,7 @@ try:
           if guMaximumNumberOfBugs > 1:
             sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
           # Translate characters that are not valid in file names.
-          suValidReportFileName = fsGetValidName(sDesiredReportFileName, bUnicode = dxConfig["bUseUnicodeReportFileNames"]);
+          suValidReportFileName = cFileSystemItem.fsGetValidName(sDesiredReportFileName, bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"]);
           if dxConfig["sReportFolderPath"] is not None:
             suReportFilePath = os.path.join(dxConfig["sReportFolderPath"], suValidReportFileName + ".html");
           else:
