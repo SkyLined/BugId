@@ -31,3 +31,6 @@
 [submodule "modules/cFileSystemItem"]
 	path = modules/cFileSystemItem
 	url = https://github.com/SkyLined/cFileSystemItem/
+[submodule "modules/mHumanReadable"]
+	path = modules/mHumanReadable
+	url = https://github.com/SkyLined/mHumanReadable/
