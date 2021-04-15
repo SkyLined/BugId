@@ -527,7 +527,13 @@ try:
             if oUWPApplication is not None:
               oConsole.fPrint(ERROR, "- You cannot provide UWP application details and process ids.");
               fTerminate(2);
-            auApplicationProcessIds += [long(x) for x in sValue.split(",")];
+            for sPid in sValue.split(","):
+              try:
+                auApplicationProcessIds.append(long(sPid));
+              except ValueError:
+                oConsole.fPrint(ERROR, "- You cannot provide ", ERROR_INFO, repr(sPid), ERROR, " as a process ids, as it is not a number.");
+                oConsole.fPrint(ERROR, "  Full argument: ", ERROR_INFO, repr(sArgument), ERROR, ".");
+                fTerminate(2);
           elif sSettingName == "handle-jit-event":
             if not sValue:
               oConsole.fPrint(ERROR, "- No event handle provided!");
