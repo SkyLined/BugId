@@ -726,6 +726,10 @@ try:
         dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
         dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
       
+      if u0JITDebuggerEventId is not None and dxConfig["sReportFolderPath"] is None:
+        oConsole.fPrint(ERROR, "- JIT debugging is not possible without providing a value for ", ERROR_INFO, "sReportFolderPath", ERROR, ".");
+        fTerminate(2);
+      
       dsApplicationURLTemplate_by_srSourceFilePath = {};
       
       if gbSaveOutputWithReport:
