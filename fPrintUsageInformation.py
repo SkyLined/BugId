@@ -76,8 +76,9 @@ def fPrintUsageInformation(asApplicationKeywords):
     oConsole.fPrint("    the JIT debugger. It might be useful to add arguments such as \"--pause\"");
     oConsole.fPrint("    to leave the BugId window open after it generated a report, \"--full-dump\"");
     oConsole.fPrint("    to generate a full memory dump and \"--reports=<path>\" to have the reports");
-    oConsole.fPrint("    stored in a specific folder. Otherwise, the location where reports and");
-    oConsole.fPrint("    other output are stored is not known.");
+    oConsole.fPrint("    stored in a specific folder. If you do not provide \"--reports\", it will");
+    oConsole.fPrint("    be added automatically to make sure the reports are saved in a folder that");
+    oConsole.fPrint("    BugId can write to, and which you can easily find.");
     
     oConsole.fPrint(INFO,"  --isa=x86|x64");
     oConsole.fPrint("    Use the x86 or x64 version of cdb to debug the application. The default is");
