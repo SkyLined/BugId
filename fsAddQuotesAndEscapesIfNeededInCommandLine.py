@@ -14,5 +14,6 @@ def fsAddQuotesAndEscapesIfNeededInCommandLine(sString):
   return '"%s"' % (sString
     .replace('"', '""') # double up quotes inside quotes to escape them
     .replace('%', '"%"') # move '%' out of the quotes to avoid environment variable expansion.
+    .replace('"%""%"', '%') # '%%' was modified to '"%""%"', now turn it back into '%'.
     .replace(r'\\', r'"\\"'), # move '\\' out of the quotes AND double up to avoid it being interpreted as an escape char.
   );
