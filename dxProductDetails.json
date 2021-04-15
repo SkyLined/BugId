@@ -2,7 +2,7 @@
   "asDependentOnProductNames": [
     "cBugId", 
     "cFileSystemItem", 
-    "mHumanReadable",
+    "mHumanReadable", 
     "mDebugOutput", 
     "mWindowsSDK", 
     "mMultiThreading", 
@@ -23,7 +23,7 @@
   "asPythonApplicationNames": [
     "BugId"
   ], 
-  "oProductVersion": "2021-03-01 18:51", 
+  "oProductVersion": "2021-04-15 11:40", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "BugId", 
