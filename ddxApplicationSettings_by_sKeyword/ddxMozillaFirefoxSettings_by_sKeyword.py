@@ -26,6 +26,15 @@ oFirefoxProfileFolder = cFileSystemItem(os.getenv("TEMP")).foGetChild("Firefox-p
 def fasGetFirefoxStaticArguments(bForHelp):
   fFirefoxCleanup();
   return [
+    # https://wiki.mozilla.org/Platform/Integration/InjectEject/Launcher_Process/#Considerations_for_Developers
+    # This switch prevents the "Launcher" process (the first firefox.exe process) from starting the "Browser" process
+    # as a completely separate process (not a child) and terminating. Instead, it will spawn the "Browser" process
+    # as a child and wait for it to terminate before terminating itself.
+    "--wait-for-browser",
+    # http://kb.mozillazine.org/Opening_a_new_instance_of_Firefox_with_another_profile
+    # These switches prevent the "Launcher" process from telling an existing firefox.exe process to open a new window
+    # and terminating. Instead, they allow us to run an instance of Firefox completely separated from any already
+    # running instances.
     "--no-remote",
     "-profile", oFirefoxProfileFolder.sPath,
   ];
