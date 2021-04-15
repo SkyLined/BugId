@@ -68,7 +68,7 @@ try:
       # No application is known to require running processes with a non-ideal cdb ISA at this point.
     ];
     gasReportedBinaryNameWithNonIdealCdbISA = [];
-    gbAnErrorOccured = False;
+    gbAnInternalErrorOccured = False;
     gbFailedToApplyMemoryLimitsErrorShown = False;
     gbQuiet = False;
     gbVerbose = False;
@@ -107,8 +107,8 @@ try:
       oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTimeInSeconds(), sReason));
     
     def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
-      global gbAnErrorOccured;
-      gbAnErrorOccured = True;
+      global gbAnInternalErrorOccured;
+      gbAnInternalErrorOccured = True;
       oConsole.fLock();
       try:
         oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " Failed to debug the application ", ERROR, sPadding = u"\u2500");
@@ -120,8 +120,8 @@ try:
         oConsole.fUnlock();
     
     def fInternalExceptionCallback(oBugId, oThread, oException, oTraceBack):
-      global gbAnErrorOccured;
-      gbAnErrorOccured = True;
+      global gbAnInternalErrorOccured;
+      gbAnInternalErrorOccured = True;
       fSaveInternalExceptionReportAndExit(oException, oTraceBack);
     
     def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
@@ -141,8 +141,8 @@ try:
     def fLicenseErrorsCallback(oBugId, asErrors):
       # These should have been reported before cBugId was even instantiated, so this is kind of unexpected.
       # But rather than raise AssertionError("NOT REACHED"), we'll report the license error gracefully:
-      global gbAnErrorOccured;
-      gbAnErrorOccured = True;
+      global gbAnInternalErrorOccured;
+      gbAnInternalErrorOccured = True;
       oConsole.fLock();
       try:
         oConsole.fPrint(ERROR, u"\u250C\u2500", ERROR_INFO, " Software license error ", ERROR, sPadding = u"\u2500");
@@ -169,7 +169,7 @@ try:
       global \
           gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA, \
           gasReportedBinaryNameWithNonIdealCdbISA, \
-          gbAnErrorOccured;
+          gbAnInternalErrorOccured;
       sBinaryName = oProcess.sBinaryName;
       if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA:
         return;
@@ -192,7 +192,7 @@ try:
           finally:
             oConsole.fUnlock();
       else:
-        gbAnErrorOccured = True;
+        gbAnInternalErrorOccured = True;
         oConsole.fLock();
         try:
           oConsole.fPrint(
@@ -217,8 +217,7 @@ try:
     def fPageHeapNotEnabledCallback(oBugId, oProcess, bIsMainProcess, bPreventable):
       global \
           gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
-          gasReportedLowercaseBinaryNamesWithoutPageHeap, \
-          gbAnErrorOccured;
+          gasReportedLowercaseBinaryNamesWithoutPageHeap;
       sLowerBinaryName = oProcess.sBinaryName.lower();
       if (
         gbQuiet
@@ -353,7 +352,8 @@ try:
     def fBugReportCallback(oBugId, oBugReport):
       global guDetectedBugsCount, \
              guMaximumNumberOfBugs, \
-             gduNumberOfRepros_by_sBugIdAndLocation;
+             gduNumberOfRepros_by_sBugIdAndLocation, \
+             gbAnInternalErrorOccured;
       guDetectedBugsCount += 1;
       oConsole.fLock();
       try:
@@ -395,6 +395,7 @@ try:
           except Exception as oException:
             oConsole.fPrint(u"\u2502 ", ERROR, "Bug report:       ", ERROR_INFO, suValidReportFileName, ".html", ERROR, " not saved!");
             oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
+            gbAnInternalErrorOccured = True;
           else:
             oConsole.fPrint(u"\u2502 Bug report:       ", INFO, suValidReportFileName, ".html", NORMAL, ".");
           if gbSaveOutputWithReport:
@@ -409,6 +410,7 @@ try:
               oConsole.fCleanup();
               oConsole.fPrint(u"\u2502 BugId output log: ", ERROR_INFO, suValidReportFileName, ".txt", ERROR, " not saved!");
               oConsole.fPrint(u"\u2502   Error:          ", ERROR_INFO, str(oException));
+              gbAnInternalErrorOccured = True;
             else:
               oConsole.fPrint(u"\u2502 BugId output log: ", INFO, suValidReportFileName, ".txt", NORMAL, ".");
           if gbSaveDump:
@@ -516,7 +518,6 @@ try:
             # "--bFlag" is an alias for "--bFlag=true"
             sSettingName = sArgument[2:];
             sValue = None;
-          
           if sSettingName in ["pid", "pids"]:
             if not sValue:
               oConsole.fPrint(ERROR, "- You must provide at least one process id.");
@@ -986,7 +987,7 @@ try:
         guDetectedBugsCount = 0;
         oBugId.fStart();
         oBugId.fWait();
-        if gbAnErrorOccured:
+        if gbAnInternalErrorOccured:
           if fCleanup:
             # Call cleanup after runnning the application, before exiting BugId
             oConsole.fStatus("* Cleaning up application state...");
