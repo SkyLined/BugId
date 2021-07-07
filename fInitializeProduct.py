@@ -1,102 +1,93 @@
-import json, os, sys;
-
-class cProductDetails(object):
-  def __init__(oSelf, sProductFolderPath):
-    oSelf.sProductFolderPath = sProductFolderPath;
-    # Load product details
-    try:
-      sProductDetailsFilePath = os.path.join(sProductFolderPath, "dxProductDetails.json");
-      oProductDetailsFile = open(sProductDetailsFilePath, "rb");
-      try:
-        dxProductDetails = json.load(oProductDetailsFile);
-      finally:
-        oProductDetailsFile.close();
-      oSelf.sProductName = dxProductDetails["sProductName"];
-      oSelf.asDependentOnProductNames = dxProductDetails.get("asDependentOnProductNames", []);
-    except:
-      print "*" * 80;
-      print "The file %s does not appear to contain valid product details!" % sProductDetailsFilePath;
-      print "*" * 80;
-      raise;
-
-def foLoadModule(sProductName, oMainProductDetails, sDependencyForProductName):
-  try:
-    oProductModule = __import__(sProductName, globals(), locals(), [], -1);
-  except ImportError as oError:
-    print "*" * 80;
-    if oError.message == "No module named %s" % sProductName:
-      print "%s%s depends on %s which cannot be found on your system." % (
-        sDependencyForProductName,
-        "" if sDependencyForProductName == oMainProductDetails.sProductName else
-          (", one of the dependencies of %s, in turn" % oMainProductDetails.sProductName),
-        sProductName,
-      )
-      print "You can download the repository from GitHub at the following URL:";
-      print "https://github.com/SkyLined/%s/" % sProductName
-      print "After downloading, please save the code in one of these two folders:";
-      print "    %s" % os.path.normpath(os.path.join(oMainProductDetails.sProductFolderPath, "modules", sProductName));
-      print " - or -";
-      print "    %s" % os.path.normpath(os.path.join(oMainProductDetails.sProductFolderPath, "..", sProductName));
-      print "Once you have completed these steps, please try again.";
-      print "*" * 80;
-    else:
-      print "*" * 80;
-      print "%s%s depends on %s which cannot be loaded." % (
-        sDependencyForProductName,
-        "" if sDependencyForProductName == oMainProductDetails.sProductName else
-          (", one of the dependencies of %s, in turn" % oMainProductDetails.sProductName),
-        sProductName,
-      );
-      print "*" * 80;
-    raise;
-  return oProductModule;
-
-class cDependencyChecker(object):
-  def __init__(oSelf, sMainProductFolderPath):
-    oSelf.sMainProductFolderPath = sMainProductFolderPath;
-    oSelf.oBaseFolderPath = os.path.dirname(sMainProductFolderPath);
-    
-    oSelf.doProductDetails_by_sName = {};
-    oSelf.oMainProductDetails = oSelf.foLoadProductDetailsForFolderPath(sMainProductFolderPath);
-  
-  def foLoadProductDetailsForFolderPath(oSelf, sProductFolderPath):
-    oProductDetails = cProductDetails(sProductFolderPath);
-    assert oProductDetails.sProductName not in oSelf.doProductDetails_by_sName, \
-        "Cannot have a single product in two folders: %s found in %s and %s" % \
-        (oProductDetails.sProductName, sProductFolderPath, 
-        oSelf.doProductDetails_by_sName[oProductDetails.sProductName].sProductFolderPath);
-    oSelf.doProductDetails_by_sName[oProductDetails.sProductName] = oProductDetails;
-    return oProductDetails;
-  
-  def fCheck(oSelf):
-    asLoadedProductNames = [oSelf.oMainProductDetails.sProductName];
-    asCheckedProductNames = [];
-    while len(asCheckedProductNames) < len(oSelf.doProductDetails_by_sName):
-      for (sProductName, oProductDetails) in oSelf.doProductDetails_by_sName.items():
-        if sProductName in asCheckedProductNames:
-          continue;
-        for sDepentOnProductName in oProductDetails.asDependentOnProductNames:
-          if sDepentOnProductName in asLoadedProductNames:
-            continue;
-          oProductModule = foLoadModule(sDepentOnProductName, oSelf.oMainProductDetails, sProductName);
-          sProductFolderPath = os.path.dirname(oProductModule.__file__);
-          # This dependency's module can be loaded; record this.
-          asLoadedProductNames.append(sDepentOnProductName);
-          # Make sure we check the dependencies of this module as well.
-          oSelf.foLoadProductDetailsForFolderPath(sProductFolderPath);
-        asCheckedProductNames.append(sProductName);
-
 def fInitializeProduct():
-  # This file is supposed to be store in the main product folder.
+  import json, os, sys;
+  
+  import __main__;
+  bIsMainProduct = hasattr(__main__, "__file__") and os.path.dirname(__main__.__file__) == os.path.dirname(__file__);
+  
+  bDebugOutput = "--debug-product-initialization" in sys.argv[1:];
+  auCurrentLineLength = [0];
+  if bDebugOutput:
+    def fDebugStatus(sMessage):
+      print("\r%s" % sMessage.ljust(auCurrentLineLength[0]), sep = "", end = "\n");
+      auCurrentLineLength[0] = len(sMessage);
+    def fDebugOutput(sMessage):
+      print("\r%s" % sMessage.ljust(auCurrentLineLength[0]), sep = "");
+      auCurrentLineLength[0] = 0;
+  
+  def fo0LoadModule(sProductName, sModuleName, bOptional = False):
+    if sModuleName in sys.modules:
+      return sys.modules[sModuleName];
+    if bDebugOutput: fDebugStatus("\xB7 Loading module %s for %s..." % (sModuleName, sProductName));
+    try:
+      oModule = __import__(sModuleName, dict(globals()), {}, [], 0);
+    except Exception as oException:
+      bModuleNotFound = isinstance(oException, ModuleNotFoundError) and oException.args[0] == "No module named '%s'" % sModuleName;
+      if bDebugOutput:
+        if bModuleNotFound:
+          fDebugOutput("- %s %s is not available." % ("Optional module" if bOptional else "Module", sModuleName));
+        else:
+          fDebugOutput("- %s %s cannot be loaded: %s(%s)." % \
+              ("Optional module" if bOptional else "Module", sModuleName, oException.__class__.__name__, repr(oException.args)[1:-1]));
+      if bOptional:
+        return None;
+      if bIsMainProduct:
+        print("*" * 80);
+        if bModuleNotFound:
+          print("%s depends on %s which is not available." % (sProductName, sModuleName));
+        else:
+          print("%s depends on %s which cannot be loaded because of an error:" % (sProductName, sModuleName));
+          print("%s: %s" % (oException.__class__.__name__, oException));
+        print("*" * 80);
+      raise;
+    if bDebugOutput: fDebugOutput("+ Module %s loaded (%s)." % (sModuleName, os.path.dirname(oModule.__file__)));
+    return oModule;
+  
+  # This is supposed to be the __init__.py file in the main product folder.
+  sMainProductFolderPath = os.path.normpath(os.path.dirname(__file__));
+  asExpectedModulePaths = [
+    sMainProductFolderPath,
+    os.path.dirname(sMainProductFolderPath), # parent folder
+    os.path.join(sMainProductFolderPath, "modules") # "modules" folder
+  ]
+  asOriginalSysPath = sys.path[:];
   # Our search path will be the main product folder first, its parent folder
   # second, the "modules" child folder of the main product folder third, and
   # whatever was already in the search path last.
-  sMainProductFolderPath = os.path.normpath(os.path.dirname(__file__));
-  sParentFolderPath = os.path.normpath(os.path.dirname(sMainProductFolderPath));
-  sModulesFolderPath = os.path.join(sMainProductFolderPath, "modules");
-  asOriginalSysPath = sys.path[:];
-  sys.path = [sMainProductFolderPath, sParentFolderPath, sModulesFolderPath] + sys.path;
-  cDependencyChecker(sMainProductFolderPath).fCheck();
+  sys.path = asExpectedModulePaths + [sPath for sPath in sys.path if sPath not in asExpectedModulePaths];
+#  if bDebugOutput:
+#    fDebugOutput("* Module search path:");
+#    for sPath in sys.path:
+#      fDebugOutput("  %s" % sPath);
+  # Load the dxProductDetails.json file and extract dependencies:
+  sProductDetailsFilePath = os.path.join(sMainProductFolderPath, "dxProductDetails.json");
+  if bDebugOutput: fDebugStatus("\xB7 Loading product details (%s)..." % sProductDetailsFilePath);
+  try:
+    with open(sProductDetailsFilePath, "rb") as oProductDetailsFile:
+      dxProductDetails = json.load(oProductDetailsFile);
+  except Exception as oException:
+    if bDebugOutput: fDebugOutput("- Product details cannot be loaded from %s: %s(%s)" % \
+          (sProductDetailsFilePath, oException.__class__.__name__, repr(oException.args)[1:-1]));
+    raise;
+  if bDebugOutput: fDebugOutput("+ Product details for %s loaded (%s)" % (
+    "%(sProductName)s by %(sProductAuthor)s" % dxProductDetails, 
+    sProductDetailsFilePath,
+  ));
+  for sModuleName in dxProductDetails.get("a0sDependentOnProductNames", []):
+    fo0LoadModule(dxProductDetails["sProductName"], sModuleName, bOptional = False);
+  for sModuleName in (
+    dxProductDetails.get("a0sDebugAdditionalProductNames", []) +
+    dxProductDetails.get("a0sReleaseAdditionalProductNames", [])
+  ):
+    fo0LoadModule(dxProductDetails["sProductName"], sModuleName, bOptional = True);
+  if bDebugOutput: fDebugOutput("+ Product %s initialized." % dxProductDetails["sProductName"]);
   # Restore the original module search path
   sys.path = asOriginalSysPath;
-
+  # Remove the debug flag from the arguments if it was provided.
+  # We only do this in the main product initializer, otherwise
+  # it might be removed by one module initializer before another
+  # module is loaded, causing the later module not to display debug
+  # output even though it was requested. Once this code is executed
+  # in the main product, all modules should have been loaded.
+  if bDebugOutput and bIsMainProduct:
+    sys.argv = sys.argv[:1] + [s for s in sys.argv[1:] if s != "--debug-product-initialization"];
+  

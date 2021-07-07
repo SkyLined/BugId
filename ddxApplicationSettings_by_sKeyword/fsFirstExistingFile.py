@@ -1,4 +1,4 @@
-from cFileSystemItem import cFileSystemItem;
+from mFileSystemItem import cFileSystemItem;
 
 def fsFirstExistingFile(*asPossiblePaths):
   for sPossiblePath in asPossiblePaths:

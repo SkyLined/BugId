@@ -1,5 +1,7 @@
 import os;
-from fsFirstExistingFile import fsFirstExistingFile;
+
+from .fsFirstExistingFile import fsFirstExistingFile;
+
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
@@ -14,13 +16,13 @@ sApplicationBinaryPath_x86 = fsFirstExistingFile(
 );
 sApplicationBinaryPath = sApplicationBinaryPath_x86;
 
-def fasGetOptionalArguments(bForHelp = False):
+def fasGetStaticArguments(dxConfig, bForHelp = False):
   return ["repro.pdf"]; # Does not matter if it's for help or not: value is the same
 
 ddxAdobeAcrobatReaderSettings_by_sKeyword = {
   "acrobat": {
     "sBinaryPath": sApplicationBinaryPath,
-    "fasGetOptionalArguments": fasGetOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
     # Adobe Reader has a component that constantly crashes with a NULL pointer when you enable page heap.
     "asBinaryNamesThatAreAllowedToRunWithoutPageHeap": [
@@ -30,7 +32,7 @@ ddxAdobeAcrobatReaderSettings_by_sKeyword = {
   },
   "acrobat_x86": {
     "sBinaryPath": sApplicationBinaryPath_x86,
-    "fasGetOptionalArguments": fasGetOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
     # Adobe Reader has a component that constantly crashes with a NULL pointer when you enable page heap.

@@ -1,10 +1,8 @@
 import os;
 
-from dxConfig import dxConfig;
+from .fsFirstExistingFile import fsFirstExistingFile;
 
-from fsFirstExistingFile import fsFirstExistingFile;
-
-from cFileSystemItem import cFileSystemItem;
+from mFileSystemItem import cFileSystemItem;
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 
@@ -23,7 +21,7 @@ sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x8
 
 oFirefoxProfileFolder = cFileSystemItem(os.getenv("TEMP")).foGetChild("Firefox-profile");
 
-def fasGetFirefoxStaticArguments(bForHelp):
+def fasGetStaticArguments(bForHelp):
   fFirefoxCleanup();
   return [
     # https://wiki.mozilla.org/Platform/Integration/InjectEject/Launcher_Process/#Considerations_for_Developers
@@ -39,7 +37,7 @@ def fasGetFirefoxStaticArguments(bForHelp):
     "-profile", oFirefoxProfileFolder.sPath,
   ];
 
-def fasGetFirefoxOptionalArguments(bForHelp = False):
+def fasGetOptionalArguments(dxConfig, bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
 
 def fFirefoxSetup(bFirstRun):
@@ -76,8 +74,8 @@ dsURLTemplate_by_srSourceFilePath = {srMozillaCentralSourceURLMappings: "https:/
 ddxMozillaFirefoxSettings_by_sKeyword = {
   "firefox": {
     "sBinaryPath": sApplicationBinaryPath,
-    "fasGetStaticArguments": fasGetFirefoxStaticArguments,
-    "fasGetOptionalArguments": fasGetFirefoxOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
+    "fasGetOptionalArguments": fasGetOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "fSetup": fFirefoxSetup,
     "fCleanup": fFirefoxCleanup,
@@ -85,8 +83,8 @@ ddxMozillaFirefoxSettings_by_sKeyword = {
   },
   "firefox_x86": {
     "sBinaryPath": sApplicationBinaryPath_x86,
-    "fasGetStaticArguments": fasGetFirefoxStaticArguments,
-    "fasGetOptionalArguments": fasGetFirefoxOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
+    "fasGetOptionalArguments": fasGetOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "fSetup": fFirefoxSetup,
     "fCleanup": fFirefoxCleanup,
@@ -95,8 +93,8 @@ ddxMozillaFirefoxSettings_by_sKeyword = {
   },
   "firefox_x64": {
     "sBinaryPath": sApplicationBinaryPath_x64,
-    "fasGetStaticArguments": fasGetFirefoxStaticArguments,
-    "fasGetOptionalArguments": fasGetFirefoxOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
+    "fasGetOptionalArguments": fasGetOptionalArguments,
     "dxConfigSettings": dxConfigSettings,
     "fSetup": fFirefoxSetup,
     "fCleanup": fFirefoxCleanup,

@@ -1,7 +1,7 @@
 import json, os, re, sys;
 
 import mRegistry;
-from oConsole import oConsole;
+from mConsole import oConsole;
 
 from mColors import *;
 import mJITDebuggerRegistry;
@@ -15,8 +15,8 @@ def fxGetCurrentJITDebuggerCommandLine():
     sKeyName = mJITDebuggerRegistry.sComandLineKeyPath,
   );
   try:
-    oRegistryValue = oRegistryHiveKey.foGetNamedValue(sValueName = "Debugger");
-  except WindowsError, oException:
+    oRegistryValue = oRegistryHiveKey.foGetValueForName(sValueName = "Debugger");
+  except WindowsError as oException:
     return False;
   if oRegistryValue.sTypeName != "REG_SZ":
     return False;

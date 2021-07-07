@@ -1,5 +1,7 @@
 import os;
-from fsFirstExistingFile import fsFirstExistingFile;
+
+from .fsFirstExistingFile import fsFirstExistingFile;
+
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
@@ -14,18 +16,18 @@ sApplicationBinaryPath_x86 = fsFirstExistingFile(
 );
 sApplicationBinaryPath = sApplicationBinaryPath_x86;
 
-def fasGetOptionalArguments(bForHelp = False):
+def fasGetStaticArguments(dxConfig, bForHelp = False):
   return ["repro.pdf"]; # Does not matter if it's for help or not: value is the same
 
 ddxFoxitReaderSettings_by_sKeyword = {
   "foxit": {
     "sBinaryPath": sApplicationBinaryPath,
-    "fasGetOptionalArguments": fasGetOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
   },
   "foxit_x86": {
     "sBinaryPath": sApplicationBinaryPath_x86,
-    "fasGetOptionalArguments": fasGetOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
   },

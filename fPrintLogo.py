@@ -1,4 +1,4 @@
-from oConsole import oConsole;
+from mConsole import oConsole;
 
 from mColors import *;
 
@@ -39,29 +39,29 @@ asBugIdLogoColors = [s.rstrip() for s in """
 
 def fPrintLogo():
   # We will use the above ASCII and color data to create a list of arguments
-  # that can be passed to oConsole.fPrint in order to output the logo in color:
+  # that can be passed to oConsole.fOutput in order to output the logo in color:
   oConsole.fLock();
   try:
-    for uLineIndex in xrange(len(asBugIdLogo)):
+    for uLineIndex in range(len(asBugIdLogo)):
       uCurrentColor = NORMAL;
       bUnderlined = False;
       asBugIdLogoPrintArguments = [""];
       sCharsLine = asBugIdLogo[uLineIndex];
       sColorsLine = asBugIdLogoColors[uLineIndex];
       uColorIndex = 0;
-      for uColumnIndex in xrange(len(sCharsLine)):
+      for uColumnIndex in range(len(sCharsLine)):
         sColor = sColorsLine[uColorIndex];
         uColorIndex += 1;
         if sColor == "_":
           bUnderlined = not bUnderlined;
           sColor = sColorsLine[uColorIndex];
           uColorIndex += 1;
-        uColor = (sColor != " " and (0x0F00 + long(sColor, 16)) or NORMAL) + (bUnderlined and UNDERLINE or 0);
+        uColor = (sColor != " " and (0x0F00 + int(sColor, 16)) or NORMAL) + (bUnderlined and UNDERLINE or 0);
         if uColor != uCurrentColor:
           asBugIdLogoPrintArguments.extend([uColor, ""]);
           uCurrentColor = uColor;
         sChar = sCharsLine[uColumnIndex];
         asBugIdLogoPrintArguments[-1] += sChar;
-      oConsole.fPrint(*asBugIdLogoPrintArguments);
+      oConsole.fOutput(*asBugIdLogoPrintArguments);
   finally:
     oConsole.fUnlock();

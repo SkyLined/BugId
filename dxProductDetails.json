@@ -1,38 +1,39 @@
 {
-  "asDependentOnProductNames": [
-    "cBugId", 
-    "cFileSystemItem", 
-    "mHumanReadable", 
-    "mDebugOutput", 
-    "mWindowsSDK", 
-    "mMultiThreading", 
-    "mDateTime", 
-    "mProductDetails", 
-    "mWindowsAPI", 
-    "mRegistry", 
-    "oConsole"
-  ], 
-  "asJavaScriptModuleNames": [], 
-  "asOptionalProductNames": [
+  "a0sDebugAdditionalProductNames": [
     "mDebugOutput"
-  ], 
-  "asPHPModuleNames": [], 
+  ],
+  "a0sDependentOnProductNames": [
+    "mBugId",
+    "mFileSystemItem",
+    "mHumanReadable",
+    "mDebugOutput",
+    "mWindowsSDK",
+    "mMultiThreading",
+    "mNotProvided",
+    "mDateTime",
+    "mProductDetails",
+    "mWindowsAPI",
+    "mRegistry",
+    "mConsole"
+  ],
+  "a0sPythonApplicationNames": [
+    "BugId"
+  ],
   "asProductTypes": [
     "Python application"
-  ], 
-  "asPythonApplicationNames": [
-    "BugId"
-  ], 
-  "oProductVersion": "2021-04-15 11:40", 
-  "oRepository": {
-    "sBranch": "master", 
-    "sRepositoryName": "BugId", 
-    "sType": "GitHub", 
-    "sUserName": "SkyLined"
-  }, 
-  "oTrialPeriodDuration": "+1m", 
-  "sLicenseServerURL": "https://license.skylined.nl/License_dxCheck.php", 
-  "sProductAuthor": "SkyLined", 
-  "sProductName": "BugId", 
-  "sProductURL": "https://github.com/SkyLined/BugId"
+  ],
+  "o0Repository": {
+    "sStructureVersion": "2021-07-02 11:16",
+    "sType": "GitHub",
+    "sbBranch": "master",
+    "sbRepositoryName": "BugId",
+    "sbUserName": "SkyLined"
+  },
+  "o0TrialPeriodDuration": "+1m",
+  "oProductVersion": "2021-07-07 13:13",
+  "sProductAuthor": "SkyLined",
+  "sProductName": "BugId",
+  "sStructureVersion": "2021-07-02 11:16",
+  "sb0LicenseServerURL": "https://license.skylined.nl/",
+  "sb0ProductURL": "https://github.com/SkyLined/BugId"
 }

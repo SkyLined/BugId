@@ -1,7 +1,7 @@
 import os;
 
 import mRegistry;
-from oConsole import oConsole;
+from mConsole import oConsole;
 
 from dxConfig import dxConfig;
 from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
@@ -47,20 +47,35 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
     sKeyName = mJITDebuggerRegistry.sComandLineKeyPath,
   );
   oConsole.fStatus("* Installing as JIT debugger...");
+  bSettingsChanged = False;
   for (sName, sValue) in {
     "Auto": "1",
     "Debugger": sBugIdCommandLine
   }.items():
+    # Check if the value is already set correctly:
     try:
-      oRegistryHiveKey.foSetNamedValue(sValueName = sName, sTypeName = "SZ", xValue = sValue);
-    except WindowsError, oException:
+      oRegistryValue = oRegistryHiveKey.foGetValueForName(sValueName = "Debugger");
+    except WindowsError as oException:
+      pass;
+    else:
+      if oRegistryValue.sTypeName == "REG_SZ" and oRegistryValue.xValue == sValue:
+        continue; # Yes; no need to modify it.
+    try:
+      oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
+    except WindowsError as oException:
       if oException.winerror == 5:
-        oConsole.fOutput(ERROR, "- BugId cannot be installed as the default JIT debugger.");
-        oConsole.fOutput(ERROR, "  Access to the relevant registry keys is denied.");
-        oConsole.fOutput(ERROR, "  Please try again with elevated priviledges.");
+        oConsole.fOutput(ERROR, "\xd7 ", ERROR_INFO, "BugId cannot be installed as the default JIT debugger.");
+        oConsole.fOutput(ERROR, "  ", ERROR_INFO, "Access to the relevant registry keys is denied.");
+        oConsole.fOutput(ERROR, "  Please try again with ", ERROR_INFO, "elevated priviledges", ERROR, ".");
         return False;
       raise;
-  oConsole.fOutput("+ BugId is now installed as the default JIT debugger.");
-  oConsole.fOutput("  Command line: ", INFO, sBugIdCommandLine);
-  oConsole.fOutput("  Reports folder: ", INFO, sBugIdReportsFolder);
+    bSettingsChanged = True;
+  if bSettingsChanged:
+    oConsole.fOutput("\u221A BugId is now installed as the default JIT debugger.");
+    oConsole.fOutput("  Command line: ", INFO, sBugIdCommandLine);
+    oConsole.fOutput("  Reports folder: ", INFO, sBugIdReportsFolder);
+  else:
+    oConsole.fOutput("\u2022 BugId is already installed as the default JIT debugger.");
+    oConsole.fOutput("  Command line: ", INFO, sBugIdCommandLine);
+    oConsole.fOutput("  Reports folder: ", INFO, sBugIdReportsFolder);
   return True;

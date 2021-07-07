@@ -1,5 +1,7 @@
 import os;
-from fsFirstExistingFile import fsFirstExistingFile;
+
+from .fsFirstExistingFile import fsFirstExistingFile;
+
 sProgramFilesPath = os.getenv("ProgramFiles");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
 sProgramFilesPath_x64 = os.getenv("ProgramW6432");
@@ -19,24 +21,24 @@ sApplicationBinaryPath_x86 = fsFirstExistingFile(
 );
 sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x86;
 
-def fasGetJavaOptionalArguments(bForHelp = False):
+def fasGetStaticArguments(dxConfig, bForHelp = False):
   return ["-jar", "repro.jar"]; # Does not matter if it's for help or not: value is the same
 
 ddxOracleJavaSettings_by_sKeyword = {
   "java": {
     "sBinaryPath": sApplicationBinaryPath,
-    "fasGetOptionalArguments": fasGetJavaOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
   },
   "java_x86": {
     "sBinaryPath": sApplicationBinaryPath_x86,
-    "fasGetOptionalArguments": fasGetJavaOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x86",
   },
   "java_x64": {
     "sBinaryPath": sApplicationBinaryPath_x64,
-    "fasGetOptionalArguments": fasGetJavaOptionalArguments,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "dxConfigSettings": dxConfigSettings,
     "sISA": "x64",
   },

@@ -1,6 +1,6 @@
 import json;
 
-from oConsole import oConsole;
+from mConsole import oConsole;
 
 from dxConfig import dxConfig;
 from mColors import *;
@@ -14,7 +14,7 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
   for sGroupName in asGroupNames:
     asHandledGroupNames.append(sGroupName);
     if sGroupName not in dxConfigGroup:
-      oConsole.fPrint(
+      oConsole.fOutput(
         ERROR, "Unknown config group ",
         ERROR_INFO, ".".join(asHandledGroupNames),
         ERROR, " in setting name ",
@@ -25,7 +25,7 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
     dxConfigGroup = dxConfigGroup.get(sGroupName, {});
   if sSettingName not in dxConfigGroup:
     if len(asHandledGroupNames) > 0:
-      oConsole.fPrint(
+      oConsole.fOutput(
         ERROR, "Unknown setting name ",
         ERROR_INFO, sSettingName,
         ERROR, " in config group ",
@@ -33,7 +33,7 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
         ERROR, ".",
       );
     else:
-      oConsole.fPrint(
+      oConsole.fOutput(
         ERROR, "Unknown setting name ",
         ERROR_INFO, sSettingName,
         ERROR, ".",
@@ -41,11 +41,11 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
     return False;
   if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
     if sIndentation is not None:
-      oConsole.fPrint(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
+      oConsole.fOutput(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
           " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
   else:
     if sIndentation is not None:
-      oConsole.fPrint(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
+      oConsole.fOutput(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
           " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
     dxConfigGroup[sSettingName] = xValue;
   return True;
