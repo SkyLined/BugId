@@ -8,6 +8,10 @@ sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 
 dxConfigSettings = {
   "bApplicationTerminatesWithMainProcess": False,
+  "azsSymbolServerURLs": [
+    "http://msdl.microsoft.com/download/symbols",
+    "https://symbols.mozilla.org/",
+  ]
 };
 
 # Firefox stable (if installed, otherwise use Firefox Developer Edition if installed).
@@ -22,7 +26,6 @@ sApplicationBinaryPath = sApplicationBinaryPath_x64 or sApplicationBinaryPath_x8
 oFirefoxProfileFolder = cFileSystemItem(os.getenv("TEMP")).foGetChild("Firefox-profile");
 
 def fasGetStaticArguments(bForHelp):
-  fFirefoxCleanup();
   return [
     # https://wiki.mozilla.org/Platform/Integration/InjectEject/Launcher_Process/#Considerations_for_Developers
     # This switch prevents the "Launcher" process (the first firefox.exe process) from starting the "Browser" process
@@ -63,13 +66,19 @@ def fFirefoxCleanup():
 
 # Known applications can have regular expressions that map source file paths in its output to URLs, so the details HTML for any detected bug can have clickable
 # links to an online source repository:
-srMozillaCentralSourceURLMappings = "".join([
-  r"c:[\\/]builds[\\/]moz2_slave[\\/][^\\/]+[\\/]build[\\/](?:src[\\/])?", # absolute file path
-  r"(?P<path>[^:]+\.\w+)", # relative file path
-  r"(:| @ |, line )", # separator
-  r"(?P<lineno>\d+)",  # line number
-]);
-dsURLTemplate_by_srSourceFilePath = {srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"};
+srMozillaCentralSourceURLMappings = (
+  r"(?:" # base folder
+    r"c:[\\/]builds[\\/]moz2_slave[\\/][^\\/]+[\\/]build[\\/](?:src[\\/])?"
+  r"|"
+    r"[\\/]builds[\\/]worker[\\/]checkouts[\\/]gecko[\\/]"
+  r")"
+  r"(?P<path>[^:]+\.\w+)" # relative file path
+  r"(:| @ |, line )" # separator
+  r"(?P<lineno>\d+)"  # line number
+);
+dsURLTemplate_by_srSourceFilePath = {
+  srMozillaCentralSourceURLMappings: "https://dxr.mozilla.org/mozilla-central/source/%(path)s#%(lineno)s"
+};
 
 ddxMozillaFirefoxSettings_by_sKeyword = {
   "firefox": {
