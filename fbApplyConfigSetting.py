@@ -1,5 +1,3 @@
-import json;
-
 from mConsole import oConsole;
 
 from dxConfig import dxConfig;
@@ -39,10 +37,10 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
         ERROR, ".",
       );
     return False;
-  if json.dumps(dxConfigGroup[sSettingName]) == json.dumps(xValue):
+  if repr(dxConfigGroup[sSettingName]) == repr(xValue):
     if sIndentation is not None:
       oConsole.fOutput(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
-          " is ", json.dumps(dxConfigGroup[sSettingName]), ".");
+          " is ", INFO, repr(dxConfigGroup[sSettingName]), NORMAL, ".");
   else:
     if sIndentation is not None:
       oConsole.fOutput(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
