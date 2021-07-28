@@ -1,5 +1,8 @@
 import os;
 
+
+from mNotProvided import zNotProvided;
+
 uKiloByte = 10 ** 3;
 uMegaByte = 10 ** 6;
 uGigaByte = 10 ** 9;
@@ -12,12 +15,12 @@ uTeraByte = 10 ** 12;
 
 dxConfig = {
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
-  "asLocalSymbolPaths": None,                     # List of local symbol paths (symbols created for a local build or
-                                                  # downloaded with a remote build, None = use default).
-  "asSymbolCachePaths": None,                     # List of symbol cache paths (Where to download symbols from a remote
-                                                  # server, None = use default).
-  "asSymbolServerURLs": None,                     # List of symbol server URLs (where to try to download symbosl from 
-                                                  # if none are found locally, None = use default).
+  "a0sLocalSymbolPaths": None,                    # List of local symbol paths (symbols created for a local build or
+                                                  # downloaded with a remote build, None = no local symbol paths).
+  "azsSymbolCachePaths": zNotProvided,            # List of symbol cache paths (Where to download symbols from a remote
+                                                  # server, zNotProvided = use default).
+  "azsSymbolServerURLs": zNotProvided,            # List of symbol server URLs (where to try to download symbosl from 
+                                                  # if none are found locally, zNotProvided = use default).
   "bExcessiveCPUUsageCheckEnabled": False,        # Set to True to enabled checking for excessive CPU usage in the
                                                   # application. This used to be the default, but I've found most
                                                   # people prefer not having this check.
@@ -25,7 +28,7 @@ dxConfig = {
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.
   "sDefaultBrowserTestURL": "http://%s:28876/" % os.getenv("COMPUTERNAME"), # Default URL for browser tests.
-  "nApplicationMaxRunTimeInSeconds": None,        # Terminate BugId if the application has been running for this many
+  "nzApplicationMaxRunTimeInSeconds": zNotProvided,# Terminate BugId if the application has been running for this many
                                                   # seconds without crashing. None to allow the application to run
                                                   # forever.
   "u0ProcessMaxMemoryUse": None,                  # Limit the total amount of memory a single process can allocate. If
