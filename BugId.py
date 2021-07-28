@@ -40,6 +40,7 @@ try:
   from mFileSystemItem import cFileSystemItem;
   import mProductDetails, mWindowsAPI;
   from mConsole import oConsole;
+  from mNotProvided import *;
   
   from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
   from dxConfig import dxConfig;
@@ -88,7 +89,7 @@ try:
     
     def fApplicationMaxRunTimeCallback(oBugId):
       oConsole.fOutput("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
-          (oBugId.fnApplicationRunTimeInSeconds(), dxConfig["nApplicationMaxRunTimeInSeconds"]));
+          (oBugId.fnApplicationRunTimeInSeconds(), dxConfig["nzApplicationMaxRunTimeInSeconds"]));
       oConsole.fOutput();
       oConsole.fStatus(INFO, "* BugId is stopping...");
       oBugId.fStop();
@@ -253,23 +254,32 @@ try:
       oConsole.fOutput(DIM, "log>%s%s" % (sMessage, sData and " (%s)" % sData or ""));
     
     # Helper function to format messages that are specific to a process.
-    def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *asMessage):
+    def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *tsMessage):
       # oProcess is a mWindowsAPI.cProcess or derivative.
+      sIntegrityLevel = "?" if oProcess.uIntegrityLevel is None else (
+        str(oProcess.uIntegrityLevel >> 12) +
+        ("+" if oProcess.uIntegrityLevel & 0x100 else "")
+      );
+      axHeader = [
+        sHeaderChar or " ", " ", bIsMainProcess and "Main" or "Sub", " process ",
+        INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, 
+        NORMAL, " (",
+          INFO, oProcess.sBinaryName,
+          NORMAL, ", ", INFO, oProcess.sISA,
+          NORMAL, ", IL:", INFO, sIntegrityLevel,
+        NORMAL, "): ",
+      ];
       if sHeaderChar is None:
         # Just blanks for the header (used for multi-line output to reduce redundant output).
         oConsole.fOutput(
-          " ", " ", bIsMainProcess and "    " or "   ", "         ",
-          " " * len("%d" % oProcess.uId), " ", " " * len("0x%X" % oProcess.uId),
-          "  ", " " * len(oProcess.sBinaryName), "   ",
-          *asMessage,
+          " " * len("".join(s for s in axHeader if isinstance(s, str))),
+          *tsMessage,
           uConvertTabsToSpaces = 8
         );
       else:
         oConsole.fOutput(
-          sHeaderChar, " ", bIsMainProcess and "Main" or "Sub", " process ",
-          INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, NORMAL,
-          " (", INFO, oProcess.sBinaryName, NORMAL, "): ",
-          *asMessage,
+          axHeader,
+          *tsMessage,
           uConvertTabsToSpaces = 8
         );
     
@@ -474,8 +484,12 @@ try:
       dxUserProvidedConfigSettings = {};
       asAdditionalLocalSymbolPaths = [];
       bFast = False;
-      bInstallAsJITDebugger = True;
+      a0sJITDebuggerArguments = None;
       for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
+        if a0sJITDebuggerArguments is not None:
+          # Stop processing arguments after "-I"
+          a0sJITDebuggerArguments.append(sArgument);
+          continue;
         if s0LowerName in ["q", "quiet"]:
           if s0Value is None or s0Value.lower() == "true":
             gbQuiet = True;
@@ -551,10 +565,11 @@ try:
                 " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
             fTerminate(2);
         elif s0LowerName in ["i"]:
+          if s0Value is not None:
+            oConsole.fOutput(ERROR, "- The option ", ERROR_INFO, sArgument, ERROR, " does not accept a value.")
+            fTerminate(2);
           # Install as JIT Debugger. Remaining arguments are passed on the command line to the JIT debugger.
-          if fbInstallAsJITDebugger(asArguments):
-            fTerminate(0);
-          fTerminate(3);
+          a0sJITDebuggerArguments = []; # Remaining arguments will be added to this list.
         elif s0LowerName in ["c", "collateral"]:
           if s0Value is None:
             guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
@@ -683,10 +698,14 @@ try:
             fTerminate(2);
           asApplicationOptionalArguments.append(sArgument);
       
+      if a0sJITDebuggerArguments is not None:
+        if fbInstallAsJITDebugger(a0sJITDebuggerArguments):
+          fTerminate(0);
+        fTerminate(3);
       if bFast:
         gbQuiet = True;
         dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
-        dxUserProvidedConfigSettings["asSymbolServerURLs"] = [];
+        dxUserProvidedConfigSettings["azsSymbolServerURLs"] = [];
         dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
       
       if u0JITDebuggerEventId is not None and dxConfig["sReportFolderPath"] is None:
@@ -855,7 +874,7 @@ try:
         finally:
           oConsole.fUnlock();
       
-      asLocalSymbolPaths = dxConfig["asLocalSymbolPaths"] or [];
+      asLocalSymbolPaths = dxConfig["a0sLocalSymbolPaths"] or [];
       if asAdditionalLocalSymbolPaths:
         asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
       uRunCounter = 0;
@@ -875,8 +894,8 @@ try:
           o0UWPApplication = o0UWPApplication,
           asApplicationArguments = asApplicationArguments,
           asLocalSymbolPaths = asLocalSymbolPaths,
-          a0sSymbolCachePaths = dxConfig["asSymbolCachePaths"], 
-          a0sSymbolServerURLs = dxConfig["asSymbolServerURLs"],
+          azsSymbolCachePaths = dxConfig["azsSymbolCachePaths"], 
+          azsSymbolServerURLs = dxConfig["azsSymbolServerURLs"],
           d0sURLTemplate_by_srSourceFilePath = dsApplicationURLTemplate_by_srSourceFilePath,
           bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
           u0ProcessMaxMemoryUse = dxConfig["u0ProcessMaxMemoryUse"],
@@ -939,10 +958,10 @@ try:
         oBugId.fAddCallback("Process started", fProcessStartedCallback);
         oBugId.fAddCallback("Process terminated", fProcessTerminatedCallback);
         
-        if dxConfig["nApplicationMaxRunTimeInSeconds"] is not None:
+        if fbIsProvided(dxConfig["nzApplicationMaxRunTimeInSeconds"]):
           oBugId.foSetTimeout(
             sDescription = "Maximum application runtime",
-            nTimeoutInSeconds = dxConfig["nApplicationMaxRunTimeInSeconds"],
+            nTimeoutInSeconds = dxConfig["nzApplicationMaxRunTimeInSeconds"],
             f0Callback = fApplicationMaxRunTimeCallback,
          );
         if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]:
