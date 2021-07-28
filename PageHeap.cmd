@@ -123,15 +123,28 @@ EXIT /B 0
   EXIT /B 0
 
 :SET_OR_SHOW_PAGE_HEAP
-  REM 00000010 Enable heap tail checking
-  REM 00000020 Enable heap free checking
-  REM 00000040 Enable heap parameter checking
-  REM 00001000 Create user mode stack trace database
-  REM 00008000 Enable heap tagging by DLL
-  REM 00100000 Enable system critical breaks
-  REM 02000000 Enable page heap (full page heap)
+  REM 00000001  soe - Stop On Exception
+  REM 00000002  sls - Show Loader Snaps
+  REM 00000004  dic - Debug Initial Command  \ These seem to go together in gflags.exe
+  REM 00000008  shg - Stop on Hung GUI       /
+  REM 00000010 *htc - Enable heap tail checking
+  REM 00000020 *hfc - Enable heap free checking
+  REM 00000040 *hpc - Enable heap parameter checking
+  REM 00000080  hvc - Enable heap validation on call
+  REM 00000100  vrf - Enable application verifier
+  REM 00000800 *htg - Enable heap tagging
+  REM 00001000 *ust - Create user mode stack trace database
+  REM 00008000 *htd - Enable heap tagging by DLL
+  REM 00010000  dse - Disable stack extensions
+  REM 00100000 *scb - Enable system critical breaks
+  REM 00200000  dhc - Disable Heap Coalesce on Free
+  REM 00800000  eel - Enable exception logging
+  REM 02000000 *hpa - Enable page heap
+  REM 10000000  cse - Early critical section event creation
+  REM 20000000  sue - Stop on Unhandled Exception
+  REM 80000000  dpd - Disable protected DLL verification
   REM ----------
-  REM 02109870 =
+  REM 02109870 
   
   REM The following flags were considered but not enabled:
   REM 00000080 Enable heap validation on call ## disabled because of overhead
