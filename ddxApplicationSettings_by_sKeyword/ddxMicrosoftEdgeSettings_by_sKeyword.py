@@ -8,6 +8,9 @@ from mColors import *;
 from .fsFirstExistingFile import fsFirstExistingFile;
 
 sLocalAppData = os.getenv("LocalAppData");
+sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");
+
+sApplicationBinaryPath = "%s\\Microsoft\\Edge\\Application\\msedge.exe" % sProgramFilesPath_x86;
 
 dxConfigSettings = {
   "bApplicationTerminatesWithMainProcess": True,
@@ -21,16 +24,6 @@ oEdgeRecoveryFolder = cFileSystemItem(os.path.join(
 ));
 
 def fEdgeSetup(bFirstRun):
-  if bFirstRun:
-    if oSystemInfo.uOSBuild < 15063:
-      oConsole.fOutput(ERROR, "Debugging Microsoft Edge directly using BugId is only supported on Windows");
-      oConsole.fOutput(ERROR, "builds ", ERROR_INFO, "15063", ERROR, " and higher, and you are running build ", \
-          ERROR_INFO, oSystemInfo.sOSBuild, ERROR, ".");
-      oConsole.fOutput();
-      oConsole.fOutput("You could try using the ", INFO, "EdgeBugId.cmd", NORMAL, " script that comes with EdgeDbg,");
-      oConsole.fOutput("which you can download from ", INFO, "https://github.com/SkyLined/EdgeDbg", NORMAL, ".");
-      oConsole.fOutput("It can be used to debug Edge in BugId on Windows versions before 10.0.15063.");
-      os._exit(4);
   # Cleanup in case Edge is currently running or there is state data from a previous run.
   fEdgeCleanup();
 
@@ -52,7 +45,7 @@ def fEdgeCleanup():
   # Microsoft Edge may attempt to restart killed processes, so we do this in a loop until there are no more processes
   # running.
   while 1:
-    auProcessIds = fauProcessesIdsForExecutableNames(["MicrosoftEdge.exe", "MicrosoftEdgeCP.exe"])
+    auProcessIds = fauProcessesIdsForExecutableNames(["msedge.exe"])
     if not auProcessIds:
       break;
     for uProcessId in auProcessIds:
@@ -64,16 +57,30 @@ def fEdgeCleanup():
   oConsole.fOutput(ERROR_INFO, oEdgeRecoveryFolder.sPath, ERROR, ".");
   os._exit(4);
 
+def fasGetStaticArguments(bForHelp):
+  return [
+    "-no-sandbox",
+  ];
+
 def fasGetOptionalArguments(dxConfig, bForHelp = False):
   return bForHelp and ["<dxConfig.sDefaultBrowserTestURL>"] or [dxConfig["sDefaultBrowserTestURL"]];
 
 
 ddxMicrosoftEdgeSettings_by_sKeyword = {
-  "edge": {
+  "edge-uwp": {
     "dxUWPApplication": {
       "sPackageName": "Microsoft.MicrosoftEdge",
       "sId": "MicrosoftEdge",
     },
+    "asApplicationAttachForProcessExecutableNames": ["browser_broker.exe"],
+    "fasGetOptionalArguments": fasGetOptionalArguments,
+    "fSetup": fEdgeSetup,
+    "fCleanup": fEdgeCleanup,
+    "dxConfigSettings": dxConfigSettings,
+  },
+  "edge": {
+    "sBinaryPath": sApplicationBinaryPath,
+    "fasGetStaticArguments": fasGetStaticArguments,
     "asApplicationAttachForProcessExecutableNames": ["browser_broker.exe"],
     "fasGetOptionalArguments": fasGetOptionalArguments,
     "fSetup": fEdgeSetup,
