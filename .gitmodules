@@ -34,6 +34,15 @@
 [submodule "modules/mHumanReadable"]
 	path = modules/mHumanReadable
 	url = https://github.com/SkyLined/mHumanReadable/
-[submodule "modules\\mNotProvided"]
-	path = modules\\mNotProvided
+[submodule "modules/mNotProvided"]
+	path = modules/mNotProvided
 	url = https://github.com/SkyLined/mNotProvided
+[submodule "modules/mBugId"]
+	path = modules/mBugId
+	url = https://github.com/SkyLined/mBugId
+[submodule "modules/mConsole"]
+	path = modules/mConsole
+	url = https://github.com/SkyLined/mConsole
+[submodule "modules/mFileSystemItem"]
+	path = modules/mFileSystemItem
+	url = https://github.com/SkyLined/mFileSystemItem
