@@ -12,7 +12,7 @@ def fxGetCurrentJITDebuggerCommandLine():
   # or False if the registry could not be read or the value makes no sense.
   oRegistryHiveKey = mRegistry.cRegistryHiveKey(
     sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
-    sKeyName = mJITDebuggerRegistry.sComandLineKeyPath,
+    sKeyPath = mJITDebuggerRegistry.sComandLineKeyPath,
   );
   try:
     oRegistryValue = oRegistryHiveKey.foGetValueForName(sValueName = "Debugger");

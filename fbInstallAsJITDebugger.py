@@ -44,7 +44,7 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
   );
   oRegistryHiveKey = mRegistry.cRegistryHiveKey(
     sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
-    sKeyName = mJITDebuggerRegistry.sComandLineKeyPath,
+    sKeyPath = mJITDebuggerRegistry.sComandLineKeyPath,
   );
   oConsole.fStatus("* Installing as JIT debugger...");
   bSettingsChanged = False;
