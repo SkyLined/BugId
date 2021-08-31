@@ -34,13 +34,13 @@ def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolde
           )
         ) else
         [INFO, BULLET_CHAR] if bCheckForUpdates and bCheckForUpdatesSuccessful and oProductDetails.bVersionIsPreRelease else
-        [OK, OK_CHAR] if oProductDetails.oLicense or not oProductDetails.bRequiresLicense else
+        [OK, OK_CHAR] if oProductDetails.o0License or not oProductDetails.bRequiresLicense else
         [ERROR, ERROR_CHAR]
       ), " ", (
-        INFO if (not oProductDetails.bRequiresLicense or oProductDetails.oLicense) else
+        INFO if (not oProductDetails.bRequiresLicense or oProductDetails.o0License) else
         WARNING if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
         ERROR
-      ) + (UNDERLINE if oProductDetails.oLicense else 0),
+      ) + (UNDERLINE if oProductDetails.o0License else 0),
       oProductDetails.sProductName, NORMAL, " version: ", (
         WARNING if (
           bCheckForUpdates and (
@@ -55,7 +55,7 @@ def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolde
         NORMAL, " installed at ", HILITE, oProductDetails.s0InstallationFolderPath,
       ] or [ ]
     ) + (
-      [] if (not oProductDetails.bRequiresLicense or oProductDetails.oLicense) else
+      [] if (not oProductDetails.bRequiresLicense or oProductDetails.o0License) else
       [NORMAL, " ", WARNING, "(in trial period)"] if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
       [NORMAL, " ", ERROR, "(no valid license found)"]
     ) + (

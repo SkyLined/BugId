@@ -33,9 +33,9 @@ def fPrintLicenseInformation(bUpdateIfNeeded = False):
     for oProductDetails in aoProductDetails:
       if not oProductDetails.bRequiresLicense:
         asProductNamesWithoutLicenseRequirement.append(oProductDetails.sProductName);
-      elif oProductDetails.oLicense:
-        if oProductDetails.oLicense not in aoLicenses:
-          aoLicenses.append(oProductDetails.oLicense);
+      elif oProductDetails.o0License:
+        if oProductDetails.o0License not in aoLicenses:
+          aoLicenses.append(oProductDetails.o0License);
         asLicensedProductNames.append(oProductDetails.sProductName);
       elif oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod:
         asProductNamesInTrial.append(oProductDetails.sProductName);
