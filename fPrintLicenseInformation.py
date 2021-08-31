@@ -57,7 +57,10 @@ def fPrintLicenseInformation(bUpdateIfNeeded = False):
           oConsole.fOutput(
             ERROR, ERROR_CHAR, " License check for ", ERROR_INFO, oLicense.sLicenseId,
             ERROR, " on server ", ERROR_INFO, sServerURL,
-            ERROR, " failed: ", ERROR_INFO, sLicenseServerError,
+            ERROR, " failed:",
+          );
+          oConsole.fOutput(
+            ERROR, "  ", ERROR_INFO, sLicenseServerError,
           );
         uCheckedLicenseCounter += 1;
         if oLicense.bMayNeedToBeUpdated and bUpdateIfNeeded:
@@ -109,11 +112,11 @@ def fPrintLicenseInformation(bUpdateIfNeeded = False):
         NORMAL, " covers ", INFO, oLicense.sUsageTypeDescription, 
         NORMAL, " by ", INFO, oLicense.sLicenseeName,
         NORMAL, " of ", INFO, oLicense.asProductNames[0],
-        NORMAL, " on ", INFO, str(oLicense.uLicensedInstances), NORMAL, "machine", "s" if oLicense.uLicensedInstances != 1 else "",
+        NORMAL, " on ", INFO, str(oLicense.uLicensedInstances), NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "",
         NORMAL, ".",
       );
       oConsole.fOutput("\u2502   Covered products: ", faxListOutput(oLicense.asProductNames, "and", oLicense.asProductNames, INFO, NORMAL, NORMAL), NORMAL, ".");
-      oConsole.fOutput("\u2502   License source:", INFO, oLicense.sLicenseSource, NORMAL, ".");
+      oConsole.fOutput("\u2502   License source: ", INFO, oLicense.sLicenseSource, NORMAL, ".");
     if asProductNamesInTrial:
       oConsole.fOutput(
         "\u2502 ", WARNING, WARNING_CHAR, " A ",
