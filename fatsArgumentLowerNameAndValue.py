@@ -4,6 +4,7 @@ from fPrintUsageInformation import fPrintUsageInformation;
 from fPrintVersionInformation import fPrintVersionInformation;
 from fPrintLicenseInformation import fPrintLicenseInformation;
 from mColors import *;
+from mProductDetails import faoGetLicensesFromRegistry, faoGetLicensesFromFile;
 
 def fatsArgumentLowerNameAndValue():
   atsArgumentNameAndValue = [];
@@ -35,10 +36,61 @@ def fatsArgumentLowerNameAndValue():
           bUpdateIfNeeded = sLowerName == "license-update",
         );
         sys.exit(0);
-      if sLowerName == "arguments":
+      if sLowerName in ["license-server-url"]:
         if not s0Value:
-          oConsole.fOutput(ERROR, "- Invalid ", ERROR_INFO, sLowerName, ERROR, "argument:");
-          oConsole.fOutput(ERROR, "  You must provide a value for this argument.");
+          oConsole.fOutput(ERROR, "- Invalid ", ERROR_INFO, sLowerName, ERROR, " argument:");
+          oConsole.fOutput(ERROR, "  You must provide a URL for a license server as value for this argument.");
+          sys.exit(1);
+        try:
+          sbLicenseServerURL = bytes(s0Value, "ascii", "strict");
+        except:
+          oConsole.fOutput(ERROR, "- Invalid ", ERROR_INFO, sLowerName, ERROR, " argument:");
+          oConsole.fOutput(ERROR, "  You must provide a valid URL for a license server as value for this argument.");
+          sys.exit(1);
+        for oProductDetails in mProductDetails.faoGetProductDetailsForAllLoadedModules():
+          if oProductDetails.sb0LicenseServerURL is not None:
+            oProductDetails.sb0LicenseServerURL = sbLicenseServerURL;
+      elif sLowerName in ["license-clear-cache"]:
+        # Remove all cached licenses from registry
+        aoCachedLicenses = faoGetLicensesFromRegistry();
+        if len(aoCachedLicenses) == 0:
+          oConsole.fOutput("* There are ", INFO, "no", NORMAL, " licenses cached in the registry.");
+        else:
+          oConsole.fOutput("* Removing ", INFO, str(len(aoCachedLicenses)), NORMAL, " cached licenses from the registry:");
+          for oLicense in aoCachedLicenses:
+            assert oLicense.fbRemoveFromRegistry(bThrowErrors = True), \
+                "Unreachable code !?";
+            oConsole.fOutput(
+              "  - License ", INFO, oLicense.sLicenseId,
+              NORMAL, " covering ", INFO, oLicense.sUsageTypeDescription, 
+              NORMAL, " by ", INFO, oLicense.sLicenseeName,
+              NORMAL, " of ", INFO, oLicense.asProductNames[0],
+              NORMAL, " on ", INFO, str(oLicense.uLicensedInstances), NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "",
+              NORMAL, ".",
+            );
+        sys.exit(0);
+      elif sLowerName in ["license-load-file"]:
+        sPath = s0Value or "#license.asc";
+        aoLoadedLicenses = faoGetLicensesFromFile(sPath);
+        if len(aoLoadedLicenses) == 0:
+          oConsole.fOutput("* There are ", INFO, "no", NORMAL, " licenses in the file ", INFO, sPath, NORMAL, ".");
+        else:
+          oConsole.fOutput("* Caching ", INFO, str(len(aoLoadedLicenses)), NORMAL, " licenses from file ", INFO, sPath, NORMAL, ":");
+          for oLicense in faoGetLicensesFromFile(sPath):
+            oLicense.fWriteToRegistry();
+            oConsole.fOutput(
+              "  ", OK, "+", NORMAL, " License ", INFO, oLicense.sLicenseId,
+              NORMAL, " covering ", INFO, oLicense.sUsageTypeDescription, 
+              NORMAL, " by ", INFO, oLicense.sLicenseeName,
+              NORMAL, " of ", INFO, oLicense.asProductNames[0],
+              NORMAL, " on ", INFO, str(oLicense.uLicensedInstances), NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "",
+              NORMAL, ".",
+            );
+        sys.exit(0);
+      elif sLowerName == "arguments":
+        if not s0Value:
+          oConsole.fOutput(ERROR, "- Invalid ", ERROR_INFO, sLowerName, ERROR, " argument:");
+          oConsole.fOutput(ERROR, "  You must provide a path to a file containing arguments as value for this argument.");
           sys.exit(1);
         # Read additional arguments from file and insert them after the current argument.
         oArgumentsFile = cFileSystemItem(s0Value);
