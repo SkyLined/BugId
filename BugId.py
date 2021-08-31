@@ -130,7 +130,7 @@ try:
         if not os.path.isfile(sErrorReportFilePath):
           break;
       oConsole.fStatus("Creating a copy of the error report in %s..." % (sErrorReportFilePath,));
-      if oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True, bThrowErrors = False):
+      if oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True, bThrowErrors = True):
         oConsole.fOutput("A copy of the error report can be found in ", INFO, sErrorReportFilePath, NORMAL, "...");
       oConsole.fCleanup();
       fTerminate(3);
