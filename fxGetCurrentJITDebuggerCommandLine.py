@@ -3,7 +3,7 @@ import json, os, re, sys;
 import mRegistry;
 from mConsole import oConsole;
 
-from mColors import *;
+from mColorsAndChars import *;
 import mJITDebuggerRegistry;
 
 def fxGetCurrentJITDebuggerCommandLine():

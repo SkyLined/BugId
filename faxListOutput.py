@@ -1,6 +1,6 @@
-from mColors import *;
+from mColorsAndChars import *;
 
-def faxListOutput(asData, sAndOr, asImportantData, uImportantDataColor = INFO, uNonImportantDataColor = DIM, uNormalColor = NORMAL):
+def faxListOutput(asData, sAndOr, asImportantData, uImportantDataColor = COLOR_INFO, uNonImportantDataColor = COLOR_DIM, uNormalColor = COLOR_NORMAL):
   def faxColoredData(sData):
     return [uImportantDataColor if sData in asImportantData else uNonImportantDataColor, sData];
   if len(asData) == 1:

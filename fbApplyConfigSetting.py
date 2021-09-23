@@ -1,7 +1,7 @@
 from mConsole import oConsole;
 
 from dxConfig import dxConfig;
-from mColors import *;
+from mColorsAndChars import *;
 
 def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is None means no output!
   asGroupNames = sSettingName.split("."); # last element is not a group name
@@ -13,37 +13,37 @@ def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is 
     asHandledGroupNames.append(sGroupName);
     if sGroupName not in dxConfigGroup:
       oConsole.fOutput(
-        ERROR, "Unknown config group ",
-        ERROR_INFO, ".".join(asHandledGroupNames),
-        ERROR, " in setting name ",
-        ERROR_INFO, sFullName,
-        ERROR, ".",
+        COLOR_ERROR, "Unknown config group ",
+        COLOR_INFO, ".".join(asHandledGroupNames),
+        COLOR_ERROR, " in setting name ",
+        COLOR_INFO, sFullName,
+        COLOR_ERROR, ".",
       );
       return False;
     dxConfigGroup = dxConfigGroup.get(sGroupName, {});
   if sSettingName not in dxConfigGroup:
     if len(asHandledGroupNames) > 0:
       oConsole.fOutput(
-        ERROR, "Unknown setting name ",
-        ERROR_INFO, sSettingName,
-        ERROR, " in config group ",
-        ERROR_INFO, ".".join(asHandledGroupNames),
-        ERROR, ".",
+        COLOR_ERROR, "Unknown setting name ",
+        COLOR_INFO, sSettingName,
+        COLOR_ERROR, " in config group ",
+        COLOR_INFO, ".".join(asHandledGroupNames),
+        COLOR_ERROR, ".",
       );
     else:
       oConsole.fOutput(
-        ERROR, "Unknown setting name ",
-        ERROR_INFO, sSettingName,
-        ERROR, ".",
+        COLOR_ERROR, "Unknown setting name ",
+        COLOR_INFO, sSettingName,
+        COLOR_ERROR, ".",
       );
     return False;
   if repr(dxConfigGroup[sSettingName]) == repr(xValue):
     if sIndentation is not None:
-      oConsole.fOutput(sIndentation, "* The default value for config setting ", HILITE, sFullName, NORMAL, \
-          " is ", INFO, repr(dxConfigGroup[sSettingName]), NORMAL, ".");
+      oConsole.fOutput(sIndentation, "* The default value for config setting ", COLOR_HILITE, sFullName, COLOR_NORMAL, \
+          " is ", COLOR_INFO, repr(dxConfigGroup[sSettingName]), COLOR_NORMAL, ".");
   else:
     if sIndentation is not None:
-      oConsole.fOutput(sIndentation, "+ Changed config setting ", HILITE, sFullName, NORMAL, \
-          " from ", HILITE, repr(dxConfigGroup[sSettingName]), NORMAL, " to ", INFO, repr(xValue), NORMAL, ".");
+      oConsole.fOutput(sIndentation, "+ Changed config setting ", COLOR_HILITE, sFullName, COLOR_NORMAL, \
+          " from ", COLOR_HILITE, repr(dxConfigGroup[sSettingName]), COLOR_NORMAL, " to ", COLOR_INFO, repr(xValue), COLOR_NORMAL, ".");
     dxConfigGroup[sSettingName] = xValue;
   return True;

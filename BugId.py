@@ -1,4 +1,4 @@
-"""
+﻿"""
                           __                     _____________                  
             ,,,     _,siSS**SSis,_        ,-.   /             |                 
            :O()   ,SP*'`      `'*YS,     |   `-|  O    BugId  |                 
@@ -34,24 +34,65 @@ except ModuleNotFoundError as oException:
     raise;
   m0DebugOutput = None;
 
+guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
   # Load the stuff from external modules that we need.
   from mBugId import cBugId;
-  from mFileSystemItem import cFileSystemItem;
-  import mProductDetails, mWindowsAPI;
   from mConsole import oConsole;
+  from mDateTime import cDateTimeDuration;
+  from mFileSystemItem import cFileSystemItem;
   from mNotProvided import *;
+  import mProductDetails, mWindowsAPI;
   
   from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
   from dxConfig import dxConfig;
   from fbApplyConfigSetting import fbApplyConfigSetting;
   from fbInstallAsJITDebugger import fbInstallAsJITDebugger;
   from fCheckPythonVersion import fCheckPythonVersion;
-  from fPrintApplicationKeyWordHelp import fPrintApplicationKeyWordHelp;
-  from fPrintCurrentJITDebuggerSettings import fPrintCurrentJITDebuggerSettings;
-  from fPrintExceptionInformation import fPrintExceptionInformation;
+  from fOutputApplicationKeyWordHelp import fOutputApplicationKeyWordHelp;
+  from fOutputCurrentJITDebuggerSettings import fOutputCurrentJITDebuggerSettings;
+  from fOutputExceptionInformation import fOutputExceptionInformation;
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
-  from mColors import *;
+  from mColorsAndChars import *;
+  from mExitCodes import *;
+  
+  def fxProcessBooleanArgument(sArgumentName, s0Value, u0CanAlsoBeAnIntegerLargerThan = None):
+    if s0Value is None or s0Value.lower() == "true":
+      return True;
+    if s0Value.lower() == "false":
+      return False;
+    if u0CanAlsoBeAnIntegerLargerThan is not None:
+      try:
+        uValue = int(s0Value);
+      except:
+        pass;
+      else:
+        if uValue > u0CanAlsoBeAnIntegerLargerThan:
+          return uValue;
+    oConsole.fOutput(
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " The value for ",
+      COLOR_INFO, sArgument,
+      COLOR_NORMAL, " must be \"",
+      COLOR_INFO, "true",
+      COLOR_NORMAL, "\" (default) or \"",
+      COLOR_INFO, "false",
+      COLOR_NORMAL, "\"",
+      [
+        " or an integer larger than ", COLOR_INFO, str(u0CanAlsoBeAnIntegerLargerThan), COLOR_NORMAL,
+      ] if u0CanAlsoBeAnIntegerLargerThan is not None else [],
+      ".",
+    );
+    fTerminate(guExitCodeBadArgument);
+  def fTerminateIfNoArgumentValueProvided(sArgumentName, s0Value, sExpectedValueType):
+    if not s0Value:
+      oConsole.fOutput(
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " The value for ",
+        COLOR_INFO, sArgumentName,
+        COLOR_NORMAL, " must contain ", sExpectedValueType, ".",
+      );
+      fTerminate(guExitCodeBadArgument);
   
   if __name__ == "__main__":
     asTestedPythonVersions = ["3.9.1"];
@@ -85,33 +126,46 @@ try:
       if gbPauseBeforeExit:
         oConsole.fOutput("Press ENTER to quit...");
         input();
-      os._exit(uExitCode);
+      sys.exit(uExitCode);
     
     def fApplicationMaxRunTimeCallback(oBugId):
-      oConsole.fOutput("+ T+%.1f The application has been running for %.1f seconds without crashing." % \
-          (oBugId.fnApplicationRunTimeInSeconds(), dxConfig["nzApplicationMaxRunTimeInSeconds"]));
+      oConsole.fOutput(
+        COLOR_INFO, CHAR_INFO,
+        COLOR_NORMAL, " T+",
+        COLOR_INFO, "%.1f" % oBugId.fnApplicationRunTimeInSeconds(),
+        COLOR_NORMAL, " The application has been running for ",
+        COLOR_INFO, "%.1f" % dxConfig["nzApplicationMaxRunTimeInSeconds"],
+        COLOR_NORMAL, " seconds without crashing.",
+      );
       oConsole.fOutput();
-      oConsole.fStatus(INFO, "* BugId is stopping...");
+      oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " BugId is stopping...");
       oBugId.fStop();
     
     def fApplicationResumedCallback(oBugId):
-      oConsole.fStatus("* The application is running...");
+      oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The application is running...");
     
     def fApplicationRunningCallback(oBugId):
-      oConsole.fStatus("* The application was started successfully and is running...");
+      oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The application was started successfully and is running...");
     
     def fApplicationSuspendedCallback(oBugId, sReason):
-      oConsole.fStatus("* T+%.1f The application is suspended (%s)..." % (oBugId.fnApplicationRunTimeInSeconds(), sReason));
+      oConsole.fStatus(
+        COLOR_BUSY, CHAR_BUSY,
+        COLOR_NORMAL, " T+",
+        COLOR_INFO, "%.1f" % oBugId.fnApplicationRunTimeInSeconds(),
+        COLOR_NORMAL, " The application is suspended (",
+        COLOR_INFO, sReason,
+        COLOR_NORMAL, ")...",
+      );
     
     def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
       global gbAnInternalErrorOccured;
       gbAnInternalErrorOccured = True;
       oConsole.fLock();
       try:
-        oConsole.fOutput(ERROR, "\u250C\u2500", ERROR_INFO, " Failed to debug the application ", ERROR, sPadding = "\u2500");
+        oConsole.fOutput("┌───[", COLOR_ERROR, " Failed to debug the application ", COLOR_NORMAL, "]", sPadding = "─");
         for sLine in sErrorMessage.split("\n"):
-          oConsole.fOutput(ERROR, "\u2502 ", ERROR_INFO, sLine.rstrip("\r"));
-        oConsole.fOutput(ERROR, "\u2514", sPadding = "\u2500");
+          oConsole.fOutput("│ ", COLOR_INFO, sLine.rstrip("\r"));
+        oConsole.fOutput("└", sPadding = "─");
         oConsole.fOutput();
       finally:
         oConsole.fUnlock();
@@ -122,18 +176,28 @@ try:
       fSaveInternalExceptionReportAndExit(oException, oTraceBack);
     
     def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
-      fPrintExceptionInformation(oException, oTraceBack);
+      fOutputExceptionInformation(oException, oTraceBack);
       uIndex = 0;
       while True:
         uIndex += 1;
         sErrorReportFilePath = os.path.join(gsInternalErrorReportsFolder, "BugId error report #%d.txt" % uIndex);
         if not os.path.isfile(sErrorReportFilePath):
           break;
-      oConsole.fStatus("Creating a copy of the error report in %s..." % (sErrorReportFilePath,));
-      if oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True, bThrowErrors = True):
-        oConsole.fOutput("A copy of the error report can be found in ", INFO, sErrorReportFilePath, NORMAL, "...");
-      oConsole.fCleanup();
-      fTerminate(3);
+      oConsole.fStatus(
+        COLOR_BUSY, CHAR_BUSY,
+        COLOR_NORMAL, " Creating a copy of the error report in ",
+        COLOR_INFO, sErrorReportFilePath,
+        COLOR_NORMAL, "...",
+      );
+      assert oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True, bThrowErrors = True), \
+          "UNREACHABLE CODE (bThrowErrors = True)";
+      oConsole.fOutput(
+        COLOR_OK, CHAR_OK,
+        COLOR_NORMAL, " A copy of the error report can be found in ",
+        COLOR_INFO, sErrorReportFilePath,
+        COLOR_NORMAL, ".",
+      );
+      fTerminate(guExitCodeInternalError);
     
     def fLicenseErrorsCallback(oBugId, asErrors):
       # These should have been reported before cBugId was even instantiated, so this is kind of unexpected.
@@ -142,25 +206,17 @@ try:
       gbAnInternalErrorOccured = True;
       oConsole.fLock();
       try:
-        oConsole.fOutput(ERROR, "\u250C\u2500", ERROR_INFO, " Software license error ", ERROR, sPadding = "\u2500");
+        oConsole.fOutput("┌───[", COLOR_INFO, " Software license error ", COLOR_NORMAL, "]", sPadding = "─");
         for sError in asErrors:
-          oConsole.fOutput(ERROR, "\u2502 ", ERROR_INFO, sError);
-        oConsole.fOutput(ERROR, "\u2514", sPadding = "\u2500");
+          oConsole.fOutput("│ ", COLOR_INFO, sError);
+        oConsole.fOutput("└", sPadding = "─");
       finally:
         oConsole.fUnlock();
-      fTerminate(5);
+      fTerminate(guExitCodeLicenseError);
     
     def fLicenseWarningsCallback(oBugId, asWarnings):
       # These were already reported when BugId started; ignore them.
       pass;
-    #  oConsole.fLock();
-    #  try:
-    #    oConsole.fOutput(WARNING, u"\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = u"\u2500");
-    #    for sWarning in asWarnings:
-    #      oConsole.fOutput(WARNING, u"\u2502 ", WARNING_INFO, sWarning);
-    #    oConsole.fOutput(WARNING, u"\u2514", sPadding = u"\u2500");
-    #  finally:
-    #    oConsole.fUnlock();
     
     def fCdbISANotIdealCallback(oBugId, oProcess, bIsMainProcess, sCdbISA, bPreventable):
       global \
@@ -176,10 +232,14 @@ try:
           oConsole.fLock();
           try:
             oConsole.fOutput(
-              WARNING, "- You are debugging an ",
-              WARNING_INFO, oProcess.sISA, WARNING, " process running ",
-              WARNING_INFO, sBinaryName, WARNING, " with a ",
-              WARNING_INFO, sCdbISA, WARNING, " cdb.exe."
+              COLOR_WARNING, CHAR_WARNING,
+              COLOR_NORMAL, " You are debugging an ",
+              COLOR_INFO, oProcess.sISA,
+              COLOR_NORMAL, " process running ",
+              COLOR_INFO, sBinaryName,
+              COLOR_NORMAL, " with a ",
+              COLOR_INFO, sCdbISA,
+              COLOR_NORMAL, " cdb.exe.",
             );
             oConsole.fOutput("  This appears to be due to the application running both x86 and x64 processes.");
             oConsole.fOutput("  Unfortunately, this means use-after-free bugs in this process may be reported");
@@ -193,17 +253,24 @@ try:
         oConsole.fLock();
         try:
           oConsole.fOutput(
-            ERROR, "- You are debugging an ",
-            ERROR_INFO, oProcess.sISA, WARNING, " process running ",
-            ERROR_INFO, sBinaryName, WARNING, " with a ",
-            ERROR_INFO, sCdbISA, WARNING, " cdb.exe."
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " You are debugging an ",
+            COLOR_INFO, oProcess.sISA,
+            COLOR_NORMAL, " process running ",
+            COLOR_INFO, sBinaryName,
+            COLOR_NORMAL, " with a ",
+            COLOR_INFO, sCdbISA,
+            COLOR_NORMAL, " version of cdb.exe.",
           );
           oConsole.fOutput(
-            "  You should use the ", INFO, "--isa=", oProcess.sISA, NORMAL, " command line argument to let BugId know",
-            "it should be using a ", oProcess.sISA, " cdb.exe.");
+            "  You should use the ",
+            COLOR_INFO, "--isa=", oProcess.sISA, COLOR_NORMAL,
+            " command line argument to let BugId know it should be using a ",
+            COLOR_INFO, oProcess.sISA,
+            COLOR_NORMAL, " version of cdb.exe.");
           oConsole.fOutput("  Please restart BugId with the aboce command line argument to try again.");
           oConsole.fOutput();
-          oConsole.fStatus(INFO, "* BugId is stopping...");
+          oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " BugId is stopping...");
         finally:
           oConsole.fUnlock();
         # There is no reason to run without page heap, so terminated.
@@ -225,15 +292,23 @@ try:
       gasReportedLowercaseBinaryNamesWithoutPageHeap.append(sLowerBinaryName);
       oConsole.fLock();
       try:
-        oConsole.fOutput(WARNING, "- Full page heap is not enabled for ", WARNING_INFO, oProcess.sBinaryName,
-                        WARNING, " in process ", WARNING_INFO, "0x%X" % oProcess.uId, WARNING, ".");
+        oConsole.fOutput(
+          COLOR_WARNING, CHAR_WARNING,
+          COLOR_NORMAL, " Full page heap is not enabled for ",
+          COLOR_INFO, oProcess.sBinaryName,
+          COLOR_NORMAL, " in process ",
+          COLOR_INFO, "%s" % oProcess.uId,
+          COLOR_NORMAL, "/",
+          COLOR_INFO, "0x%X" % oProcess.uId,
+          COLOR_NORMAL, ".",
+        );
         if bPreventable:
           oConsole.fOutput("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
           oConsole.fOutput("  optimal. Please enable page heap to improve detection and analysis.");
           oConsole.fOutput();
           oConsole.fOutput("  You can enabled full page heap for ", sLowerBinaryName, " by running:");
           oConsole.fOutput();
-          oConsole.fOutput("      ", INFO, 'PageHeap.cmd "', oProcess.sBinaryName, '" ON');
+          oConsole.fOutput("      ", COLOR_INFO, 'PageHeap.cmd "', oProcess.sBinaryName, '" ON');
         else:
           oConsole.fOutput("  This appears to be due to a bug in page heap that prevents it from");
           oConsole.fOutput("  determining the binary name correctly. Unfortunately, there is no known fix");
@@ -244,30 +319,45 @@ try:
         oConsole.fUnlock();
     
     def fCdbStdInInputCallback(oBugId, sbInput):
-      oConsole.fOutput(HILITE, "<stdin<", NORMAL, str(sbInput, 'latin1'), uConvertTabsToSpaces = 8);
+      oConsole.fOutput(
+        COLOR_INPUT, "<stdin<",
+        COLOR_NORMAL, str(sbInput, 'latin1'),
+        uConvertTabsToSpaces = 8,
+      );
     def fCdbStdOutOutputCallback(oBugId, sbOutput):
-      oConsole.fOutput(HILITE, "stdout>", NORMAL, str(sbOutput, 'latin1'), uConvertTabsToSpaces = 8);
+      oConsole.fOutput(
+        COLOR_OUTPUT, "stdout>",
+        COLOR_NORMAL, str(sbOutput, 'latin1'),
+        uConvertTabsToSpaces = 8,
+      );
     def fCdbStdErrOutputCallback(oBugId, sbOutput):
-      oConsole.fOutput(ERROR_INFO, "stderr>", ERROR, str(sbOutput, 'latin1'), uConvertTabsToSpaces = 8);
+      oConsole.fOutput(
+        COLOR_ERROR, "stderr>",
+        COLOR_NORMAL, str(sbOutput, 'latin1'),
+        uConvertTabsToSpaces = 8,
+      );
     def fLogMessageCallback(oBugId, sMessage, dsData = None):
       sData = dsData and ", ".join(["%s: %s" % (sName, sValue) for (sName, sValue) in dsData.items()]);
-      oConsole.fOutput(DIM, "log>%s%s" % (sMessage, sData and " (%s)" % sData or ""));
+      oConsole.fOutput(
+        COLOR_DIM, "log>", sMessage, sData and " (%s)" % sData or [],
+      );
     
     # Helper function to format messages that are specific to a process.
-    def fPrintMessageForProcess(sHeaderChar, oProcess, bIsMainProcess, *tsMessage):
+    def fOutputMessageForProcess(uHeaderColor, sHeader, oProcess, bIsMainProcess, *tsMessage):
       # oProcess is a mWindowsAPI.cProcess or derivative.
       sIntegrityLevel = "?" if oProcess.uIntegrityLevel is None else (
         str(oProcess.uIntegrityLevel >> 12) +
         ("+" if oProcess.uIntegrityLevel & 0x100 else "")
       );
       axHeader = [
-        sHeaderChar or " ", " ", bIsMainProcess and "Main" or "Sub", " process ",
-        INFO, "%d" % oProcess.uId, NORMAL, "/", INFO , "0x%X" % oProcess.uId, 
-        NORMAL, " (",
-          INFO, oProcess.sBinaryName,
-          NORMAL, ", ", INFO, oProcess.sISA,
-          NORMAL, ", IL:", INFO, sIntegrityLevel,
-        NORMAL, "): ",
+        uHeaderColor, sHeader,
+        COLOR_NORMAL, bIsMainProcess and "Main" or "Sub", " process ",
+        COLOR_INFO, str(oProcess.uId), COLOR_NORMAL, "/", COLOR_INFO , "0x%X" % oProcess.uId, 
+        COLOR_NORMAL, " (",
+          COLOR_INFO, oProcess.sBinaryName,
+          COLOR_NORMAL, ", ", COLOR_INFO, oProcess.sISA,
+          COLOR_NORMAL, ", IL:", COLOR_INFO, sIntegrityLevel,
+        COLOR_NORMAL, "): ",
       ];
       if sHeaderChar is None:
         # Just blanks for the header (used for multi-line output to reduce redundant output).
@@ -286,77 +376,106 @@ try:
     def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
       global gbFailedToApplyMemoryLimitsErrorShown, gbQuiet, gbVerbose;
       if not gbQuiet:
-        fPrintMessageForProcess("-", oProcess, bIsMainProcess,
-            ERROR_INFO, "Cannot apply application memory limits");
+        fOutputMessageForProcess(
+          COLOR_ERROR, CHAR_ERROR,
+          oProcess, bIsMainProcess,
+          "Cannot apply application memory limits",
+        );
         gbFailedToApplyMemoryLimitsErrorShown = True;
         if not gbVerbose:
           oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
     def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
       global gbFailedToApplyMemoryLimitsErrorShown, gbVerbose;
       if gbVerbose or not gbFailedToApplyMemoryLimitsErrorShown:
-        fPrintMessageForProcess("-", oProcess, bIsMainProcess,
-            ERROR_INFO, "Cannot apply process memory limits");
+        fOutputMessageForProcess(
+          COLOR_ERROR, CHAR_ERROR,
+          oProcess, bIsMainProcess,
+          "Cannot apply process memory limits",
+        );
         gbFailedToApplyMemoryLimitsErrorShown = True;
         if not gbVerbose:
           oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
     
     def fProcessStartedCallback(oBugId, oConsoleProcess, bIsMainProcess):
       if gbVerbose:
-        fPrintMessageForProcess("+", oConsoleProcess, bIsMainProcess,
-          "Started", "; command line = ", INFO, oConsoleProcess.sCommandLine, NORMAL, "."
+        fOutputMessageForProcess(
+          COLOR_ADD, CHAR_ADD,
+          oConsoleProcess, bIsMainProcess,
+          "Started (",
+          COLOR_INFO, oConsoleProcess.sCommandLine,
+          COLOR_NORMAL, ").",
         );
     def fProcessAttachedCallback(oBugId, oProcess, bIsMainProcess):
       global gasAttachForProcessExecutableNames;
       if not gbQuiet: # Main processes
-        fPrintMessageForProcess("+", oProcess, bIsMainProcess,
-          "Attached", "; command line = ", INFO, oProcess.sCommandLine or "<unknown>", NORMAL, "."
+        fOutputMessageForProcess(
+          COLOR_ADD, CHAR_ADD,
+          oProcess, bIsMainProcess,
+          "Attached (",
+          COLOR_INFO, oProcess.sCommandLine or "command line unknown",
+          COLOR_NORMAL, ").",
         );
       # Now is a good time to look for additional binaries that may need to be debugged as well.
       if gasAttachForProcessExecutableNames:
         oBugId.fAttachForProcessExecutableNames(*gasAttachForProcessExecutableNames);
     
     def fApplicationDebugOutputCallback(oBugId, oProcess, bIsMainProcess, asbMessages):
-      uCount = 0;
+      uLineNumber = 0;
       sDebug = "debug";
       oConsole.fLock();
       for sbMessage in asbMessages:
-        uCount += 1;
-        if uCount == 1:
-          sHeader = "*";
+        uLineNumber += 1;
+        if uLineNumber == 1:
           # we will create a box shape to show which messages belong together.
           # On the first line we will branch down and right if the message is multi-line.
-          sPrefix = " " if len(asbMessages) == 1 else "\u252c";
+          sPrefix = " " if len(asbMessages) == 1 else "┬";
         else:
-          sHeader = None;
           # if more lines folow, show a vertical stripe, otherwise bend right on the last line
-          sPrefix = "\u2514" if uCount == len(asbMessages) else "\u2502";
-        fPrintMessageForProcess(sHeader, oProcess, bIsMainProcess,
-          INFO, sDebug, NORMAL, sPrefix, HILITE, str(sbMessage, 'latin1'),
+          sPrefix = "└" if uCount == len(asbMessages) else "│";
+        fOutputMessageForProcess(
+          COLOR_OUTPUT, CHAR_OUTPUT,
+          oProcess, bIsMainProcess,
+          COLOR_INFO, "debug",
+          COLOR_NORMAL, sPrefix,
+          COLOR_HILITE, str(sbMessage, 'latin1'),
         );
         sDebug = "     ";
       oConsole.fUnlock();
     
     def fApplicationStdOutOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
-      fPrintMessageForProcess("*", oConsoleProcess, bIsMainProcess,
-        INFO, "stdout", NORMAL, ">", HILITE, sMessage,
+      fOutputMessageForProcess(
+        COLOR_OUTPUT, CHAR_OUTPUT,
+        oConsoleProcess, bIsMainProcess,
+        COLOR_INFO, "stdout",
+        COLOR_NORMAL, ">", sMessage,
       );
     def fApplicationStdErrOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
-      fPrintMessageForProcess("*", oConsoleProcess, bIsMainProcess,
-        ERROR, "stderr", NORMAL, ">", ERROR_INFO, sMessage,
+      fOutputMessageForProcess(
+        COLOR_OUTPUT, CHAR_OUTPUT,
+        oConsoleProcess, bIsMainProcess,
+        COLOR_ERROR, "stderr",
+        COLOR_NORMAL, ">",
+        COLOR_ERROR, sMessage,
       );
     def fASanDetectedCallback(oBugId, oProcess, bIsMainProcess):
-      fPrintMessageForProcess("*", oProcess, bIsMainProcess, 
-        " has ", INFO, "Address Sanitizer", NORMAL, " enabled."
+      fOutputMessageForProcess(
+        COLOR_OK, CHAR_OK,
+        oProcess, bIsMainProcess, 
+        " has ",
+        COLOR_INFO, "Address Sanitizer",
+        COLOR_NORMAL, " enabled."
       );
     
     def fProcessTerminatedCallback(oBugId, oProcess, bIsMainProcess):
       bStopBugId = bIsMainProcess and dxConfig["bApplicationTerminatesWithMainProcess"];
       if not gbQuiet:
-        fPrintMessageForProcess("-", oProcess, bIsMainProcess,
+        fOutputMessageForProcess(
+          COLOR_REMOVE, CHAR_REMOVE,
+          oProcess, bIsMainProcess,
           "Terminated", bStopBugId and "; the application is considered to have terminated with it." or ".",
         );
       if bStopBugId:
-        oConsole.fStatus(INFO, "* BugId is stopping because a main process terminated...");
+        oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " BugId is stopping because a main process terminated...");
         oBugId.fStop();
     
     def fBugReportCallback(oBugId, oBugReport):
@@ -367,23 +486,23 @@ try:
       guDetectedBugsCount += 1;
       oConsole.fLock();
       try:
-        oConsole.fOutput("\u250C\u2500 ", HILITE, "A bug was detected ", NORMAL, sPadding = "\u2500");
+        oConsole.fOutput("┌───[", COLOR_HILITE, " A bug was detected ", COLOR_NORMAL, "]", sPadding = "─");
         if oBugReport.sBugLocation:
-          oConsole.fOutput("\u2502 Id @ Location:    ", INFO, oBugReport.sId, NORMAL, " @ ", INFO, oBugReport.sBugLocation);
+          oConsole.fOutput("│ Id @ Location:    ", COLOR_INFO, oBugReport.sId, COLOR_NORMAL, " @ ", COLOR_INFO, oBugReport.sBugLocation);
           sBugIdAndLocation = "%s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
         else:
-          oConsole.fOutput("\u2502 Id:               ", INFO, oBugReport.sId);
+          oConsole.fOutput("│ Id:               ", COLOR_INFO, oBugReport.sId);
           sBugIdAndLocation = oBugReport.sId;
         gduNumberOfRepros_by_sBugIdAndLocation.setdefault(sBugIdAndLocation, 0);
         gduNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] += 1;
         if oBugReport.sBugSourceLocation:
-          oConsole.fOutput("\u2502 Source:           ", INFO, oBugReport.sBugSourceLocation);
-        oConsole.fOutput("\u2502 Description:      ", INFO, oBugReport.s0BugDescription or "None provided");
-        oConsole.fOutput("\u2502 Security impact:  ", INFO, (oBugReport.s0SecurityImpact or "None"));
+          oConsole.fOutput("│ Source:           ", COLOR_INFO, oBugReport.sBugSourceLocation);
+        oConsole.fOutput("│ Description:      ", COLOR_INFO, oBugReport.s0BugDescription or "None provided");
+        oConsole.fOutput("│ Security impact:  ", COLOR_INFO, (oBugReport.s0SecurityImpact or "None"));
         if oBugReport.asVersionInformation:
-          oConsole.fOutput("\u2502 Version:          ", NORMAL, oBugReport.asVersionInformation[0]); # The process' binary.
+          oConsole.fOutput("│ Version:          ", COLOR_NORMAL, oBugReport.asVersionInformation[0]); # The process' binary.
           for sVersionInformation in oBugReport.asVersionInformation[1:]: # There may be two if the crash was in a
-            oConsole.fOutput("\u2502                   ", NORMAL, sVersionInformation); # different binary (e.g. a .dll)
+            oConsole.fOutput("│                   ", COLOR_NORMAL, sVersionInformation); # different binary (e.g. a .dll)
         if dxConfig["bGenerateReportHTML"]:
           # Use a report file name base on the BugId.
           sDesiredReportFileName = "%s" % sBugIdAndLocation;
@@ -396,7 +515,12 @@ try:
             sReportFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + ".html");
           else:
             sReportFilePath = sValidReportFileName + ".html";
-          oConsole.fStatus("\u2502 Bug report:       ", INFO, sValidReportFileName, ".html", NORMAL, "...");
+          oConsole.fStatus(
+            COLOR_BUSY, CHAR_BUSY,
+            COLOR_NORMAL, " Saving bug report ",
+            COLOR_INFO, sValidReportFileName, ".html",
+            COLOR_NORMAL, "...",
+          );
           try:
             oReportFile = cFileSystemItem(sReportFilePath);
             sbReportHTML = bytes(oBugReport.sReportHTML, "utf-8")
@@ -405,36 +529,46 @@ try:
             else:
               oReportFile.fbCreateAsFile(sbReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
           except Exception as oException:
-            oConsole.fOutput("\u2502 ", ERROR, "Bug report:       ", ERROR_INFO, sValidReportFileName, ".html", ERROR, " not saved!");
-            oConsole.fOutput("\u2502   Error:          ", ERROR_INFO, str(oException));
+            oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " Bug report:     ", sValidReportFileName, ".html ", COLOR_ERROR, "could not be saved!");
+            oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
             gbAnInternalErrorOccured = True;
           else:
-            oConsole.fOutput("\u2502 Bug report:       ", INFO, sValidReportFileName, ".html", NORMAL, ".");
+            oConsole.fOutput("│ Bug report:       ", COLOR_INFO, sValidReportFileName, ".html", COLOR_NORMAL, ".");
           if gbSaveOutputWithReport:
             if dxConfig["sReportFolderPath"] is not None:
               sLogOutputFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + " BugId output.txt");
             else:
               sLogOutputFilePath = sValidReportFileName + " BugId output.txt";
-            oConsole.fStatus("\u2502 BugId output log: ", INFO, sValidReportFileName, ".txt", NORMAL, "...");
+            oConsole.fStatus(
+              COLOR_BUSY, CHAR_BUSY,
+              COLOR_NORMAL, " Saving BugId output log ",
+              COLOR_INFO, sValidReportFileName, ".txt",
+              COLOR_NORMAL, "...",
+            );
             try:
               oConsole.fbCopyOutputToFilePath(sLogOutputFilePath);
             except Exception as oException:
               oConsole.fCleanup();
-              oConsole.fOutput("\u2502 BugId output log: ", ERROR_INFO, sValidReportFileName, ".txt", ERROR, " not saved!");
-              oConsole.fOutput("\u2502   Error:          ", ERROR_INFO, str(oException));
+              oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " BugId output:   ", sValidReportFileName, ".txt ", COLOR_ERROR, "could not be saved!");
+              oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
               gbAnInternalErrorOccured = True;
             else:
-              oConsole.fOutput("\u2502 BugId output log: ", INFO, sValidReportFileName, ".txt", NORMAL, ".");
+              oConsole.fOutput("│ BugId output log: ", COLOR_INFO, sValidReportFileName, ".txt", COLOR_NORMAL, ".");
           if gbSaveDump:
             sValidDumpFileName = "".join([sChar if 0x20 <= ord(sChar) < 0x7F else "." for sChar in sValidReportFileName]);
             if dxConfig["sReportFolderPath"] is not None:
               sDumpFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidDumpFileName + ".dmp");
             else:
               sDumpFilePath = sValidDumpFileName + ".dmp";
-            oConsole.fStatus("\u2502 Dump file:        ", INFO, sValidDumpFileName, ".dmp", NORMAL, "...");
+            oConsole.fStatus(
+              COLOR_BUSY, CHAR_BUSY,
+              COLOR_NORMAL, " Saving dump file ",
+              COLOR_INFO, sValidDumpFileName, ".dmp",
+              COLOR_NORMAL, "...",
+            );
             oBugId.fSaveDumpToFile(sDumpFilePath, True, gbSaveFullDump);
-            oConsole.fOutput("\u2502 Dump file:        ", INFO, sValidDumpFileName, ".dmp", NORMAL, ".");
-        oConsole.fOutput("\u2514", sPadding = "\u2500");
+            oConsole.fOutput("│ Dump file:        ", COLOR_INFO, sValidDumpFileName, ".dmp", COLOR_NORMAL, ".");
+        oConsole.fOutput("└", sPadding = "─");
       finally:
         oConsole.fUnlock();
     
@@ -455,18 +589,29 @@ try:
       # software as this is likely to cause unexpected issues.
       fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
       if mWindowsAPI.oSystemInfo.sOSVersion != "10.0":
-        oConsole.fOutput(ERROR, "Error: unfortunately BugId only runs on Windows 10 at this time.");
-        fTerminate(3);
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR, 
+          COLOR_NORMAL, " BugId only runs on Windows 10.",
+        );
+        fTerminate(guExitCodeBadDependencyError);
       if mWindowsAPI.oSystemInfo.sOSISA == "x64" and mWindowsAPI.fsGetPythonISA() == "x86":
         oConsole.fLock();
         try:
-          oConsole.fOutput(WARNING, "\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = "\u2500");
-          oConsole.fOutput(WARNING, "\u2502 You are running a ", WARNING_INFO, "32-bit", WARNING, " version of Python on a ",
-              WARNING_INFO, "64-bit", WARNING, " version of Windows.");
-          oConsole.fOutput(WARNING, "\u2502 BugId will not be able to debug 64-bit applications unless you run it in a 64-bit " +
-              "version of Python.");
-          oConsole.fOutput(WARNING, "\u2502 If you experience any issues, use a 64-bit version of Python and try again.");
-          oConsole.fOutput(WARNING, "\u2514", sPadding = "\u2500");
+          oConsole.fOutput("┌───[", COLOR_WARNING, " Warning ", COLOR_NORMAL, "]", sPadding = "─");
+          oConsole.fOutput(
+            "│ You are running a ",
+            COLOR_INFO, "32-bit",
+            COLOR_NORMAL, " version of Python on a ",
+            COLOR_INFO, "64-bit",
+            COLOR_NORMAL, " version of Windows.",
+          );
+          oConsole.fOutput(
+            "│ BugId will not be able to debug 64-bit applications unless you run it in a 64-bit version of Python.",
+          );
+          oConsole.fOutput(
+            "│ If you experience any issues, use a 64-bit version of Python and try again.",
+          );
+          oConsole.fOutput("└", sPadding = "─");
         finally:
           oConsole.fUnlock();
       
@@ -491,83 +636,38 @@ try:
           a0sJITDebuggerArguments.append(sArgument);
           continue;
         if s0LowerName in ["q", "quiet"]:
-          if s0Value is None or s0Value.lower() == "true":
-            gbQuiet = True;
-          elif s0Value.lower() == "false":
-            gbQuiet = False;
-          else:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-            fTerminate(2);
+          gbQuiet = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["v", "verbose"]:
-          if s0Value is None or s0Value.lower() == "true":
-            gbVerbose = True;
-          elif s0Value.lower() == "false":
-            gbVerbose = False;
-          else:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-            fTerminate(2);
+          gbVerbose = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["p", "pause"]:
-          if s0Value is None or s0Value.lower() == "true":
-            gbPauseBeforeExit = True;
-          elif s0Value.lower() == "false":
-            gbPauseBeforeExit = False;
-          else:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-            fTerminate(2);
+          gbPauseBeforeExit = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["f", "fast", "quick"]:
-          if s0Value is None or s0Value.lower() == "true":
-            bFast = True;
-          elif s0Value.lower() == "false":
-            bFast = False;
-          else:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-            fTerminate(2);
+          bFast = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["r", "repeat", "forever"]:
-          if s0Value is None or s0Value.lower() == "true":
-            bRepeat = True;
-          elif s0Value.lower() == "false":
-            bRepeat = False;
-          elif s0LowerName in ["forever"]:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-            fTerminate(2);
+          xValue = fxProcessBooleanArgument(s0LowerName, s0Value, u0CanAlsoBeAnIntegerLargerThan = 1 if s0LowerName != "forever" else None);
+          if isinstance(xValue, bool):
+            bRepeat = xValue;
           else:
             bRepeat = True;
-            try:
-              uNumberOfRepeats = int(s0Value);
-              if uNumberOfRepeats < 2:
-                uNumberOfRepeats = None;
-              elif str(uNumberOfRepeats) != s0Value:
-                uNumberOfRepeats = None;
-            except:
-              uNumberOfRepeats = None;
-            if uNumberOfRepeats is None:
-              oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                  " must be \"", ERROR_INFO, "true", ERROR, "\" (default), \"", ERROR_INFO, "false", ERROR, "\", or ",
-                  ERROR_INFO, "an integer larger than 1", ERROR, ".");
-              fTerminate(2);
+            uNumberOfRepeats = xValue;
         elif s0LowerName in ["d", "dump", "full-dump"]:
-          if s0Value is None or s0Value.lower() == "true":
+          if fxProcessBooleanArgument(s0LowerName, s0Value):
             gbSaveDump = True;
             if s0LowerName in ["full-dump"]:
               gbSaveFullDump = True; # --full-dump[=true] enables dump & full dump
-          elif s0Value.lower() == "false":
-            if s0LowerName in ["full-dump"]:
-              gbSaveFullDump = False; # --full-dump=false disables full dump only (not dump)
-            else:
-              gbSaveDump = False;
+          elif s0LowerName in ["full-dump"]:
+            gbSaveFullDump = False; # --full-dump=false disables full dump only (not dump)
           else:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-            fTerminate(2);
+            gbSaveDump = False;
         elif s0LowerName in ["i"]:
           if s0Value is not None:
-            oConsole.fOutput(ERROR, "- The option ", ERROR_INFO, sArgument, ERROR, " does not accept a value.")
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The option ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, " does not accept a value.",
+            )
+            fTerminate(guExitCodeBadArgument);
           # Install as JIT Debugger. Remaining arguments are passed on the command line to the JIT debugger.
           a0sJITDebuggerArguments = []; # Remaining arguments will be added to this list.
         elif s0LowerName in ["c", "collateral"]:
@@ -582,90 +682,168 @@ try:
             except:
               guMaximumNumberOfBugs = None;
             if guMaximumNumberOfBugs is None:
-              oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                  " must be empty or ", ERROR_INFO, "an integer larger than 0", ERROR, ".");
-              fTerminate(2);
+              oConsole.fOutput(
+                COLOR_ERROR, CHAR_ERROR,
+                COLOR_NORMAL, " The value for ",
+                COLOR_INFO, sArgument,
+                COLOR_NORMAL, " must be empty or an integer larger than ",
+                COLOR_INFO, "0",
+                COLOR_NORMAL, ".",
+              );
+              fTerminate(guExitCodeBadArgument);
         elif s0LowerName in ["pid", "pids"]:
           if not s0Value:
-            oConsole.fOutput(ERROR, "- You must provide at least one process id.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, " must contain at least one process id.",
+            );
+            fTerminate(guExitCodeBadArgument);
           if s0ApplicationBinaryPath is not None:
-            oConsole.fOutput(ERROR, "- You cannot provide an application binary and process ids.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide both an application binary and process ids.",
+            );
+            fTerminate(guExitCodeBadArgument);
           if o0UWPApplication is not None:
-            oConsole.fOutput(ERROR, "- You cannot provide UWP application details and process ids.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide both UWP application details and process ids.",
+            );
+            fTerminate(guExitCodeBadArgument);
           for sPid in s0Value.split(","):
             try:
-              auApplicationProcessIds.append(int(sPid));
+              uProcessId = int(sPid);
+              if uProcessId <= 0 or uProcessId % 4 != 0:
+                raise ValueError();
+              auApplicationProcessIds.append(uProcessId);
             except ValueError:
-              oConsole.fOutput(ERROR, "- You cannot provide ", ERROR_INFO, repr(sPid), ERROR, " as a process ids, as it is not a number.");
-              oConsole.fOutput(ERROR, "  Full argument: ", ERROR_INFO, repr(sArgument), ERROR, ".");
-              fTerminate(2);
+              oConsole.fOutput(
+                COLOR_ERROR, CHAR_ERROR,
+                COLOR_NORMAL, " The value for ",
+                COLOR_INFO, sArgument,
+                COLOR_NORMAL, " must contain a list of comma separated process ids and ",
+                COLOR_INFO, repr(sPid),
+                COLOR_NORMAL, " is not a valid process id.",
+              );
+              fTerminate(guExitCodeBadArgument);
         elif s0LowerName in ["handle-jit-event"]:
-          if not s0Value:
-            oConsole.fOutput(ERROR, "- No event handle provided!");
-            fTerminate(2);
-          u0JITDebuggerEventId = int(s0Value);
+          fTerminateIfNoArgumentValueProvided(sLowerName, s0Value, "a JIT debugger event id");
+          try:
+            u0JITDebuggerEventId = int(s0Value);
+          except ValueError:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, " must contain a JIT debugger event id and ",
+              COLOR_INFO, repr(s0Value),
+              COLOR_NORMAL, " is not a valid event id.",
+            );
+            fTerminate(guExitCodeBadArgument);
         elif s0LowerName in ["uwp", "uwp-app"]:
           if not s0Value:
-            oConsole.fOutput(ERROR, "- You must provide UWP application details.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You must provide UWP application details.",
+            );
+            fTerminate(guExitCodeBadArgument);
           if o0UWPApplication is not None:
-            oConsole.fOutput(ERROR, "- You cannot provide UWP application details more than once.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide UWP application details more than once.",
+            );
+            fTerminate(guExitCodeBadArgument);
           if s0ApplicationBinaryPath is not None:
-            oConsole.fOutput(ERROR, "- You cannot provide an application binary and UWP application details.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide an application binary and UWP application details.",
+            );
+            fTerminate(guExitCodeBadArgument);
           if len(auApplicationProcessIds) > 0:
-            oConsole.fOutput(ERROR, "- You cannot provide process ids and UWP application details.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide process ids and UWP application details.",
+            );
+            fTerminate(guExitCodeBadArgument);
           tsUWPApplicationPackageNameAndId = s0Value.split("!", 1);
           sUWPApplicationPackageName = tsUWPApplicationPackageNameAndId[0];
           sUWPApplicationId = tsUWPApplicationPackageNameAndId[1] if len(tsUWPApplicationPackageNameAndId) == 2 else None;
           o0UWPApplication = mWindowsAPI.cUWPApplication(sUWPApplicationPackageName, sUWPApplicationId);
         elif s0LowerName in ["jit"]:
-          fPrintCurrentJITDebuggerSettings();
-          fTerminate(0);
+          fOutputCurrentJITDebuggerSettings();
+          fTerminate(guExitCodeSuccess);
         elif s0LowerName in ["log-output"]:
-          gbSaveOutputWithReport = True;
+          gbSaveOutputWithReport = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["isa", "cpu"]:
           if not s0Value:
-            oConsole.fOutput(ERROR, "- You must provide an Instruction Set Architecture.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You must provide an Instruction Set Architecture.",
+            );
+            fTerminate(guExitCodeBadArgument);
           if s0Value not in ["x86", "x64"]:
-            oConsole.fOutput(ERROR, "- Unknown Instruction Set Architecture ", repr(s0Value));
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " Unknown Instruction Set Architecture ", repr(s0Value),
+            );
+            fTerminate(guExitCodeBadArgument);
           sApplicationISA = s0Value;
         elif s0LowerName in ["symbols"]:
           if s0Value is None or not cFileSystemItem(s0Value).fbIsFolder():
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be a valid folder path.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, " must be a valid folder path.",
+            );
+            fTerminate(guExitCodeBadArgument);
           asAdditionalLocalSymbolPaths.append(s0Value);
         elif s0LowerName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path"]:
           if s0Value is None:
-            oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-                " must be a valid folder path.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, " must be a valid folder path.",
+            );
+            fTerminate(guExitCodeBadArgument);
           oReportFolder = cFileSystemItem(s0Value);
           if not oReportFolder.fbIsFolder(bParseZipFiles = True) and not oReportFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True):
-            oConsole.fOutput(ERROR, "- The folder ", ERROR_INFO, s0Value, ERROR, " does not exist and cannot be created.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The folder ",
+              COLOR_INFO, s0Value,
+              COLOR_NORMAL, " does not exist and cannot be created.",
+            );
+            fTerminate(guExitCodeBadArgument);
           dxConfig["sReportFolderPath"] = s0Value;
         elif s0LowerName in ["test-internal-error", "internal-error-test"]:
           raise Exception("Testing internal error");
         elif s0LowerName:
           if not s0Value:
-            oConsole.fOutput(ERROR, "- You cannot provide an argument (", ERROR_INFO, sArgument, ERROR, \
-                ") without a value.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide a setting name (",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, ") without a value.",
+            );
+            fTerminate(guExitCodeBadArgument);
           try:
             xValue = json.loads(s0Value);
           except ValueError as oError:
-            oConsole.fOutput(ERROR, "- Cannot decode argument JSON value ", ERROR_INFO, sArgument, ERROR, "=", \
-                ERROR_INFO, s0Value, ERROR, ": ", ERROR_INFO, " ".join(oError.args), ERROR, ".");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " Cannot decode argument JSON value ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "=",
+              COLOR_INFO, s0Value,
+              COLOR_NORMAL, ": ",
+              COLOR_INFO, " ".join(oError.args),
+              COLOR_NORMAL, ".",
+            );
+            fTerminate(guExitCodeBadArgument);
           # User provided config settings must be applied after any keyword specific config settings, so we
           # save them and apply them later. We also need to get the non-lowercase name.
           sName = sArgument.split("=", 1)[0].lstrip("--"); # Good enough.
@@ -678,30 +856,49 @@ try:
               sApplicationKeyword = sArgument[:-1];
               dxApplicationSettings = ddxApplicationSettings_by_sKeyword.get(sApplicationKeyword);
               if not dxApplicationSettings:
-                oConsole.fOutput(ERROR, "- Unknown application keyword ", ERROR_INFO, sApplicationKeyword, ERROR, ".");
-                fTerminate(2);
-              fPrintApplicationKeyWordHelp(sApplicationKeyword, dxApplicationSettings);
-              fTerminate(0);
+                oConsole.fOutput(
+                  COLOR_ERROR, CHAR_ERROR,
+                  COLOR_NORMAL, " Unknown application keyword ",
+                  COLOR_INFO, sApplicationKeyword,
+                  COLOR_NORMAL, ".",
+                );
+                fTerminate(guExitCodeBadArgument);
+              fOutputApplicationKeyWordHelp(sApplicationKeyword, dxApplicationSettings);
+              fTerminate(guExitCodeSuccess);
             else:
               if len(auApplicationProcessIds) > 0:
-                oConsole.fOutput(ERROR, "- You cannot provide process ids and an application binary.");
-                fTerminate(2);
+                oConsole.fOutput(
+                  COLOR_ERROR, CHAR_ERROR,
+                  COLOR_NORMAL, " You cannot provide process ids and an application binary.",
+                );
+                fTerminate(guExitCodeBadArgument);
               if o0UWPApplication is not None:
-                oConsole.fOutput(ERROR, "- You cannot provide an application UWP package name and a binary.");
-                fTerminate(2);
+                oConsole.fOutput(
+                  COLOR_ERROR, CHAR_ERROR,
+                  COLOR_NORMAL, " You cannot provide an application UWP package name and a binary.",
+                );
+                fTerminate(guExitCodeBadArgument);
               s0ApplicationBinaryPath = sArgument;
           else:
-            oConsole.fOutput(ERROR, "- Unknown argument: ", ERROR_INFO, sArgument, ERROR, ".");
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " Unknown argument: ",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, ".",
+            );
         else: # After "--":
           if len(auApplicationProcessIds) > 0:
-            oConsole.fOutput(ERROR, "- You cannot provide process ids and application arguments.");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide process ids and application arguments.",
+            );
+            fTerminate(guExitCodeBadArgument);
           asApplicationOptionalArguments.append(sArgument);
       
       if a0sJITDebuggerArguments is not None:
         if fbInstallAsJITDebugger(a0sJITDebuggerArguments):
-          fTerminate(0);
-        fTerminate(3);
+          fTerminate(guExitCodeSuccess);
+        fTerminate(guExitCodeInternalError);
       if bFast:
         gbQuiet = True;
         dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
@@ -709,8 +906,13 @@ try:
         dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
       
       if u0JITDebuggerEventId is not None and dxConfig["sReportFolderPath"] is None:
-        oConsole.fOutput(ERROR, "- JIT debugging is not possible without providing a value for ", ERROR_INFO, "sReportFolderPath", ERROR, ".");
-        fTerminate(2);
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " JIT debugging is not possible without providing a value for ",
+          COLOR_INFO, "sReportFolderPath",
+          COLOR_NORMAL, ".",
+        );
+        fTerminate(guExitCodeBadArgument);
       
       dsApplicationURLTemplate_by_srSourceFilePath = {};
       
@@ -722,52 +924,87 @@ try:
       if s0ApplicationKeyword:
         dxApplicationSettings = ddxApplicationSettings_by_sKeyword.get(s0ApplicationKeyword);
         if not dxApplicationSettings:
-          oConsole.fOutput(ERROR, "- Unknown application keyword ", ERROR_INFO, s0ApplicationKeyword, ERROR, ".");
-          fTerminate(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Unknown application keyword ",
+            COLOR_INFO, s0ApplicationKeyword,
+            COLOR_NORMAL, ".",
+          );
+          fTerminate(guExitCodeBadArgument);
         fSetup = dxApplicationSettings.get("fSetup");
         fCleanup = dxConfig["bCleanup"] and dxApplicationSettings.get("fCleanup");
         # Get application binary/UWP package name/process ids as needed:
         if "sBinaryPath" in dxApplicationSettings:
           # This application is started from the command-line.
           if auApplicationProcessIds:
-            oConsole.fOutput(ERROR, "- You cannot provide process ids for application keyword ", ERROR_INFO, \
-                s0ApplicationKeyword, ERROR, ".");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide process ids for application keyword ",
+              COLOR_INFO, s0ApplicationKeyword,
+              COLOR_NORMAL, ".",
+            );
+            fTerminate(guExitCodeBadArgument);
           if o0UWPApplication:
-            oConsole.fOutput(ERROR, "- You cannot provide an application UWP package name for application keyword ", \
-                ERROR_INFO, s0ApplicationKeyword, ERROR, ".");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide an application UWP package name for application keyword ",
+              COLOR_INFO, s0ApplicationKeyword,
+              COLOR_NORMAL, ".",
+            );
+            fTerminate(guExitCodeBadArgument);
           if s0ApplicationBinaryPath is None:
             s0ApplicationBinaryPath = dxApplicationSettings["sBinaryPath"];
             if s0ApplicationBinaryPath is None:
-              oConsole.fOutput(ERROR, "- The main application binary for ", ERROR_INFO, s0ApplicationKeyword, \
-                  ERROR, " could not be detected on your system.");
-              oConsole.fOutput(ERROR, "  Please provide the path to this binary in the arguments.");
-              fTerminate(4);
+              oConsole.fOutput(
+                COLOR_ERROR, CHAR_ERROR,
+                COLOR_NORMAL, " The main application binary for ",
+                COLOR_INFO, s0ApplicationKeyword,
+                COLOR_NORMAL, " could not be detected on your system.",
+              );
+              oConsole.fOutput(
+                COLOR_NORMAL, "  Please provide the path to this binary in the arguments.",
+              );
+              fTerminate(guExitCodeApplicationBinaryNotFound);
         elif "dxUWPApplication" in dxApplicationSettings:
           dxUWPApplication = dxApplicationSettings["dxUWPApplication"];
           # This application is started as a Universal Windows Platform application.
           if s0ApplicationBinaryPath:
-            oConsole.fOutput(ERROR, "- You cannot provide an application binary for application keyword ", \
-                ERROR_INFO, s0ApplicationKeyword, ERROR, ".");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide an application binary for application keyword ",
+              COLOR_INFO, s0ApplicationKeyword,
+              COLOR_NORMAL, ".",
+            );
+            fTerminate(guExitCodeBadArgument);
           if auApplicationProcessIds:
-            oConsole.fOutput(ERROR, "- You cannot provide process ids for application keyword ", ERROR_INFO, \
-                s0ApplicationKeyword, ERROR, ".");
-            fTerminate(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot provide process ids for application keyword ",
+              COLOR_INFO, s0ApplicationKeyword,
+              COLOR_NORMAL, ".",
+            );
+            fTerminate(guExitCodeBadArgument);
           sUWPApplicationPackageName = dxUWPApplication["sPackageName"];
           sUWPApplicationId = dxUWPApplication["sId"];
           o0UWPApplication = mWindowsAPI.cUWPApplication(sUWPApplicationPackageName, sUWPApplicationId);
         elif not auApplicationProcessIds:
           # This application is attached to.
-          oConsole.fOutput(ERROR, "- You must provide process ids for application keyword ", \
-              ERROR_INFO, s0ApplicationKeyword, ERROR, ".");
-          fTerminate(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " You must provide process ids for application keyword ",
+            COLOR_INFO, s0ApplicationKeyword,
+            COLOR_NORMAL, ".",
+          );
+          fTerminate(guExitCodeBadArgument);
         elif asApplicationOptionalArguments:
           # Cannot provide arguments if we're attaching to processes
-          oConsole.fOutput(ERROR, "- You cannot provide arguments for application keyword ", \
-              ERROR_INFO, s0ApplicationKeyword, ERROR, ".");
-          fTerminate(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " You cannot provide arguments for application keyword ",
+            COLOR_INFO, s0ApplicationKeyword,
+            COLOR_NORMAL, ".",
+          );
+          fTerminate(guExitCodeBadArgument);
         if "asApplicationAttachForProcessExecutableNames" in dxApplicationSettings:
           gasAttachForProcessExecutableNames = dxApplicationSettings["asApplicationAttachForProcessExecutableNames"];
         # Get application arguments;
@@ -784,12 +1021,17 @@ try:
         if dxApplicationSettings.get("dxConfigSettings"):
           dxApplicationConfigSettings = dxApplicationSettings["dxConfigSettings"];
           if gbVerbose:
-            oConsole.fOutput("* Applying application specific configuration for %s:" % s0ApplicationKeyword);
+            oConsole.fOutput(
+              COLOR_INFO, CHAR_INFO,
+              COLOR_NORMAL, " Applying application specific configuration for ",
+              COLOR_INFO, s0ApplicationKeyword,
+              COLOR_NORMAL, ":",
+            );
           for (sSettingName, xValue) in dxApplicationConfigSettings.items():
             if sSettingName not in dxUserProvidedConfigSettings:
               # Apply and show result indented or errors.
               if not fbApplyConfigSetting(sSettingName, xValue, [None, "  "][gbVerbose]):
-                fTerminate(2);
+                fTerminate(guExitCodeBadArgument);
           if gbVerbose:
             oConsole.fOutput();
         # Apply application specific source settings
@@ -809,68 +1051,86 @@ try:
       else:
         oConsole.fLock();
         try:
-          oConsole.fOutput(ERROR, "- You must provide something to debug. This can be either one or more process");
-          oConsole.fOutput(ERROR, "  ids, an application command-line or an UWP application package name.");
-          oConsole.fOutput("Run \"", INFO, "BugId -h", NORMAL, "\" for help on command-line arguments.");
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " You must provide something to debug. This can be either one or more process",
+          );
+          oConsole.fOutput("  ids, an application command-line or an UWP application package name.");
+          oConsole.fOutput();
+          oConsole.fOutput("  Run \"", COLOR_INFO, "BugId -h", COLOR_NORMAL, "\" for help on command-line arguments.");
         finally:
           oConsole.fUnlock();
-        fTerminate(2);
+        fTerminate(guExitCodeBadArgument);
       
       # Check that the UWP application exists if needed.
       if o0UWPApplication:
         if not o0UWPApplication.bPackageExists:
-          oConsole.fOutput(ERROR, "- UWP application package ", ERROR_INFO, o0UWPApplication.sPackageName,
-              ERROR, " does not exist.");
-          fTerminate(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " UWP application package ",
+            COLOR_INFO, o0UWPApplication.sPackageName,
+            COLOR_NORMAL, " does not exist.",
+          );
+          fTerminate(guExitCodeBadArgument);
         elif not o0UWPApplication.bIdExists:
-          oConsole.fOutput(ERROR, "- UWP application package ", ERROR_INFO, o0UWPApplication.sPackageName,
-              ERROR, " does not contain an application with id ", ERROR_INFO, o0UWPApplication.sApplicationId,
-              ERROR, ".");
-          fTerminate(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " UWP application package ",
+            COLOR_INFO, o0UWPApplication.sPackageName,
+            COLOR_NORMAL, " does not contain an application with id ",
+            COLOR_INFO, o0UWPApplication.sApplicationId,
+            COLOR_NORMAL, ".",
+          );
+          fTerminate(guExitCodeBadArgument);
       # Apply user provided settings:
       for (sSettingName, xValue) in list(dxUserProvidedConfigSettings.items()):
         # Apply and show result or errors:
         if not fbApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]):
-          fTerminate(2);
+          fTerminate(guExitCodeBadArgument);
       
       # Check if cdb.exe is found:
       sCdbISA = sApplicationISA or cBugId.sOSISA;
       if not cBugId.fbCdbFound(sCdbISA):
         oConsole.fLock();
         try:
-          oConsole.fOutput(ERROR, "- BugId depends on ", ERROR_INFO, "Debugging Tools for Windows", ERROR, " which was not found.");
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " BugId depends on ",
+            COLOR_INFO, "Debugging Tools for Windows",
+            COLOR_NORMAL, " which was not found.",
+          );
           oConsole.fOutput();
-          oConsole.fOutput("To install, download the Windows 10 SDK installer at:");
+          oConsole.fOutput("  To install, download the Windows 10 SDK installer at:");
           oConsole.fOutput();
-          oConsole.fOutput("  ", INFO, "https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk");
+          oConsole.fOutput("    ", COLOR_INFO, "https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk");
           oConsole.fOutput();
-          oConsole.fOutput("After downloading, run the installer. You can deselect all other features");
-          oConsole.fOutput("of the SDK before installation; only ", INFO, "Debugging Tools for Windows", NORMAL, " is required.");
+          oConsole.fOutput("  After downloading, run the installer. You can deselect all other features");
+          oConsole.fOutput("  of the SDK before installation; only ", COLOR_INFO, "Debugging Tools for Windows", COLOR_NORMAL, " is required.");
           oConsole.fOutput();
-          oConsole.fOutput("Once you have completed these steps, please try again.");
+          oConsole.fOutput("  Once you have completed these steps, please try again.");
         finally:
           oConsole.fUnlock();
-        fTerminate(2);
+        fTerminate(guExitCodeBadArgument);
       
       # Check license
       (asLicenseErrors, asLicenseWarnings) = mProductDetails.ftasGetLicenseErrorsAndWarnings();
       if asLicenseErrors:
         oConsole.fLock();
         try:
-          oConsole.fOutput(ERROR, "\u250C\u2500", ERROR_INFO, " Software license error ", ERROR, sPadding = "\u2500");
+          oConsole.fOutput("┌───[", COLOR_ERROR, " Software license error ", COLOR_NORMAL, "]", sPadding = "─");
           for sLicenseError in asLicenseErrors:
-            oConsole.fOutput(ERROR, "\u2502 ", ERROR_INFO, sLicenseError);
-          oConsole.fOutput(ERROR, "\u2514", sPadding = "\u2500");
+            oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_INFO, " ", sLicenseError);
+          oConsole.fOutput("└", sPadding = "─");
         finally:
           oConsole.fUnlock();
-        fTerminate(5);
+        fTerminate(guExitCodeLicenseError);
       if asLicenseWarnings:
         oConsole.fLock();
         try:
-          oConsole.fOutput(WARNING, "\u250C\u2500", WARNING_INFO, " Software license warning ", WARNING, sPadding = "\u2500");
+          oConsole.fOutput("┌───[", COLOR_WARNING, " Software license warning ", COLOR_NORMAL, "]", sPadding = "─");
           for sLicenseWarning in asLicenseWarnings:
-            oConsole.fOutput(WARNING, "\u2502 ", WARNING_INFO, sLicenseWarning);
-          oConsole.fOutput(WARNING, "\u2514", sPadding = "\u2500");
+            oConsole.fOutput("│ ", COLOR_WARNING, CHAR_WARNING, COLOR_INFO, " ", sLicenseWarning);
+          oConsole.fOutput("└", sPadding = "─");
         finally:
           oConsole.fUnlock();
       
@@ -883,7 +1143,7 @@ try:
         if fSetup:
           # Call setup before the application is started. Argument is boolean value indicating if this is the first time
           # the function is being called.
-          oConsole.fStatus("* Applying special application configuration settings...");
+          oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Applying special application configuration settings...");
           fSetup(bFirstRun = uRunCounter == 0);
         uRunCounter += 1;
         oBugId = cBugId(
@@ -909,28 +1169,44 @@ try:
             s0ApplicationBinaryPath = os.path.abspath(s0ApplicationBinaryPath);
             if not gbQuiet:
               asCommandLine = [s0ApplicationBinaryPath] + asApplicationArguments;
-              oConsole.fOutput("* Command line: ", INFO, " ".join(asCommandLine));
-            oConsole.fStatus("* The debugger is starting the application...");
+              oConsole.fOutput(
+                COLOR_INFO, CHAR_INFO,
+                COLOR_NORMAL, " Command line: ",
+                COLOR_INFO, " ".join(asCommandLine),
+              );
+            oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is starting the application...");
           else:
             if auApplicationProcessIds:
               asProcessIdsOutput = [];
               for uApplicationProcessId in auApplicationProcessIds:
                 if asProcessIdsOutput: asProcessIdsOutput.append(", ");
-                asProcessIdsOutput.extend([INFO, str(uApplicationProcessId), NORMAL]);
-              oConsole.fOutput("* Running process ids: ", INFO, *asProcessIdsOutput);
+                asProcessIdsOutput.extend([COLOR_INFO, str(uApplicationProcessId), COLOR_NORMAL]);
+              oConsole.fOutput(
+                COLOR_INFO, CHAR_INFO,
+                COLOR_NORMAL, " Running process ids: ",
+                COLOR_INFO, *asProcessIdsOutput,
+              );
             if o0UWPApplication and not gbQuiet:
               oConsole.fOutput(*(
-                ["* UWP application id: ", INFO, oBugId.o0UWPApplication.sApplicationId, NORMAL] +
-                [", package name: ", INFO, oBugId.o0UWPApplication.sPackageName, NORMAL] +
-                ([", Arguments: ", INFO, " ".join(asApplicationArguments), NORMAL] if asApplicationArguments else []) +
-                ["."]
+                [
+                  COLOR_INFO, CHAR_INFO,
+                  COLOR_NORMAL, " UWP application id: ",
+                  COLOR_INFO, oBugId.o0UWPApplication.sApplicationId,
+                  COLOR_NORMAL, ", package name: ",
+                  COLOR_INFO, oBugId.o0UWPApplication.sPackageName,
+                ] + ([
+                  COLOR_NORMAL, ", Arguments: ",
+                  COLOR_INFO, " ".join(asApplicationArguments),
+                ] if asApplicationArguments else []) + [
+                  COLOR_NORMAL, "."
+                ]
               ));
             if not o0UWPApplication:
-              oConsole.fStatus("* The debugger is attaching to running processes of the application...");
+              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is attaching to running processes of the application...");
             elif auApplicationProcessIds:
-              oConsole.fStatus("* The debugger is attaching to running processes and starting the application...");
+              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is attaching to running processes and starting the application...");
             else:
-              oConsole.fStatus("* The debugger is starting the application...");
+              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is starting the application...");
         finally:
           oConsole.fUnlock();
         oBugId.fAddCallback("Application resumed", fApplicationResumedCallback);
@@ -972,17 +1248,24 @@ try:
         if gbAnInternalErrorOccured:
           if fCleanup:
             # Call cleanup after runnning the application, before exiting BugId
-            oConsole.fStatus("* Cleaning up application state...");
+            oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Cleaning up application state...");
             fCleanup();
-          fTerminate(3);
+          fTerminate(guExitCodeInternalError);
         if guDetectedBugsCount == 0:
-          oConsole.fOutput("\u2500\u2500 The application terminated without a bug being detected ", sPadding = "\u2500");
+          oConsole.fOutput("─── The application terminated without a bug being detected ", sPadding = "─");
           gduNumberOfRepros_by_sBugIdAndLocation.setdefault("No crash", 0);
           gduNumberOfRepros_by_sBugIdAndLocation["No crash"] += 1;
         if gbVerbose:
-          oConsole.fOutput("  Application time: %s seconds" % (int(oBugId.fnApplicationRunTimeInSeconds() * 1000) / 1000.0));
-          nOverheadTimeInSeconds = time.time() - nStartTimeInSeconds - oBugId.fnApplicationRunTimeInSeconds();
-          oConsole.fOutput("  BugId overhead:   %s seconds" % (int(nOverheadTimeInSeconds * 1000) / 1000.0));
+          nApplicationRunTimeInSeconds = oBugId.fnApplicationRunTimeInSeconds();
+          nBugIdRunTimeInSeconds = time.time() - nStartTimeInSeconds;
+          sApplicationRunTime = cDateTimeDuration.foFromSeconds(
+            nApplicationRunTimeInSeconds
+          ).fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2);
+          sOverHeadTime = cDateTimeDuration.foFromSeconds(
+            nBugIdRunTimeInSeconds - nApplicationRunTimeInSeconds
+          ).fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2);
+          oConsole.fOutput("  Application time: ", COLOR_INFO, sApplicationRunTime, COLOR_NORMAL, ".");
+          oConsole.fOutput("  BugId overhead:   ", COLOR_INFO, sOverHeadTime, COLOR_NORMAL, ".");
         if uNumberOfRepeats is not None:
           uNumberOfRepeats -= 1;
           if uNumberOfRepeats == 0:
@@ -990,9 +1273,15 @@ try:
         if not bRepeat:
           if fCleanup:
             # Call cleanup after runnning the application, before exiting BugId
-            oConsole.fStatus("* Cleaning up application state...");
+            oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Cleaning up application state...");
             fCleanup();
-          fTerminate(guDetectedBugsCount > 0 and 1 or 0);
+          fTerminate(guExitCodeSuccess if guDetectedBugsCount > 0 else guExitCodeNoBugsDetected);
+        oConsole.fStatus(
+          COLOR_BUSY, CHAR_BUSY,
+          COLOR_NORMAL, " Saving statistics to file ",
+          COLOR_INFO, sStatisticsFilePath,
+          COLOR_NORMAL, "...",
+        );
         sStatistics = "";
         auOrderedNumberOfRepros = sorted(list(set(gduNumberOfRepros_by_sBugIdAndLocation.values())));
         auOrderedNumberOfRepros.reverse();
@@ -1013,9 +1302,21 @@ try:
           else:
             oStatisticsFile.fbCreateAsFile(sStatistics, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
         except Exception as oException:
-          oConsole.fOutput("  Statistics:       ", ERROR, "Cannot be saved (", ERROR_INFO, str(oException), ERROR, ")");
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Statistics file ",
+            COLOR_INFO, sStatisticsFilePath,
+            COLOR_NORMAL, " could not be saved!",
+          );
+          oConsole.fOutput("  ", COLOR_ERROR, str(oException));
         else:
-          oConsole.fOutput("  Statistics:       ", INFO, sStatisticsFilePath, NORMAL, " (%d bytes)" % len(sStatistics));
+          oConsole.fOutput(
+            "  Statistics:       ",
+            COLOR_INFO, sStatisticsFilePath,
+            COLOR_NORMAL, " (",
+            COLOR_INFO, str(len(sStatistics)),
+            COLOR_NORMAL, " bytes)",
+          );
         oConsole.fOutput(); # and loop
       raise AssertionError("Not reached!"); #  lgtm [py/unreachable-statement]
       
@@ -1029,12 +1330,15 @@ try:
     try:
       fMain();
     except KeyboardInterrupt:
-      oConsole.fOutput("+ Interrupted.");
+      oConsole.fOutput(
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " Interrupted.",
+      );
     except Exception as oException:
       gbAnErrorOccured = True;
       cException, oException, oTraceBack = sys.exc_info();
       fSaveInternalExceptionReportAndExit(oException, oTraceBack);
 except Exception as oException:
   if m0DebugOutput:
-    m0DebugOutput.fTerminateWithException(oException);
+    m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
   raise;

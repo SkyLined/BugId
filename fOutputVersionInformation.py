@@ -5,25 +5,20 @@ from mWindowsAPI import fsGetPythonISA, oSystemInfo;
 from mConsole import oConsole;
 
 from faxListOutput import faxListOutput;
-from mColors import *;
+from mColorsAndChars import *;
 
 try:
-  from fPrintLogo import fPrintLogo as f0PrintLogo;
+  from fOutputLogo import fOutputLogo as fOutputLogo;
 except ModuleNotFoundError as oException:
-  if oException.args[0] != "No module named 'fPrintLogo'":
+  if oException.args[0] != "No module named 'fOutputLogo'":
     raise;
-  f0PrintLogo = None;
+  f0OutputLogo = None;
 
-OK_CHAR = "\u221A";
-WARNING_CHAR = "\u25B2";
-ERROR_CHAR = "\xd7";
-BULLET_CHAR = "\u2022";
-
-def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders, bCheckForUpdates, bCheckForUpdatesSuccessful):
+def fOutputProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders, bCheckForUpdates, bCheckForUpdatesSuccessful):
   oConsole.fOutput(*(
     [
-      "\u2502 ", (
-        [WARNING, WARNING_CHAR] if (
+      "│ ", (
+        [COLOR_WARNING, CHAR_WARNING] if (
           (
             bCheckForUpdates and (
               not bCheckForUpdatesSuccessful or
@@ -33,46 +28,46 @@ def fPrintProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolde
             oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod
           )
         ) else
-        [INFO, BULLET_CHAR] if bCheckForUpdates and bCheckForUpdatesSuccessful and oProductDetails.bVersionIsPreRelease else
-        [OK, OK_CHAR] if oProductDetails.o0License or not oProductDetails.bRequiresLicense else
-        [ERROR, ERROR_CHAR]
+        [COLOR_NORMAL, CHAR_LIST] if bCheckForUpdates and bCheckForUpdatesSuccessful and oProductDetails.bVersionIsPreRelease else
+        [COLOR_OK, CHAR_OK] if oProductDetails.o0License or not oProductDetails.bRequiresLicense else
+        [COLOR_ERROR, CHAR_ERROR]
       ), " ", (
-        INFO if (not oProductDetails.bRequiresLicense or oProductDetails.o0License) else
-        WARNING if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
-        ERROR
-      ) + (UNDERLINE if oProductDetails.o0License else 0),
-      oProductDetails.sProductName, NORMAL, " version: ", (
-        WARNING if (
+        COLOR_INFO if (not oProductDetails.bRequiresLicense or oProductDetails.o0License) else
+        COLOR_WARNING if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
+        COLOR_ERROR
+      ) + (CONSOLE_UNDERLINE if oProductDetails.o0License else 0),
+      oProductDetails.sProductName, COLOR_NORMAL, " version: ", (
+        COLOR_WARNING if (
           bCheckForUpdates and (
             not bCheckForUpdatesSuccessful or
             (not oProductDetails.bVersionIsUpToDate and not oProductDetails.bVersionIsPreRelease)
           )
         ) else
-        HILITE
+        COLOR_HILITE
       ), str(oProductDetails.oProductVersion),
     ] + (
       bShowInstallationFolders and [
-        NORMAL, " installed at ", HILITE, oProductDetails.s0InstallationFolderPath,
+        COLOR_NORMAL, " installed at ", COLOR_HILITE, oProductDetails.s0InstallationFolderPath,
       ] or [ ]
     ) + (
       [] if (not oProductDetails.bRequiresLicense or oProductDetails.o0License) else
-      [NORMAL, " ", WARNING, "(in trial period)"] if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
-      [NORMAL, " ", ERROR, "(no valid license found)"]
+      [COLOR_NORMAL, " ", COLOR_WARNING, "(in trial period)"] if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
+      [COLOR_NORMAL, " ", COLOR_ERROR, "(no valid license found)"]
     ) + (
       [] if not bCheckForUpdates else
-      [NORMAL, " ", WARNING, "(no respository)"] if oProductDetails.o0Repository is None else
-      [NORMAL, " ", ERROR, "(cannot check for updates)"] if not bCheckForUpdatesSuccessful else
-      [NORMAL, " ", INFO, "(pre-release, last release version is ", str(oProductDetails.oLatestProductVersion), ")"]
+      [COLOR_NORMAL, " ", COLOR_WARNING, "(no respository)"] if oProductDetails.o0Repository is None else
+      [COLOR_NORMAL, " ", COLOR_ERROR, "(cannot check for updates)"] if not bCheckForUpdatesSuccessful else
+      [COLOR_NORMAL, " ", COLOR_INFO, "(pre-release, last release version is ", str(oProductDetails.oLatestProductVersion), ")"]
          if oProductDetails.bVersionIsPreRelease else
-      [NORMAL, " ", WARNING, "(old, latest release version is ", str(oProductDetails.oLatestProductVersion), ")"]
+      [COLOR_NORMAL, " ", COLOR_WARNING, "(old, latest release version is ", str(oProductDetails.oLatestProductVersion), ")"]
          if not oProductDetails.bVersionIsUpToDate else
       []
     ) + [
-      NORMAL, ".",
+      COLOR_NORMAL, ".",
     ]
   ));
 
-def fPrintVersionInformation(bCheckForUpdates, bShowInstallationFolders):
+def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
   # Read product details for rs and all modules it uses.
   aoProductDetails = mProductDetails.faoGetProductDetailsForAllLoadedModules();
   o0MainProductDetails = mProductDetails.fo0GetProductDetailsForMainModule();
@@ -93,32 +88,42 @@ def fPrintVersionInformation(bCheckForUpdates, bShowInstallationFolders):
           oProductDetails.foGetLatestProductDetailsFromRepository();
         except mProductDetails.mExceptions.cProductDetailsException as oException:
           oConsole.fOutput(
-            ERROR, ERROR_CHAR, " Version check for ", ERROR_INFO, oProductDetails.sProductName,
-            ERROR, " failed: ", ERROR_INFO, str(oException),
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Version check for ",
+            COLOR_INFO, oProductDetails.sProductName,
+            COLOR_NORMAL, " failed: ",
+            COLOR_INFO, str(oException),
           );
         else:
           aoProductDetailsSuccessfullyCheckedForUpdates.append(oProductDetails);
       if len(aoProductDetailsSuccessfullyCheckedForUpdates) == 0:
           oConsole.fOutput(
-            WARNING, WARNING_CHAR, " ", WARNING_INFO, "All checks failed.",
-            WARNING, " This often indicates you are running a ",
-            WARNING_INFO, "pre-release", WARNING, " version, or a version that is very ",
-            WARNING_INFO, "out of date", WARNING, ".",
+            COLOR_WARNING, CHAR_WARNING,
+            COLOR_NORMAL, "Failed to get any product version information.",
           );
           oConsole.fOutput(
-            WARNING, "  If you do not have a pre-release version of ", o0MainProductDetails.sProductName, ", ",
-            WARNING_INFO, "please try to update to the latest version before trying again.",
+            "  (This often indicates you are running a ",
+            COLOR_INFO, "pre-release",
+            COLOR_NORMAL, " version, or a version that is very ",
+            COLOR_INFO, "out of date",
+            COLOR_NORMAL, ").",
+          );
+          oConsole.fOutput(
+            "  To try and resolve this issue, please update this product to the latest",
+          );
+          oConsole.fOutput(
+            "  version and try again.",
           );
     
-    if f0PrintLogo:
-      f0PrintLogo();
+    if f0OutputLogo:
+      f0OutputLogo();
     
     oConsole.fOutput(
-      "\u250C\u2500 ", HILITE, "Version information", NORMAL, " ", sPadding = "\u2500"
+      "┌───[", COLOR_HILITE, " Version information ", COLOR_NORMAL, "]", sPadding = "─",
     );
     # Output the main product information first, then its dependencies alphabetically:
     if o0MainProductDetails:
-      fPrintProductDetails(
+      fOutputProductDetails(
         o0MainProductDetails,
         bIsMainProduct = True,
         bShowInstallationFolders = bShowInstallationFolders,
@@ -132,7 +137,7 @@ def fPrintVersionInformation(bCheckForUpdates, bShowInstallationFolders):
     ]);
     for sProductName in sorted(doRemainingProductDetails_by_sName.keys()):
       oProductDetails = doRemainingProductDetails_by_sName[sProductName];
-      fPrintProductDetails(
+      fOutputProductDetails(
         oProductDetails,
         bIsMainProduct = False,
         bShowInstallationFolders = bShowInstallationFolders,
@@ -145,22 +150,22 @@ def fPrintVersionInformation(bCheckForUpdates, bShowInstallationFolders):
     );
     
     oConsole.fOutput(
-      "\u2502 ", BULLET_CHAR, " ", INFO, "Windows",
-      NORMAL, " version: ", INFO, oSystemInfo.sOSName,
-      NORMAL, " release ", INFO, oSystemInfo.sOSReleaseId,
-      NORMAL, ", build ", INFO, oSystemInfo.sOSBuild,
-      NORMAL, " ", INFO, oSystemInfo.sOSISA,
-      NORMAL, ".",
+      "│ ", CHAR_LIST, " ", COLOR_INFO, "Windows",
+      COLOR_NORMAL, " version: ", COLOR_INFO, oSystemInfo.sOSName,
+      COLOR_NORMAL, " release ", COLOR_INFO, oSystemInfo.sOSReleaseId,
+      COLOR_NORMAL, ", build ", COLOR_INFO, oSystemInfo.sOSBuild,
+      COLOR_NORMAL, " ", COLOR_INFO, oSystemInfo.sOSISA,
+      COLOR_NORMAL, ".",
     );
     oConsole.fOutput(
-      "\u2502 ", BULLET_CHAR, " ", INFO, "Python",
-      NORMAL, " version: ", INFO, str(platform.python_version()),
-      NORMAL, " ", INFO, fsGetPythonISA(),
-      NORMAL, ".",
+      "│ ", CHAR_LIST, " ", COLOR_INFO, "Python",
+      COLOR_NORMAL, " version: ", COLOR_INFO, str(platform.python_version()),
+      COLOR_NORMAL, " ", COLOR_INFO, fsGetPythonISA(),
+      COLOR_NORMAL, ".",
     );
     
     oConsole.fOutput(
-      "\u2514", sPadding = "\u2500",
+      "└", sPadding = "─",
     );
   finally:
     oConsole.fUnlock();

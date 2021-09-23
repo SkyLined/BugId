@@ -1,9 +1,10 @@
-import os, platform;
+﻿import os, platform;
 
 from mConsole import oConsole;
 
 from faxListOutput import faxListOutput;
-from mColors import *;
+from mColorsAndChars import *;
+from mExitCodes import *;
 
 def fCheckPythonVersion(sApplicationName, asTestedPythonVersions, sBugURL):
   sPythonVersion = platform.python_version();
@@ -30,37 +31,56 @@ def fCheckPythonVersion(sApplicationName, asTestedPythonVersions, sBugURL):
   if not bRunningInTestedMajorVersion:
     asTestedMayorVersions = [str(u) for u in auTestedMajorVersions];
     oConsole.fOutput(
-      ERROR, "Error: ", sApplicationName, " requires ", ERROR_INFO, "Python", ERROR, " ",
-      faxListOutput(sorted(str(u) for u in auTestedMajorVersions), "or", ERROR_INFO, ERROR), "."
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " ", sApplicationName, " requires Python version ",
+      faxListOutput(sorted(str(u) for u in auTestedMajorVersions), "or", COLOR_INFO, COLOR_NORMAL),
+      COLOR_NORMAL, ".",
     );
-    os._exit(3);
+    sys.exit(guExitCodeInternalError);
   if not bRunningInTestedVersion:
     oConsole.fLock();
     try:
-      oConsole.fOutput(WARNING, "\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = "\u2500");
+      oConsole.fOutput("┌───[", COLOR_WARNING, " Warning ", COLOR_NORMAL, "]", sPadding = "─");
       oConsole.fOutput(
-        WARNING, "\u2502 You are running ", "an older" if bRunningInOlderVersion else "a newer",
-        " version of Python (", WARNING_INFO, sPythonVersion, WARNING, ") in which this version of"
+        "│ You are running a", "n older" if bRunningInOlderVersion else " newer", " version of Python (",
+        COLOR_INFO, sPythonVersion,
+        COLOR_NORMAL, ") in which this version of",
       );
       oConsole.fOutput(
-        WARNING, "\u2502 ", sApplicationName, " ", "was never tested" if bRunningInOlderVersion else "has not been tested yet",
-        ". The following Python versions have been tested:"
+        "│ ",
+        COLOR_INFO, sApplicationName,
+        COLOR_NORMAL, " ", "was never tested" if bRunningInOlderVersion else "has not been tested yet",
+        ".",
       );
-      oConsole.fOutput(WARNING, "\u2502   ", faxListOutput(asTestedPythonVersions, "and", WARNING_INFO, WARNING), ".");
+      oConsole.fOutput(
+        "│ The following Python versions have been tested:",
+      );
+      oConsole.fOutput(
+        "│   ",
+        faxListOutput(asTestedPythonVersions, "and", COLOR_INFO, COLOR_NORMAL),
+        COLOR_NORMAL, ".",
+      );
       if bRunningInOlderVersion:
-        oConsole.fOutput(WARNING, "\u2502 Please update Python to the latest version!");
+        oConsole.fOutput(
+          "│ Please update Python to the latest version!",
+        );
       else:
-        oConsole.fOutput(WARNING, "\u2502 Please report this so %s can be tested with this version of Python at:" % sApplicationName);
-        oConsole.fOutput(WARNING, "\u2502   ", WARNING_INFO | UNDERLINE, sBugURL);
-      oConsole.fOutput(WARNING, "\u2514", sPadding = "\u2500");
+        oConsole.fOutput(
+          "│ Please report this so ", sApplicationName, " can be tested with this version of Python at the following URL:",
+        );
+        oConsole.fOutput(
+          "│   ",
+          COLOR_INFO | CONSOLE_UNDERLINE, sBugURL,
+        );
+      oConsole.fOutput("└", sPadding = "─");
     finally:
       oConsole.fUnlock();
   elif bRunningInOlderVersion:
     oConsole.fLock();
     try:
-      oConsole.fOutput(WARNING, "\u250C\u2500", WARNING_INFO, " Warning ", WARNING, sPadding = "\u2500");
-      oConsole.fOutput(WARNING, "\u2502 You are running Python ", WARNING_INFO, sPythonVersion, WARNING, ", which is outdated.");
-      oConsole.fOutput(WARNING, "\u2502 Please update Python to the latest version!");
-      oConsole.fOutput(WARNING, "\u2514", sPadding = "\u2500");
+      oConsole.fOutput("┌───[",  COLOR_WARNING, " Warning ", COLOR_NORMAL, "]", sPadding = "─");
+      oConsole.fOutput("│ You are running Python ", COLOR_INFO, sPythonVersion, COLOR_NORMAL, ", which is outdated.");
+      oConsole.fOutput("│ Please update Python to the latest version!");
+      oConsole.fOutput("└", sPadding = "─");
     finally:
       oConsole.fUnlock();

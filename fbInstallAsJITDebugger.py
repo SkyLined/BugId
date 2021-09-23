@@ -5,7 +5,7 @@ from mConsole import oConsole;
 
 from dxConfig import dxConfig;
 from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
-from mColors import *;
+from mColorsAndChars import *;
 import mJITDebuggerRegistry;
 
 def fbInstallAsJITDebugger(asAdditionalArguments):
@@ -26,7 +26,14 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
     if sArgument.startswith("--") and "=" in sArgument:
       (sName, sValue) = sArgument[2:].split("=");
       if sName in ["pid", "pids", "handle-jit-event"]:
-        oConsole.fOutput(ERROR, "- You cannot use ", ERROR_INFO, sArgument, ERROR, " in combination with ", ERROR_INFO, "-I", ERROR, " in the arguments.");
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " You cannot use ",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, " in combination with ",
+          COLOR_INFO, "-I",
+          COLOR_NORMAL, " in the arguments.",
+        );
         return False;
       if sName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path", "sReportFolderPath"]:
         s0BugIdReportsFolder = sValue;
@@ -64,18 +71,17 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
     except WindowsError as oException:
       if oException.winerror == 5:
-        oConsole.fOutput(ERROR, "\xd7 ", ERROR_INFO, "BugId cannot be installed as the default JIT debugger.");
-        oConsole.fOutput(ERROR, "  ", ERROR_INFO, "Access to the relevant registry keys is denied.");
-        oConsole.fOutput(ERROR, "  Please try again with ", ERROR_INFO, "elevated priviledges", ERROR, ".");
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " BugId cannot be installed as the default JIT debugger.");
+        oConsole.fOutput("  Access to the relevant registry keys is denied.");
+        oConsole.fOutput("  Please try again with ", COLOR_INFO, "elevated priviledges", COLOR_NORMAL, ".");
         return False;
       raise;
     bSettingsChanged = True;
-  if bSettingsChanged:
-    oConsole.fOutput("\u221A BugId is now installed as the default JIT debugger.");
-    oConsole.fOutput("  Command line: ", INFO, sBugIdCommandLine);
-    oConsole.fOutput("  Reports folder: ", INFO, sBugIdReportsFolder);
-  else:
-    oConsole.fOutput("\u2022 BugId is already installed as the default JIT debugger.");
-    oConsole.fOutput("  Command line: ", INFO, sBugIdCommandLine);
-    oConsole.fOutput("  Reports folder: ", INFO, sBugIdReportsFolder);
+  oConsole.fOutput(
+    COLOR_OK, CHAR_OK,
+    COLOR_NORMAL, " BugId is ", "already" if bSettingsChanged else "now", " installed as the default JIT debugger.");
+  oConsole.fOutput("  Command line: ", COLOR_INFO, sBugIdCommandLine);
+  oConsole.fOutput("  Reports folder: ", COLOR_INFO, sBugIdReportsFolder);
   return True;
