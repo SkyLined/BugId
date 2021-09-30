@@ -1,4 +1,4 @@
-import sys;
+﻿import sys;
 
 from fOutputUsageInformation import fOutputUsageInformation;
 from fOutputVersionInformation import fOutputVersionInformation;
@@ -39,13 +39,13 @@ def fatsArgumentLowerNameAndValue():
         fOutputUsageInformation();
         sys.exit(guExitCodeSuccess);
       if sLowerName in ["version", "version-check"]:
-        fOutputUsageInformation(
+        fOutputVersionInformation(
           bCheckForUpdates = sLowerName == "version-check",
           bShowInstallationFolders = sLowerName == "version",
         );
         sys.exit(guExitCodeSuccess);
       if sLowerName in ["license", "license-update"]:
-        fOutputUsageInformation(
+        fOutputLicenseInformation(
           bUpdateIfNeeded = sLowerName == "license-update",
         );
         sys.exit(guExitCodeSuccess);

@@ -1,4 +1,4 @@
-import os, platform;
+﻿import os, platform;
 
 import mProductDetails;
 from mWindowsAPI import fsGetPythonISA, oSystemInfo;
@@ -8,7 +8,7 @@ from faxListOutput import faxListOutput;
 from mColorsAndChars import *;
 
 try:
-  from fOutputLogo import fOutputLogo as fOutputLogo;
+  from fOutputLogo import fOutputLogo as f0OutputLogo;
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'fOutputLogo'":
     raise;
