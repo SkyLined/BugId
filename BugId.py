@@ -1,26 +1,19 @@
-﻿"""
-                          __                     _____________                  
-            ,,,     _,siSS**SSis,_        ,-.   /             |                 
-           :O()   ,SP*'`      `'*YS,     |   `-|  O    BugId  |                 
-            ```  dS'  _    |    _ 'Sb   ,'      \_____________|                 
-      ,,,       dP     \,-` `-<`    Yb _&/                                      
-     :O()      ,S`  \,' \      \    `Sis|ssssssssssssssssss,        ,,,         
-      ```      (S   (   | --====)    SSS|SSSSSSSSSSSSSSSSSSD        ()O:        
-               'S,  /', /      /    ,S?*/******************'        ```         
-                Yb    _/'-_ _-<._   dP `                                        
-  _______________YS,       |      ,SP_________________________________________  
-                  `Sbs,_      _,sdS`                                            
-                    `'*YSSssSSY*'`                   https://bugid.skylined.nl  
-                          ``                                                    
-                                                                                
-""";
-# Running this script will return an exit code, which translates as such:
-# 0 = executed successfully, no bugs found.
-# 1 = executed successfully, bug detected.
-# 2 = bad arguments
-# 3 = internal error
-# 4 = failed to start process or attach to process(es).
-# 5 = license error
+﻿"""                                                                             
+  ____________________________________________________________________________  
+                              __                                                
+   ││▌║█▐▐║▌▌█│║║│      _,siSP**YSis,_       ╒╦╦══╦╗             ╒╦╦╕    ╔╦╕    
+   ││▌║█▐▐║▌▌█│║║│    ,SP*'`    . `'*YS,      ║╠══╬╣ ╔╗ ╔╗ ╔╦═╦╗  ║║  ╔╦═╬╣     
+   ╵2808197631337╵   dS'  _    |    _ 'Sb    ╘╩╩══╩╝ ╚╩═╩╝ ╚╩═╬╣ ╘╩╩╛ ╚╩═╩╝     
+                    dP     \,-` `-<` `  Y;                 ╚╩═╩╝    ╮╷╭         
+      ╮╷╭          ,S`  \+' \      \    `Sissssssssssssssssssss,   :O()    ╲ö╱  
+     :O()          (S   (   | --====)   :SSSSSSSSSSSSSSSSSSSSSSD    ╯╵╰    ─O─  
+      ╯╵╰  ╮╷╭     'S,  /+, /      /    ,S?********************'           ╱O╲  
+           ()O:     Yb    _/'-_ _-<._.  dP                                      
+           ╯╵╰       YS,       |      ,SP         https://bugid.skylined.nl     
+  ____________________`Sbs,_    ' _,sdS`______________________________________  
+                        `'*YSissiSY*'`                                          
+                              ``                                                
+                                                                            """;
 
 import json, os, sys, time;
 
