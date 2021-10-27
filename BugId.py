@@ -1271,12 +1271,6 @@ try:
             oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Cleaning up application state...");
             fCleanup();
           fTerminate(guExitCodeSuccess if guDetectedBugsCount > 0 else guExitCodeNoBugsDetected);
-        oConsole.fStatus(
-          COLOR_BUSY, CHAR_BUSY,
-          COLOR_NORMAL, " Saving statistics to file ",
-          COLOR_INFO, sStatisticsFilePath,
-          COLOR_NORMAL, "...",
-        );
         sStatistics = "";
         auOrderedNumberOfRepros = sorted(list(set(gduNumberOfRepros_by_sBugIdAndLocation.values())));
         auOrderedNumberOfRepros.reverse();
@@ -1290,6 +1284,12 @@ try:
           sStatisticsFilePath = os.path.join(dxConfig["sReportFolderPath"], sStatisticsFileName);
         else:
           sStatisticsFilePath = sStatisticsFileName;
+        oConsole.fStatus(
+          COLOR_BUSY, CHAR_BUSY,
+          COLOR_NORMAL, " Saving statistics to file ",
+          COLOR_INFO, sStatisticsFilePath,
+          COLOR_NORMAL, "...",
+        );
         try:
           oStatisticsFile = cFileSystemItem(sStatisticsFilePath);
           if oStatisticsFile.fbIsFile(bParseZipFiles = True):
