@@ -17,6 +17,8 @@
 
 import json, os, sys, time;
 
+sModulePath = os.path.dirname(__file__);
+sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
 from fInitializeProduct import fInitializeProduct;
 fInitializeProduct();
 
