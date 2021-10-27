@@ -22,30 +22,37 @@ SET _NT_SYMBOL_PATH=
 
 ECHO   * Test verbose mode with redirected output... 
 CALL "%~dp0\..\BugId.cmd" --verbose %ComSpec% --cBugId.bEnsurePageHeap=false -- /C "@ECHO OFF" >"%REDIRECT_STDOUT_FILE_PATH%"
-IF ERRORLEVEL 1 GOTO :ERROR
+REM See `mExitCodes.py` for expected exit code.
+IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
 
 ECHO   * Test repeat in fast mode...
 CALL "%~dp0\..\BugId.cmd" --repeat=2 --fast %ComSpec% --cBugId.bEnsurePageHeap=false -- /C "@ECHO OFF" >"%REDIRECT_STDOUT_FILE_PATH%"
-IF ERRORLEVEL 1 GOTO :ERROR
+REM See `mExitCodes.py` for expected exit code.
+IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
 IF EXIST "%~dp0\Reproduction statistics.txt" DEL "%~dp0\Reproduction statistics.txt"
 
 ECHO   * Test internal error reporting...
 CALL "%~dp0\..\BugId.cmd" --test-internal-error >"%REDIRECT_STDOUT_FILE_PATH%"
-IF NOT ERRORLEVEL == 3 GOTO :ERROR
+REM See `mExitCodes.py` for expected exit code.
+IF NOT "%ERRORLEVEL%" == "1" GOTO :ERROR
 
 IF "%~1" == "--all" (
   ECHO   * Test debugging Google Chrome...
   CALL "%~dp0\..\BugId.cmd" chrome --nApplicationMaxRunTimeInSeconds=10
-  IF ERRORLEVEL 1 GOTO :ERROR
+  REM See `mExitCodes.py` for expected exit code.
+  IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
   ECHO   * Test debugging Microsoft Edge...
   CALL "%~dp0\..\BugId.cmd" edge --nApplicationMaxRunTimeInSeconds=10
-  IF ERRORLEVEL 1 GOTO :ERROR
+  REM See `mExitCodes.py` for expected exit code.
+  IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
   ECHO   * Test debugging Mozilla Firefox...
   CALL "%~dp0\..\BugId.cmd" firefox --nApplicationMaxRunTimeInSeconds=10
-  IF ERRORLEVEL 1 GOTO :ERROR
+  REM See `mExitCodes.py` for expected exit code.
+  IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
   ECHO   * Test debugging Microsoft Internet Explorer...
   CALL "%~dp0\..\BugId.cmd" msie --nApplicationMaxRunTimeInSeconds=10
-  IF ERRORLEVEL 1 GOTO :ERROR
+  REM See `mExitCodes.py` for expected exit code.
+  IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
 )
 
 ECHO   * Test MemGC.cmd...
@@ -70,6 +77,6 @@ EXIT /B 0
 
 :CLEANUP
   IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
-    TYPE "%REDIRECT_STDOUT_FILE_PATH%"
+    POWERSHELL $OutputEncoding = New-Object -Typename System.Text.UTF8Encoding; Get-Content -Encoding utf8 '"%REDIRECT_STDOUT_FILE_PATH%"'
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
