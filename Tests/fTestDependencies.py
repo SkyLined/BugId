@@ -1,4 +1,4 @@
-import sys;
+﻿import sys;
 
 gbDebugOutput = False;
 
@@ -14,6 +14,11 @@ def fTestDependencies():
   sModulesFolderPath = os.path.join(sMainFolderPath, "modules");
   asOriginalSysPath = sys.path[:];
   # Load mDebugOutput if available to improve error output
+  sys.path = [sModulesFolderPath];
+  try:
+    from mExitCodes import guExitCodeInternalError;
+  except:
+    guExitCodeInternalError = 1; # Use standard value.
   sys.path = [sParentFolderPath] + asOriginalSysPath;
   try:
     import mDebugOutput as m0DebugOutput;
@@ -156,7 +161,7 @@ def fTestDependencies():
       dxProductDetails.get("a0sReleaseAdditionalProductNames", []) +
       dxProductDetails.get("a0sDebugAdditionalProductNames", []) 
     );
-    asUnexpectedDependencyModuleNames = [
+    asUnreportedDependencyModuleNames = [
       sModuleName
       for sModuleName in dsLoadedDependencyModules_by_sName.keys()
       if sModuleName not in asExpectedDependencyModulesNames
@@ -166,24 +171,24 @@ def fTestDependencies():
       for sModuleName in dxProductDetails.get("a0sDependentOnProductNames", [])
       if sModuleName not in dsLoadedDependencyModules_by_sName
     ];
-    if asUnexpectedDependencyModuleNames:
-      print("The product has unreported dependencies! (marked with '+')");
+    if asUnreportedDependencyModuleNames:
+      print("The product has unreported dependencies! (marked with '▲')");
     if asSuperfluousDependencyModuleNames:
-      print("The product has superfluous dependencies! (marked with '-')");
-    if asUnexpectedDependencyModuleNames or asSuperfluousDependencyModuleNames:
-      for sModuleName in sorted(list(dsLoadedDependencyModules_by_sName.keys()) + asSuperfluousDependencyModuleNames):
-        print("%s %s%s" % (
-          "+" if sModuleName in asUnexpectedDependencyModuleNames
-              else "-" if sModuleName in asSuperfluousDependencyModuleNames
-              else " ",
+      print("The product has superfluous dependencies! (marked with '×')");
+    if asUnreportedDependencyModuleNames or asSuperfluousDependencyModuleNames:
+      for sModuleName in sorted(list(set(asExpectedDependencyModulesNames + list(dsLoadedDependencyModules_by_sName.keys()) + asSuperfluousDependencyModuleNames))):
+        print("[%s%s%s] %s%s" % (
+          "√" if sModuleName in asExpectedDependencyModulesNames else "",
+          "▲" if sModuleName in asUnreportedDependencyModuleNames else "",
+          "×" if sModuleName in asSuperfluousDependencyModuleNames else "",
           sModuleName,
-          " (%s)" % (dsLoadedDependencyModules_by_sName[sModuleName].__file__,) if sModuleName in dsLoadedDependencyModules_by_sName else "",
+          " (%s)" % (dsLoadedDependencyModules_by_sName[sModuleName].__file__,) if sModuleName in dsLoadedDependencyModules_by_sName else " (not loaded)",
         ));
       sys.exit(1);
     
     if gbDebugOutput:
       if asUnexpectedDependencyPythonInteralModuleBaseNames or asSuperflousDependencyPythonInternalModuleBaseNames \
-          or asUnexpectedDependencyModuleNames or asSuperfluousDependencyModuleNames:
+          or asUnreportedDependencyModuleNames or asSuperfluousDependencyModuleNames:
         for sModuleName in sorted(sys.modules.keys()):
           if "." in sModuleName:
             continue;
@@ -208,7 +213,7 @@ def fTestDependencies():
         raise AssertionError("Incorrect dependencies found!");
   except Exception as oException:
     if m0DebugOutput:
-      m0DebugOutput.fTerminateWithException(oException);
+      m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
     raise;
   finally:
     sys.path = [sMainFolderPath, sParentFolderPath] + asOriginalSysPath;

@@ -1,4 +1,4 @@
-﻿import os, platform;
+import os, platform;
 
 import mProductDetails;
 from mWindowsAPI import fsGetPythonISA, oSystemInfo;

@@ -1,6 +1,7 @@
 import io, json, os, re, sys, urllib.request, zipfile;
 
 rIgnoredProductFilesPattern = re.compile(r"^(Tests(\..*)?|lgtm\.yml|modules|releases|Internal error reports)($|\\)|(^|\\)[\.#].*");
+from mExitCodes import *;
 
 if __name__ == "__main__":
   sMainFolder = os.path.dirname(__file__);
@@ -45,7 +46,7 @@ if __name__ == "__main__":
         if oResponse.getcode() != 200:
           print("- Unexpected response code while attempting to download %s:" % (sProductName,));
           print("  Expected 200, got %03d." % oResponse.getcode());
-          sys.exit(1);
+          sys.exit(guExitCodeInternalError);
         if oResponse.geturl() != sProductZipURL:
           print("  * Redirected to: %s" % (oResponse.geturl(),));
         sProductZip = oResponse.read();
@@ -69,7 +70,7 @@ if __name__ == "__main__":
           print("- %s path does not start with %s:" % \
               ("Folder" if sProductFileOrFolderPathWithHeader.endswith(os.sep) else "File", sProductsFileAndFoldersHeader));
           print("  Path: '%s'." % (sProductFileOrFolderPathWithHeader,));
-          sys.exit(1);
+          sys.exit(guExitCodeInternalError);
         sProductFileOrFolderPath = sProductFileOrFolderPathWithHeader[len(sProductsFileAndFoldersHeader):];
         # We ignore certain files (.git, tests, the products' own dependencies folder, etc.)
         if rIgnoredProductFilesPattern.match(sProductFileOrFolderPath):

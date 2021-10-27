@@ -1,4 +1,4 @@
-﻿import sys;
+import sys;
 
 from fOutputUsageInformation import fOutputUsageInformation;
 from fOutputVersionInformation import fOutputVersionInformation;

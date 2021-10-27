@@ -4,7 +4,7 @@ IF EXIST "%~dpn0\%~nx0" (
   CALL "%~dpn0\%~nx0" %*
   IF ERRORLEVEL 1 GOTO :ERROR
 )
-SET TEST_ALL=FALSE
+SET TEST_FULL=FALSE
 SET TEST_PYTHON=MAYBE
 SET TEST_PHP=MAYBE
 SET TEST_JAVASCRIPT=MAYBE
@@ -60,7 +60,7 @@ EXIT /B 0
 
 :PARSE_ARGUMENTS
   IF "%~1" == "--all" (
-    SET TEST_ALL=TRUE
+    SET TEST_FULL=TRUE
   ) ELSE IF "%~1" == "--python" (
     SET TEST_PYTHON=TRUE
   ) ELSE IF "%~1" == "--php" (
@@ -82,7 +82,7 @@ EXIT /B 0
   
 
 :TEST_PYTHON
-  IF "%TEST_ALL%" == "TRUE" (
+  IF "%TEST_FULL%" == "TRUE" (
     REM If you can add the x86 and x64 binaries of python to the path, or add links to the local folder, tests will be run
     REM in both
     WHERE PYTHON_X86 >nul 2>&1
@@ -135,11 +135,21 @@ EXIT /B 0
   ECHO + Testing using Python for x86 ISA...
   CALL %PYTHON_X86% "%~dpn0\%~n0.py" %*
   IF ERRORLEVEL 1 GOTO :ERROR
+  IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
+    ECHO   + ...with redirected output...
+    ECHO.|CALL %PYTHON_X86% "%~dpn0\%~n0.py" %* >nul
+    IF ERRORLEVEL 1 GOTO :ERROR
+  )
   ECHO + Completed tests using %PYTHON_X86%.
   ECHO.
   ECHO + Testing using Python for x64 ISA...
   CALL %PYTHON_X64% "%~dpn0\%~n0.py" %*
   IF ERRORLEVEL 1 GOTO :ERROR
+  IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
+    ECHO   + ...with redirected output...
+    ECHO.|CALL %PYTHON_X64% "%~dpn0\%~n0.py" %* >nul
+    IF ERRORLEVEL 1 GOTO :ERROR
+  )
   ECHO + Completed tests using %PYTHON_X64%.
   EXIT /B 0
 
@@ -157,8 +167,13 @@ EXIT /B 0
   )
 :FOUND_PHP
   ECHO * Testing PHP...
-  CALL %PHP% "%~dp0\%~n0\%~n0.php" %*
+  CALL %PHP% "%~dpn0\%~n0.php" %*
   IF ERRORLEVEL 1 GOTO :ERROR
+  IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
+    ECHO   + ...with redirected output...
+    ECHO.|CALL %PHP% "%~dpn0\%~n0.php" %* >nul
+    IF ERRORLEVEL 1 GOTO :ERROR
+  )
   ECHO + Completed tests using %PHP%.
   EXIT /B 0
 
@@ -179,8 +194,13 @@ EXIT /B 0
   )
 :FOUND_NODE
   ECHO * Testing NODE...
-  CALL %NODE% "%~dp0\Tests\Tests.js" %*
+  CALL %NODE% "%~dpn0\%~n0.js" %*
   IF ERRORLEVEL 1 GOTO :ERROR
+  IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
+    ECHO   + ...with redirected output...
+    ECHO.|CALL %NODE% "%~dpn0\%~n0.js" %* >nul
+    IF ERRORLEVEL 1 GOTO :ERROR
+  )
   ECHO + Completed tests using %NODE%.
   EXIT /B 0
 
