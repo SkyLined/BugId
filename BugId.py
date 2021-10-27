@@ -426,9 +426,9 @@ try:
           sPrefix = " " if len(asbMessages) == 1 else "┬";
         else:
           # if more lines folow, show a vertical stripe, otherwise bend right on the last line
-          sPrefix = "└" if uCount == len(asbMessages) else "│";
+          sPrefix = "└" if uLineNumber == len(asbMessages) else "│";
         fOutputMessageForProcess(
-          COLOR_OUTPUT, CHAR_OUTPUT,
+          COLOR_OUTPUT, CHAR_OUTPUT if uLineNumber == 1 else None,
           oProcess, bIsMainProcess,
           COLOR_INFO, "debug",
           COLOR_NORMAL, sPrefix,
