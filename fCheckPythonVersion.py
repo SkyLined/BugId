@@ -29,11 +29,11 @@ def fCheckPythonVersion(sApplicationName, asTestedPythonVersions, sBugURL):
         # This application was tested in a later version, so the version we are running in is outdated.
         bRunningInOlderVersion = True;
   if not bRunningInTestedMajorVersion:
-    asTestedMayorVersions = [str(u) for u in auTestedMajorVersions];
+    asTestedMayorVersions = sorted(str(u) for u in auTestedMajorVersions);
     oConsole.fOutput(
       COLOR_ERROR, CHAR_ERROR,
       COLOR_NORMAL, " ", sApplicationName, " requires Python version ",
-      faxListOutput(sorted(str(u) for u in auTestedMajorVersions), "or", COLOR_INFO, COLOR_NORMAL),
+      faxListOutput(asTestedMayorVersions, "or", asTestedMayorVersions, COLOR_INFO, COLOR_NORMAL),
       COLOR_NORMAL, ".",
     );
     sys.exit(guExitCodeInternalError);
@@ -57,7 +57,7 @@ def fCheckPythonVersion(sApplicationName, asTestedPythonVersions, sBugURL):
       );
       oConsole.fOutput(
         "│   ",
-        faxListOutput(asTestedPythonVersions, "and", COLOR_INFO, COLOR_NORMAL),
+        faxListOutput(asTestedPythonVersions, "and", asTestedPythonVersions, COLOR_INFO, COLOR_NORMAL),
         COLOR_NORMAL, ".",
       );
       if bRunningInOlderVersion:
