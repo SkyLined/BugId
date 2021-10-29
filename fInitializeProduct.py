@@ -54,23 +54,21 @@
   
   # This is supposed to be the __init__.py file in the module folder.
   sProductFolderPath = os.path.normpath(os.path.dirname(__file__));
-  asPotentialModuleParentPaths = [];
   if bProductIsAnApplication:
-    # Applications can be stand-alone, where all dependcy modules are in a `modules` sub-folder of the product folder:
-    asPotentialModuleParentPaths.append(os.path.join(sProductFolderPath, "modules"));
-  # Applications can use shared modules, where dependencies' folders are children of the application's parent
-  # folder. Non-application modules' dependencies are always children of the module's parent folder.
-  # Therefore we always add the product's parent folder to the modules search path.
-  asPotentialModuleParentPaths.append(os.path.dirname(sProductFolderPath));
-  asOriginalSysPath = sys.path[:];
-  # Our search path will be the main product folder first, its parent folder
-  # second, the "modules" child folder of the main product folder third, and
-  # whatever was already in the search path last.
-  sys.path = asPotentialModuleParentPaths + [sPath for sPath in sys.path if sPath not in asPotentialModuleParentPaths];
-  if bDebugOutput:
-    fDebugOutput("* Module search path:");
-    for sPath in sys.path:
-      fDebugOutput("  %s" % sPath);
+    # If this is not an application, the modules search path has already been set.
+    # But if it is, we want to search the application's parent path for modules in the same
+    # parent folder as the application (e.g. development mode) as well as modules in the "modules"
+    # sub-folder (i.e. release mode).
+    asOriginalSysPath = sys.path[:];
+    asModulesPaths = [
+      os.path.dirname(sProductFolderPath),
+      os.path.join(sProductFolderPath, "modules"),
+    ]
+    sys.path = asModulesPaths + [sPath for sPath in sys.path if sPath not in asModulesPaths];
+    if bDebugOutput:
+      fDebugOutput("* Module search paths:");
+      for sPath in sys.path:
+        fDebugOutput("  %s" % sPath);
   # Load the dxProductDetails.json file and extract dependencies:
   sProductDetailsFilePath = os.path.join(sProductFolderPath, "dxProductDetails.json");
   if bDebugOutput: fDebugStatus("\xB7 Loading product details (%s)..." % sProductDetailsFilePath);
@@ -94,7 +92,8 @@
     fo0LoadModule(dxProductDetails["sProductName"], sModuleName, bOptional = True);
   if bDebugOutput: fDebugOutput("+ Product %s initialized." % dxProductDetails["sProductName"]);
   # Restore the original module search path
-  sys.path = asOriginalSysPath;
+  if bProductIsAnApplication:
+    sys.path = asOriginalSysPath;
   # Remove the debug flag from the arguments if it was provided.
   # We only do this in the main product initializer, otherwise
   # it might be removed by one module initializer before another

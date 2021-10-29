@@ -8,12 +8,16 @@ SET TEST_FULL=FALSE
 SET TEST_PYTHON=MAYBE
 SET TEST_PHP=MAYBE
 SET TEST_JAVASCRIPT=MAYBE
+:GET_RANDOM_FILE
+SET REDIRECT_STDOUT_FILE_PATH=%TEMP%\Test stdout %RANDOM%.txt
+IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" GOTO :GET_RANDOM_FILE
+
 CALL :PARSE_ARGUMENTS %*
 
 IF NOT "%TEST_PYTHON%" == "FALSE" (
-  IF NOT EXIST "%~dp0\%~n0\%~n0.py" (
+  IF NOT EXIST "%~dpn0\%~n0.py" (
     IF NOT "%TEST_PYTHON%" == "MAYBE" (
-      ECHO - There is no file "%~dp0\%~n0\%~n0.py" for testing!
+      ECHO - There is no file "%~dpn0\%~n0.py" for testing!
       ENDLOCAL
       EXIT /B 1
     )
@@ -23,12 +27,21 @@ IF NOT "%TEST_PYTHON%" == "FALSE" (
       ENDLOCAL
       EXIT /B 1
     )
+    IF EXIST "%~dpn0\TEST_WITH_COMMAND_LINE_ARGUMENTS" (
+      FOR /F "usebackq tokens=*" %%A in ("%~dpn0\TEST_WITH_COMMAND_LINE_ARGUMENTS") DO (
+        CALL :TEST_PYTHON %%A
+        IF ERRORLEVEL 1 (
+          ENDLOCAL
+          EXIT /B 1
+        )
+      )
+    )
   )
 )
 IF NOT "%TEST_PHP%" == "FALSE" (
-  IF NOT EXIST "%~dp0\%~n0\%~n0.php" (
+  IF NOT EXIST "%~dpn0\%~n0.php" (
     IF NOT "%TEST_PHP%" == "MAYBE" (
-      ECHO - There is no file "%~dp0\%~n0\%~n0.php" for testing!
+      ECHO - There is no file "%~dpn0\%~n0.php" for testing!
       ENDLOCAL
       EXIT /B 1
     )
@@ -38,12 +51,21 @@ IF NOT "%TEST_PHP%" == "FALSE" (
       ENDLOCAL
       EXIT /B 1
     )
+    IF EXIST "%~dpn0\TEST_WITH_COMMAND_LINE_ARGUMENTS" (
+      FOR /F "usebackq tokens=*" %%A in ("%~dpn0\TEST_WITH_COMMAND_LINE_ARGUMENTS") DO (
+        CALL :TEST_PHP %%A
+        IF ERRORLEVEL 1 (
+          ENDLOCAL
+          EXIT /B 1
+        )
+      )
+    )
   )
 )
 IF NOT "%TEST_JAVASCRIPT%" == "FALSE" (
-  IF NOT EXIST "%~dp0\%~n0\%~n0.js" (
+  IF NOT EXIST "%~dpn0\%~n0.js" (
     IF NOT "%TEST_JAVASCRIPT%" == "MAYBE" (
-      ECHO - There is no file "%~dp0\%~n0\%~n0.js" for testing!
+      ECHO - There is no file "%~dpn0\%~n0.js" for testing!
       ENDLOCAL
       EXIT /B 1
     )
@@ -52,6 +74,15 @@ IF NOT "%TEST_JAVASCRIPT%" == "FALSE" (
     IF ERRORLEVEL 1 (
       ENDLOCAL
       EXIT /B 1
+    )
+    IF EXIST "%~dpn0\TEST_WITH_COMMAND_LINE_ARGUMENTS" (
+      FOR /F "usebackq tokens=*" %%A in ("%~dpn0\TEST_WITH_COMMAND_LINE_ARGUMENTS") DO (
+        CALL :TEST_JAVASCRIPT %%A
+        IF ERRORLEVEL 1 (
+          ENDLOCAL
+          EXIT /B 1
+        )
+      )
     )
   )
 )
@@ -137,8 +168,9 @@ EXIT /B 0
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PYTHON_X86% "%~dpn0\%~n0.py" %* >nul
+    ECHO.|CALL %PYTHON_X86% "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
+    DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
   ECHO + Completed tests using %PYTHON_X86%.
   ECHO.
@@ -147,8 +179,9 @@ EXIT /B 0
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PYTHON_X64% "%~dpn0\%~n0.py" %* >nul
+    ECHO.|CALL %PYTHON_X64% "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
+    DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
   ECHO + Completed tests using %PYTHON_X64%.
   EXIT /B 0
@@ -171,8 +204,9 @@ EXIT /B 0
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PHP% "%~dpn0\%~n0.php" %* >nul
+    ECHO.|CALL %PHP% "%~dpn0\%~n0.php" %* >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
+    DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
   ECHO + Completed tests using %PHP%.
   EXIT /B 0
@@ -198,12 +232,17 @@ EXIT /B 0
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %NODE% "%~dpn0\%~n0.js" %* >nul
+    ECHO.|CALL %NODE% "%~dpn0\%~n0.js" %* >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
+    DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
   ECHO + Completed tests using %NODE%.
   EXIT /B 0
 
 :ERROR
+  IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
+    POWERSHELL $OutputEncoding = New-Object -Typename System.Text.UTF8Encoding; Get-Content -Encoding utf8 '"%REDIRECT_STDOUT_FILE_PATH%"'
+    DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
+  )
   ECHO - Error %ERRORLEVEL%!
   EXIT /B %ERRORLEVEL%
