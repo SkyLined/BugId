@@ -34,7 +34,7 @@ try:
   # Load the stuff from external modules that we need.
   from mBugId import cBugId;
   from mConsole import oConsole;
-  from mDateTime import cDateTimeDuration;
+  from mDateTime import cDateTime, cDateTimeDuration;
   from mFileSystemItem import cFileSystemItem;
   from mNotProvided import *;
   import mProductDetails, mWindowsAPI;
@@ -115,6 +115,7 @@ try:
     gbPauseBeforeExit = False;
     gbRunningAsJITDebugger = False;
     gsInternalErrorReportsFolder = os.path.join(os.path.dirname(__file__), "Internal error reports");
+    goBugIdStartDateTime = cDateTime.foNow();
     
     def fTerminate(uExitCode):
       oConsole.fCleanup();
@@ -500,69 +501,74 @@ try:
             oConsole.fOutput("│                   ", COLOR_NORMAL, sVersionInformation); # different binary (e.g. a .dll)
         if dxConfig["bGenerateReportHTML"]:
           # Use a report file name base on the BugId.
-          sDesiredReportFileName = "%s" % sBugIdAndLocation;
-          # In collateral mode, we will number the reports so you know in which order bugs were reported.
+          sDesiredOutputFileNamesHeader = sBugIdAndLocation;
+          # In collateral mode, we will number the reports, so they can more easily be ordered chronologically.
           if guMaximumNumberOfBugs > 1:
-            sDesiredReportFileName = "#%d %s" % (guDetectedBugsCount, sDesiredReportFileName);
+            # guDetectedBugsCount has already been increased from zero, so the first file will be "#1"
+            sDesiredOutputFileNamesHeader = "#%d %s" % (guDetectedBugsCount, sDesiredOutputFileNamesHeader);
+          # In JIT mode, we will prefix the report with the date and time, so they can more easily be ordered chronologically.
+          if gbRunningAsJITDebugger:
+            sDesiredOutputFileNamesHeader = "%s %s" % (goBugIdStartDateTime.fsToString(), sDesiredOutputFileNamesHeader);
           # Translate characters that are not valid in file names.
-          sValidReportFileName = cFileSystemItem.fsGetValidName(sDesiredReportFileName, bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"]);
+          sValidOutputFileNamesHeader = cFileSystemItem.fsGetValidName(sDesiredOutputFileNamesHeader, bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"]);
+          sReportFileName = sValidOutputFileNamesHeader + ".html"
           if dxConfig["sReportFolderPath"] is not None:
-            sReportFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + ".html");
+            oReportFile = cFileSystemItem(os.path.join(dxConfig["sReportFolderPath"], sReportFileName));
           else:
-            sReportFilePath = sValidReportFileName + ".html";
+            oReportFile = cFileSystemItem(sReportFileName);
           oConsole.fStatus(
             COLOR_BUSY, CHAR_BUSY,
             COLOR_NORMAL, " Saving bug report ",
-            COLOR_INFO, sValidReportFileName, ".html",
+            COLOR_INFO, oReportFile.sPath,
             COLOR_NORMAL, "...",
           );
           try:
-            oReportFile = cFileSystemItem(sReportFilePath);
             sbReportHTML = bytes(oBugReport.sReportHTML, "utf-8")
             if oReportFile.fbIsFile(bParseZipFiles = True):
               oReportFile.fbWrite(sbReportHTML, bKeepOpen = False, bParseZipFiles = True, bThrowErrors = True);
             else:
               oReportFile.fbCreateAsFile(sbReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
           except Exception as oException:
-            oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " Bug report:     ", sValidReportFileName, ".html ", COLOR_ERROR, "could not be saved!");
+            oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " Bug report:     ", oBugReport.sPath, COLOR_ERROR, "could not be saved!");
             oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
             gbAnInternalErrorOccured = True;
           else:
-            oConsole.fOutput("│ Bug report:       ", COLOR_INFO, sValidReportFileName, ".html", COLOR_NORMAL, ".");
+            oConsole.fOutput("│ Bug report:       ", COLOR_INFO, oReportFile.sName, COLOR_NORMAL, ".");
           if gbSaveOutputWithReport:
+            sOutputFileName = sValidOutputFileNamesHeader + " BugId output.txt";
             if dxConfig["sReportFolderPath"] is not None:
-              sLogOutputFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidReportFileName + " BugId output.txt");
+              oLogOutputFile = cFileSystemItem(os.path.join(dxConfig["sReportFolderPath"], ));
             else:
-              sLogOutputFilePath = sValidReportFileName + " BugId output.txt";
+              oLogOutputFile = cFileSystemItem(sValidOutputFileNamesHeader + " BugId output.txt");
             oConsole.fStatus(
               COLOR_BUSY, CHAR_BUSY,
               COLOR_NORMAL, " Saving BugId output log ",
-              COLOR_INFO, sValidReportFileName, ".txt",
+              COLOR_INFO, oLogOutputFile.sPath,
               COLOR_NORMAL, "...",
             );
             try:
-              oConsole.fbCopyOutputToFilePath(sLogOutputFilePath);
+              oConsole.fbCopyOutputToFilePath(oLogOutputFile.sWindowsPath);
             except Exception as oException:
               oConsole.fCleanup();
-              oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " BugId output:   ", sValidReportFileName, ".txt ", COLOR_ERROR, "could not be saved!");
+              oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " BugId output:   ", oLogOutputFile.sPath, COLOR_ERROR, "could not be saved!");
               oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
               gbAnInternalErrorOccured = True;
             else:
-              oConsole.fOutput("│ BugId output log: ", COLOR_INFO, sValidReportFileName, ".txt", COLOR_NORMAL, ".");
+              oConsole.fOutput("│ BugId output log: ", COLOR_INFO, oLogOutputFile.sPath, COLOR_NORMAL, ".");
           if gbSaveDump:
-            sValidDumpFileName = "".join([sChar if 0x20 <= ord(sChar) < 0x7F else "." for sChar in sValidReportFileName]);
+            sDumpFileName = "".join([sChar if 0x20 <= ord(sChar) < 0x7F else "." for sChar in sValidOutputFileNamesHeader]) + ".dmp";
             if dxConfig["sReportFolderPath"] is not None:
-              sDumpFilePath = os.path.join(dxConfig["sReportFolderPath"], sValidDumpFileName + ".dmp");
+              oDumpFile = cFileSystemItem(os.path.join(dxConfig["sReportFolderPath"], sDumpFileName));
             else:
-              sDumpFilePath = sValidDumpFileName + ".dmp";
+              oDumpFile = cFileSystemItem(sDumpFileName);
             oConsole.fStatus(
               COLOR_BUSY, CHAR_BUSY,
               COLOR_NORMAL, " Saving dump file ",
-              COLOR_INFO, sValidDumpFileName, ".dmp",
+              COLOR_INFO, oDumpFile.sPath,
               COLOR_NORMAL, "...",
             );
-            oBugId.fSaveDumpToFile(sDumpFilePath, True, gbSaveFullDump);
-            oConsole.fOutput("│ Dump file:        ", COLOR_INFO, sValidDumpFileName, ".dmp", COLOR_NORMAL, ".");
+            oBugId.fSaveDumpToFile(oDumpFile.sPath, True, gbSaveFullDump);
+            oConsole.fOutput("│ Dump file:        ", COLOR_INFO, oDumpFile.sPath, COLOR_NORMAL, ".");
         oConsole.fOutput("└", sPadding = "─");
       finally:
         oConsole.fUnlock();
