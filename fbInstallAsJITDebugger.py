@@ -60,13 +60,9 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
     "Debugger": sBugIdCommandLine
   }.items():
     # Check if the value is already set correctly:
-    try:
-      oRegistryValue = oRegistryHiveKey.foGetValueForName(sValueName = "Debugger");
-    except WindowsError as oException:
-      pass;
-    else:
-      if oRegistryValue.sTypeName == "REG_SZ" and oRegistryValue.xValue == sValue:
-        continue; # Yes; no need to modify it.
+    o0RegistryValue = oRegistryHiveKey.fo0GetValueForName(sValueName = "Debugger");
+    if o0RegistryValue and o0RegistryValue.sTypeName == "REG_SZ" and o0RegistryValue.xValue == sValue:
+      continue; # Yes; no need to modify it.
     try:
       oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
     except WindowsError as oException:

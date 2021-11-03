@@ -1,5 +1,6 @@
 ﻿
 from mConsole import oConsole;
+from mNotProvided import fbIsProvided;
 
 from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
 from fxGetCurrentJITDebuggerCommandLine import fxGetCurrentJITDebuggerCommandLine;
@@ -10,7 +11,7 @@ def fOutputCurrentJITDebuggerSettings():
   try:
     oConsole.fOutput("┌───[", COLOR_INFO, " Current JIT Debugger ", COLOR_NORMAL, "]", sPadding = "─");
     xCurrentJITDebuggerCommandLine = fxGetCurrentJITDebuggerCommandLine();
-    if xCurrentJITDebuggerCommandLine is None:
+    if not fbIsProvided(xCurrentJITDebuggerCommandLine):
       oConsole.fOutput(
         "│ ",
         COLOR_INFO, CHAR_INFO,
@@ -18,7 +19,7 @@ def fOutputCurrentJITDebuggerSettings():
         COLOR_INFO, "None",
         COLOR_NORMAL, ".",
       );
-    elif xCurrentJITDebuggerCommandLine is False:
+    elif xCurrentJITDebuggerCommandLine is None:
       oConsole.fOutput(
         "│ ",
         COLOR_ERROR, CHAR_ERROR,

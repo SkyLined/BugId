@@ -2,22 +2,22 @@ import json, os, re, sys;
 
 import mRegistry;
 from mConsole import oConsole;
+from mNotProvided import zNotProvided;
 
 from mColorsAndChars import *;
 import mJITDebuggerRegistry;
 
 def fxGetCurrentJITDebuggerCommandLine():
   # Returns a string with the current JIT debugger command line
-  # or None if no JIT debugger is installed.
-  # or False if the registry could not be read or the value makes no sense.
+  # or zNotProvided if no JIT debugger is installed.
+  # or None if the registry could not be read or the value makes no sense.
   oRegistryHiveKey = mRegistry.cRegistryHiveKey(
     sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
     sKeyPath = mJITDebuggerRegistry.sComandLineKeyPath,
   );
-  try:
-    oRegistryValue = oRegistryHiveKey.foGetValueForName(sValueName = "Debugger");
-  except WindowsError as oException:
-    return False;
-  if oRegistryValue.sTypeName != "REG_SZ":
-    return False;
+  o0RegistryValue = oRegistryHiveKey.fo0GetValueForName(sValueName = "Debugger");
+  if o0RegistryValue is None:
+    return zNotProvided;
+  if o0RegistryValue.sTypeName != "REG_SZ":
+    return None;
   return oRegistryValue.xValue;
