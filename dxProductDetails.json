@@ -4,17 +4,17 @@
   ],
   "a0sDependentOnProductNames": [
     "mBugId",
+    "mConsole",
+    "mDateTime",
+    "mDebugOutput",
     "mFileSystemItem",
     "mHumanReadable",
-    "mDebugOutput",
-    "mWindowsSDK",
     "mMultiThreading",
     "mNotProvided",
-    "mDateTime",
     "mProductDetails",
-    "mWindowsAPI",
     "mRegistry",
-    "mConsole"
+    "mWindowsAPI",
+    "mWindowsSDK"
   ],
   "a0sPythonApplicationNames": [
     "BugId"
@@ -30,7 +30,7 @@
     "sbUserName": "SkyLined"
   },
   "o0TrialPeriodDuration": "+1m",
-  "oProductVersion": "2021-08-07 11:00",
+  "oProductVersion": "2021-11-04 13:39",
   "sProductAuthor": "SkyLined",
   "sProductName": "BugId",
   "sStructureVersion": "2021-07-02 11:16",
