@@ -1,48 +1,36 @@
-[submodule "modules/mWindowsAPI"]
-	path = modules/mWindowsAPI
-	url = https://github.com/SkyLined/mWindowsAPI
-[submodule "modules/oConsole"]
-	path = modules/oConsole
-	url = https://github.com/SkyLined/oConsole
-[submodule "modules/cBugId"]
-	path = modules/cBugId
-	url = https://github.com/SkyLined/cBugId/
-[submodule "modules/mProductDetails"]
-	path = modules/mProductDetails
-	url = https://github.com/SkyLined/mProductDetails/
-[submodule "modules/mDebugOutput"]
-	path = modules/mDebugOutput
-	url = https://github.com/SkyLined/mDebugOutput/
-[submodule "modules/mMultiThreading"]
-	path = modules/mMultiThreading
-	url = https://github.com/SkyLined/mMultiThreading/
-[submodule "modules/mFileSystem2"]
-	path = modules/mFileSystem2
-	url = https://github.com/SkyLined/mFileSystem2/
-[submodule "modules/mDateTime"]
-	path = modules/mDateTime
-	url = https://github.com/SkyLined/mDateTime/
-[submodule "modules/mWindowsSDK"]
-	path = modules/mWindowsSDK
-	url = https://github.com/SkyLined/mWindowsSDK/
-[submodule "modules/mRegistry"]
-	path = modules/mRegistry
-	url = https://github.com/SkyLined/mRegistry/
-[submodule "modules/cFileSystemItem"]
-	path = modules/cFileSystemItem
-	url = https://github.com/SkyLined/cFileSystemItem/
-[submodule "modules/mHumanReadable"]
-	path = modules/mHumanReadable
-	url = https://github.com/SkyLined/mHumanReadable/
-[submodule "modules/mNotProvided"]
-	path = modules/mNotProvided
-	url = https://github.com/SkyLined/mNotProvided
 [submodule "modules/mBugId"]
 	path = modules/mBugId
 	url = https://github.com/SkyLined/mBugId
 [submodule "modules/mConsole"]
 	path = modules/mConsole
 	url = https://github.com/SkyLined/mConsole
+[submodule "modules/mDateTime"]
+	path = modules/mDateTime
+	url = https://github.com/SkyLined/mDateTime
+[submodule "modules/mDebugOutput"]
+	path = modules/mDebugOutput
+	url = https://github.com/SkyLined/mDebugOutput
 [submodule "modules/mFileSystemItem"]
 	path = modules/mFileSystemItem
 	url = https://github.com/SkyLined/mFileSystemItem
+[submodule "modules/mHumanReadable"]
+	path = modules/mHumanReadable
+	url = https://github.com/SkyLined/mHumanReadable
+[submodule "modules/mMultiThreading"]
+	path = modules/mMultiThreading
+	url = https://github.com/SkyLined/mMultiThreading
+[submodule "modules/mNotProvided"]
+	path = modules/mNotProvided
+	url = https://github.com/SkyLined/mNotProvided
+[submodule "modules/mProductDetails"]
+	path = modules/mProductDetails
+	url = https://github.com/SkyLined/mProductDetails
+[submodule "modules/mRegistry"]
+	path = modules/mRegistry
+	url = https://github.com/SkyLined/mRegistry
+[submodule "modules/mWindowsAPI"]
+	path = modules/mWindowsAPI
+	url = https://github.com/SkyLined/mWindowsAPI
+[submodule "modules/mWindowsSDK"]
+	path = modules/mWindowsSDK
+	url = https://github.com/SkyLined/mWindowsSDK
