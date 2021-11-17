@@ -114,7 +114,8 @@ try:
     gbSaveOutputWithReport = False;
     gbPauseBeforeExit = False;
     gbRunningAsJITDebugger = False;
-    goInternalErrorReportsFolder = cFileSystemItem(__file__).o.foGetChild("Internal error reports");
+    # o0Parent can be used without checking for None because every file has a parent:
+    goInternalErrorReportsFolder = cFileSystemItem(__file__).o0Parent.foGetChild("Internal error reports");
     goBugIdStartDateTime = cDateTime.foNow();
     
     def fTerminate(uExitCode):
