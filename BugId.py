@@ -827,7 +827,7 @@ try:
             fTerminate(guExitCodeBadArgument);
           dxConfig["sReportFolderPath"] = s0Value;
         elif s0LowerName in ["test-internal-error", "internal-error-test"]:
-          raise Exception("Testing internal error");
+          raise Exception("This exception was raised to test internal error handling.");
         elif s0LowerName:
           if not s0Value:
             oConsole.fOutput(
