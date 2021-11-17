@@ -114,7 +114,7 @@ try:
     gbSaveOutputWithReport = False;
     gbPauseBeforeExit = False;
     gbRunningAsJITDebugger = False;
-    gsInternalErrorReportsFolder = os.path.join(os.path.dirname(__file__), "Internal error reports");
+    goInternalErrorReportsFolder = cFileSystemItem(__file__).o.foGetChild("Internal error reports");
     goBugIdStartDateTime = cDateTime.foNow();
     
     def fTerminate(uExitCode):
@@ -174,23 +174,25 @@ try:
     def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
       fOutputExceptionInformation(oException, oTraceBack);
       uIndex = 0;
+      if not goInternalErrorReportsFolder.fbIsFolder:
+        goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True, bThrowErrors = True);
       while True:
         uIndex += 1;
-        sErrorReportFilePath = os.path.join(gsInternalErrorReportsFolder, "BugId error report #%d.txt" % uIndex);
-        if not os.path.isfile(sErrorReportFilePath):
+        oErrorReportFilePath = goInternalErrorReportsFolder.foGetChild("BugId error report #%d.txt" % uIndex);
+        if not oErrorReportFilePath.fbIsFile():
           break;
       oConsole.fStatus(
         COLOR_BUSY, CHAR_BUSY,
         COLOR_NORMAL, " Creating a copy of the error report in ",
-        COLOR_INFO, sErrorReportFilePath,
+        COLOR_INFO, oErrorReportFilePath.sPath,
         COLOR_NORMAL, "...",
       );
-      assert oConsole.fbCopyOutputToFilePath(sErrorReportFilePath, bOverwrite = True, bThrowErrors = True), \
+      assert oConsole.fbCopyOutputToFilePath(oErrorReportFilePath.sPath, bOverwrite = True, bThrowErrors = True), \
           "UNREACHABLE CODE (bThrowErrors = True)";
       oConsole.fOutput(
         COLOR_OK, CHAR_OK,
         COLOR_NORMAL, " A copy of the error report can be found in ",
-        COLOR_INFO, sErrorReportFilePath,
+        COLOR_INFO, oErrorReportFilePath.sPath,
         COLOR_NORMAL, ".",
       );
       fTerminate(guExitCodeInternalError);
@@ -510,10 +512,13 @@ try:
           if gbRunningAsJITDebugger:
             sDesiredOutputFileNamesHeader = "%s %s" % (goBugIdStartDateTime.fsToString(), sDesiredOutputFileNamesHeader);
           # Translate characters that are not valid in file names.
-          sValidOutputFileNamesHeader = cFileSystemItem.fsGetValidName(sDesiredOutputFileNamesHeader, bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"]);
+          sValidOutputFileNamesHeader = cFileSystemItem.fsGetValidName(
+            sDesiredOutputFileNamesHeader,
+            bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"],
+          );
           sReportFileName = sValidOutputFileNamesHeader + ".html"
           if dxConfig["sReportFolderPath"] is not None:
-            oReportFile = cFileSystemItem(os.path.join(dxConfig["sReportFolderPath"], sReportFileName));
+            oReportFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sReportFileName);
           else:
             oReportFile = cFileSystemItem(sReportFileName);
           oConsole.fStatus(
@@ -537,7 +542,7 @@ try:
           if gbSaveOutputWithReport:
             sOutputFileName = sValidOutputFileNamesHeader + " BugId output.txt";
             if dxConfig["sReportFolderPath"] is not None:
-              oLogOutputFile = cFileSystemItem(os.path.join(dxConfig["sReportFolderPath"], ));
+              oLogOutputFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sOutputFileName);
             else:
               oLogOutputFile = cFileSystemItem(sValidOutputFileNamesHeader + " BugId output.txt");
             oConsole.fStatus(
@@ -558,7 +563,7 @@ try:
           if gbSaveDump:
             sDumpFileName = "".join([sChar if 0x20 <= ord(sChar) < 0x7F else "." for sChar in sValidOutputFileNamesHeader]) + ".dmp";
             if dxConfig["sReportFolderPath"] is not None:
-              oDumpFile = cFileSystemItem(os.path.join(dxConfig["sReportFolderPath"], sDumpFileName));
+              oDumpFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sDumpFileName);
             else:
               oDumpFile = cFileSystemItem(sDumpFileName);
             oConsole.fStatus(
@@ -1167,7 +1172,7 @@ try:
         try:
           if s0ApplicationBinaryPath:
             # make the binary path absolute because relative paths don't work.
-            s0ApplicationBinaryPath = os.path.abspath(s0ApplicationBinaryPath);
+            s0ApplicationBinaryPath = cFileSystemItem(s0ApplicationBinaryPath).sPath;
             if not gbQuiet:
               asCommandLine = [s0ApplicationBinaryPath] + asApplicationArguments;
               oConsole.fOutput(
@@ -1287,17 +1292,16 @@ try:
                   round(100.0 * uNumberOfRepros / uRunCounter));
         sStatisticsFileName = "Reproduction statistics.txt";
         if dxConfig["sReportFolderPath"] is not None:
-          sStatisticsFilePath = os.path.join(dxConfig["sReportFolderPath"], sStatisticsFileName);
+          oStatisticsFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sStatisticsFileName);
         else:
-          sStatisticsFilePath = sStatisticsFileName;
+          oStatisticsFile = cFileSystemItem(sStatisticsFileName);
         oConsole.fStatus(
           COLOR_BUSY, CHAR_BUSY,
           COLOR_NORMAL, " Saving statistics to file ",
-          COLOR_INFO, sStatisticsFilePath,
+          COLOR_INFO, oStatisticsFile.sPath,
           COLOR_NORMAL, "...",
         );
         try:
-          oStatisticsFile = cFileSystemItem(sStatisticsFilePath);
           if oStatisticsFile.fbIsFile(bParseZipFiles = True):
             oStatisticsFile.fbWrite(sStatistics, bKeepOpen = False, bParseZipFiles = True, bThrowErrors = True);
           else:
@@ -1306,14 +1310,14 @@ try:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " Statistics file ",
-            COLOR_INFO, sStatisticsFilePath,
+            COLOR_INFO, oStatisticsFile.sPath,
             COLOR_NORMAL, " could not be saved!",
           );
           oConsole.fOutput("  ", COLOR_ERROR, str(oException));
         else:
           oConsole.fOutput(
             "  Statistics:       ",
-            COLOR_INFO, sStatisticsFilePath,
+            COLOR_INFO, oStatisticsFile.sPath,
             COLOR_NORMAL, " (",
             COLOR_INFO, str(len(sStatistics)),
             COLOR_NORMAL, " bytes)",
