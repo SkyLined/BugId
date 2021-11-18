@@ -3,6 +3,7 @@ from .ddxAdobeAcrobatReaderDCSettings_by_sKeyword import ddxAdobeAcrobatReaderDC
 from .ddxFoxitReaderSettings_by_sKeyword import ddxFoxitReaderSettings_by_sKeyword;
 from .ddxGoogleChromeSettings_by_sKeyword import ddxGoogleChromeSettings_by_sKeyword;
 from .ddxMicrosoftEdgeSettings_by_sKeyword import ddxMicrosoftEdgeSettings_by_sKeyword;
+from .ddxMicrosoftOutlookSettings_by_sKeyword import ddxMicrosoftOutlookSettings_by_sKeyword;
 from .ddxMozillaFirefoxSettings_by_sKeyword import ddxMozillaFirefoxSettings_by_sKeyword;
 from .ddxOracleJavaSettings_by_sKeyword import ddxOracleJavaSettings_by_sKeyword;
 from .ddxMicrosoftInternetExplorerSettings_by_sKeyword import ddxMicrosoftInternetExplorerSettings_by_sKeyword;
@@ -14,6 +15,7 @@ for ddxApplicationSpecificSettings_by_sKeyword in [
   ddxFoxitReaderSettings_by_sKeyword,
   ddxGoogleChromeSettings_by_sKeyword,
   ddxMicrosoftEdgeSettings_by_sKeyword,
+  ddxMicrosoftOutlookSettings_by_sKeyword,
   ddxMozillaFirefoxSettings_by_sKeyword,
   ddxOracleJavaSettings_by_sKeyword,
   ddxMicrosoftInternetExplorerSettings_by_sKeyword,
