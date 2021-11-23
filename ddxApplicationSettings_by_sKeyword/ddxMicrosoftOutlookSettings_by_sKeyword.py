@@ -18,7 +18,7 @@ sApplicationBinaryPath_x64 = fsFirstExistingFile(
 );
 sApplicationBinaryPath = sProgramFilesPath_x64 or sProgramFilesPath_x86;
 
-ddxFoxitReaderSettings_by_sKeyword = {
+ddxMicrosoftOutlookSettings_by_sKeyword = {
   "outlook": {
     "sBinaryPath": sApplicationBinaryPath,
     "dxConfigSettings": dxConfigSettings,
