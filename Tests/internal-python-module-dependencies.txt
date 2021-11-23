@@ -13,6 +13,7 @@ errno
 fnmatch
 gc
 hashlib
+heapq
 http
 importlib
 inspect
@@ -23,6 +24,7 @@ math
 msvcrt
 nturl2path
 opcode
+pathlib
 platform
 posixpath
 queue
@@ -42,7 +44,6 @@ threading
 token
 tokenize
 traceback
-typing
 urllib
 uu
 uuid
