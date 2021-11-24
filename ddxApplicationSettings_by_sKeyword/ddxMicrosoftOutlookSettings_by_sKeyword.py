@@ -11,9 +11,13 @@ dxConfigSettings = {
 };
 
 sApplicationBinaryPath_x86 = fsFirstExistingFile(
+  r"%s\Microsoft Office\Office14\OUTLOOK.EXE" % sProgramFilesPath_x86,
+  r"%s\Microsoft Office\Office15\OUTLOOK.EXE" % sProgramFilesPath_x86,
   r"%s\Microsoft Office\root\Office16\OUTLOOK.EXE" % sProgramFilesPath_x86,
 );
 sApplicationBinaryPath_x64 = fsFirstExistingFile(
+  r"%s\Microsoft Office\Office14\OUTLOOK.EXE" % sProgramFilesPath_x64,
+  r"%s\Microsoft Office\Office15\OUTLOOK.EXE" % sProgramFilesPath_x64,
   r"%s\Microsoft Office\root\Office16\OUTLOOK.EXE" % sProgramFilesPath_x64,
 );
 sApplicationBinaryPath = sProgramFilesPath_x64 or sProgramFilesPath_x86;
