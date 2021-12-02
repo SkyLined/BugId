@@ -54,7 +54,7 @@ def fatsArgumentLowerNameAndValue():
         if s0Value:
           try:
             sbLicenseServerURL = bytes(s0Value, "ascii", "strict");
-          except:
+          except UnicodeError:
             pass;
           else:
             bValueIsIsValidURL = True;
