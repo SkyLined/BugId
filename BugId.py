@@ -736,7 +736,7 @@ try:
               );
               fTerminate(guExitCodeBadArgument);
         elif s0LowerName in ["handle-jit-event"]:
-          fTerminateIfNoArgumentValueProvided(sLowerName, s0Value, "a JIT debugger event id");
+          fTerminateIfNoArgumentValueProvided(s0LowerName, s0Value, "a JIT debugger event id");
           try:
             u0JITDebuggerEventId = int(s0Value);
           except ValueError:
