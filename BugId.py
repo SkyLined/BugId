@@ -486,9 +486,9 @@ try:
       oConsole.fLock();
       try:
         oConsole.fOutput("┌───[", COLOR_HILITE, " A bug was detected ", COLOR_NORMAL, "]", sPadding = "─");
-        if oBugReport.sBugLocation:
-          oConsole.fOutput("│ Id @ Location:    ", COLOR_INFO, oBugReport.sId, COLOR_NORMAL, " @ ", COLOR_INFO, oBugReport.sBugLocation);
-          sBugIdAndLocation = "%s @ %s" % (oBugReport.sId, oBugReport.sBugLocation);
+        if oBugReport.s0BugLocation:
+          oConsole.fOutput("│ Id @ Location:    ", COLOR_INFO, oBugReport.sId, COLOR_NORMAL, " @ ", COLOR_INFO, oBugReport.s0BugLocation);
+          sBugIdAndLocation = "%s @ %s" % (oBugReport.sId, oBugReport.s0BugLocation);
         else:
           oConsole.fOutput("│ Id:               ", COLOR_INFO, oBugReport.sId);
           sBugIdAndLocation = oBugReport.sId;
