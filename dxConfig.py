@@ -14,6 +14,10 @@ uTeraByte = 10 ** 12;
 # change values in `gdApplication_dxSettings_by_sKeyword`, or provide them on the command line.
 
 dxConfig = {
+  "bQuiet": False,                                # Set to True to show very little output.
+  "bVerbose": False,                              # Set to True to show verbose output.
+  "bInteractive": False,                          # Set to False for fully automatic mode (e.g. do not ask for values
+                                                  # when handling collateral bugs).
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "a0sLocalSymbolPaths": None,                    # List of local symbol paths (symbols created for a local build or
                                                   # downloaded with a remote build, None = no local symbol paths).
@@ -28,9 +32,9 @@ dxConfig = {
                                                   # many seconds. Lower values yield results faster, but slow down
                                                   # testing and may give false positives if startup takes long.
   "sDefaultBrowserTestURL": "http://%s:28876/" % os.getenv("COMPUTERNAME"), # Default URL for browser tests.
-  "nzApplicationMaxRunTimeInSeconds": zNotProvided,# Terminate BugId if the application has been running for this many
-                                                  # seconds without crashing. None to allow the application to run
-                                                  # forever.
+  "n0ApplicationMaxRunTimeInSeconds": None,       # Terminate BugId if the application has been running for this many
+                                                  # seconds without crashing. Set to `None` to allow the application to
+                                                  # run forever.
   "u0ProcessMaxMemoryUse": None,                  # Limit the total amount of memory a single process can allocate. If
                                                   # a process attempts to allocate memory that would cause it to have
                                                   # more than this maximum allocated, the allocation will fail.

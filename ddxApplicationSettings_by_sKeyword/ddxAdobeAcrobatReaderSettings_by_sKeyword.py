@@ -8,7 +8,7 @@ sProgramFilesPath_x64 = os.getenv("ProgramW6432");
 
 dxConfigSettings = {
   "bApplicationTerminatesWithMainProcess": True,
-  "nApplicationMaxRunTimeInSeconds": 60.0, # This application can load very slowly, so give it a little more time than others.
+  "n0ApplicationMaxRunTimeInSeconds": 60.0, # This application can load very slowly, so give it a little more time than others.
 };
 
 sApplicationBinaryPath_x86 = fsFirstExistingFile(

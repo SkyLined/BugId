@@ -15,7 +15,7 @@
                               ``                                                
                                                                             """;
 
-import json, os, sys, time;
+import json, os, re, sys, time;
 
 sModulePath = os.path.dirname(__file__);
 sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
@@ -41,13 +41,33 @@ try:
   
   from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
   from dxConfig import dxConfig;
+  from fApplicationDebugOutputCallbackHandler import fApplicationDebugOutputCallbackHandler;
+  from fApplicationMaxRunTimeCallbackHandler import fApplicationMaxRunTimeCallbackHandler;
+  from fApplicationResumedCallbackHandler import fApplicationResumedCallbackHandler;
+  from fApplicationRunningCallbackHandler import fApplicationRunningCallbackHandler;
+  from fApplicationStdErrOutputCallbackHandler import fApplicationStdErrOutputCallbackHandler;
+  from fApplicationStdOutOutputCallbackHandler import fApplicationStdOutOutputCallbackHandler;
+  from fApplicationSuspendedCallbackHandler import fApplicationSuspendedCallbackHandler;
+  from fASanDetectedCallbackHandler import fASanDetectedCallbackHandler;
+  from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
   from fbApplyConfigSetting import fbApplyConfigSetting;
   from fbInstallAsJITDebugger import fbInstallAsJITDebugger;
+  from fCdbCommandStartedExecutingCallbackHandler import fCdbCommandStartedExecutingCallbackHandler;
+  from fCdbCommandFinishedExecutingCallbackHandler import fCdbCommandFinishedExecutingCallbackHandler;
+  from fCdbStdErrOutputCallbackHandler import fCdbStdErrOutputCallbackHandler;
+  from fCdbStdInInputCallbackHandler import fCdbStdInInputCallbackHandler;
+  from fCdbStdOutOutputCallbackHandler import fCdbStdOutOutputCallbackHandler;
   from fCheckPythonVersion import fCheckPythonVersion;
+  from fCollateralCannotIgnoreBugCallbackHandler import fCollateralCannotIgnoreBugCallbackHandler;
+  from fCollateralBugIgnoredCallbackHandler import fCollateralBugIgnoredCallbackHandler;
+  from fiCollateralInteractiveAskForValue import fiCollateralInteractiveAskForValue;
+  from fLogMessageCallbackHandler import fLogMessageCallbackHandler;
   from fOutputApplicationKeyWordHelp import fOutputApplicationKeyWordHelp;
   from fOutputCurrentJITDebuggerSettings import fOutputCurrentJITDebuggerSettings;
   from fOutputExceptionInformation import fOutputExceptionInformation;
-  from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
+  from fOutputMessageForProcess import fOutputMessageForProcess;
+  from fProcessStartedCallbackHandler import fProcessStartedCallbackHandler;
+  from fProcessTerminatedCallbackHandler import fProcessTerminatedCallbackHandler;
   from mColorsAndChars import *;
   from mExitCodes import *;
   
@@ -103,13 +123,10 @@ try:
     gasReportedBinaryNameWithNonIdealCdbISA = [];
     gbAnInternalErrorOccured = False;
     gbFailedToApplyMemoryLimitsErrorShown = False;
-    gbQuiet = False;
-    gbVerbose = False;
     gbSaveDump = False;
     gbSaveFullDump = False;
-    guDefaultCollateralMaximumNumberOfBugs = 5; # Just a hunch that that's a reasonable value.
     guDetectedBugsCount = 0;
-    guMaximumNumberOfBugs = 1;
+    gu0MaximumNumberOfBugs = 1;
     gduNumberOfRepros_by_sBugIdAndLocation = {};
     gbSaveOutputWithReport = False;
     gbPauseBeforeExit = False;
@@ -117,42 +134,23 @@ try:
     # o0Parent can be used without checking for None because every file has a parent:
     goInternalErrorReportsFolder = cFileSystemItem(__file__).o0Parent.foGetChild("Internal error reports");
     goBugIdStartDateTime = cDateTime.foNow();
+    def fsGetFileName(sFileNamesBase, bPrefixWithBugIdStartDateTime):
+      # Translate characters that are not valid in file names.
+      # Optionally add the BugId start date as a prefix.
+      return cFileSystemItem.fsGetValidName(
+        "%s%s" % (
+          (goBugIdStartDateTime.fsToString() + " ") if bPrefixWithBugIdStartDateTime else "",
+          sFileNamesBase,
+        ),
+        bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"],
+      );
     
     def fTerminate(uExitCode):
       oConsole.fCleanup();
       if gbPauseBeforeExit:
         oConsole.fOutput("Press ENTER to quit...");
         input();
-      sys.exit(uExitCode);
-    
-    def fApplicationMaxRunTimeCallback(oBugId):
-      oConsole.fOutput(
-        COLOR_INFO, CHAR_INFO,
-        COLOR_NORMAL, " T+",
-        COLOR_INFO, "%.1f" % oBugId.fnApplicationRunTimeInSeconds(),
-        COLOR_NORMAL, " The application has been running for ",
-        COLOR_INFO, "%.1f" % dxConfig["nzApplicationMaxRunTimeInSeconds"],
-        COLOR_NORMAL, " seconds without crashing.",
-      );
-      oConsole.fOutput();
-      oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " BugId is stopping...");
-      oBugId.fStop();
-    
-    def fApplicationResumedCallback(oBugId):
-      oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The application is running...");
-    
-    def fApplicationRunningCallback(oBugId):
-      oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The application was started successfully and is running...");
-    
-    def fApplicationSuspendedCallback(oBugId, sReason):
-      oConsole.fStatus(
-        COLOR_BUSY, CHAR_BUSY,
-        COLOR_NORMAL, " T+",
-        COLOR_INFO, "%.1f" % oBugId.fnApplicationRunTimeInSeconds(),
-        COLOR_NORMAL, " The application is suspended (",
-        COLOR_INFO, sReason,
-        COLOR_NORMAL, ")...",
-      );
+      os._exit(uExitCode);
     
     def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
       global gbAnInternalErrorOccured;
@@ -167,6 +165,30 @@ try:
       finally:
         oConsole.fUnlock();
     
+    def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
+      global gbFailedToApplyMemoryLimitsErrorShown;
+      if not dxConfig["bQuiet"]:
+        fOutputMessageForProcess(
+          COLOR_ERROR, CHAR_ERROR,
+          oProcess, bIsMainProcess,
+          "Cannot apply application memory limits",
+        );
+        gbFailedToApplyMemoryLimitsErrorShown = True;
+        if not dxConfig["bVerbose"]:
+          oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
+    
+    def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
+      global gbFailedToApplyMemoryLimitsErrorShown;
+      if dxConfig["bVerbose"] or not gbFailedToApplyMemoryLimitsErrorShown:
+        fOutputMessageForProcess(
+          COLOR_ERROR, CHAR_ERROR,
+          oProcess, bIsMainProcess,
+          "Cannot apply process memory limits",
+        );
+        gbFailedToApplyMemoryLimitsErrorShown = True;
+        if not dxConfig["bVerbose"]:
+          oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
+    
     def fInternalExceptionCallback(oBugId, oThread, oException, oTraceBack):
       global gbAnInternalErrorOccured;
       gbAnInternalErrorOccured = True;
@@ -174,26 +196,40 @@ try:
     
     def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
       fOutputExceptionInformation(oException, oTraceBack);
-      uIndex = 0;
+      rErrorReportFileName = re.compile(
+        r"\A"
+        r"\d{4}.\d\d.\d\d " r"\d\d.\d\d.\d\d(?:.\d+)? " # Date Time
+        r"BugId error report #(\d+)\.txt"              # Name #<number>
+        r"\Z"
+      );
+      uIndex = 1;
       if not goInternalErrorReportsFolder.fbIsFolder:
         goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True, bThrowErrors = True);
-      while True:
-        uIndex += 1;
-        oErrorReportFilePath = goInternalErrorReportsFolder.foGetChild("BugId error report #%d.txt" % uIndex);
-        if not oErrorReportFilePath.fbIsFile():
-          break;
+      else:
+        # Scan for previous error reports, so we can number them:
+        for oPotentialOlderErrorReport in goInternalErrorReportsFolder.faoGetChildren():
+          oErrorReportFileNameMatch = rErrorReportFileName.match(oPotentialOlderErrorReport.sName);
+          if oErrorReportFileNameMatch:
+            uExistingIndex = int(oErrorReportFileNameMatch.group(1));
+            if uExistingIndex >= uIndex:
+              uIndex = uExistingIndex + 1;
+      sExceptionReportFileName = fsGetFileName(
+        "BugId error report #%d.txt" % uIndex,
+        bPrefixWithBugIdStartDateTime = True
+      );
+      oExceptionReportFile = goInternalErrorReportsFolder.foGetChild(sExceptionReportFileName);
       oConsole.fStatus(
         COLOR_BUSY, CHAR_BUSY,
         COLOR_NORMAL, " Creating a copy of the error report in ",
-        COLOR_INFO, oErrorReportFilePath.sPath,
+        COLOR_INFO, oExceptionReportFile.sPath,
         COLOR_NORMAL, "...",
       );
-      assert oConsole.fbCopyOutputToFilePath(oErrorReportFilePath.sPath, bOverwrite = True, bThrowErrors = True), \
+      assert oConsole.fbCopyOutputToFilePath(oExceptionReportFile.sPath, bOverwrite = True, bThrowErrors = True), \
           "UNREACHABLE CODE (bThrowErrors = True)";
       oConsole.fOutput(
         COLOR_OK, CHAR_OK,
         COLOR_NORMAL, " A copy of the error report can be found in ",
-        COLOR_INFO, oErrorReportFilePath.sPath,
+        COLOR_INFO, oExceptionReportFile.sPath,
         COLOR_NORMAL, ".",
       );
       fTerminate(guExitCodeInternalError);
@@ -226,7 +262,7 @@ try:
       if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA:
         return;
       if not bPreventable:
-        if not gbQuiet and sBinaryName not in gasReportedBinaryNameWithNonIdealCdbISA:
+        if not dxConfig["bQuiet"] and sBinaryName not in gasReportedBinaryNameWithNonIdealCdbISA:
           gasReportedBinaryNameWithNonIdealCdbISA.append(sBinaryName);
           oConsole.fLock();
           try:
@@ -283,7 +319,7 @@ try:
           gasReportedLowercaseBinaryNamesWithoutPageHeap;
       sLowerBinaryName = oProcess.sBinaryName.lower();
       if (
-        gbQuiet
+        dxConfig["bQuiet"]
         or sLowerBinaryName in gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap
         or sLowerBinaryName in gasReportedLowercaseBinaryNamesWithoutPageHeap 
       ):
@@ -317,96 +353,9 @@ try:
       finally:
         oConsole.fUnlock();
     
-    def fCdbStdInInputCallback(oBugId, sbInput):
-      oConsole.fOutput(
-        COLOR_INPUT, "<stdin<",
-        COLOR_NORMAL, str(sbInput, 'latin1'),
-        uConvertTabsToSpaces = 8,
-      );
-    def fCdbStdOutOutputCallback(oBugId, sbOutput):
-      oConsole.fOutput(
-        COLOR_OUTPUT, "stdout>",
-        COLOR_NORMAL, str(sbOutput, 'latin1'),
-        uConvertTabsToSpaces = 8,
-      );
-    def fCdbStdErrOutputCallback(oBugId, sbOutput):
-      oConsole.fOutput(
-        COLOR_ERROR, "stderr>",
-        COLOR_NORMAL, str(sbOutput, 'latin1'),
-        uConvertTabsToSpaces = 8,
-      );
-    def fLogMessageCallback(oBugId, sMessage, dsData = None):
-      sData = dsData and ", ".join(["%s: %s" % (sName, sValue) for (sName, sValue) in dsData.items()]);
-      oConsole.fOutput(
-        COLOR_DIM, "log>", sMessage, sData and " (%s)" % sData or [],
-      );
-    
-    # Helper function to format messages that are specific to a process.
-    def fOutputMessageForProcess(uHeaderColor, s0HeaderChar, oProcess, bIsMainProcess, *tsMessage):
-      # oProcess is a mWindowsAPI.cProcess or derivative.
-      sIntegrityLevel = "?" if oProcess.uIntegrityLevel is None else (
-        str(oProcess.uIntegrityLevel >> 12) +
-        ("+" if oProcess.uIntegrityLevel & 0x100 else "")
-      );
-      axHeader = [
-        uHeaderColor, s0HeaderChar or " ",
-        COLOR_NORMAL, " ", bIsMainProcess and "Main" or "Sub", " process ",
-        COLOR_INFO, str(oProcess.uId), COLOR_NORMAL, "/", COLOR_INFO , "0x%X" % oProcess.uId, 
-        COLOR_NORMAL, " (",
-          COLOR_INFO, oProcess.sBinaryName,
-          COLOR_NORMAL, ", ", COLOR_INFO, oProcess.sISA,
-          COLOR_NORMAL, ", IL:", COLOR_INFO, sIntegrityLevel,
-        COLOR_NORMAL, "): ",
-      ];
-      if s0HeaderChar is None:
-        # Just blanks for the header (used for multi-line output to reduce redundant output).
-        oConsole.fOutput(
-          " " * len("".join(s for s in axHeader if isinstance(s, str))),
-          *tsMessage,
-          uConvertTabsToSpaces = 8
-        );
-      else:
-        oConsole.fOutput(
-          axHeader,
-          *tsMessage,
-          uConvertTabsToSpaces = 8
-        );
-    
-    def fFailedToApplyApplicationMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
-      global gbFailedToApplyMemoryLimitsErrorShown, gbQuiet, gbVerbose;
-      if not gbQuiet:
-        fOutputMessageForProcess(
-          COLOR_ERROR, CHAR_ERROR,
-          oProcess, bIsMainProcess,
-          "Cannot apply application memory limits",
-        );
-        gbFailedToApplyMemoryLimitsErrorShown = True;
-        if not gbVerbose:
-          oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
-    def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
-      global gbFailedToApplyMemoryLimitsErrorShown, gbVerbose;
-      if gbVerbose or not gbFailedToApplyMemoryLimitsErrorShown:
-        fOutputMessageForProcess(
-          COLOR_ERROR, CHAR_ERROR,
-          oProcess, bIsMainProcess,
-          "Cannot apply process memory limits",
-        );
-        gbFailedToApplyMemoryLimitsErrorShown = True;
-        if not gbVerbose:
-          oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
-    
-    def fProcessStartedCallback(oBugId, oConsoleProcess, bIsMainProcess):
-      if gbVerbose:
-        fOutputMessageForProcess(
-          COLOR_ADD, CHAR_ADD,
-          oConsoleProcess, bIsMainProcess,
-          "Started (",
-          COLOR_INFO, oConsoleProcess.sCommandLine,
-          COLOR_NORMAL, ").",
-        );
     def fProcessAttachedCallback(oBugId, oProcess, bIsMainProcess):
       global gasAttachForProcessExecutableNames;
-      if not gbQuiet: # Main processes
+      if not dxConfig["bQuiet"]: # Main processes
         fOutputMessageForProcess(
           COLOR_ADD, CHAR_ADD,
           oProcess, bIsMainProcess,
@@ -417,69 +366,10 @@ try:
       # Now is a good time to look for additional binaries that may need to be debugged as well.
       if gasAttachForProcessExecutableNames:
         oBugId.fAttachForProcessExecutableNames(*gasAttachForProcessExecutableNames);
-    
-    def fApplicationDebugOutputCallback(oBugId, oProcess, bIsMainProcess, asbMessages):
-      uLineNumber = 0;
-      sDebug = "debug";
-      oConsole.fLock();
-      for sbMessage in asbMessages:
-        uLineNumber += 1;
-        if uLineNumber == 1:
-          # we will create a box shape to show which messages belong together.
-          # On the first line we will branch down and right if the message is multi-line.
-          sPrefix = " " if len(asbMessages) == 1 else "┬";
-        else:
-          # if more lines folow, show a vertical stripe, otherwise bend right on the last line
-          sPrefix = "└" if uLineNumber == len(asbMessages) else "│";
-        fOutputMessageForProcess(
-          COLOR_OUTPUT, CHAR_OUTPUT if uLineNumber == 1 else None,
-          oProcess, bIsMainProcess,
-          COLOR_INFO, "debug",
-          COLOR_NORMAL, sPrefix,
-          COLOR_HILITE, str(sbMessage, 'latin1'),
-        );
-        sDebug = "     ";
-      oConsole.fUnlock();
-    
-    def fApplicationStdOutOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
-      fOutputMessageForProcess(
-        COLOR_OUTPUT, CHAR_OUTPUT,
-        oConsoleProcess, bIsMainProcess,
-        COLOR_INFO, "stdout",
-        COLOR_NORMAL, ">", sMessage,
-      );
-    def fApplicationStdErrOutputCallback(oBugId, oConsoleProcess, bIsMainProcess, sMessage):
-      fOutputMessageForProcess(
-        COLOR_OUTPUT, CHAR_OUTPUT,
-        oConsoleProcess, bIsMainProcess,
-        COLOR_ERROR, "stderr",
-        COLOR_NORMAL, ">",
-        COLOR_ERROR, sMessage,
-      );
-    def fASanDetectedCallback(oBugId, oProcess, bIsMainProcess):
-      fOutputMessageForProcess(
-        COLOR_OK, CHAR_OK,
-        oProcess, bIsMainProcess, 
-        " has ",
-        COLOR_INFO, "Address Sanitizer",
-        COLOR_NORMAL, " enabled."
-      );
-    
-    def fProcessTerminatedCallback(oBugId, oProcess, bIsMainProcess):
-      bStopBugId = bIsMainProcess and dxConfig["bApplicationTerminatesWithMainProcess"];
-      if not gbQuiet:
-        fOutputMessageForProcess(
-          COLOR_REMOVE, CHAR_REMOVE,
-          oProcess, bIsMainProcess,
-          "Terminated", bStopBugId and "; the application is considered to have terminated with it." or ".",
-        );
-      if bStopBugId:
-        oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " BugId is stopping because a main process terminated...");
-        oBugId.fStop();
-    
+
     def fBugReportCallback(oBugId, oBugReport):
       global guDetectedBugsCount, \
-             guMaximumNumberOfBugs, \
+             gu0MaximumNumberOfBugs, \
              gduNumberOfRepros_by_sBugIdAndLocation, \
              gbAnInternalErrorOccured;
       guDetectedBugsCount += 1;
@@ -504,20 +394,18 @@ try:
             oConsole.fOutput("│                   ", COLOR_NORMAL, sVersionInformation); # different binary (e.g. a .dll)
         if dxConfig["bGenerateReportHTML"]:
           # Use a report file name base on the BugId.
-          sDesiredOutputFileNamesHeader = sBugIdAndLocation;
           # In collateral mode, we will number the reports, so they can more easily be ordered chronologically.
-          if guMaximumNumberOfBugs > 1:
+          bCountBugs = gu0MaximumNumberOfBugs is None or gu0MaximumNumberOfBugs > 1;
+          sOutputFileNamesHeader = "".join([
             # guDetectedBugsCount has already been increased from zero, so the first file will be "#1"
-            sDesiredOutputFileNamesHeader = "#%d %s" % (guDetectedBugsCount, sDesiredOutputFileNamesHeader);
-          # In JIT mode, we will prefix the report with the date and time, so they can more easily be ordered chronologically.
-          if gbRunningAsJITDebugger:
-            sDesiredOutputFileNamesHeader = "%s %s" % (goBugIdStartDateTime.fsToString(), sDesiredOutputFileNamesHeader);
-          # Translate characters that are not valid in file names.
-          sValidOutputFileNamesHeader = cFileSystemItem.fsGetValidName(
-            sDesiredOutputFileNamesHeader,
-            bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"],
+            ("#%d " % guDetectedBugsCount) if bCountBugs else "",
+            sBugIdAndLocation,
+          ]);
+          sReportFileName = fsGetFileName(
+            sOutputFileNamesHeader + ".html",
+            # In JIT mode and when counting bugs we prefix the report with the date and time.
+            bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs or u0NumberOfRepeats is not None,
           );
-          sReportFileName = sValidOutputFileNamesHeader + ".html"
           if dxConfig["sReportFolderPath"] is not None:
             oReportFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sReportFileName);
           else:
@@ -541,40 +429,56 @@ try:
           else:
             oConsole.fOutput("│ Bug report:       ", COLOR_INFO, oReportFile.sName, COLOR_NORMAL, ".");
           if gbSaveOutputWithReport:
-            sOutputFileName = sValidOutputFileNamesHeader + " BugId output.txt";
+            # We want the BugId ouput file to be stored in the same folder as the bug report,
+            # with a similar file name, so where to store it is determined in a very similar way:
+            sBugIdOutputFileName = fsGetFileName(
+              sOutputFileNamesHeader + " BugId output.txt",
+              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs or u0NumberOfRepeats is not None,
+            );
             if dxConfig["sReportFolderPath"] is not None:
-              oLogOutputFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sOutputFileName);
+              oBugIdOutputFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sBugIdOutputFileName);
             else:
-              oLogOutputFile = cFileSystemItem(sValidOutputFileNamesHeader + " BugId output.txt");
+              oBugIdOutputFile = cFileSystemItem(sBugIdOutputFileName);
             oConsole.fStatus(
               COLOR_BUSY, CHAR_BUSY,
               COLOR_NORMAL, " Saving BugId output log ",
-              COLOR_INFO, oLogOutputFile.sPath,
+              COLOR_INFO, oBugIdOutputFile.sPath,
               COLOR_NORMAL, "...",
             );
             try:
-              oConsole.fbCopyOutputToFilePath(oLogOutputFile.sWindowsPath);
+              oConsole.fbCopyOutputToFilePath(oBugIdOutputFile.sWindowsPath);
             except Exception as oException:
               oConsole.fCleanup();
-              oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " BugId output:   ", oLogOutputFile.sPath, COLOR_ERROR, "could not be saved!");
+              oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " BugId output:   ", oBugIdOutputFile.sPath, COLOR_ERROR, "could not be saved!");
               oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
               gbAnInternalErrorOccured = True;
             else:
-              oConsole.fOutput("│ BugId output log: ", COLOR_INFO, oLogOutputFile.sPath, COLOR_NORMAL, ".");
+              oConsole.fOutput("│ BugId output log: ", COLOR_INFO, oBugIdOutputFile.sPath, COLOR_NORMAL, ".");
           if gbSaveDump:
-            sDumpFileName = "".join([sChar if 0x20 <= ord(sChar) < 0x7F else "." for sChar in sValidOutputFileNamesHeader]) + ".dmp";
+            # We want the debugger dump file to be stored in the same folder as the bug report,
+            # with a similar file name, so where to store it is determined in a very similar way:
+            sDebuggerDumpFileName = fsGetFileName(
+              sOutputFileNamesHeader + ".dmp",
+              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs or u0NumberOfRepeats is not None,
+            );
+            # Because of limitations in cdb.exe, we can only use ASCII chars in the file name
+            # all non-ASCII chars will be replaced with ".":
+            sDebuggerDumpASCIIFileName = "".join([
+              sChar if 0x20 <= ord(sChar) < 0x7F else "."
+              for sChar in sDebuggerDumpFileName
+            ]);
             if dxConfig["sReportFolderPath"] is not None:
-              oDumpFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sDumpFileName);
+              oDebuggerDumpFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sDebuggerDumpASCIIFileName);
             else:
-              oDumpFile = cFileSystemItem(sDumpFileName);
+              oDebuggerDumpFile = cFileSystemItem(sDebuggerDumpASCIIFileName);
             oConsole.fStatus(
               COLOR_BUSY, CHAR_BUSY,
               COLOR_NORMAL, " Saving dump file ",
-              COLOR_INFO, oDumpFile.sPath,
+              COLOR_INFO, oDebuggerDumpFile.sPath,
               COLOR_NORMAL, "...",
             );
-            oBugId.fSaveDumpToFile(oDumpFile.sPath, True, gbSaveFullDump);
-            oConsole.fOutput("│ Dump file:        ", COLOR_INFO, oDumpFile.sPath, COLOR_NORMAL, ".");
+            oBugId.fSaveDumpToFile(oDebuggerDumpFile.sPath, True, gbSaveFullDump);
+            oConsole.fOutput("│ Dump file:        ", COLOR_INFO, oDebuggerDumpFile.sPath, COLOR_NORMAL, ".");
         oConsole.fOutput("└", sPadding = "─");
       finally:
         oConsole.fUnlock();
@@ -583,12 +487,10 @@ try:
       global \
           gasAttachForProcessExecutableNames, \
           gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap, \
-          gbQuiet, \
-          gbVerbose, \
           gbSaveDump, \
           gbSaveFullDump, \
           guDetectedBugsCount, \
-          guMaximumNumberOfBugs, \
+          gu0MaximumNumberOfBugs, \
           gbSaveOutputWithReport, \
           gbPauseBeforeExit;
       
@@ -631,7 +533,7 @@ try:
       asApplicationOptionalArguments = [];
       sApplicationISA = None;
       bRepeat = False;
-      uNumberOfRepeats = None;
+      u0NumberOfRepeats = None;
       bCheckForUpdates = False;
       dxUserProvidedConfigSettings = {};
       asAdditionalLocalSymbolPaths = [];
@@ -643,9 +545,9 @@ try:
           a0sJITDebuggerArguments.append(sArgument);
           continue;
         if s0LowerName in ["q", "quiet"]:
-          gbQuiet = fxProcessBooleanArgument(s0LowerName, s0Value);
+          dxConfig["bQuiet"] = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["v", "verbose"]:
-          gbVerbose = fxProcessBooleanArgument(s0LowerName, s0Value);
+          dxConfig["bVerbose"] = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["p", "pause"]:
           gbPauseBeforeExit = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["f", "fast", "quick"]:
@@ -656,7 +558,7 @@ try:
             bRepeat = xValue;
           else:
             bRepeat = True;
-            uNumberOfRepeats = xValue;
+            u0NumberOfRepeats = xValue;
         elif s0LowerName in ["d", "dump", "full-dump"]:
           if fxProcessBooleanArgument(s0LowerName, s0Value):
             gbSaveDump = True;
@@ -679,16 +581,16 @@ try:
           a0sJITDebuggerArguments = []; # Remaining arguments will be added to this list.
         elif s0LowerName in ["c", "collateral"]:
           if s0Value is None:
-            guMaximumNumberOfBugs = guDefaultCollateralMaximumNumberOfBugs;
+            gu0MaximumNumberOfBugs = None;
+          elif s0Value == "?":
+            gu0MaximumNumberOfBugs = None;
+            dxConfig["bInteractive"] = True;
           else:
             # -- collateral=1 means one collateral bug in addition to the first bug.
             try:
-              guMaximumNumberOfBugs = int(s0Value) + 1;
-              if guMaximumNumberOfBugs < 1:
-                guMaximumNumberOfBugs = None;
+              gu0MaximumNumberOfBugs = int(s0Value) + 1;
+              assert gu0MaximumNumberOfBugs > 0;
             except:
-              guMaximumNumberOfBugs = None;
-            if guMaximumNumberOfBugs is None:
               oConsole.fOutput(
                 COLOR_ERROR, CHAR_ERROR,
                 COLOR_NORMAL, " The value for ",
@@ -907,7 +809,7 @@ try:
           fTerminate(guExitCodeSuccess);
         fTerminate(guExitCodeInternalError);
       if bFast:
-        gbQuiet = True;
+        dxConfig["bQuiet"] = True;
         dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
         dxUserProvidedConfigSettings["azsSymbolServerURLs"] = [];
         dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
@@ -1027,7 +929,7 @@ try:
         # Apply application specific settings
         if dxApplicationSettings.get("dxConfigSettings"):
           dxApplicationConfigSettings = dxApplicationSettings["dxConfigSettings"];
-          if gbVerbose:
+          if dxConfig["bVerbose"]:
             oConsole.fOutput(
               COLOR_INFO, CHAR_INFO,
               COLOR_NORMAL, " Applying application specific configuration for ",
@@ -1037,9 +939,9 @@ try:
           for (sSettingName, xValue) in dxApplicationConfigSettings.items():
             if sSettingName not in dxUserProvidedConfigSettings:
               # Apply and show result indented or errors.
-              if not fbApplyConfigSetting(sSettingName, xValue, [None, "  "][gbVerbose]):
+              if not fbApplyConfigSetting(sSettingName, xValue, [None, "  "][dxConfig["bVerbose"]]):
                 fTerminate(guExitCodeBadArgument);
-          if gbVerbose:
+          if dxConfig["bVerbose"]:
             oConsole.fOutput();
         # Apply application specific source settings
         if "dsURLTemplate_by_srSourceFilePath" in dxApplicationSettings:
@@ -1092,7 +994,7 @@ try:
       # Apply user provided settings:
       for (sSettingName, xValue) in list(dxUserProvidedConfigSettings.items()):
         # Apply and show result or errors:
-        if not fbApplyConfigSetting(sSettingName, xValue, [None, ""][gbVerbose]):
+        if not fbApplyConfigSetting(sSettingName, xValue, [None, ""][dxConfig["bVerbose"]]):
           fTerminate(guExitCodeBadArgument);
       
       # Check if cdb.exe is found:
@@ -1167,14 +1069,15 @@ try:
           bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
           u0ProcessMaxMemoryUse = dxConfig["u0ProcessMaxMemoryUse"],
           u0TotalMaxMemoryUse = dxConfig["u0TotalMaxMemoryUse"],
-          uMaximumNumberOfBugs = guMaximumNumberOfBugs,
+          u0MaximumNumberOfBugs = gu0MaximumNumberOfBugs,
+          f0iCollateralInteractiveAskForValue = fiCollateralInteractiveAskForValue if dxConfig["bInteractive"] else None,
         );
         oConsole.fLock();
         try:
           if s0ApplicationBinaryPath:
             # make the binary path absolute because relative paths don't work.
             s0ApplicationBinaryPath = cFileSystemItem(s0ApplicationBinaryPath).sPath;
-            if not gbQuiet:
+            if not dxConfig["bQuiet"]:
               asCommandLine = [s0ApplicationBinaryPath] + asApplicationArguments;
               oConsole.fOutput(
                 COLOR_INFO, CHAR_INFO,
@@ -1193,7 +1096,7 @@ try:
                 COLOR_NORMAL, " Running process ids: ",
                 COLOR_INFO, *asProcessIdsOutput,
               );
-            if o0UWPApplication and not gbQuiet:
+            if o0UWPApplication and not dxConfig["bQuiet"]:
               oConsole.fOutput(*(
                 [
                   COLOR_INFO, CHAR_INFO,
@@ -1216,19 +1119,23 @@ try:
               oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is starting the application...");
         finally:
           oConsole.fUnlock();
-        oBugId.fAddCallback("Application resumed", fApplicationResumedCallback);
-        oBugId.fAddCallback("Application running", fApplicationRunningCallback);
-        oBugId.fAddCallback("Application suspended", fApplicationSuspendedCallback);
-        oBugId.fAddCallback("Application debug output", fApplicationDebugOutputCallback);
-        oBugId.fAddCallback("Application stderr output", fApplicationStdErrOutputCallback);
-        oBugId.fAddCallback("Application stdout output", fApplicationStdOutOutputCallback);
-        oBugId.fAddCallback("ASan detected", fASanDetectedCallback);
+        oBugId.fAddCallback("Application resumed", fApplicationResumedCallbackHandler);
+        oBugId.fAddCallback("Application running", fApplicationRunningCallbackHandler);
+        oBugId.fAddCallback("Application suspended", fApplicationSuspendedCallbackHandler);
+        oBugId.fAddCallback("Application debug output", fApplicationDebugOutputCallbackHandler);
+        oBugId.fAddCallback("Application stderr output", fApplicationStdErrOutputCallbackHandler);
+        oBugId.fAddCallback("Application stdout output", fApplicationStdOutOutputCallbackHandler);
+        oBugId.fAddCallback("ASan detected", fASanDetectedCallbackHandler);
+        oBugId.fAddCallback("Bug cannot be ignored", fCollateralCannotIgnoreBugCallbackHandler);
+        oBugId.fAddCallback("Bug ignored", fCollateralBugIgnoredCallbackHandler);
         oBugId.fAddCallback("Bug report", fBugReportCallback);
-        oBugId.fAddCallback("Cdb stderr output", fCdbStdErrOutputCallback);
-        if gbVerbose:
-          oBugId.fAddCallback("Cdb stdin input", fCdbStdInInputCallback);
-          oBugId.fAddCallback("Cdb stdout output", fCdbStdOutOutputCallback);
-          oBugId.fAddCallback("Log message", fLogMessageCallback);
+        oBugId.fAddCallback("Cdb command started executing", fCdbCommandStartedExecutingCallbackHandler);
+        oBugId.fAddCallback("Cdb command finished executing", fCdbCommandFinishedExecutingCallbackHandler);
+        oBugId.fAddCallback("Cdb stderr output", fCdbStdErrOutputCallbackHandler);
+        if dxConfig["bVerbose"]:
+          oBugId.fAddCallback("Cdb stdin input", fCdbStdInInputCallbackHandler);
+          oBugId.fAddCallback("Cdb stdout output", fCdbStdOutOutputCallbackHandler);
+          oBugId.fAddCallback("Log message", fLogMessageCallbackHandler);
         oBugId.fAddCallback("Failed to apply application memory limits", fFailedToApplyApplicationMemoryLimitsCallback);
         oBugId.fAddCallback("Failed to apply process memory limits", fFailedToApplyProcessMemoryLimitsCallback);
         oBugId.fAddCallback("Failed to debug application", fFailedToDebugApplicationCallback);
@@ -1238,14 +1145,14 @@ try:
         oBugId.fAddCallback("Page heap not enabled", fPageHeapNotEnabledCallback);
         oBugId.fAddCallback("Cdb ISA not ideal", fCdbISANotIdealCallback);
         oBugId.fAddCallback("Process attached", fProcessAttachedCallback);
-        oBugId.fAddCallback("Process started", fProcessStartedCallback);
-        oBugId.fAddCallback("Process terminated", fProcessTerminatedCallback);
+        oBugId.fAddCallback("Process started", fProcessStartedCallbackHandler);
+        oBugId.fAddCallback("Process terminated", fProcessTerminatedCallbackHandler);
         
-        if fbIsProvided(dxConfig["nzApplicationMaxRunTimeInSeconds"]):
+        if dxConfig["n0ApplicationMaxRunTimeInSeconds"] is not None:
           oBugId.foSetTimeout(
             sDescription = "Maximum application runtime",
-            nTimeoutInSeconds = dxConfig["nzApplicationMaxRunTimeInSeconds"],
-            f0Callback = fApplicationMaxRunTimeCallback,
+            nTimeoutInSeconds = dxConfig["n0ApplicationMaxRunTimeInSeconds"],
+            f0Callback = fApplicationMaxRunTimeCallbackHandler,
          );
         if dxConfig["bExcessiveCPUUsageCheckEnabled"] and dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]:
           oBugId.fSetCheckForExcessiveCPUUsageTimeout(dxConfig["nExcessiveCPUUsageCheckInitialTimeoutInSeconds"]);
@@ -1262,7 +1169,7 @@ try:
           oConsole.fOutput("─── The application terminated without a bug being detected ", sPadding = "─");
           gduNumberOfRepros_by_sBugIdAndLocation.setdefault("No crash", 0);
           gduNumberOfRepros_by_sBugIdAndLocation["No crash"] += 1;
-        if gbVerbose:
+        if dxConfig["bVerbose"]:
           nApplicationRunTimeInSeconds = oBugId.fnApplicationRunTimeInSeconds();
           nBugIdRunTimeInSeconds = time.time() - nStartTimeInSeconds;
           sApplicationRunTime = cDateTimeDuration.foFromSeconds(
@@ -1273,9 +1180,9 @@ try:
           ).fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2);
           oConsole.fOutput("  Application time: ", COLOR_INFO, sApplicationRunTime, COLOR_NORMAL, ".");
           oConsole.fOutput("  BugId overhead:   ", COLOR_INFO, sOverHeadTime, COLOR_NORMAL, ".");
-        if uNumberOfRepeats is not None:
-          uNumberOfRepeats -= 1;
-          if uNumberOfRepeats == 0:
+        if u0NumberOfRepeats is not None:
+          u0NumberOfRepeats -= 1;
+          if u0NumberOfRepeats == 0:
             bRepeat = False;
         if not bRepeat:
           if fCleanup:
@@ -1291,7 +1198,10 @@ try:
             if gduNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
               sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
                   round(100.0 * uNumberOfRepros / uRunCounter));
-        sStatisticsFileName = "Reproduction statistics.txt";
+        sStatisticsFileName = fsGetFileName(
+          "Reproduction statistics.txt",
+          bPrefixWithBugIdStartDateTime = True,
+        );
         if dxConfig["sReportFolderPath"] is not None:
           oStatisticsFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sStatisticsFileName);
         else:
