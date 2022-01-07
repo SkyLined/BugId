@@ -136,8 +136,6 @@ def fTestDependencies():
           asSuperflousDependencyPythonInternalModuleBaseNames = [];
         finally:
           oInternalPythonModuleDepenciesListFile.close();
-      else:
-        raise AssertionError("Incorrect dependencies on Python internal modules found!");
     
     # Determine which product modules were unexpectedly loaded as dependencies:
     dsLoadedDependencyModules_by_sName = {};

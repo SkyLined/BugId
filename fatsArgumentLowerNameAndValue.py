@@ -136,9 +136,12 @@ def fatsArgumentLowerNameAndValue():
           fExitWithBadArgumentValue(sLowerName, "You must provide a path to a file containing arguments as value for this argument.");
         # Read additional arguments from file and insert them after the current argument.
         oArgumentsFile = cFileSystemItem(s0Value);
-        if not oArgumentsFile.fbIsFile():
+        if not oArgumentsFile.fbIsFile(bThrowErrors = False):
           fExitWithBadArgumentValue(sLowerName, "File %s not found." % oArgumentsFile.sPath);
-        sArgumentsFileContent = str(oArgumentsFile.fsbRead(), "utf-8");
+        sb0ArgumentsFileContent = oArgumentsFile.fsb0Read(bThrowErrors = False);
+        if sb0ArgumentsFileContent is None:
+          fExitWithBadArgumentValue(sLowerName, "File %s cannot be read." % oArgumentsFile.sPath);
+        sArgumentsFileContent = str(sb0ArgumentsFileContent, "utf-8");
         asArguments = [
           os.path.expandvars(sStrippedArgumentFileLine) for sStrippedArgumentFileLine in [
             sArgumentFileLine.strip() for sArgumentFileLine in sArgumentsFileContent.split("\n")
