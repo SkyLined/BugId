@@ -126,7 +126,8 @@ try:
     gbSaveDump = False;
     gbSaveFullDump = False;
     guDetectedBugsCount = 0;
-    gu0MaximumNumberOfBugs = 1;
+    guNumberOfTimesToRunTheApplication = 1;
+    gu0MaximumNumberOfBugsEachRun = 1;
     gduNumberOfRepros_by_sBugIdAndLocation = {};
     gbSaveOutputWithReport = False;
     gbPauseBeforeExit = False;
@@ -384,7 +385,7 @@ try:
 
     def fBugReportCallback(oBugId, oBugReport):
       global guDetectedBugsCount, \
-             gu0MaximumNumberOfBugs, \
+             gu0MaximumNumberOfBugsEachRun, \
              gduNumberOfRepros_by_sBugIdAndLocation, \
              gbAnInternalErrorOccured;
       guDetectedBugsCount += 1;
@@ -410,7 +411,11 @@ try:
         if dxConfig["bGenerateReportHTML"]:
           # Use a report file name base on the BugId.
           # In collateral mode, we will number the reports, so they can more easily be ordered chronologically.
-          bCountBugs = gu0MaximumNumberOfBugs is None or gu0MaximumNumberOfBugs > 1;
+          bCountBugs = (
+            gu0MaximumNumberOfBugsEachRun is None
+            or gu0MaximumNumberOfBugsEachRun > 1
+            or guNumberOfTimesToRunTheApplication > 1
+          );
           sOutputFileNamesHeader = "".join([
             # guDetectedBugsCount has already been increased from zero, so the first file will be "#1"
             ("#%d " % guDetectedBugsCount) if bCountBugs else "",
@@ -419,7 +424,7 @@ try:
           sReportFileName = fsGetFileName(
             sOutputFileNamesHeader + ".html",
             # In JIT mode and when counting bugs we prefix the report with the date and time.
-            bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs or u0NumberOfRepeats is not None,
+            bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs,
           );
           if dxConfig["sReportFolderPath"] is not None:
             oReportFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sReportFileName);
@@ -448,7 +453,7 @@ try:
             # with a similar file name, so where to store it is determined in a very similar way:
             sBugIdOutputFileName = fsGetFileName(
               sOutputFileNamesHeader + " BugId output.txt",
-              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs or u0NumberOfRepeats is not None,
+              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBug,
             );
             if dxConfig["sReportFolderPath"] is not None:
               oBugIdOutputFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sBugIdOutputFileName);
@@ -474,7 +479,7 @@ try:
             # with a similar file name, so where to store it is determined in a very similar way:
             sDebuggerDumpFileName = fsGetFileName(
               sOutputFileNamesHeader + ".dmp",
-              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs or u0NumberOfRepeats is not None,
+              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs,
             );
             # Because of limitations in cdb.exe, we can only use ASCII chars in the file name
             # all non-ASCII chars will be replaced with ".":
@@ -505,7 +510,8 @@ try:
           gbSaveDump, \
           gbSaveFullDump, \
           guDetectedBugsCount, \
-          gu0MaximumNumberOfBugs, \
+          guNumberOfTimesToRunTheApplication, \
+          gu0MaximumNumberOfBugsEachRun, \
           gbSaveOutputWithReport, \
           gbPauseBeforeExit;
       
@@ -547,8 +553,8 @@ try:
       o0UWPApplication = None;
       asApplicationOptionalArguments = [];
       sApplicationISA = None;
-      bRepeat = False;
-      u0NumberOfRepeats = None;
+      bRepeatForever = False;
+      uNumberOfTimesTheApplicationHasBeenRun = 0;
       bCheckForUpdates = False;
       dxUserProvidedConfigSettings = {};
       asAdditionalLocalSymbolPaths = [];
@@ -570,10 +576,10 @@ try:
         elif s0LowerName in ["r", "repeat", "forever"]:
           xValue = fxProcessBooleanArgument(s0LowerName, s0Value, u0CanAlsoBeAnIntegerLargerThan = 1 if s0LowerName != "forever" else None);
           if isinstance(xValue, bool):
-            bRepeat = xValue;
+            bRepeatForever = xValue;
           else:
-            bRepeat = True;
-            u0NumberOfRepeats = xValue;
+            bRepeatForever = False;
+            guNumberOfTimesToRunTheApplication = xValue;
         elif s0LowerName in ["d", "dump", "full-dump"]:
           if fxProcessBooleanArgument(s0LowerName, s0Value):
             gbSaveDump = True;
@@ -596,15 +602,15 @@ try:
           a0sJITDebuggerArguments = []; # Remaining arguments will be added to this list.
         elif s0LowerName in ["c", "collateral"]:
           if s0Value is None:
-            gu0MaximumNumberOfBugs = None;
+            gu0MaximumNumberOfBugsEachRun = None;
           elif s0Value == "?":
-            gu0MaximumNumberOfBugs = None;
+            gu0MaximumNumberOfBugsEachRun = None;
             dxConfig["bInteractive"] = True;
           else:
-            # -- collateral=1 means one collateral bug in addition to the first bug.
+            # `--collateral=2` means one collateral bug in addition to the first bug.
             try:
-              gu0MaximumNumberOfBugs = int(s0Value) + 1;
-              assert gu0MaximumNumberOfBugs > 0;
+              gu0MaximumNumberOfBugsEachRun = int(s0Value);
+              assert gu0MaximumNumberOfBugsEachRun > 0;
             except:
               oConsole.fOutput(
                 COLOR_ERROR, CHAR_ERROR,
@@ -1061,15 +1067,13 @@ try:
       asLocalSymbolPaths = dxConfig["a0sLocalSymbolPaths"] or [];
       if asAdditionalLocalSymbolPaths:
         asLocalSymbolPaths += asAdditionalLocalSymbolPaths;
-      uRunCounter = 0;
-      while 1: # Will only loop if bRepeat is True
+      while 1:
         nStartTimeInSeconds = time.time();
         if fSetup:
           # Call setup before the application is started. Argument is boolean value indicating if this is the first time
           # the function is being called.
           oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Applying special application configuration settings...");
-          fSetup(bFirstRun = uRunCounter == 0);
-        uRunCounter += 1;
+          fSetup(bFirstRun = uNumberOfTimesTheApplicationHasBeenRun == 0);
         oBugId = cBugId(
           sCdbISA = sCdbISA,
           s0ApplicationBinaryPath = s0ApplicationBinaryPath or None,
@@ -1084,7 +1088,7 @@ try:
           bGenerateReportHTML = dxConfig["bGenerateReportHTML"],
           u0ProcessMaxMemoryUse = dxConfig["u0ProcessMaxMemoryUse"],
           u0TotalMaxMemoryUse = dxConfig["u0TotalMaxMemoryUse"],
-          u0MaximumNumberOfBugs = gu0MaximumNumberOfBugs,
+          u0MaximumNumberOfBugs = gu0MaximumNumberOfBugsEachRun,
           f0iCollateralInteractiveAskForValue = fiCollateralInteractiveAskForValue if dxConfig["bInteractive"] else None,
         );
         oConsole.fLock();
@@ -1195,11 +1199,8 @@ try:
           ).fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2);
           oConsole.fOutput("  Application time: ", COLOR_INFO, sApplicationRunTime, COLOR_NORMAL, ".");
           oConsole.fOutput("  BugId overhead:   ", COLOR_INFO, sOverHeadTime, COLOR_NORMAL, ".");
-        if u0NumberOfRepeats is not None:
-          u0NumberOfRepeats -= 1;
-          if u0NumberOfRepeats == 0:
-            bRepeat = False;
-        if not bRepeat:
+        uNumberOfTimesTheApplicationHasBeenRun += 1;
+        if not bRepeatForever and uNumberOfTimesTheApplicationHasBeenRun == guNumberOfTimesToRunTheApplication:
           if fCleanup:
             # Call cleanup after runnning the application, before exiting BugId
             oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Cleaning up application state...");
@@ -1212,7 +1213,7 @@ try:
           for sBugIdAndLocation in gduNumberOfRepros_by_sBugIdAndLocation.keys():
             if gduNumberOfRepros_by_sBugIdAndLocation[sBugIdAndLocation] == uNumberOfRepros:
               sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
-                  round(100.0 * uNumberOfRepros / uRunCounter));
+                  round(100.0 * uNumberOfRepros / uNumberOfTimesTheApplicationHasBeenRun));
         sStatisticsFileName = fsGetFileName(
           "Reproduction statistics.txt",
           bPrefixWithBugIdStartDateTime = True,
