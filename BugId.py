@@ -205,7 +205,7 @@ try:
       );
       uIndex = 1;
       if not goInternalErrorReportsFolder.fbIsFolder:
-        if not goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True, bThrowErrors = False):
+        if not goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True):
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " The internal error report folder ",
@@ -439,9 +439,9 @@ try:
           try:
             sbReportHTML = bytes(oBugReport.sReportHTML, "utf-8")
             if oReportFile.fbIsFile(bParseZipFiles = True):
-              oReportFile.fbWrite(sbReportHTML, bKeepOpen = False, bParseZipFiles = True, bThrowErrors = True);
+              oReportFile.fWrite(sbReportHTML, bKeepOpen = False, bParseZipFiles = True);
             else:
-              oReportFile.fbCreateAsFile(sbReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
+              oReportFile.fCreateAsFile(sbReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False);
           except Exception as oException:
             oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " Bug report:     ", oBugReport.sPath, COLOR_ERROR, "could not be saved!");
             oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
@@ -740,7 +740,10 @@ try:
             );
             fTerminate(guExitCodeBadArgument);
           oReportFolder = cFileSystemItem(s0Value);
-          if not oReportFolder.fbIsFolder(bParseZipFiles = True) and not oReportFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True):
+          if (
+            not oReportFolder.fbIsFolder(bParseZipFiles = True)
+            and not oReportFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True)
+          ):
             oConsole.fOutput(
               COLOR_ERROR, CHAR_ERROR,
               COLOR_NORMAL, " The folder ",
@@ -1230,9 +1233,9 @@ try:
         );
         try:
           if oStatisticsFile.fbIsFile(bParseZipFiles = True):
-            oStatisticsFile.fbWrite(sStatistics, bKeepOpen = False, bParseZipFiles = True, bThrowErrors = True);
+            oStatisticsFile.fWrite(sStatistics, bKeepOpen = False, bParseZipFiles = True);
           else:
-            oStatisticsFile.fbCreateAsFile(sStatistics, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False, bThrowErrors = True);
+            oStatisticsFile.fCreateAsFile(sStatistics, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False);
         except Exception as oException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
