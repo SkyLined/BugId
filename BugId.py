@@ -204,15 +204,30 @@ try:
       );
       uIndex = 1;
       if not goInternalErrorReportsFolder.fbIsFolder:
-        goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True, bThrowErrors = True);
+        if not goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True, bThrowErrors = False):
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " The internal error report folder ",
+            COLOR_INFO, goInternalErrorReportsFolder.sPath,
+            COLOR_NORMAL, " cannot be created.",
+          );
       else:
         # Scan for previous error reports, so we can number them:
-        for oPotentialOlderErrorReport in goInternalErrorReportsFolder.faoGetChildren():
-          oErrorReportFileNameMatch = rErrorReportFileName.match(oPotentialOlderErrorReport.sName);
-          if oErrorReportFileNameMatch:
-            uExistingIndex = int(oErrorReportFileNameMatch.group(1));
-            if uExistingIndex >= uIndex:
-              uIndex = uExistingIndex + 1;
+        a0oPotentialOlderErrorReports = goInternalErrorReportsFolder.fa0oGetChildren(bThrowErrors = False);
+        if a0oPotentialOlderErrorReports is None:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " The internal error report folder ",
+            COLOR_INFO, goInternalErrorReportsFolder.sPath,
+            COLOR_NORMAL, " cannot be read.",
+          );
+        else:
+          for oPotentialOlderErrorReport in a0oPotentialOlderErrorReports:
+            oErrorReportFileNameMatch = rErrorReportFileName.match(oPotentialOlderErrorReport.sName);
+            if oErrorReportFileNameMatch:
+              uExistingIndex = int(oErrorReportFileNameMatch.group(1));
+              if uExistingIndex >= uIndex:
+                uIndex = uExistingIndex + 1;
       sExceptionReportFileName = fsGetFileName(
         "BugId error report #%d.txt" % uIndex,
         bPrefixWithBugIdStartDateTime = True
