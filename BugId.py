@@ -1134,11 +1134,11 @@ try:
                 ]
               ));
             if not o0UWPApplication:
-              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is attaching to running processes of the application...");
+              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is attaching to processes...");
             elif auApplicationProcessIds:
-              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is attaching to running processes and starting the application...");
+              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is attaching to processes and starting the Windows App...");
             else:
-              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is starting the application...");
+              oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " The debugger is starting the Windows App...");
         finally:
           oConsole.fUnlock();
         oBugId.fAddCallback("Application resumed", fApplicationResumedCallbackHandler);
