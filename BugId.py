@@ -443,11 +443,24 @@ try:
             else:
               oReportFile.fCreateAsFile(sbReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False);
           except Exception as oException:
-            oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " Bug report:     ", oBugReport.sPath, COLOR_ERROR, "could not be saved!");
-            oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
+            oConsole.fOutput(
+              COLOR_NORMAL, "│ ",
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " Bug report:     ",
+              COLOR_INFO, oReportFile.sPath,
+              COLOR_NORMAL, "could not be saved!",
+            );
+            oConsole.fOutput(
+              COLOR_NORMAL, "│                   => ",
+              COLOR_INFO, str(oException),
+            );
             gbAnInternalErrorOccured = True;
           else:
-            oConsole.fOutput("│ Bug report:       ", COLOR_INFO, oReportFile.sName, COLOR_NORMAL, ".");
+            oConsole.fOutput(
+              COLOR_NORMAL, "│ Bug report:       ",
+              COLOR_INFO, oReportFile.sName,
+              COLOR_NORMAL, ".",
+            );
           if gbSaveOutputWithReport:
             # We want the BugId ouput file to be stored in the same folder as the bug report,
             # with a similar file name, so where to store it is determined in a very similar way:
