@@ -67,7 +67,7 @@ def fOutputProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFold
     ]
   ));
 
-def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
+def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders, dsAdditionalVersion_by_sName = {}):
   # Read product details for rs and all modules it uses.
   aoProductDetails = mProductDetails.faoGetProductDetailsForAllLoadedModules();
   o0MainProductDetails = mProductDetails.fo0GetProductDetailsForMainModule();
@@ -163,6 +163,13 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
       COLOR_NORMAL, " ", COLOR_INFO, fsGetPythonISA(),
       COLOR_NORMAL, ".",
     );
+    
+    for (sName, sVersion) in dsAdditionalVersion_by_sName.items():
+      oConsole.fOutput(
+        "│ ", CHAR_LIST, " ", COLOR_INFO, sName,
+        COLOR_NORMAL, " version: ", COLOR_INFO, sVersion,
+        COLOR_NORMAL, ".",
+      );
     
     oConsole.fOutput(
       "└", sPadding = "─",

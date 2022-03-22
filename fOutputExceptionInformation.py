@@ -11,6 +11,7 @@ from mConsole import oConsole;
 
 from mColorsAndChars import *;
 from fOutputVersionInformation import fOutputVersionInformation;
+from fdsGetAdditionalVersionByName import fdsGetAdditionalVersionByName;
 
 def fOutputExceptionInformation(oException, oTraceback):
   if m0DebugOutput:
@@ -54,6 +55,7 @@ def fOutputExceptionInformation(oException, oTraceback):
     fOutputVersionInformation(
       bCheckForUpdates = False,
       bShowInstallationFolders = False,
+      dsAdditionalVersion_by_sName = fdsGetAdditionalVersionByName(),
     );
     oConsole.fOutput("Thank you in advance for helping to improve BugId!");
   finally:

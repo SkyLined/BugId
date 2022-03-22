@@ -19,7 +19,7 @@ def fExitWithBadArgumentValue(sArgumentName, sMessage):
   );
   sys.exit(guExitCodeBadArgument);
 
-def fatsArgumentLowerNameAndValue():
+def fatsArgumentLowerNameAndValue(f0dsGetAdditionalVersionByName = None):
   atsArgumentNameAndValue = [];
   asArguments = sys.argv[1:];
   while len(asArguments) > 0:
@@ -42,6 +42,7 @@ def fatsArgumentLowerNameAndValue():
         fOutputVersionInformation(
           bCheckForUpdates = sLowerName == "version-check",
           bShowInstallationFolders = sLowerName == "version",
+          dsAdditionalVersion_by_sName = f0dsGetAdditionalVersionByName() if f0dsGetAdditionalVersionByName else {},
         );
         sys.exit(guExitCodeSuccess);
       if sLowerName in ["license", "license-update"]:

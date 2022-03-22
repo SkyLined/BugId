@@ -60,6 +60,7 @@ try:
   from fCheckPythonVersion import fCheckPythonVersion;
   from fCollateralCannotIgnoreBugCallbackHandler import fCollateralCannotIgnoreBugCallbackHandler;
   from fCollateralBugIgnoredCallbackHandler import fCollateralBugIgnoredCallbackHandler;
+  from fdsGetAdditionalVersionByName import fdsGetAdditionalVersionByName;
   from fiCollateralInteractiveAskForValue import fiCollateralInteractiveAskForValue;
   from fLogMessageCallbackHandler import fLogMessageCallbackHandler;
   from fOutputApplicationKeyWordHelp import fOutputApplicationKeyWordHelp;
@@ -573,7 +574,7 @@ try:
       asAdditionalLocalSymbolPaths = [];
       bFast = False;
       a0sJITDebuggerArguments = None;
-      for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
+      for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue(fdsGetAdditionalVersionByName):
         if a0sJITDebuggerArguments is not None:
           # Stop processing arguments after "-I"
           a0sJITDebuggerArguments.append(sArgument);
