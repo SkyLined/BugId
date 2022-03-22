@@ -205,7 +205,7 @@ try:
       );
       uIndex = 1;
       if not goInternalErrorReportsFolder.fbIsFolder:
-        if not goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True):
+        if not goInternalErrorReportsFolder.fbCreateAsFolder(bCreateParents = True):
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " The internal error report folder ",
@@ -382,7 +382,7 @@ try:
       # Now is a good time to look for additional binaries that may need to be debugged as well.
       if gasAttachForProcessExecutableNames:
         oBugId.fAttachForProcessExecutableNames(*gasAttachForProcessExecutableNames);
-
+    
     def fBugReportCallback(oBugId, oBugReport):
       global guDetectedBugsCount, \
              gu0MaximumNumberOfBugsEachRun, \
@@ -437,11 +437,11 @@ try:
             COLOR_NORMAL, "...",
           );
           try:
-            sbReportHTML = bytes(oBugReport.sReportHTML, "utf-8")
-            if oReportFile.fbIsFile(bParseZipFiles = True):
-              oReportFile.fWrite(sbReportHTML, bKeepOpen = False, bParseZipFiles = True);
+            sbReportHTML = bytes(oBugReport.sReportHTML, "utf-8", "strict");
+            if oReportFile.fbIsFile():
+              oReportFile.fWrite(sbReportHTML);
             else:
-              oReportFile.fCreateAsFile(sbReportHTML, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False);
+              oReportFile.fCreateAsFile(sbReportHTML, bCreateParents = True);
           except Exception as oException:
             oConsole.fOutput(
               COLOR_NORMAL, "│ ",
@@ -754,8 +754,8 @@ try:
             fTerminate(guExitCodeBadArgument);
           oReportFolder = cFileSystemItem(s0Value);
           if (
-            not oReportFolder.fbIsFolder(bParseZipFiles = True)
-            and not oReportFolder.fbCreateAsFolder(bCreateParents = True, bParseZipFiles = True)
+            not oReportFolder.fbIsFolder()
+            and not oReportFolder.fbCreateAsFolder(bCreateParents = True)
           ):
             oConsole.fOutput(
               COLOR_ERROR, CHAR_ERROR,
@@ -1245,10 +1245,10 @@ try:
           COLOR_NORMAL, "...",
         );
         try:
-          if oStatisticsFile.fbIsFile(bParseZipFiles = True):
-            oStatisticsFile.fWrite(sStatistics, bKeepOpen = False, bParseZipFiles = True);
+          if oStatisticsFile.fbIsFile():
+            oStatisticsFile.fWrite(sStatistics);
           else:
-            oStatisticsFile.fCreateAsFile(sStatistics, bCreateParents = True, bParseZipFiles = True, bKeepOpen = False);
+            oStatisticsFile.fCreateAsFile(sStatistics, bCreateParents = True);
         except Exception as oException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
@@ -1288,5 +1288,8 @@ try:
       fSaveInternalExceptionReportAndExit(oException, oTraceBack);
 except Exception as oException:
   if m0DebugOutput:
-    m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
+    m0DebugOutput.fTerminateWithException(
+      oException = oException,
+      uExitCode = guExitCodeInternalError,
+    );
   raise;
