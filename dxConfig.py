@@ -73,7 +73,7 @@ dxConfig = {
                                                   # setting will ensure BugId does not run forever in such cases.
   "bShowLicenseAndDonationInfo": True,            # Set to False to disable the licensing and donations information
                                                   # shown at the end of each run. Feel free to act on it first :)
-  "bUseUnicodeReportFileNames": False,            # Disable if you are experiencing "Invalid file name" errors
+  "bUseUnicodeReportFileNames": True,             # Disable if you are experiencing "Invalid file name" errors
                                                   # when trying to write bug reports. Enable if you want the report
                                                   # file name to look very similar to the BugId by translating invalid
                                                   # characters to similarly looking Unicode characters.
