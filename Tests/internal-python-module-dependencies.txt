@@ -24,7 +24,6 @@ math
 msvcrt
 nturl2path
 opcode
-pathlib
 platform
 posixpath
 queue
@@ -49,4 +48,3 @@ uu
 uuid
 warnings
 weakref
-zipfile
