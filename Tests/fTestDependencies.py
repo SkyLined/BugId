@@ -107,15 +107,14 @@ def fTestDependencies():
         if sModuleName not in asUnexpectedlyLoadedPythonInteralModuleBaseNames:
           print("* %s" % sModuleName);
       if asUnexpectedlyLoadedPythonInteralModuleBaseNames:
-        print();
         print("Unexpectedly loaded:");
         for sModuleName in sorted(asUnexpectedlyLoadedPythonInteralModuleBaseNames):
-          print(sModuleName);
+          print("+ %s" % sModuleName);
       if asExpectedButNotLoadedPythonInternalModuleBaseNames:
-        print();
         print("Unexpectedly missing:");
         for sModuleName in sorted(asExpectedButNotLoadedPythonInternalModuleBaseNames):
-          print(sModuleName);
+          print("- %s" % sModuleName);
+      print();
       try:
         from mConsole import oConsole;
         oConsole.fRestoreWindow();
