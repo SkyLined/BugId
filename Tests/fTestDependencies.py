@@ -83,42 +83,45 @@ def fTestDependencies():
         and not (o0Module and hasattr(o0Module, "__file__") and o0Module.__file__.startswith(sParentFolderPath))
       )
     ];
-    asUnexpectedDependencyPythonInteralModuleBaseNames = [
+    asUnexpectedlyLoadedPythonInteralModuleBaseNames = [
       sModuleName
       for sModuleName in asLoadedPythonInteralModuleBaseNames
       if sModuleName not in asExpectedDependencyPythonInternalModuleBaseNames
     ];
     # Determine which Python internal modules were reported as dependencies but not loaded
-    asSuperflousDependencyPythonInternalModuleBaseNames = [
+    asExpectedButNotLoadedPythonInternalModuleBaseNames = [
       sModuleName
       for sModuleName in asExpectedDependencyPythonInternalModuleBaseNames
       if sModuleName not in asLoadedPythonInteralModuleBaseNames
     ];
-    if asUnexpectedDependencyPythonInteralModuleBaseNames:
-      if asSuperflousDependencyPythonInternalModuleBaseNames:
-        print("  The product also missing ('+') and superfluous ('-') Python internal module dependencies!");
-      else:
-        print("- The product has unreported Python internal module dependencies! (marked with '+')");
-    elif asSuperflousDependencyPythonInternalModuleBaseNames:
-      print("The product has superfluous Python internal module dependencies! (marked with '-')");
-    if asUnexpectedDependencyPythonInteralModuleBaseNames or asSuperflousDependencyPythonInternalModuleBaseNames:
-      for sModuleName in sorted(asLoadedPythonInteralModuleBaseNames + asSuperflousDependencyPythonInternalModuleBaseNames):
-        print("%s %s" % (
-          "+" if sModuleName in asUnexpectedDependencyPythonInteralModuleBaseNames
-              else "-" if sModuleName in asSuperflousDependencyPythonInternalModuleBaseNames
-              else " ",
-              sModuleName
-        ));
-      print();
-      print("The full list should be:");
+    if asUnexpectedlyLoadedPythonInteralModuleBaseNames or asExpectedButNotLoadedPythonInternalModuleBaseNames:
+      if asUnexpectedlyLoadedPythonInteralModuleBaseNames:
+        if asExpectedButNotLoadedPythonInternalModuleBaseNames:
+          print("  The product also has both unexpected missing and additional Python internal module dependencies!");
+        else:
+          print("- The product has unexpected additional Python internal module dependencies!");
+      elif asExpectedButNotLoadedPythonInternalModuleBaseNames:
+        print("- The product has unexpected missing Python internal module dependencies!");
+      print("Loaded as expected:");
       for sModuleName in sorted(asLoadedPythonInteralModuleBaseNames):
-        print(sModuleName);
+        if sModuleName not in asUnexpectedlyLoadedPythonInteralModuleBaseNames:
+          print("* %s" % sModuleName);
+      if asUnexpectedlyLoadedPythonInteralModuleBaseNames:
+        print();
+        print("Unexpectedly loaded:");
+        for sModuleName in sorted(asUnexpectedlyLoadedPythonInteralModuleBaseNames):
+          print(sModuleName);
+      if asExpectedButNotLoadedPythonInternalModuleBaseNames:
+        print();
+        print("Unexpectedly missing:");
+        for sModuleName in sorted(asExpectedButNotLoadedPythonInternalModuleBaseNames):
+          print(sModuleName);
       try:
         from mConsole import oConsole;
         oConsole.fRestoreWindow();
       except:
         pass;
-      print("Would you like to automatically update the list? (y/N)");
+      print("Would you like to automatically update the list to the ones that were loaded? (y/N)");
       if input("> ").lower() in ("y", "yes"):
         print("* Updating... ",);
         oInternalPythonModuleDepenciesListFile = open(sInternalPythonModuleDepenciesListFilePath, "wb");
@@ -132,8 +135,8 @@ def fTestDependencies():
           raise;
         else:
           print("ok.");
-          asUnexpectedDependencyPythonInteralModuleBaseNames = [];
-          asSuperflousDependencyPythonInternalModuleBaseNames = [];
+          asUnexpectedlyLoadedPythonInteralModuleBaseNames = [];
+          asExpectedButNotLoadedPythonInternalModuleBaseNames = [];
         finally:
           oInternalPythonModuleDepenciesListFile.close();
     
