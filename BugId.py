@@ -569,8 +569,8 @@ try:
       sApplicationISA = None;
       bRepeatForever = False;
       uNumberOfTimesTheApplicationHasBeenRun = 0;
-      bCheckForUpdates = False;
       dxUserProvidedConfigSettings = {};
+      bDoNotLoadSymbols = False;
       asAdditionalLocalSymbolPaths = [];
       bFast = False;
       a0sJITDebuggerArguments = None;
@@ -744,6 +744,8 @@ try:
             );
             fTerminate(guExitCodeBadArgument);
           asAdditionalLocalSymbolPaths.append(s0Value);
+        elif s0LowerName in ["no-symbols"]:
+          bDoNotLoadSymbols = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path"]:
           if s0Value is None:
             oConsole.fOutput(
@@ -850,6 +852,7 @@ try:
         dxConfig["bQuiet"] = True;
         dxUserProvidedConfigSettings["bGenerateReportHTML"] = False;
         dxUserProvidedConfigSettings["azsSymbolServerURLs"] = [];
+        bDoNotLoadSymbols = True;
         dxUserProvidedConfigSettings["cBugId.bUse_NT_SYMBOL_PATH"] = False;
       
       if u0JITDebuggerEventId is not None and dxConfig["sReportFolderPath"] is None:
@@ -1098,6 +1101,7 @@ try:
           u0JITDebuggerEventId = u0JITDebuggerEventId,
           o0UWPApplication = o0UWPApplication,
           asApplicationArguments = asApplicationArguments,
+          bDoNotLoadSymbols = bDoNotLoadSymbols,
           asLocalSymbolPaths = asLocalSymbolPaths,
           azsSymbolCachePaths = dxConfig["azsSymbolCachePaths"], 
           azsSymbolServerURLs = dxConfig["azsSymbolServerURLs"],

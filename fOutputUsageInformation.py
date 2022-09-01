@@ -93,6 +93,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Create no HTML report, do not use symbols. This is an alias for:");
     oConsole.fOutput("        ", COLOR_INFO, "--bGenerateReportHTML=false");
     oConsole.fOutput("        ", COLOR_INFO, "--cBugId.asSymbolServerURLs=[]");
+    oConsole.fOutput("        ", COLOR_INFO, "--no-symbols");
     oConsole.fOutput("        ", COLOR_INFO, "--cBugId.bUse_NT_SYMBOL_PATH=false");
     
     oConsole.fOutput("  ", COLOR_INFO, "-I", COLOR_NORMAL, " [", COLOR_INFO, "arguments", COLOR_NORMAL, "]");
@@ -131,6 +132,9 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Use the given path as a local symbol folder in addition to the symbol paths");
     oConsole.fOutput("    specified in dxConfig. You can provide this option multiple times to add");
     oConsole.fOutput("    as many additional local symbol paths as needed.");
+    
+    oConsole.fOutput("  ", COLOR_INFO, "--no-symbols");
+    oConsole.fOutput("    Do not try to load symbols at all.");
     
     oConsole.fOutput("  ", COLOR_INFO, "--reports", COLOR_NORMAL, "=", COLOR_INFO, "path\\to\\reports\\folder");
     oConsole.fOutput("    Store reports in the given path. Optional cdb output and crash dumps are");
