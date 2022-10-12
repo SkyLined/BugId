@@ -108,6 +108,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("    BugId can write to, and which you can easily find.");
     oConsole.fOutput("    Here's what I normally use:");
     oConsole.fOutput("      ", COLOR_HILITE, "BugId -I --collateral=10 \"--reports=%USERPROFILE%\\BugId reports\" --full-dump");
+    
     oConsole.fOutput("  ", COLOR_INFO, "--jit");
     oConsole.fOutput("    Show details on the currently installed JIT debugger.");
     

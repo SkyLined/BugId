@@ -30,6 +30,9 @@ except ModuleNotFoundError as oException:
   m0DebugOutput = None;
 
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
+gbPauseBeforeExit = False; # will be set to true when we are handling a JIT event:
+                           # the console will be closed when we exit and we want the
+                           # user to be able to see the error.
 try:
   # Load the stuff from external modules that we need.
   from mBugId import cBugId;
@@ -131,7 +134,6 @@ try:
     gu0MaximumNumberOfBugsEachRun = 1;
     gduNumberOfRepros_by_sBugIdAndLocation = {};
     gbSaveOutputWithReport = False;
-    gbPauseBeforeExit = False;
     gbRunningAsJITDebugger = False;
     # o0Parent can be used without checking for None because every file has a parent:
     goInternalErrorReportsFolder = cFileSystemItem(__file__).o0Parent.foGetChild("Internal error reports");
@@ -526,8 +528,7 @@ try:
           guDetectedBugsCount, \
           guNumberOfTimesToRunTheApplication, \
           gu0MaximumNumberOfBugsEachRun, \
-          gbSaveOutputWithReport, \
-          gbPauseBeforeExit;
+          gbSaveOutputWithReport;
       
       # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
       # software as this is likely to cause unexpected issues.
@@ -1296,5 +1297,6 @@ except Exception as oException:
     m0DebugOutput.fTerminateWithException(
       oException = oException,
       uExitCode = guExitCodeInternalError,
+      bPauseBeforeExit = gbPauseBeforeExit,
     );
   raise;

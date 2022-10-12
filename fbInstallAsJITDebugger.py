@@ -9,22 +9,16 @@ from mColorsAndChars import *;
 import mJITDebuggerRegistry;
 
 def fbInstallAsJITDebugger(asAdditionalArguments):
-  # When BugId gets started as a JIT debugger, we can use the string "%ld" in the arguments twice, which will get 
-  # replaced by the process id and the JIT event number, in order. We will add arguments to that effect at the start
-  # of the arument list provided by the user (later).
-  asDefaultArguments = [
-    # '%' gets escaped to avoid environment variable expansion. However, here we do want a '%' in the command line.
-    # We can use '%%' to do so '%':
-    "--pid=%%ld", 
-    "--handle-jit-event=%%ld",
-  ];
   # To prevent the user from accidentally providing these arguments themselves, we scan the arguments provided by the
   # user for for these and report an error and return false if we find them. We will also check if the user has provided
   # a report folder path.
-  s0BugIdReportsFolder = dxConfig["sReportFolderPath"];
+  bBugIdReportsFolderArgumentPresent = False;
+  asPauseArguments = [];
+  asFilteredAdditionalArguments = [];
   for sArgument in asAdditionalArguments:
-    if sArgument.startswith("--") and "=" in sArgument:
-      (sName, sValue) = sArgument[2:].split("=");
+    if sArgument.startswith("--"):
+      tsNameAndValue = sArgument[2:].split("=");
+      sName = tsNameAndValue[0];
       if sName in ["pid", "pids", "handle-jit-event"]:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -35,19 +29,35 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
           COLOR_NORMAL, " in the arguments.",
         );
         return False;
+      if sName in ["p", "pause"]:
+        # We want to set the pause flag as early as possible to catch any exceptions.
+        asPauseArguments.append(sArgument);
+        # So we will remove
+        continue;
       if sName in ["report", "reports", "report-folder", "reports-folder", "report-folder-path", "reports-folder-path", "sReportFolderPath"]:
-        s0BugIdReportsFolder = sValue;
-  # By default the python process hosting BugId will be run in the Windows System32 folder. We cannot save bug
-  # reports there. To make sure we will save bug reports somewhere we can write and where the user will likely find
-  # them, we will add an argument
-  if s0BugIdReportsFolder is None:
-    sBugIdReportsFolder = "%s\\BugId reports" % os.getenv("USERPROFILE");
-    asDefaultArguments.append("--reports=%s" % sBugIdReportsFolder);
-  else:
-    sBugIdReportsFolder = s0BugIdReportsFolder;
+        bBugIdReportsFolderArgumentPresent = True;
+    asFilteredAdditionalArguments.append(sArgument);
   
   sBugIdCommandLine = fsCreateBugIdCommandLine(
-    asDefaultArguments + asAdditionalArguments
+    (
+      # We want to set the pause flag as early as possible to catch any exceptions.
+      asPauseArguments or ["-p"] # If no pause argument is provided, default to pausing
+    ) + [
+      # When BugId gets started as a JIT debugger, we can use the string "%ld" in the arguments twice, which will get 
+      # replaced by the process id and the JIT event number, in order. We will add arguments to that effect at the start
+      # of the arument list provided by the user (later).
+      # '%' gets escaped to avoid environment variable expansion. However, here we do want a '%' in the command line.
+      # We can use '%%' to do so '%':
+      "--pid=%%ld", 
+      "--handle-jit-event=%%ld",
+    ] + (
+      # By default the python process hosting BugId will be run in the Windows System32 folder. We cannot save bug
+      # reports there. To make sure we will save bug reports somewhere we can write and where the user will likely find
+      # them, we will add an argument
+      ["%s\\BugId reports" % os.getenv("USERPROFILE")] if not bBugIdReportsFolderArgumentPresent else []
+    ) + (
+      asFilteredAdditionalArguments
+    )
   );
   oRegistryHiveKey = mRegistry.cRegistryHiveKey(
     sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
