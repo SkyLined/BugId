@@ -41,7 +41,7 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
   sBugIdCommandLine = fsCreateBugIdCommandLine(
     (
       # We want to set the pause flag as early as possible to catch any exceptions.
-      asPauseArguments or ["-p"] # If no pause argument is provided, default to pausing
+      asPauseArguments or ["--pause"] # If no pause argument is provided, default to pausing
     ) + [
       # When BugId gets started as a JIT debugger, we can use the string "%ld" in the arguments twice, which will get 
       # replaced by the process id and the JIT event number, in order. We will add arguments to that effect at the start
@@ -54,7 +54,7 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       # By default the python process hosting BugId will be run in the Windows System32 folder. We cannot save bug
       # reports there. To make sure we will save bug reports somewhere we can write and where the user will likely find
       # them, we will add an argument
-      ["%s\\BugId reports" % os.getenv("USERPROFILE")] if not bBugIdReportsFolderArgumentPresent else []
+      ["--reports-folder-path", "%s\\BugId reports" % os.getenv("USERPROFILE")] if not bBugIdReportsFolderArgumentPresent else []
     ) + (
       asFilteredAdditionalArguments
     )
@@ -89,5 +89,4 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
     COLOR_OK, CHAR_OK,
     COLOR_NORMAL, " BugId is ", "already" if bSettingsChanged else "now", " installed as the default JIT debugger.");
   oConsole.fOutput("  Command line: ", COLOR_INFO, sBugIdCommandLine);
-  oConsole.fOutput("  Reports folder: ", COLOR_INFO, sBugIdReportsFolder);
   return True;
