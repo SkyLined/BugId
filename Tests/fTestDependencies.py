@@ -1,8 +1,6 @@
-﻿import sys;
+﻿gbDebugOutput = False;
 
-gbDebugOutput = False;
-
-def fTestDependencies():
+def fTestDependencies(bAutomaticallyUpdate = False):
   import json, os, sys;
   # Save the list of names of default loaded modules:
   asInitiallyLoadedModuleNames = list(sys.modules.keys());
@@ -120,8 +118,12 @@ def fTestDependencies():
         oConsole.fRestoreWindow();
       except:
         pass;
-      print("Would you like to automatically update the list to the ones that were loaded? (y/N)");
-      if input("> ").lower() in ("y", "yes"):
+      if bAutomaticallyUpdate:
+        bUpdate = True;
+      else:
+        print("Would you like to automatically update the list to the ones that were loaded? (y/N)");
+        bUpdate = input("> ").lower() in ("y", "yes");
+      if bUpdate:
         print("* Updating... ",);
         oInternalPythonModuleDepenciesListFile = open(sInternalPythonModuleDepenciesListFilePath, "wb");
         try:
@@ -187,8 +189,7 @@ def fTestDependencies():
       sys.exit(1);
     
     if gbDebugOutput:
-      if asUnexpectedDependencyPythonInteralModuleBaseNames or asSuperflousDependencyPythonInternalModuleBaseNames \
-          or asUnreportedDependencyModuleNames or asSuperfluousDependencyModuleNames:
+      if asUnreportedDependencyModuleNames or asSuperfluousDependencyModuleNames:
         for sModuleName in sorted(sys.modules.keys()):
           if "." in sModuleName:
             continue;
