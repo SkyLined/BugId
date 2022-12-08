@@ -39,12 +39,12 @@ string
 struct
 subprocess
 tempfile
+textwrap
 threading
 token
 tokenize
 traceback
 urllib
-uu
 uuid
 warnings
 weakref
