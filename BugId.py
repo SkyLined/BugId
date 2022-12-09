@@ -1252,9 +1252,9 @@ try:
         );
         try:
           if oStatisticsFile.fbIsFile():
-            oStatisticsFile.fWrite(sStatistics);
+            oStatisticsFile.fWrite(sStatistics.encode('utf8'));
           else:
-            oStatisticsFile.fCreateAsFile(sStatistics, bCreateParents = True);
+            oStatisticsFile.fCreateAsFile(sStatistics.encode('utf8'), bCreateParents = True);
         except Exception as oException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
