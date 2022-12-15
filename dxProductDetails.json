@@ -29,7 +29,7 @@
     "sbRepositoryName": "BugId",
     "sbUserName": "SkyLined"
   },
-  "o0TrialPeriodDuration": "+1m",
+  "o0TrialPeriodDuration": "+30d",
   "oProductVersion": "2022-12-12 12:05",
   "sProductAuthor": "SkyLined",
   "sProductName": "BugId",

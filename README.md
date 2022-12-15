@@ -113,15 +113,6 @@ Congratulations! You are now ready to test your own crashes with BugId, but
 you may want to run `BugId.cmd --help` at some point to get information about
 the many different command-line options BugId supports.
 
-License
--------
-BugId is free for non-commercial use and commercial licenses are available.
-BugId has a 30 day trial period after which a valid license is required.
-Commercial licenses can be bought and non-commercial licenses requested at
-<a href="https://license.skylined.nl">license.skylined.nl</a>.
-
-Keep up-to-date with BugId development through the [BugId blog page](https://bugid.skylined.nl).
-
 Notes
 -----
 BugId has been developed for and tested on a large number of applications
@@ -159,13 +150,23 @@ License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">
   <img alt="Creative Commons License" style="vertical-align: middle; float: left;" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
 </a>
-This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 International License](http://creativecommons.org/licenses/by-nc/4.0/). It is provided free of charge for non-commercial use only.
+BugId has a free 30-day trial period for commercial and non-commercial use.
+During this trial period this work is licensed under a
+[Creative Commons Attribution-NonCommercial 4.0 International License](http://creativecommons.org/licenses/by-nc/4.0/).
 
-BugId has a trial period to allow you to assess its usefulness. If you
-want to continue to use BugId after the trial period has ended, you are
-required to get a license file from [license.skylined.nl](https://license.skylined.nl/).
-On this site you can request a non-commercial license or buy a commercial
-license.
+After the trial period, paid license must be acquired at
+[license.skylined.nl](https://license.skylined.nl) if you want to continue
+to use BugId.
 
-If you find BugId useful and would like to make a donation in BitCoin,
-you can send them to 183yyxa9s1s1f7JBpPHPmzQ346y91Rx5DX. 
+Non-Commercial licenses are available for a very small fee; just enough to pay
+for my expenses. Commercial licenses for individual security researchers are
+available at a huge discount too.
+
+If you have any questions about licensing, or want to discuss a bulk-discount,
+please contact [license@skylined.nl](mailto:license@skylined.nl).
+
+BugId has a trial period to allow you to assess its usefulness. If you want to
+continue to use BugId after the trial period has ended, I ask that you contribute
+a small fee to pay for my work on BugId and handling of the license request. If
+you are using BugId commercially, I ask that you pay a regular license fee to
+share some of the profit you are making off of your use of BugId.
