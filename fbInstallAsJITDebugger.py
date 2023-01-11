@@ -54,7 +54,8 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       # By default the python process hosting BugId will be run in the Windows System32 folder. We cannot save bug
       # reports there. To make sure we will save bug reports somewhere we can write and where the user will likely find
       # them, we will add an argument
-      ["--reports-folder-path", "%s\\BugId reports" % os.getenv("USERPROFILE")] if not bBugIdReportsFolderArgumentPresent else []
+      ["--reports-folder-path=%s\\BugId reports" % os.getenv("USERPROFILE")]
+          if not bBugIdReportsFolderArgumentPresent else []
     ) + (
       asFilteredAdditionalArguments
     )
