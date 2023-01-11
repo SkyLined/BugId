@@ -1299,4 +1299,9 @@ except Exception as oException:
       uExitCode = guExitCodeInternalError,
       bPauseBeforeExit = gbPauseBeforeExit,
     );
-  raise;
+  import traceback;
+  traceback.print_exc();
+  if gbPauseBeforeExit:
+    print("Press ENTER to quit...");
+    input();
+  os._exit(guExitCodeInternalError);
