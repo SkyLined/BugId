@@ -196,9 +196,9 @@ try:
     def fInternalExceptionCallback(oBugId, oThread, oException, oTraceBack):
       global gbAnInternalErrorOccured;
       gbAnInternalErrorOccured = True;
-      fSaveInternalExceptionReportAndExit(oException, oTraceBack);
+      fSaveInternalExceptionReportAndTerminate(oException, oTraceBack);
     
-    def fSaveInternalExceptionReportAndExit(oException, oTraceBack):
+    def fSaveInternalExceptionReportAndTerminate(oException, oTraceBack):
       fOutputExceptionInformation(oException, oTraceBack);
       rErrorReportFileName = re.compile(
         r"\A"
@@ -1291,7 +1291,7 @@ try:
     except Exception as oException:
       gbAnErrorOccured = True;
       cException, oException, oTraceBack = sys.exc_info();
-      fSaveInternalExceptionReportAndExit(oException, oTraceBack);
+      fSaveInternalExceptionReportAndTerminate(oException, oTraceBack);
 except Exception as oException:
   if m0DebugOutput:
     m0DebugOutput.fTerminateWithException(
