@@ -1,7 +1,7 @@
 from mColorsAndChars import \
-  COLOR_DIM, \
-  COLOR_INFO, \
-  COLOR_NORMAL;
+    COLOR_DIM, \
+    COLOR_INFO, \
+    COLOR_NORMAL;
 
 def faxListOutput(
   asData,

@@ -26,6 +26,10 @@ def fsOutputArgumentsToString(txArguments):
 class oConsoleStandIn(object):
   uCurrentLineLength = 0;
   uCurrentColor = 0xFF07;
+  uDefaultColor = 0;
+  uDefaultBarColor = 0;
+  uDefaultProgressColor = 0;
+  uDefaultSubProgressColor = 0;
   uWindowWidth = 80;
   uWidth = 80;
   oLock = threading.Lock();
