@@ -19,4 +19,4 @@ def fxGetCurrentJITDebuggerCommandLine():
     return zNotProvided;
   if o0RegistryValue.sTypeName != "REG_SZ":
     return None;
-  return oRegistryValue.xValue;
+  return o0RegistryValue.xValue;
