@@ -1,11 +1,21 @@
-import os, platform;
+import math, platform, sys;
 
 import mProductDetails;
-from mWindowsAPI import fsGetPythonISA, oSystemInfo;
-from mConsole import oConsole;
+from foConsoleLoader import foConsoleLoader;
+oConsole = foConsoleLoader();
 
-from faxListOutput import faxListOutput;
-from mColorsAndChars import *;
+from mColorsAndChars import \
+  CHAR_ERROR, \
+  CHAR_LIST, \
+  CHAR_OK, \
+  CHAR_WARNING, \
+  COLOR_ERROR, \
+  COLOR_HILITE, \
+  COLOR_INFO, \
+  COLOR_NORMAL, \
+  COLOR_OK, \
+  COLOR_WARNING, \
+  CONSOLE_UNDERLINE;
 
 try:
   from fOutputLogo import fOutputLogo as f0OutputLogo;
@@ -144,23 +154,17 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders, dsAddi
         bCheckForUpdates = bCheckForUpdates,
         bCheckForUpdatesSuccessful = oProductDetails in aoProductDetailsSuccessfullyCheckedForUpdates,
       );
-    asProductNames = (
-      ([o0MainProductDetails.sProductName] if o0MainProductDetails else [])
-      + list(doRemainingProductDetails_by_sName.keys())
-    );
-    
     oConsole.fOutput(
-      "│ ", CHAR_LIST, " ", COLOR_INFO, "Windows",
-      COLOR_NORMAL, " version: ", COLOR_INFO, oSystemInfo.sOSName,
-      COLOR_NORMAL, " release ", COLOR_INFO, oSystemInfo.sOSReleaseId,
-      COLOR_NORMAL, ", build ", COLOR_INFO, oSystemInfo.sOSBuild,
-      COLOR_NORMAL, " ", COLOR_INFO, oSystemInfo.sOSISA,
-      COLOR_NORMAL, ".",
+      "│ ", CHAR_LIST, " ", COLOR_INFO, "Platform",
+      COLOR_NORMAL, " OS: ", COLOR_INFO, platform.platform(),
+      COLOR_NORMAL, " on ", COLOR_INFO, platform.machine(),
+      COLOR_NORMAL, " processor.",
     );
+    uProcessISABits = math.log(sys.maxsize + 1, 2) + 1;
     oConsole.fOutput(
       "│ ", CHAR_LIST, " ", COLOR_INFO, "Python",
       COLOR_NORMAL, " version: ", COLOR_INFO, str(platform.python_version()),
-      COLOR_NORMAL, " ", COLOR_INFO, fsGetPythonISA(),
+      COLOR_NORMAL, ", ", COLOR_INFO, "%d" % uProcessISABits, " bit",
       COLOR_NORMAL, ".",
     );
     

@@ -1,11 +1,18 @@
-import os, platform;
-
 import mProductDetails;
-from mWindowsAPI import fsGetPythonISA, oSystemInfo;
-from mConsole import oConsole;
 
 from faxListOutput import faxListOutput;
-from mColorsAndChars import *;
+from foConsoleLoader import foConsoleLoader;
+from mColorsAndChars import \
+  CHAR_ERROR, \
+  CHAR_OK, \
+  CHAR_WARNING, \
+  COLOR_ERROR, \
+  COLOR_HILITE, \
+  COLOR_INFO, \
+  COLOR_NORMAL, \
+  COLOR_OK, \
+  COLOR_WARNING;
+oConsole = foConsoleLoader();
 
 try:
   from fOutputLogo import fOutputLogo as f0OutputLogo;

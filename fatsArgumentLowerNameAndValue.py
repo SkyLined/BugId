@@ -1,11 +1,14 @@
-import sys;
+import os, sys;
+
+import mProductDetails;
+from mProductDetails import faoGetLicensesFromRegistry, faoGetLicensesFromFile;
+from mFileSystemItem import cFileSystemItem;
 
 from fOutputUsageInformation import fOutputUsageInformation;
 from fOutputVersionInformation import fOutputVersionInformation;
 from fOutputLicenseInformation import fOutputLicenseInformation;
 from mColorsAndChars import *;
 from mExitCodes import *;
-from mProductDetails import faoGetLicensesFromRegistry, faoGetLicensesFromFile;
 
 def fExitWithBadArgumentValue(sArgumentName, sMessage):
   oConsole.fOutput(
@@ -26,7 +29,7 @@ def fatsArgumentLowerNameAndValue(f0dsGetAdditionalVersionByName = None):
     sArgument = asArguments.pop(0);
     if sArgument == "--":
       break;
-    if len(sArgument) >= 2 and sArgument.startswith("-") or sArgument.startswith("/"):
+    if len(sArgument) >= 2 and sArgument.startswith("-"):
       if "=" in sArgument:
         (sNameWithPrefix, s0Value) = sArgument.split("=", 1);
       else:

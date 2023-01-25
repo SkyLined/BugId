@@ -1,6 +1,16 @@
-from mColorsAndChars import *;
+from mColorsAndChars import \
+  COLOR_DIM, \
+  COLOR_INFO, \
+  COLOR_NORMAL;
 
-def faxListOutput(asData, sAndOr, a0sImportantData = None, uImportantDataColor = COLOR_INFO, uNonImportantDataColor = COLOR_DIM, uNormalColor = COLOR_NORMAL):
+def faxListOutput(
+  asData,
+  sAndOr,
+  a0sImportantData = None,
+  uImportantDataColor = COLOR_INFO,
+  uNonImportantDataColor = COLOR_DIM,
+  uNormalColor = COLOR_NORMAL, \
+):
   asData = [str(x) for x in asData];
   asImportantData = (
     a0sImportantData if a0sImportantData is not None

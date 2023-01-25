@@ -1,7 +1,8 @@
 import io, json, os, re, sys, urllib.request, zipfile;
 
 rIgnoredProductFilesPattern = re.compile(r"^(Tests(\..*)?|lgtm\.yml|modules|releases|Internal error reports)($|\\)|(^|\\)[\.#].*");
-from mExitCodes import *;
+from mExitCodes import \
+    guExitCodeInternalError;
 
 if __name__ == "__main__":
   sMainFolder = os.path.dirname(__file__);
