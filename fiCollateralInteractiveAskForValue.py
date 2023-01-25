@@ -1,7 +1,8 @@
 ﻿from mNotProvided import *;
-from mConsole import oConsole;
 
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fiCollateralInteractiveAskForValue(uProcessId, uThreadId, sInstruction, a0txRegisters, sDestination, i0CurrentValue, u0OriginalValue, iMinValue, iMaxValue, iSuggestedValue):
   fAssertTypes({

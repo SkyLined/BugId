@@ -1,11 +1,10 @@
-import json, os, re, sys;
-
 import mRegistry;
-from mConsole import oConsole;
 from mNotProvided import zNotProvided;
 
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 import mJITDebuggerRegistry;
+oConsole = foConsoleLoader();
 
 def fxGetCurrentJITDebuggerCommandLine():
   # Returns a string with the current JIT debugger command line

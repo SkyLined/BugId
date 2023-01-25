@@ -7,11 +7,11 @@ except ModuleNotFoundError as oException:
     raise;
   m0DebugOutput = None;
 
-from mConsole import oConsole;
-
 from mColorsAndChars import *;
+from foConsoleLoader import foConsoleLoader;
 from fOutputVersionInformation import fOutputVersionInformation;
 from fdsGetAdditionalVersionByName import fdsGetAdditionalVersionByName;
+oConsole = foConsoleLoader();
 
 def fOutputExceptionInformation(oException, oTraceback):
   if m0DebugOutput:

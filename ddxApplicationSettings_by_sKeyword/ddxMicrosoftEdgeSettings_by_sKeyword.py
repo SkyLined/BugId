@@ -1,12 +1,13 @@
 import os, sys;
 
 from mWindowsAPI import fauProcessesIdsForExecutableNames, fbTerminateForProcessId, oSystemInfo;
-from mConsole import oConsole;
 from mFileSystemItem import cFileSystemItem;
 
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mExitCodes import *;
 from .fsFirstExistingFile import fsFirstExistingFile;
+oConsole = foConsoleLoader();
 
 sLocalAppData = os.getenv("LocalAppData");
 sProgramFilesPath_x86 = os.getenv("ProgramFiles(x86)") or os.getenv("ProgramFiles");

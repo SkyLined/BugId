@@ -1,8 +1,7 @@
 ﻿import platform, sys;
 
-from mConsole import oConsole;
-
 from faxListOutput import faxListOutput;
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import \
   CHAR_ERROR, \
   COLOR_ERROR, \
@@ -12,6 +11,7 @@ from mColorsAndChars import \
   COLOR_WARNING;
 from mExitCodes import \
   guExitCodeInternalError;
+oConsole = foConsoleLoader();
 
 def fCheckPythonVersion(sApplicationName, asTestedPythonVersions, sBugURL):
   sPythonVersion = platform.python_version();

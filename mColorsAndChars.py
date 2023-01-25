@@ -50,7 +50,8 @@ CHAR_REMOVE                             = "-";
 CHAR_IGNORE                             = "·";
 
 # DEFAULTS
-from mConsole import oConsole;
+from foConsoleLoader import foConsoleLoader;
+oConsole = foConsoleLoader();
 oConsole.uDefaultColor = COLOR_NORMAL;
 oConsole.uDefaultBarColor = COLOR_PROGRESS_BAR;
 oConsole.uDefaultProgressColor = COLOR_PROGRESS_BAR_HILITE;

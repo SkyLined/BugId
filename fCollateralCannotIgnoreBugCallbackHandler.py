@@ -1,6 +1,6 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fCollateralCannotIgnoreBugCallbackHandler(oBugId, sReason):
   oConsole.fOutput(

@@ -1,8 +1,8 @@
-﻿from mConsole import oConsole;
-
-from dxConfig import dxConfig;
+﻿from dxConfig import dxConfig;
+from foConsoleLoader import foConsoleLoader;
 from fOutputMessageForProcess import fOutputMessageForProcess;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fProcessTerminatedCallbackHandler(oBugId, oProcess, bIsMainProcess):
   bStopBugId = bIsMainProcess and dxConfig["bApplicationTerminatesWithMainProcess"];

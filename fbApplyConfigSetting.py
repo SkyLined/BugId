@@ -1,7 +1,7 @@
-from mConsole import oConsole;
-
 from dxConfig import dxConfig;
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fbApplyConfigSetting(sSettingName, xValue, sIndentation): # sIndentation is None means no output!
   asGroupNames = sSettingName.split("."); # last element is not a group name

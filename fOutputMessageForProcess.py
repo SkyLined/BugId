@@ -1,6 +1,6 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 # Helper function to format messages that are specific to a process.
 def fOutputMessageForProcess(uHeaderColor, s0HeaderChar, oProcess, bIsMainProcess, *txMessage):

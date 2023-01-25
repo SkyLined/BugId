@@ -1,8 +1,8 @@
-﻿from mConsole import oConsole;
-
-from dxConfig import dxConfig;
+﻿from dxConfig import dxConfig;
+from foConsoleLoader import foConsoleLoader;
 from fOutputMessageForProcess import fOutputMessageForProcess;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fApplicationDebugOutputCallbackHandler(oBugId, oProcess, bIsMainProcess, asbMessages):
   if dxConfig["bQuiet"]:

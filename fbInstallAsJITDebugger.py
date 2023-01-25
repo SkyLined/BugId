@@ -1,12 +1,13 @@
 import os;
 
 import mRegistry;
-from mConsole import oConsole;
 
 from dxConfig import dxConfig;
+from foConsoleLoader import foConsoleLoader;
 from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
 from mColorsAndChars import *;
 import mJITDebuggerRegistry;
+oConsole = foConsoleLoader();
 
 def fbInstallAsJITDebugger(asAdditionalArguments):
   # To prevent the user from accidentally providing these arguments themselves, we scan the arguments provided by the

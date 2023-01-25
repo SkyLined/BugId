@@ -1,7 +1,7 @@
-﻿from mConsole import oConsole;
-
-from dxConfig import dxConfig;
+﻿from dxConfig import dxConfig;
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fCollateralBugIgnoredCallbackHandler(oBugId, sInstruction, asActions):
   if not dxConfig["bQuiet"]:

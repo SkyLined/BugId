@@ -1,7 +1,8 @@
 import json;
-from mConsole import oConsole;
 
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fOutputApplicationKeyWordHelp(sApplicationKeyword, dxApplicationSettings):
   oConsole.fLock();

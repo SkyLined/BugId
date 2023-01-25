@@ -1,7 +1,7 @@
-from mConsole import oConsole;
-
 from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
+from foConsoleLoader import foConsoleLoader;
 from fOutputLogo import fOutputLogo;
+oConsole = foConsoleLoader();
 from dxConfig import dxConfig;
 from mColorsAndChars import *;
 

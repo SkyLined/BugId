@@ -36,7 +36,6 @@ gbPauseBeforeExit = False; # will be set to true when we are handling a JIT even
 try:
   # Load the stuff from external modules that we need.
   from mBugId import cBugId;
-  from mConsole import oConsole;
   from mDateTime import cDateTime, cDateTimeDuration;
   from mFileSystemItem import cFileSystemItem;
   from mNotProvided import *;
@@ -66,6 +65,7 @@ try:
   from fdsGetAdditionalVersionByName import fdsGetAdditionalVersionByName;
   from fiCollateralInteractiveAskForValue import fiCollateralInteractiveAskForValue;
   from fLogMessageCallbackHandler import fLogMessageCallbackHandler;
+  from foConsoleLoader import foConsoleLoader;
   from fOutputApplicationKeyWordHelp import fOutputApplicationKeyWordHelp;
   from fOutputCurrentJITDebuggerSettings import fOutputCurrentJITDebuggerSettings;
   from fOutputExceptionInformation import fOutputExceptionInformation;
@@ -74,6 +74,7 @@ try:
   from fProcessTerminatedCallbackHandler import fProcessTerminatedCallbackHandler;
   from mColorsAndChars import *;
   from mExitCodes import *;
+  oConsole = foConsoleLoader();
   
   def fxProcessBooleanArgument(sArgumentName, s0Value, u0CanAlsoBeAnIntegerLargerThan = None):
     if s0Value is None or s0Value.lower() == "true":
