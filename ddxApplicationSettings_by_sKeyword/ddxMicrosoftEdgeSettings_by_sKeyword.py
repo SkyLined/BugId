@@ -6,7 +6,6 @@ from mFileSystemItem import cFileSystemItem;
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mExitCodes import *;
-from .fsFirstExistingFile import fsFirstExistingFile;
 oConsole = foConsoleLoader();
 
 sLocalAppData = os.getenv("LocalAppData");

@@ -2,7 +2,6 @@ import os;
 
 import mRegistry;
 
-from dxConfig import dxConfig;
 from foConsoleLoader import foConsoleLoader;
 from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
 from mColorsAndChars import *;

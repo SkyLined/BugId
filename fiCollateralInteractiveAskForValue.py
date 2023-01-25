@@ -1,4 +1,4 @@
-﻿from mNotProvided import *;
+﻿from mNotProvided import fAssertTypes;
 
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;

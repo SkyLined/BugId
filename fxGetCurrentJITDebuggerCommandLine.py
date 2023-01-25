@@ -1,4 +1,4 @@
-import mRegistry;
+from mRegistry import cRegistryHiveKey;
 from mNotProvided import zNotProvided;
 
 from foConsoleLoader import foConsoleLoader;
@@ -10,7 +10,7 @@ def fxGetCurrentJITDebuggerCommandLine():
   # Returns a string with the current JIT debugger command line
   # or zNotProvided if no JIT debugger is installed.
   # or None if the registry could not be read or the value makes no sense.
-  oRegistryHiveKey = mRegistry.cRegistryHiveKey(
+  oRegistryHiveKey = cRegistryHiveKey(
     sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
     sKeyPath = mJITDebuggerRegistry.sComandLineKeyPath,
   );
