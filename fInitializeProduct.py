@@ -105,7 +105,7 @@
           );
       # Dump exception stack like Python would
       import traceback;
-      asExceptionReportLines = traceback.format_exception();
+      asExceptionReportLines = traceback.format_exc();
       for sLines in asExceptionReportLines:
         for sLine in sLines.rstrip("\n"):
           oConsole.fOutput(sLine);
