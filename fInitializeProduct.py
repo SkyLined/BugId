@@ -16,31 +16,11 @@
       os.path.join(sProductFolderPath, "modules"),
     ]
     sys.path = asModulesPaths + [sPath for sPath in sys.path if sPath not in asModulesPaths];
-    if bDebugOutput:
-      from foConsoleLoader import foConsoleLoader;
-      oConsole = foConsoleLoader();
-
-      from mExitCodes import guExitCodeInternalError, guExitCodeBadDependencyError;
-      from mColorsAndChars import \
-          COLOR_BUSY, CHAR_BUSY, \
-          COLOR_ERROR, CHAR_ERROR, \
-          COLOR_INFO, CHAR_INFO, \
-          COLOR_LIST, CHAR_LIST, \
-          COLOR_OK, CHAR_OK, \
-          COLOR_WARNING, CHAR_WARNING, \
-          COLOR_HILITE, COLOR_NORMAL;
-      oConsole.fOutput(
-        COLOR_INFO, CHAR_INFO,
-        COLOR_NORMAL, " Module search paths:",
-      );
+  if bDebugOutput:
+    if bProductIsAnApplication:
+      print(" Module search paths:");
       for sPath in sys.path:
-        oConsole.fOutput(
-          COLOR_NORMAL, "  ",
-          COLOR_LIST, CHAR_LIST,
-          COLOR_NORMAL, " ",
-          COLOR_INFO, sPath,
-          COLOR_NORMAL, ".",
-        );
+        print("  * %s." % sPath);
 
   def fo0LoadModule(sProductName, sModuleName, bOptional = False):
     if sModuleName in sys.modules:
@@ -60,20 +40,20 @@
       if bOptional:
         if bDebugOutput:
           if bModuleNotFound:
-            oConsole.fOutput(
+            print(
               COLOR_WARNING, CHAR_WARNING,
               COLOR_NORMAL, " ", "Optional module" if bOptional else "Module", " ",
               COLOR_HILITE, sModuleName,
               COLOR_NORMAL, " is not available!",
             );
           else:
-            oConsole.fOutput(
+            print(
               COLOR_WARNING, CHAR_WARNING,
               COLOR_NORMAL, " ", "Optional module" if bOptional else "Module", " ",
               COLOR_HILITE, sModuleName,
               COLOR_NORMAL, " can not be loaded!",
             );
-            oConsole.fOutput(
+            print(
               COLOR_NORMAL, "  Exception: ",
               COLOR_HILITE, oException.__class__.__name__,
               COLOR_NORMAL, " - ",
@@ -83,20 +63,20 @@
         return None;
       if bProductIsAnApplication:
         if bModuleNotFound:
-          oConsole.fOutput(
+          print(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " ", "Optional module" if bOptional else "Module", " ",
             COLOR_HILITE, sModuleName,
             COLOR_NORMAL, " is not available!",
           );
         else:
-          oConsole.fOutput(
+          print(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " ", "Optional module" if bOptional else "Module", " ",
             COLOR_HILITE, sModuleName,
             COLOR_NORMAL, " can not be loaded!",
           );
-          oConsole.fOutput(
+          print(
             COLOR_NORMAL, "  Exception: ",
             COLOR_HILITE, oException.__class__.__name__,
             COLOR_NORMAL, " - ",
@@ -105,13 +85,12 @@
           );
       # Dump exception stack like Python would
       import traceback;
-      asExceptionReportLines = traceback.format_exc();
-      for sLines in asExceptionReportLines:
-        for sLine in sLines.rstrip("\n"):
-          oConsole.fOutput(sLine);
+      asExceptionReportLines = traceback.format_exc().split("\n");
+      for sLine in asExceptionReportLines:
+        print(sLine.rstrip("\r"));
       # Terminate with the appropriate exit code from mExitCodes (use standard values if it cannot be loaded).
       sys.exit(guExitCodeBadDependencyError if bModuleNotFound else guExitCodeInternalError);
-    if bDebugOutput: oConsole.fOutput(
+    if bDebugOutput: print(
       COLOR_OK, CHAR_OK,
       COLOR_NORMAL, " Module ",
       COLOR_HILITE, sModuleName,
@@ -135,7 +114,7 @@
       dxProductDetails = json.load(oProductDetailsFile);
   except Exception as oException:
     if bDebugOutput:
-      oConsole.fOutput(
+      print(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Product details cannot be loaded from ",
         COLOR_INFO, sProductDetailsFilePath,
@@ -143,7 +122,7 @@
       );
     raise;
   if bDebugOutput:
-    oConsole.fOutput(
+    print(
       COLOR_OK, CHAR_OK,
       COLOR_NORMAL, " Product details for ",
       COLOR_INFO, dxProductDetails["sProductName"],
@@ -161,7 +140,7 @@
   ):
     fo0LoadModule(dxProductDetails["sProductName"], sModuleName, bOptional = True);
   if bDebugOutput:
-    oConsole.fOutput(
+    print(
       COLOR_OK, CHAR_OK,
       COLOR_NORMAL, " Product ",
       COLOR_INFO, dxProductDetails["sProductName"],
