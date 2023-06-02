@@ -11,19 +11,19 @@ def fTestDependencies(bAutomaticallyUpdate = False):
   sParentFolderPath = os.path.dirname(sMainFolderPath);
   sModulesFolderPath = os.path.join(sMainFolderPath, "modules");
   asOriginalSysPath = sys.path[:];
+  # Load test standard error codes. For modules these are in the Tests sub-folder,
+  # for scripts these are in the main folder.
+  sys.path = [sTestsFolderPath, sMainFolderPath];
+  from mStandardExitCodes import guExitCodeInternalError;
   # Load mDebugOutput if available to improve error output
   sys.path = [sModulesFolderPath];
-  try:
-    from mExitCodes import guExitCodeInternalError;
-  except:
-    guExitCodeInternalError = 1; # Use standard value.
-  sys.path = [sParentFolderPath] + asOriginalSysPath;
   try:
     import mDebugOutput as m0DebugOutput;
   except ModuleNotFoundError as oException:
     if oException.args[0] != "No module named 'mDebugOutput'":
       raise;
     m0DebugOutput = None;
+  sys.path = [sParentFolderPath] + asOriginalSysPath;
   
   try:
     # Load product details
