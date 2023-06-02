@@ -15,15 +15,14 @@ def fTestDependencies(bAutomaticallyUpdate = False):
   # for scripts these are in the main folder.
   sys.path = [sTestsFolderPath, sMainFolderPath];
   from mStandardExitCodes import guExitCodeInternalError;
+  sys.path = [sParentFolderPath, sModulesFolderPath] + asOriginalSysPath;
   # Load mDebugOutput if available to improve error output
-  sys.path = [sModulesFolderPath];
   try:
     import mDebugOutput as m0DebugOutput;
   except ModuleNotFoundError as oException:
     if oException.args[0] != "No module named 'mDebugOutput'":
       raise;
     m0DebugOutput = None;
-  sys.path = [sParentFolderPath] + asOriginalSysPath;
   
   try:
     # Load product details
