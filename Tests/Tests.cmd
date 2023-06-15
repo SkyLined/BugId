@@ -29,7 +29,7 @@ ECHO   * Test repeat in fast mode...
 CALL "%~dp0\..\BugId.cmd" --repeat=2 --fast %ComSpec% --cBugId.bEnsurePageHeap=false -- /C "@ECHO OFF" >"%REDIRECT_STDOUT_FILE_PATH%"
 REM See `mExitCodes.py` for expected exit code.
 IF NOT "%ERRORLEVEL%" == "11" GOTO :ERROR
-IF EXIST "%~dp0\Reproduction statistics.txt" DEL "%~dp0\Reproduction statistics.txt"
+IF EXIST "%~dp0\Reproduction statistics *.txt" DEL "%~dp0\Reproduction statistics *.txt"
 
 ECHO   * Test internal error reporting...
 CALL "%~dp0\..\BugId.cmd" --test-internal-error >"%REDIRECT_STDOUT_FILE_PATH%"
