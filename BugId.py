@@ -139,14 +139,11 @@ try:
     # o0Parent can be used without checking for None because every file has a parent:
     goInternalErrorReportsFolder = cFileSystemItem(__file__).o0Parent.foGetChild("Internal error reports");
     goBugIdStartDateTime = cDateTime.foNow();
-    def fsGetFileName(sFileNamesBase, bPrefixWithBugIdStartDateTime):
+    def fsGetFileName(sFileNamesBase):
       # Translate characters that are not valid in file names.
       # Optionally add the BugId start date as a prefix.
       return cFileSystemItem.fsGetValidName(
-        "%s%s" % (
-          (goBugIdStartDateTime.fsToString() + " ") if bPrefixWithBugIdStartDateTime else "",
-          sFileNamesBase,
-        ),
+        sFileNamesBase.replace("{timestamp}", goBugIdStartDateTime.fsToString()),
         bUseUnicodeHomographs = dxConfig["bUseUnicodeReportFileNames"],
       );
     
@@ -234,8 +231,7 @@ try:
               if uExistingIndex >= uIndex:
                 uIndex = uExistingIndex + 1;
       sExceptionReportFileName = fsGetFileName(
-        "BugId error report #%d.txt" % uIndex,
-        bPrefixWithBugIdStartDateTime = True
+        "{timestamp} BugId error report #%d.txt" % uIndex,
       );
       oExceptionReportFile = goInternalErrorReportsFolder.foGetChild(sExceptionReportFileName);
       oConsole.fStatus(
@@ -426,9 +422,11 @@ try:
             sBugIdAndLocation,
           ]);
           sReportFileName = fsGetFileName(
-            sOutputFileNamesHeader + ".html",
-            # In JIT mode and when counting bugs we prefix the report with the date and time.
-            bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs,
+            "%s%s.html" % (
+              # In JIT mode and when counting bugs we prefix the report with the date and time.
+              "{timtestamp} " if (gbRunningAsJITDebugger or bCountBugs) else "",
+              sOutputFileNamesHeader,
+            ),
           );
           if dxConfig["sReportFolderPath"] is not None:
             oReportFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sReportFileName);
@@ -469,8 +467,10 @@ try:
             # We want the BugId ouput file to be stored in the same folder as the bug report,
             # with a similar file name, so where to store it is determined in a very similar way:
             sBugIdOutputFileName = fsGetFileName(
-              sOutputFileNamesHeader + " BugId output.txt",
-              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBug,
+              "%s%s BugId output.txt" % (
+                "{timestamp} " if (gbRunningAsJITDebugger or bCountBugs) else "",
+                sOutputFileNamesHeader,
+              ),
             );
             if dxConfig["sReportFolderPath"] is not None:
               oBugIdOutputFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sBugIdOutputFileName);
@@ -495,8 +495,10 @@ try:
             # We want the debugger dump file to be stored in the same folder as the bug report,
             # with a similar file name, so where to store it is determined in a very similar way:
             sDebuggerDumpFileName = fsGetFileName(
-              sOutputFileNamesHeader + ".dmp",
-              bPrefixWithBugIdStartDateTime = gbRunningAsJITDebugger or bCountBugs,
+              "%s%s.dmp" % (
+                "{timestamp} " if (gbRunningAsJITDebugger or bCountBugs) else "",
+                sOutputFileNamesHeader,
+              ),
             );
             # Because of limitations in cdb.exe, we can only use ASCII chars in the file name
             # all non-ASCII chars will be replaced with ".":
@@ -1238,8 +1240,7 @@ try:
               sStatistics += "%d \xD7 %s (%d%%)\r\n" % (uNumberOfRepros, str(sBugIdAndLocation), \
                   round(100.0 * uNumberOfRepros / uNumberOfTimesTheApplicationHasBeenRun));
         sStatisticsFileName = fsGetFileName(
-          "Reproduction statistics.txt",
-          bPrefixWithBugIdStartDateTime = True,
+          "Reproduction statistics {timestamp}.txt",
         );
         if dxConfig["sReportFolderPath"] is not None:
           oStatisticsFile = cFileSystemItem(dxConfig["sReportFolderPath"]).foGetChild(sStatisticsFileName);
