@@ -7,7 +7,6 @@
 *.VC.opendb
 *.vs
 Internal error reports/*
-Reproduction statistics*
 releases
 Tests/tmp/
 Tests/Reports/
