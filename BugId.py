@@ -115,7 +115,7 @@ try:
       fTerminate(guExitCodeBadArgument);
   
   if __name__ == "__main__":
-    asTestedPythonVersions = ["3.8.5", "3.9.1", "3.9.7", "3.10.0", "3.11.1", "3.11.4"];
+    asTestedPythonVersions = ["3.8.5", "3.9.1", "3.9.7", "3.10.0", "3.11.1", "3.11.4", "3.12.0"];
     
     gasAttachForProcessExecutableNames = [];
     gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
@@ -535,7 +535,6 @@ try:
       
       # Make sure Windows and the Python binary are up to date; we don't want our users to unknowingly run outdated
       # software as this is likely to cause unexpected issues.
-      fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
       if mWindowsAPI.oSystemInfo.sOSVersion != "10.0":
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR, 
@@ -1295,6 +1294,10 @@ try:
       cException, oException, oTraceBack = sys.exc_info();
       fSaveInternalExceptionReportAndTerminate(oException, oTraceBack);
 except Exception as oException:
+  try:
+    fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
+  except:
+    pass
   if m0DebugOutput:
     m0DebugOutput.fTerminateWithException(
       oException = oException,
