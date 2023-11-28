@@ -298,7 +298,7 @@ try:
             );
             oConsole.fOutput("  This appears to be due to the application running both x86 and x64 processes.");
             oConsole.fOutput("  Unfortunately, this means use-after-free bugs in this process may be reported");
-            oConsole.fOutput("  as attempts to access reserved memory regions, which is tecnically true but");
+            oConsole.fOutput("  as attempts to access reserved memory regions, which is technically true but");
             oConsole.fOutput("  not as accurate as you might expect.");
             oConsole.fOutput();
           finally:
@@ -323,7 +323,7 @@ try:
             " command line argument to let BugId know it should be using a ",
             COLOR_INFO, oProcess.sISA,
             COLOR_NORMAL, " version of cdb.exe.");
-          oConsole.fOutput("  Please restart BugId with the aboce command line argument to try again.");
+          oConsole.fOutput("  Please restart BugId with the above command line argument to try again.");
           oConsole.fOutput();
           oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " BugId is stopping...");
         finally:
@@ -331,7 +331,7 @@ try:
         # There is no reason to run without page heap, so terminated.
         oBugId.fStop();
         # If you really want to run without page heap, set `dxConfig["cBugId"]["bEnsurePageHeap"]` to `False` in
-        # `dxConfig.py`or run with the command-line siwtch `--cBugId.bEnsurePageHeap=false`
+        # `dxConfig.py`or run with the command-line switch `--cBugId.bEnsurePageHeap=false`
     
     def fPageHeapNotEnabledCallback(oBugId, oProcess, bIsMainProcess, bPreventable):
       global \
@@ -361,7 +361,7 @@ try:
           oConsole.fOutput("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
           oConsole.fOutput("  optimal. Please enable page heap to improve detection and analysis.");
           oConsole.fOutput();
-          oConsole.fOutput("  You can enabled full page heap for ", sLowerBinaryName, " by running:");
+          oConsole.fOutput("  You can enable full page heap for ", sLowerBinaryName, " by running:");
           oConsole.fOutput();
           oConsole.fOutput("      ", COLOR_INFO, 'PageHeap.cmd "', oProcess.sBinaryName, '" ON');
         else:

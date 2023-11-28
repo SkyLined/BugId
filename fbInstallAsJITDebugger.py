@@ -10,7 +10,7 @@ oConsole = foConsoleLoader();
 
 def fbInstallAsJITDebugger(asAdditionalArguments):
   # To prevent the user from accidentally providing these arguments themselves, we scan the arguments provided by the
-  # user for for these and report an error and return false if we find them. We will also check if the user has provided
+  # user for these and report an error and return false if we find them. We will also check if the user has provided
   # a report folder path.
   bBugIdReportsFolderArgumentPresent = False;
   asPauseArguments = [];
@@ -38,6 +38,9 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
         bBugIdReportsFolderArgumentPresent = True;
     asFilteredAdditionalArguments.append(sArgument);
   
+  
+  # Two different registry paths must be adjusted individually on x64 systems - one for 64-bit applications, and a different one for 32-bit 
+  # applications, as outlined in https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/enabling-postmortem-debugging
   sBugIdCommandLine = fsCreateBugIdCommandLine(
     (
       # We want to set the pause flag as early as possible to catch any exceptions.
@@ -50,6 +53,7 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       # We can use '%%' to do so '%':
       "--pid=%%ld", 
       "--handle-jit-event=%%ld",
+      "--isa=x64",
     ] + (
       # By default the python process hosting BugId will be run in the Windows System32 folder. We cannot save bug
       # reports there. To make sure we will save bug reports somewhere we can write and where the user will likely find
@@ -60,11 +64,45 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       asFilteredAdditionalArguments
     )
   );
+  
+  # specifically adding --isa=x86 for the 32-bit version 
+  sBugIdCommandLinex86 = fsCreateBugIdCommandLine(
+    (
+      # We want to set the pause flag as early as possible to catch any exceptions.
+      asPauseArguments or ["--pause"] # If no pause argument is provided, default to pausing
+    ) + [
+      # When BugId gets started as a JIT debugger, we can use the string "%ld" in the arguments twice, which will get 
+      # replaced by the process id and the JIT event number, in order. We will add arguments to that effect at the start
+      # of the arument list provided by the user (later).
+      # '%' gets escaped to avoid environment variable expansion. However, here we do want a '%' in the command line.
+      # We can use '%%' to do so '%':
+      "--pid=%%ld", 
+      "--handle-jit-event=%%ld",
+      "--isa=x86",
+    ] + (
+      # By default the python process hosting BugId will be run in the Windows System32 folder. We cannot save bug
+      # reports there. To make sure we will save bug reports somewhere we can write and where the user will likely find
+      # them, we will add an argument
+      ["--reports-folder-path=%s\\BugId reports" % os.getenv("USERPROFILE")]
+          if not bBugIdReportsFolderArgumentPresent else []
+    ) + (
+      asFilteredAdditionalArguments
+    )
+  );
+  
   oRegistryHiveKey = mRegistry.cRegistryHiveKey(
     sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
     sKeyPath = mJITDebuggerRegistry.sComandLineKeyPath,
   );
-  oConsole.fStatus("* Installing as JIT debugger...");
+  
+  # adding JIT entry for 32-bit
+  oRegistryHiveKeyx86 = mRegistry.cRegistryHiveKey(
+    sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
+    sKeyPath = mJITDebuggerRegistry.sComandLineKeyPathx86,
+  );
+  
+  
+  oConsole.fStatus("* Installing as JIT debugger 64-bit...");
   bSettingsChanged = False;
   for (sName, sValue) in {
     "Auto": "1",
@@ -72,15 +110,17 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
   }.items():
     # Check if the value is already set correctly:
     o0RegistryValue = oRegistryHiveKey.fo0GetValueForName(sValueName = "Debugger");
+    
     if o0RegistryValue and o0RegistryValue.sTypeName == "REG_SZ" and o0RegistryValue.xValue == sValue:
       continue; # Yes; no need to modify it.
+
     try:
       oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
     except WindowsError as oException:
       if oException.winerror == 5:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " BugId cannot be installed as the default JIT debugger.");
+          COLOR_NORMAL, " BugId cannot be installed as the default JIT debugger for 64-bit binaries..");
         oConsole.fOutput("  Access to the relevant registry keys is denied.");
         oConsole.fOutput("  Please try again with ", COLOR_INFO, "elevated priviledges", COLOR_NORMAL, ".");
         return False;
@@ -88,6 +128,37 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
     bSettingsChanged = True;
   oConsole.fOutput(
     COLOR_OK, CHAR_OK,
-    COLOR_NORMAL, " BugId is ", "already" if bSettingsChanged else "now", " installed as the default JIT debugger.");
+    COLOR_NORMAL, " BugId is ", "already" if bSettingsChanged else "now", " installed as the default JIT debugger for 64-bit binaries.");
   oConsole.fOutput("  Command line: ", COLOR_INFO, sBugIdCommandLine);
+  
+  # do the same for the 32-bit version
+  oConsole.fStatus("* Installing as JIT debugger 32-bit...");
+  bSettingsChanged = False;
+  for (sName, sValue) in {
+    "Auto": "1",
+    "Debugger": sBugIdCommandLinex86
+  }.items():
+    # Check if the value is already set correctly for 32-bit:
+    o0RegistryValuex86 = oRegistryHiveKey.fo0GetValueForName(sValueName = "Debugger");
+
+    if o0RegistryValuex86 and o0RegistryValuex86.sTypeName == "REG_SZ" and o0RegistryValuex86.xValue == sValue:
+      continue; # Yes; no need to modify it.
+
+    try:
+      oRegistryHiveKeyx86.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
+    except WindowsError as oException:
+      if oException.winerror == 5:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " BugId cannot be installed as the default JIT debugger for 32-bit binaries..");
+        oConsole.fOutput("  Access to the relevant registry keys is denied.");
+        oConsole.fOutput("  Please try again with ", COLOR_INFO, "elevated priviledges", COLOR_NORMAL, ".");
+        return False;
+      raise;
+    bSettingsChanged = True;
+  oConsole.fOutput(
+    COLOR_OK, CHAR_OK,
+    COLOR_NORMAL, " BugId is ", "already" if bSettingsChanged else "now", " installed as the default JIT debugger for 32-bit binaries.");
+  oConsole.fOutput("  Command line: ", COLOR_INFO, sBugIdCommandLinex86);
+  
   return True;
