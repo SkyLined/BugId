@@ -11,8 +11,8 @@ def fxGetCurrentJITDebuggerCommandLine():
   # or zNotProvided if no JIT debugger is installed.
   # or None if the registry could not be read or the value makes no sense.
   oRegistryHiveKey = cRegistryHiveKey(
-    sHiveName = mJITDebuggerRegistry.sComandLineHiveName,
-    sKeyPath = mJITDebuggerRegistry.sComandLineKeyPath,
+    sHiveName = mJITDebuggerRegistry.sCommandLineHiveName,
+    sKeyPath = mJITDebuggerRegistry.sCommandLineKeyPath,
   );
   o0RegistryValue = oRegistryHiveKey.fo0GetValueForName(sValueName = "Debugger");
   if o0RegistryValue is None:

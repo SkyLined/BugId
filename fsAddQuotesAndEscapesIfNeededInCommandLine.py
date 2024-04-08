@@ -8,7 +8,7 @@ rArgumentThatDoesNotRequireQuotesAndEscapesInCommandLine = re.compile(
 def fsAddQuotesAndEscapesIfNeededInCommandLine(sString):
   # Arguments with spaces and/or special characters will need to be quoted and some
   # special chars need to be 'escaped'. It's not technically escaping but they do need
-  # to be replaced with a set of chars to make sure they will be interpretted correctly.
+  # to be replaced with a set of chars to make sure they will be interpreted correctly.
   if rArgumentThatDoesNotRequireQuotesAndEscapesInCommandLine.match(sString):
     return sString;
   return '"%s"' % (sString

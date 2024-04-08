@@ -65,7 +65,7 @@ class oConsoleStandIn(object):
   def fProgressBar(cClass, nProgress, sMessage = "", **dxArguments):
     cClass.fStatus(int(100 * nProgress), "%", sMessage);
   @classmethod
-  def fSetTitele(cClass, sTitle):
+  def fSetTitle(cClass, sTitle):
     pass;
   @classmethod
   def fHideWindow(cClass):

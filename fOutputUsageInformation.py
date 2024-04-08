@@ -36,7 +36,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("    determine the package name and id for that application, optionally apply");
     oConsole.fOutput("    application specific settings and provide default arguments. This makes it");
     oConsole.fOutput("    easier to run these applications without having to manually provide these.");
-    oConsole.fOutput("    You can optioanlly override any default settings by providing them *after*");
+    oConsole.fOutput("    You can optionally override any default settings by providing them *after*");
     oConsole.fOutput("    the keyword. You can also provide the path to the application binary after");
     oConsole.fOutput("    the keyword to use a different binary than the one BugId automatically");
     oConsole.fOutput("    detects, or if BugId is unable to detect the binary on your system.");
@@ -75,7 +75,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("    over the instruction. It will do this for up to the specified number of");
     oConsole.fOutput("    bugs.");
     oConsole.fOutput("    The upshot of this is that you can get an idea of what would happen if");
-    oConsole.fOutput("    you were able to control the bad read/write operation. This can be usedful");
+    oConsole.fOutput("    you were able to control the bad read/write operation. This can be useful");
     oConsole.fOutput("    when determining if a particular vulnerability is theoretically exploitable");
     oConsole.fOutput("    or not. E.g. it might show that nothing else happens, that the application");
     oConsole.fOutput("    crashes unavoidably and immediately, both of which indicate that the issue");
@@ -125,7 +125,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("    various crashes a non-deterministic repro can cause or while making ");
     oConsole.fOutput("    modifications to the repro in order to test how they affect the crash.");
     oConsole.fOutput("    A statistics file is created or updated after each run that contains the");
-    oConsole.fOutput("    number of occurances of each Bug Id that was detected. If a number is");
+    oConsole.fOutput("    number of occurrences of each Bug Id that was detected. If a number is");
     oConsole.fOutput("    provided, the application will be run that many times. Otherwise the");
     oConsole.fOutput("    application will be run indefinitely.");
     
@@ -153,7 +153,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("    no local or cached symbols are available, you'll get less information");
     oConsole.fOutput("  ", COLOR_INFO, "\"--sReportFolderPath=\\\"BugId\\\"\"");
     oConsole.fOutput("    Save report to the specified folder, in this case \"BugId\". The quotes");
-    oConsole.fOutput("    mess is needed because of the Windows quirck explained below.");
+    oConsole.fOutput("    mess is needed because of the Windows quirk explained below.");
     oConsole.fOutput("  The remaining dxConfig settings are:");
     for sSettingName in sorted(dxConfig.keys()):
       if sSettingName not in ["bGenerateReportHTML", "sReportFolderPath", "cBugId"]:

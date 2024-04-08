@@ -28,15 +28,14 @@ except ModuleNotFoundError as oException:
   m0DebugOutput = None;
 
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
-gbPauseBeforeExit = False; # will be set to true when we are handling a JIT event:
-                           # the console will be closed when we exit and we want the
-                           # user to be able to see the error.
+gbPauseBeforeExit = False;  # will be set to true when we are handling a JIT event:
+                            # the console will be closed when we exit and we want the
+                            # user to be able to see the error.
 try:
   # Load the stuff from external modules that we need.
   from mBugId import cBugId;
   from mDateTime import cDateTime, cDateTimeDuration;
   from mFileSystemItem import cFileSystemItem;
-  from mNotProvided import *;
   import mProductDetails, mWindowsAPI;
   
   from ddxApplicationSettings_by_sKeyword import ddxApplicationSettings_by_sKeyword;
@@ -90,7 +89,7 @@ try:
     oConsole.fOutput(
       COLOR_ERROR, CHAR_ERROR,
       COLOR_NORMAL, " The value for ",
-      COLOR_INFO, sArgument,
+      COLOR_INFO, sArgumentName,
       COLOR_NORMAL, " must be \"",
       COLOR_INFO, "true",
       COLOR_NORMAL, "\" (default) or \"",
@@ -124,7 +123,7 @@ try:
       # No application is known to require running processes with a non-ideal cdb ISA at this point.
     ];
     gasReportedBinaryNameWithNonIdealCdbISA = [];
-    gbAnInternalErrorOccured = False;
+    gbAnInternalErrorOccurred = False;
     gbFailedToApplyMemoryLimitsErrorShown = False;
     gbSaveDump = False;
     gbSaveFullDump = False;
@@ -153,8 +152,8 @@ try:
       os._exit(uExitCode);
     
     def fFailedToDebugApplicationCallback(oBugId, sErrorMessage):
-      global gbAnInternalErrorOccured;
-      gbAnInternalErrorOccured = True;
+      global gbAnInternalErrorOccurred;
+      gbAnInternalErrorOccurred = True;
       oConsole.fLock();
       try:
         oConsole.fOutput("┌───[", COLOR_ERROR, " Failed to debug the application ", COLOR_NORMAL, "]", sPadding = "─");
@@ -175,7 +174,7 @@ try:
         );
         gbFailedToApplyMemoryLimitsErrorShown = True;
         if not dxConfig["bVerbose"]:
-          oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
+          oConsole.fOutput("  Any additional failures to apply memory limits to processes will not be shown.");
     
     def fFailedToApplyProcessMemoryLimitsCallback(oBugId, oProcess, bIsMainProcess):
       global gbFailedToApplyMemoryLimitsErrorShown;
@@ -187,11 +186,11 @@ try:
         );
         gbFailedToApplyMemoryLimitsErrorShown = True;
         if not dxConfig["bVerbose"]:
-          oConsole.fOutput("  Any additional failures to apply memory limits to processess will not be shown.");
+          oConsole.fOutput("  Any additional failures to apply memory limits to processes will not be shown.");
     
     def fInternalExceptionCallback(oBugId, oThread, oException, oTraceBack):
-      global gbAnInternalErrorOccured;
-      gbAnInternalErrorOccured = True;
+      global gbAnInternalErrorOccurred;
+      gbAnInternalErrorOccurred = True;
       fSaveInternalExceptionReportAndTerminate(oException, oTraceBack);
     
     def fSaveInternalExceptionReportAndTerminate(oException, oTraceBack):
@@ -251,8 +250,8 @@ try:
     def fLicenseErrorsCallback(oBugId, asErrors):
       # These should have been reported before cBugId was even instantiated, so this is kind of unexpected.
       # But rather than raise AssertionError("NOT REACHED"), we'll report the license error gracefully:
-      global gbAnInternalErrorOccured;
-      gbAnInternalErrorOccured = True;
+      global gbAnInternalErrorOccurred;
+      gbAnInternalErrorOccurred = True;
       oConsole.fLock();
       try:
         oConsole.fOutput("┌───[", COLOR_INFO, " Software license error ", COLOR_NORMAL, "]", sPadding = "─");
@@ -271,7 +270,7 @@ try:
       global \
           gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA, \
           gasReportedBinaryNameWithNonIdealCdbISA, \
-          gbAnInternalErrorOccured;
+          gbAnInternalErrorOccurred;
       sBinaryName = oProcess.sBinaryName;
       if sBinaryName.lower() in gasBinaryNamesThatAreAllowedToRunWithNonIdealCdbISA:
         return;
@@ -298,7 +297,7 @@ try:
           finally:
             oConsole.fUnlock();
       else:
-        gbAnInternalErrorOccured = True;
+        gbAnInternalErrorOccurred = True;
         oConsole.fLock();
         try:
           oConsole.fOutput(
@@ -352,7 +351,7 @@ try:
           COLOR_NORMAL, ".",
         );
         if bPreventable:
-          oConsole.fOutput("  Without page heap enabled, detection and anaylsis of any bugs will be sub-");
+          oConsole.fOutput("  Without page heap enabled, detection and analysis of any bugs will be sub-");
           oConsole.fOutput("  optimal. Please enable page heap to improve detection and analysis.");
           oConsole.fOutput();
           oConsole.fOutput("  You can enable full page heap for ", sLowerBinaryName, " by running:");
@@ -385,7 +384,7 @@ try:
       global guDetectedBugsCount, \
              gu0MaximumNumberOfBugsEachRun, \
              gduNumberOfRepros_by_sBugIdAndLocation, \
-             gbAnInternalErrorOccured;
+             gbAnInternalErrorOccurred;
       guDetectedBugsCount += 1;
       oConsole.fLock();
       try:
@@ -422,7 +421,7 @@ try:
           sReportFileName = fsGetFileName(
             "%s%s.html" % (
               # In JIT mode and when counting bugs we prefix the report with the date and time.
-              "{timtestamp} " if (gbRunningAsJITDebugger or bCountBugs) else "",
+              "{timestamp} " if (gbRunningAsJITDebugger or bCountBugs) else "",
               sOutputFileNamesHeader,
             ),
           );
@@ -454,7 +453,7 @@ try:
               COLOR_NORMAL, "│                   => ",
               COLOR_INFO, str(oException),
             );
-            gbAnInternalErrorOccured = True;
+            gbAnInternalErrorOccurred = True;
           else:
             oConsole.fOutput(
               COLOR_NORMAL, "│ Bug report:       ",
@@ -462,7 +461,7 @@ try:
               COLOR_NORMAL, ".",
             );
           if gbSaveOutputWithReport:
-            # We want the BugId ouput file to be stored in the same folder as the bug report,
+            # We want the BugId output file to be stored in the same folder as the bug report,
             # with a similar file name, so where to store it is determined in a very similar way:
             sBugIdOutputFileName = fsGetFileName(
               "%s%s BugId output.txt" % (
@@ -486,7 +485,7 @@ try:
               oConsole.fCleanup();
               oConsole.fOutput("│ ", COLOR_ERROR, CHAR_ERROR, COLOR_NORMAL, " BugId output:   ", oBugIdOutputFile.sPath, COLOR_ERROR, "could not be saved!");
               oConsole.fOutput("│                   => ", COLOR_INFO, str(oException));
-              gbAnInternalErrorOccured = True;
+              gbAnInternalErrorOccurred = True;
             else:
               oConsole.fOutput("│ BugId output log: ", COLOR_INFO, oBugIdOutputFile.sPath, COLOR_NORMAL, ".");
           if gbSaveDump:
@@ -1200,9 +1199,9 @@ try:
         guDetectedBugsCount = 0;
         oBugId.fStart();
         oBugId.fWait();
-        if gbAnInternalErrorOccured:
+        if gbAnInternalErrorOccurred:
           if fCleanup:
-            # Call cleanup after runnning the application, before exiting BugId
+            # Call cleanup after running the application, before exiting BugId
             oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Cleaning up application state...");
             fCleanup();
           fTerminate(guExitCodeInternalError);
@@ -1224,7 +1223,7 @@ try:
         uNumberOfTimesTheApplicationHasBeenRun += 1;
         if not bRepeatForever and uNumberOfTimesTheApplicationHasBeenRun == guNumberOfTimesToRunTheApplication:
           if fCleanup:
-            # Call cleanup after runnning the application, before exiting BugId
+            # Call cleanup after running the application, before exiting BugId
             oConsole.fStatus(COLOR_BUSY, CHAR_BUSY, COLOR_NORMAL, " Cleaning up application state...");
             fCleanup();
           fTerminate(guExitCodeSuccess if guDetectedBugsCount > 0 else guExitCodeNoBugsDetected);
@@ -1288,7 +1287,7 @@ try:
         COLOR_NORMAL, " Interrupted.",
       );
     except Exception as oException:
-      gbAnErrorOccured = True;
+      gbAnInternalErrorOccurred = True;
       cException, oException, oTraceBack = sys.exc_info();
       fSaveInternalExceptionReportAndTerminate(oException, oTraceBack);
 except Exception as oException:

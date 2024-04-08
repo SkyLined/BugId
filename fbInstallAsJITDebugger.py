@@ -81,7 +81,7 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       
       if o0RegistryValue and o0RegistryValue.sTypeName == "REG_SZ" and o0RegistryValue.xValue == sValue:
         continue; # Yes; no need to modify it.
-
+      
       try:
         oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
       except WindowsError as oException:

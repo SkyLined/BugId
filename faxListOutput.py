@@ -16,7 +16,7 @@ def faxListOutput(
     a0sImportantData if a0sImportantData is not None
     else asData
   );
-
+  
   def faxColoredData(sData):
     return [uImportantDataColor if sData in asImportantData else uNonImportantDataColor, sData];
   

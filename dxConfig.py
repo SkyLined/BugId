@@ -23,7 +23,7 @@ dxConfig = {
                                                   # downloaded with a remote build, None = no local symbol paths).
   "azsSymbolCachePaths": zNotProvided,            # List of symbol cache paths (Where to download symbols from a remote
                                                   # server, zNotProvided = use default).
-  "azsSymbolServerURLs": zNotProvided,            # List of symbol server URLs (where to try to download symbosl from 
+  "azsSymbolServerURLs": zNotProvided,            # List of symbol server URLs (where to try to download symbols from 
                                                   # if none are found locally, zNotProvided = use default).
   "bExcessiveCPUUsageCheckEnabled": False,        # Set to True to enabled checking for excessive CPU usage in the
                                                   # application. This used to be the default, but I've found most
@@ -47,7 +47,7 @@ dxConfig = {
                                                   # processes to Job objects themselves and since processes cannot be
                                                   # assigned to more than one Job object, it may not be possible to
                                                   # apply this limit in that way. In such cases, BugId will reserve
-                                                  # part of the process' address space to limit the ammount of memory
+                                                  # part of the process' address space to limit the amount of memory
                                                   # the process can allocate. Unfortunately, this fallback method
                                                   # limits the amount of shared AND private memory the process can
                                                   # allocate AND reserve and may fragment the address space to the
