@@ -1,5 +1,6 @@
 ﻿def fInitializeProduct():
-  import __main__, json, os, sys;
+  import __main__, json, os, sys, warnings;
+  warnings.filterwarnings("error");
   try:
     from mStandardExitCodes import \
         guExitCodeBadDependencyError, \

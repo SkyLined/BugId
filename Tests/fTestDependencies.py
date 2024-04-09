@@ -1,7 +1,8 @@
 ﻿gbDebugOutput = False;
 
 def fTestDependencies(bAutomaticallyUpdate = False):
-  import json, os, sys;
+  import json, os, sys, warnings;
+  warnings.filterwarnings("error");
   # Save the list of names of default loaded modules:
   asInitiallyLoadedModuleNames = list(sys.modules.keys());
   

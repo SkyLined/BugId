@@ -63,9 +63,9 @@ def fOutputProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFold
       [COLOR_NORMAL, " ", COLOR_WARNING, "(no respository)"] if oProductDetails.o0Repository is None else
       [COLOR_NORMAL, " ", COLOR_ERROR, "(cannot check for updates)"] if not bCheckForUpdatesSuccessful else
       [COLOR_NORMAL, " ", COLOR_INFO, "(pre-release, last release version is ", str(oProductDetails.oLatestProductVersion), ")"]
-          if oProductDetails.bVersionIsPreRelease else
+         if oProductDetails.bVersionIsPreRelease else
       [COLOR_NORMAL, " ", COLOR_WARNING, "(old, latest release version is ", str(oProductDetails.oLatestProductVersion), ")"]
-          if not oProductDetails.bVersionIsUpToDate else
+         if not oProductDetails.bVersionIsUpToDate else
       []
     ) + [
       COLOR_NORMAL, ".",
