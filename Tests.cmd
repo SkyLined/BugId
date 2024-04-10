@@ -157,7 +157,7 @@ EXIT /B 0
   EXIT /B 0
 
 :RUN_PYTHON
-  CALL %PYTHON% "%~dpn0\%~n0.py" %*
+  CALL %PYTHON% -Werror "%~dpn0\%~n0.py" %*
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO + Completed tests using %PYTHON%.
   EXIT /B 0
@@ -168,7 +168,7 @@ EXIT /B 0
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PYTHON_X86% "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
+    ECHO.|CALL %PYTHON_X86% -Werror "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
@@ -179,7 +179,7 @@ EXIT /B 0
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PYTHON_X64% "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
+    ECHO.|CALL %PYTHON_X64% -Werror "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
