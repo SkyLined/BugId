@@ -1303,6 +1303,7 @@ except Exception as oException:
     );
   import traceback;
   traceback.print_exc();
+finally:
   if gbPauseBeforeExit:
     print("Press ENTER to quit...");
     input();
