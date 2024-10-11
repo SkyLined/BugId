@@ -4,8 +4,8 @@ oConsole = foConsoleLoader();
 
 asBugIdLogo = [s.rstrip() for s in """
   ____________________________________________________________________________  
-                              __                                                
-   ││▌║█▐▐║▌▌█│║║│      _,siSP**YSis,_       ╒╦╦══╦╗             ╒╦╦╕    ╔╦╕    
+                              __             ╷                   ╷              
+   ││▌║█▐▐║▌▌█│║║│      _,siSP**YSis,_      ─╒╦╦══╦╗            ─╒╦╦╕    ╔╦╕    
    ││▌║█▐▐║▌▌█│║║│    ,SP*'`    . `'*YS,      ║╠══╬╣ ╔╗ ╔╗ ╔╦═╦╗  ║║  ╔╦═╬╣     
    ╵2808197631337╵   dS'  _    |    _ 'Sb    ╘╩╩══╩╝ ╚╩═╩╝ ╚╩═╬╣ ╘╩╩╛ ╚╩═╩╝     
                     dP     \\,-` `-<` `  Y;                 ╚╩═╩╝    ╮╷╭         
@@ -24,8 +24,8 @@ asBugIdLogo = [s.rstrip() for s in """
 # digit = color number.
 asBugIdLogoColors = [s.rstrip() for s in """
   EAEAAEAAAEAAAAAAAAAAAAAAAAAAAAA2AAA2AA2AA2A2A2A2A2A22A22A222A222228222822828  
-                              FF                                                
-   FFFFFFFFFFFFFFF      FFFFF77777FFFF       EAAAAA2             EAA2    EA2    
+                              FF             7                   7               
+   FFFFFFFFFFFFFFF      FFFFF77777FFFF      7EAAAAA2            7EAA2    EA2    
    FFFFFFFFFFFFFFF    FF7788    6 7777FF      A22AA2 EA EA EAAAA  A2  EAAA2     
    F7777777777777F   F78  6    6    6 77F    A232323 A3223 A22A2 A233 A2323     
                     F7     6CCC CCC6 6  7F                 A2323    888         
