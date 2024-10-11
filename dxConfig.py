@@ -18,6 +18,7 @@ dxConfig = {
   "bVerbose": False,                              # Set to True to show verbose output.
   "bInteractive": False,                          # Set to False for fully automatic mode (e.g. do not ask for values
                                                   # when handling collateral bugs).
+  "bPauseBeforeExit": False,                      # Always wait for user to press ENTER before terminating.
   "bGenerateReportHTML": True,                    # Set to True to have BugId.py output a HTML formatted crash report.
   "a0sLocalSymbolPaths": None,                    # List of local symbol paths (symbols created for a local build or
                                                   # downloaded with a remote build, None = no local symbol paths).

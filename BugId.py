@@ -28,9 +28,6 @@ except ModuleNotFoundError as oException:
   m0DebugOutput = None;
 
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
-gbPauseBeforeExit = False;  # will be set to true when we are handling a JIT event:
-                            # the console will be closed when we exit and we want the
-                            # user to be able to see the error.
 try:
   # Load the stuff from external modules that we need.
   from mBugId import cBugId;
@@ -146,7 +143,7 @@ try:
     
     def fTerminate(uExitCode):
       oConsole.fCleanup();
-      if gbPauseBeforeExit:
+      if dxConfig["bPauseBeforeExit"]:
         oConsole.fOutput("Press ENTER to quit...");
         input();
       os._exit(uExitCode);
@@ -584,7 +581,7 @@ try:
         elif s0LowerName in ["v", "verbose"]:
           dxConfig["bVerbose"] = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["p", "pause"]:
-          gbPauseBeforeExit = fxProcessBooleanArgument(s0LowerName, s0Value);
+          dxConfig["bPauseBeforeExit"] = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["f", "fast", "quick"]:
           bFast = fxProcessBooleanArgument(s0LowerName, s0Value);
         elif s0LowerName in ["r", "repeat", "forever"]:
@@ -1299,12 +1296,12 @@ except Exception as oException:
     m0DebugOutput.fTerminateWithException(
       oException = oException,
       uExitCode = guExitCodeInternalError,
-      bPauseBeforeExit = gbPauseBeforeExit,
+      bPauseBeforeExit = dxConfig["bPauseBeforeExit"],
     );
   import traceback;
   traceback.print_exc();
 finally:
-  if gbPauseBeforeExit:
+  if dxConfig["bPauseBeforeExit"]:
     print("Press ENTER to quit...");
     input();
   os._exit(guExitCodeInternalError);
