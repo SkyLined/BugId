@@ -20,6 +20,10 @@ IF ERRORLEVEL 1 GOTO :ERROR
 
 SET _NT_SYMBOL_PATH=
 
+ECHO   * Test get JIT debugger information...
+CALL "%~dp0\..\BugId.cmd" --jit >"%REDIRECT_STDOUT_FILE_PATH%"
+IF ERRORLEVEL 1 GOTO :ERROR
+
 ECHO   * Test verbose mode with redirected output... 
 CALL "%~dp0\..\BugId.cmd" --verbose %ComSpec% --cBugId.bEnsurePageHeap=false -- /C "@ECHO OFF" >"%REDIRECT_STDOUT_FILE_PATH%"
 REM See `mExitCodes.py` for expected exit code.
