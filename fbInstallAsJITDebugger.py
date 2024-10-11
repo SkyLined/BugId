@@ -39,7 +39,7 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
     asFilteredAdditionalArguments.append(sArgument);
   
   sOSISA = mWindowsAPI.oSystemInfo.sOSISA;
-  dsCommandLineKeyPath_by_sTargetBinaryISA = mJITDebuggerRegistry.ddsCommandLineKeyPath_by_sTargetBinaryISA_by_sOSISA[sOSIA];
+  dsCommandLineKeyPath_by_sTargetBinaryISA = mJITDebuggerRegistry.ddsCommandLineKeyPath_by_sTargetBinaryISA_by_sOSISA[sOSISA];
   for (sTargetBinaryISA, sCommandLineKeyPath) in dsCommandLineKeyPath_by_sTargetBinaryISA.items():
     sBugIdCommandLine = fsCreateBugIdCommandLine(
       (
@@ -77,11 +77,11 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       "Debugger": sBugIdCommandLine
     }.items():
       # Check if the value is already set correctly:
-      o0RegistryValue = oRegistryHiveKey.fo0GetValueForName(sValueName = "Debugger");
+      o0RegistryValue = oRegistryHiveKey.fo0GetValueForName(sValueName = sName);
       
       if o0RegistryValue and o0RegistryValue.sTypeName == "REG_SZ" and o0RegistryValue.xValue == sValue:
         continue; # Yes; no need to modify it.
-      
+      oConsole.fOutput("Modifying ", sName, "=REGSZ:", repr(sValue), " (was ", o0RegistryValue.sTypeName, ":", repr(o0RegistryValue.xValue));
       try:
         oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
       except WindowsError as oException:
@@ -96,6 +96,6 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       bSettingsForTargetBinaryISAChanged = True;
     oConsole.fOutput(
       COLOR_OK, CHAR_OK,
-      COLOR_NORMAL, " BugId is ", "already" if bSettingsForTargetBinaryISAChanged else "now", " installed as the default JIT debugger for 64-bit binaries.");
+      COLOR_NORMAL, " BugId ", "is now" if bSettingsForTargetBinaryISAChanged else "was already", " installed as the default JIT debugger for 64-bit binaries.");
     oConsole.fOutput("  Command line: ", COLOR_INFO, sBugIdCommandLine);
   return True;
