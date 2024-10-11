@@ -1287,21 +1287,23 @@ try:
       gbAnInternalErrorOccurred = True;
       cException, oException, oTraceBack = sys.exc_info();
       fSaveInternalExceptionReportAndTerminate(oException, oTraceBack);
+    raise AssertionError("NOT REACHED");
 except Exception as oException:
   try:
-    fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
-  except:
-    pass
-  if m0DebugOutput:
-    m0DebugOutput.fTerminateWithException(
-      oException = oException,
-      uExitCode = guExitCodeInternalError,
-      bPauseBeforeExit = dxConfig["bPauseBeforeExit"],
-    );
-  import traceback;
-  traceback.print_exc();
-finally:
-  if dxConfig["bPauseBeforeExit"]:
-    print("Press ENTER to quit...");
-    input();
-  os._exit(guExitCodeInternalError);
+    try:
+      fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
+    except:
+      pass
+    if m0DebugOutput:
+      m0DebugOutput.fTerminateWithException(
+        oException = oException,
+        uExitCode = guExitCodeInternalError,
+        bPauseBeforeExit = dxConfig["bPauseBeforeExit"],
+      );
+    import traceback;
+    traceback.print_exc();
+  finally:
+    if dxConfig["bPauseBeforeExit"]:
+      print("Press ENTER to quit...");
+      input();
+    os._exit(guExitCodeInternalError);
