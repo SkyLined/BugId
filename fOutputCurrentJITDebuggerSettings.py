@@ -4,7 +4,6 @@ from mNotProvided import fbIsProvided;
 
 from foConsoleLoader import foConsoleLoader;
 from fsCreateBugIdCommandLine import fsCreateBugIdCommandLine;
-from fxGetCurrentJITDebuggerCommandLine import fxGetCurrentJITDebuggerCommandLine;
 from mColorsAndChars import *;
 import mJITDebuggerRegistry;
 oConsole = foConsoleLoader();
