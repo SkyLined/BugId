@@ -9,9 +9,9 @@ asBugIdLogo = [s.rstrip() for s in """
    ││▌║█▐▐║▌▌█│║║│    ,SP*'`    . `'*YS,      ║╠══╬╣ ╔╗ ╔╗ ╔╦═╦╗  ║║  ╔╦═╬╣     
    ╵2808197631337╵   dS'  _    |    _ 'Sb    ╘╩╩══╩╝ ╚╩═╩╝ ╚╩═╬╣ ╘╩╩╛ ╚╩═╩╝     
                     dP     \\,-` `-<` `  Y;                 ╚╩═╩╝    ╮╷╭         
-      ╮╷╭          ,S`  \\+' \\      \\    `Sissssssssssssssssssss,   :O()    ╲ö╱  
-     :O()          (S   (   | --====)   :SSSSSSSSSSSSSSSSSSSSSSD    ╯╵╰    ─O─  
-      ╯╵╰  ╮╷╭     'S,  /+, /      /    ,S?********************'           ╱O╲  
+      ╮╷╭          ,S`  \\+' \\      \\    `Sissssssssssssssssssss,   :O()         
+     :O()          (S   (   | --====)   :SSSSSSSSSSSSSSSSSSSSSSD    ╯╵╰         
+      ╯╵╰  ╮╷╭     'S,  /+, /      /    ,S?********************'                 
            ()O:     Yb    _/'-_ _-<._.  dP                                      
            ╯╵╰       YS,       |      ,SP         https://bugid.skylined.nl     
   ____________________`Sbs,_    ' _,sdS`______________________________________  
@@ -29,9 +29,9 @@ asBugIdLogoColors = [s.rstrip() for s in """
    FFFFFFFFFFFFFFF    FF7788    6 7777FF      A22AA2 EA EA EAAAA  A2  EAAA2     
    F7777777777777F   F78  6    6    6 77F    A232323 A3223 A22A2 A233 A2323     
                     F7     6CCC CCC6 6  7F                 A2323    888         
-      666          F78  67C 4      C    777F7F7F7F7F7F7F7F7F7F7F   7999    6C6  
-     7CCC          F7   C   4 444444C   F77777777777777777777777    888    646  
-      666  222     F78  67C 4      C    F77888888888888888888888           646  
+      666          F78  67C 4      C    777F7F7F7F7F7F7F7F7F7F7F   7999         
+     7CCC          F7   C   4 444444C   F77777777777777777777777    888         
+      666  222     F78  67C 4      C    F77888888888888888888888                
            3337     F7    66CCC CCC666  78                                      
            222       778       6      F78         _AAAAAAAAAAAAAAAAAAAAAAAAA_   
   EAEAAA2AA2A2A22A282877777F    6 FFF787EAEAAEAAAAA2AAA2AA2A2A2A2A22A222A22828  
