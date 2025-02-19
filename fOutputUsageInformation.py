@@ -21,8 +21,7 @@ def fOutputUsageInformation():
     oConsole.fOutput("  ", COLOR_INFO, "\"path\\to\\binary.exe\"");
     oConsole.fOutput("    Start the given binary in the debugger with the given arguments.");
     oConsole.fOutput("  ", COLOR_INFO, "--pids=pid[,pid[...]]");
-    oConsole.fOutput("    Attach debugger to the process(es) provided in the list. The processes ", COLOR_HILITE, "must");
-    oConsole.fOutput("    all have been suspended, as they will be resumed by the debugger.");
+    oConsole.fOutput("    Attach debugger to the process(es) provided in the list.");
     oConsole.fOutput("    Arguments cannot be provided for obvious reasons.");
     oConsole.fOutput("  ", COLOR_INFO, "--uwp-app=<package name>[!<application id>]");
     oConsole.fOutput("    Start and debug a Universal Windows Platform App identified by the given");
