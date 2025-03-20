@@ -1,15 +1,20 @@
 import math, platform, sys;
 
-import mProductDetails;
+from mProductDetails import (
+  cProductDetailsException,
+  faoGetProductDetailsForAllLoadedModules,
+  fo0GetProductDetailsForMainModule,
+);
 
 from foConsoleLoader import foConsoleLoader;
-from mColorsAndChars import \
-    COLOR_ERROR, CHAR_ERROR, \
-    COLOR_LIST, CHAR_LIST, \
-    COLOR_OK, CHAR_OK, \
-    COLOR_WARNING, CHAR_WARNING, \
-    COLOR_HILITE, COLOR_INFO, COLOR_NORMAL, \
-    CONSOLE_UNDERLINE;
+from mColorsAndChars import (
+  COLOR_ERROR, CHAR_ERROR,
+  COLOR_LIST, CHAR_LIST,
+  COLOR_OK, CHAR_OK,
+  COLOR_WARNING, CHAR_WARNING,
+  COLOR_HILITE, COLOR_INFO, COLOR_NORMAL,
+  CONSOLE_UNDERLINE
+);
 oConsole = foConsoleLoader();
 
 try:
@@ -74,8 +79,8 @@ def fOutputProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFold
 
 def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders, dsAdditionalVersion_by_sName = {}):
   # Read product details for rs and all modules it uses.
-  aoProductDetails = mProductDetails.faoGetProductDetailsForAllLoadedModules();
-  o0MainProductDetails = mProductDetails.fo0GetProductDetailsForMainModule();
+  aoProductDetails = faoGetProductDetailsForAllLoadedModules();
+  o0MainProductDetails = fo0GetProductDetailsForMainModule();
   oConsole.fLock();
   try:
     aoProductDetailsCheckedForUpdates = [];
@@ -91,7 +96,7 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders, dsAddi
         );
         try:
           oProductDetails.foGetLatestProductDetailsFromRepository();
-        except mProductDetails.mExceptions.cProductDetailsException as oException:
+        except cProductDetailsException as oException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " Version check for ",
@@ -177,6 +182,8 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders, dsAddi
         COLOR_NORMAL, " version: ", COLOR_INFO, sVersion,
         COLOR_NORMAL, ".",
       );
+    
+    oConsole.fOutput("│ (", CONSOLE_UNDERLINE, "Underlined", COLOR_NORMAL, " modules are covered by a license installed on this system.)");
     
     oConsole.fOutput(
       COLOR_NORMAL, "└", sPadding = "─",
