@@ -27,6 +27,8 @@ except ModuleNotFoundError as oException:
     raise;
   m0DebugOutput = None;
 
+asActivityCharacters = ["⢎⠁", "⠎⠑", "⠊⠱", "⠈⡱", "⢀⡱", "⢄⡰", "⢆⡠", "⢎⡀"];
+
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
   # Load the stuff from external modules that we need.
@@ -361,6 +363,17 @@ try:
       finally:
         oConsole.fUnlock();
     
+    def fCdbActivityCallback(oBugId, nTimeSinceStartOfCdbActivityInSeconds):
+      uActivityIndex = int(time.time() * 10);
+      oConsole.fStatus(
+        COLOR_BUSY, asActivityCharacters[uActivityIndex % len(asActivityCharacters)],
+        COLOR_NORMAL, " Process time: ",
+        COLOR_INFO, cDateTimeDuration.foFromSeconds(oBugId.fnApplicationRunTimeInSeconds()).fsToString(),
+        COLOR_NORMAL, ", current cdb command time: ",
+        COLOR_INFO, cDateTimeDuration.foFromSeconds(nTimeSinceStartOfCdbActivityInSeconds).fsToString(),
+        COLOR_NORMAL, ".",
+      );
+
     def fProcessAttachedCallback(oBugId, oProcess, bIsMainProcess):
       global gasAttachForProcessExecutableNames;
       if not dxConfig["bQuiet"]: # Main processes
@@ -1164,6 +1177,8 @@ try:
         oBugId.fAddCallback("Bug cannot be ignored", fCollateralCannotIgnoreBugCallbackHandler);
         oBugId.fAddCallback("Bug ignored", fCollateralBugIgnoredCallbackHandler);
         oBugId.fAddCallback("Bug report", fBugReportCallback);
+        oBugId.fAddCallback("Cdb activity", fCdbActivityCallback);
+        oBugId.fSetActivityReportInterval(0.1);
         oBugId.fAddCallback("Cdb command started executing", fCdbCommandStartedExecutingCallbackHandler);
         oBugId.fAddCallback("Cdb command finished executing", fCdbCommandFinishedExecutingCallbackHandler);
         oBugId.fAddCallback("Cdb stderr output", fCdbStdErrOutputCallbackHandler);
