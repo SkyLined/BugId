@@ -33,7 +33,6 @@ random
 select
 selectors
 shutil
-signal
 socket
 ssl
 string
