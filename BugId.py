@@ -53,7 +53,6 @@ try:
   from fCdbStdErrOutputCallbackHandler import fCdbStdErrOutputCallbackHandler;
   from fCdbStdInInputCallbackHandler import fCdbStdInInputCallbackHandler;
   from fCdbStdOutOutputCallbackHandler import fCdbStdOutOutputCallbackHandler;
-  from fCheckPythonVersion import fCheckPythonVersion;
   from fCollateralCannotIgnoreBugCallbackHandler import fCollateralCannotIgnoreBugCallbackHandler;
   from fCollateralBugIgnoredCallbackHandler import fCollateralBugIgnoredCallbackHandler;
   from fdsGetAdditionalVersionByName import fdsGetAdditionalVersionByName;
@@ -109,7 +108,6 @@ try:
       fTerminate(guExitCodeBadArgument);
   
   if __name__ == "__main__":
-    asTestedPythonVersions = ["3.8.5", "3.9.1", "3.9.7", "3.10.0", "3.11.1", "3.11.4", "3.12.0"];
     
     gasAttachForProcessExecutableNames = [];
     gasLowercaseBinaryNamesThatAreAllowedToRunWithoutPageHeap = [
@@ -1290,10 +1288,6 @@ try:
     raise AssertionError("NOT REACHED");
 except Exception as oException:
   try:
-    try:
-      fCheckPythonVersion("BugId", asTestedPythonVersions, "https://github.com/SkyLined/BugId/issues/new")
-    except:
-      pass
     if m0DebugOutput:
       m0DebugOutput.fTerminateWithException(
         oException = oException,
