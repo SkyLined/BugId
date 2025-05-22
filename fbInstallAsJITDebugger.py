@@ -81,7 +81,10 @@ def fbInstallAsJITDebugger(asAdditionalArguments):
       
       if o0RegistryValue and o0RegistryValue.sTypeName == "REG_SZ" and o0RegistryValue.xValue == sValue:
         continue; # Yes; no need to modify it.
-      oConsole.fOutput("Modifying ", sName, "=REGSZ:", repr(sValue), " (was ", o0RegistryValue.sTypeName, ":", repr(o0RegistryValue.xValue));
+      if o0RegistryValue:
+        oConsole.fOutput("Modifying ", sName, "=REGSZ:", repr(sValue), " (was ", o0RegistryValue.sTypeName, ":", repr(o0RegistryValue.xValue));
+      else:
+        oConsole.fOutput("Adding ", sName, "=REGSZ:", repr(sValue));
       try:
         oRegistryHiveKey.foSetValueForName(sValueName = sName, sTypeName = "SZ", xValue = sValue);
       except WindowsError as oException:
